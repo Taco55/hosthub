@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "HostHub Console DEV Web",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "deviceId": "chrome",
+      "program": "${workspaceFolder}/hosthub_console/lib/main.dart",
+      "cwd": "${workspaceFolder}/hosthub_console",
+      "args": [
+        "--dart-define-from-file=../../hosthub_secrets/hosthub-shared.env",
+        "--dart-define-from-file=../../hosthub_secrets/hosthub-dev.env",
+        "--web-port=3000",
+        "--no-start-paused"
+      ]
+    }
+  ]
+}

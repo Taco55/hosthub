@@ -1,0 +1,43 @@
+# macOS
+.DS_Store
+**/.DS_Store
+
+# IDE
+.idea/
+**/.idea/
+*.iml
+
+# Flutter / Dart
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.packages
+**/.pub-cache/
+**/build/
+**/test_cache/
+*.dill
+*.dill.track.dill
+*.snapshot
+*.snapshot.incremental
+
+# Node / JS
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+**/.next/
+
+# Local env / secrets
+.env
+.env.*
+!.env.example
+**/secrets/
+hosthub_cloudflare/.wrangler/
+
+# Supabase local artifacts
+supabase/.branches/
+supabase/.temp/
+
+# Logs
+*.log

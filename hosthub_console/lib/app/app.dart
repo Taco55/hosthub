@@ -1,0 +1,178 @@
+import 'package:flutter/material.dart';
+
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_localized_locales/flutter_localized_locales.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:toastification/toastification.dart';
+import 'package:styled_widgets/styled_widgets.dart';
+import 'package:app_errors/app_errors.dart';
+import 'package:hosthub_console/core/core.dart';
+import 'package:hosthub_console/shared/l10n/l10n.dart';
+import 'package:hosthub_console/shared/widgets/widgets.dart';
+import 'package:hosthub_console/shared/services/services.dart';
+import 'package:hosthub_console/shared/l10n/application/language_cubit.dart';
+
+import 'package:hosthub_console/app/router/router.dart';
+import 'package:hosthub_console/app/router/go_router_refresh_stream.dart';
+import 'package:hosthub_console/app/shell/navigation/navigation_guard_controller.dart';
+import 'package:hosthub_console/app/session/session_bloc_listeners.dart';
+import 'package:hosthub_console/features/auth/auth.dart';
+import 'package:hosthub_console/features/cms/cms.dart';
+import 'package:hosthub_console/features/profile/profile.dart';
+import 'package:hosthub_console/features/server_settings/data/admin_settings_repository.dart';
+import 'package:hosthub_console/features/properties/properties.dart';
+import 'package:hosthub_console/shared/domain/channel_manager/channel_manager_repository.dart';
+import 'package:hosthub_console/features/user_settings/user_settings.dart';
+import 'package:hosthub_console/features/users/users.dart';
+
+class ConsoleApp extends StatelessWidget {
+  const ConsoleApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        RepositoryProvider<AdminUserRepository>.value(
+          value: I.get<AdminUserRepository>(),
+        ),
+        RepositoryProvider<CmsRepository>.value(value: I.get<CmsRepository>()),
+        RepositoryProvider<PropertyRepository>.value(
+          value: I.get<PropertyRepository>(),
+        ),
+        RepositoryProvider<CurrentUserProvider>.value(
+          value: I.get<CurrentUserProvider>(),
+        ),
+        RepositoryProvider<ChannelManagerRepository>.value(
+          value: I.get<ChannelManagerRepository>(),
+        ),
+        RepositoryProvider<AdminSettingsRepository>.value(
+          value: I.get<AdminSettingsRepository>(),
+        ),
+        BlocProvider<AuthBloc>(
+          create: (_) => AuthBloc(
+            authService: I.get<AuthPort>(),
+            localStorage: I.get<LocalStorageManager>(),
+          )..add(const AuthEvent.initialize()),
+        ),
+        BlocProvider<SettingsCubit>(
+          create: (_) => SettingsCubit(
+            repository: I.get<UserSettingsRepository>(),
+            currentUserProvider: I.get<CurrentUserProvider>(),
+          ),
+        ),
+        BlocProvider<UserSettingsCubit>(
+          create: (context) => UserSettingsCubit(
+            userSettingsRepository: I.get<UserSettingsRepository>(),
+            channelManagerRepository: I.get<ChannelManagerRepository>(),
+            propertyRepository: I.get<PropertyRepository>(),
+            settingsCubit: context.read<SettingsCubit>(),
+            currentUserProvider: I.get<CurrentUserProvider>(),
+          ),
+        ),
+        BlocProvider<ProfileCubit>(
+          create: (_) => ProfileCubit(
+            sessionManager: I.get<SessionManager>(),
+            profileRepository: I.get<ProfileRepository>(),
+          ),
+        ),
+        BlocProvider<PropertyContextCubit>(
+          create: (_) =>
+              PropertyContextCubit(repository: I.get<PropertyRepository>()),
+        ),
+        BlocProvider<LanguageCubit>.value(value: I.get<LanguageCubit>()),
+        BlocProvider<ThemeCubit>.value(value: I.get<ThemeCubit>()),
+        BlocProvider<ThemeModeCubit>.value(value: I.get<ThemeModeCubit>()),
+        ChangeNotifierProvider<NavigationGuardController>(
+          create: (_) => NavigationGuardController(),
+        ),
+      ],
+      child: const _ConsoleRouterHost(),
+    );
+  }
+}
+
+class _ConsoleRouterHost extends StatefulWidget {
+  const _ConsoleRouterHost();
+
+  @override
+  State<_ConsoleRouterHost> createState() => _ConsoleRouterHostState();
+}
+
+class _ConsoleRouterHostState extends State<_ConsoleRouterHost> {
+  late final GoRouterRefreshStream _refresh;
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    final authBloc = context.read<AuthBloc>();
+    _refresh = GoRouterRefreshStream(authBloc.stream);
+    _router = createRouter(refreshListenable: _refresh);
+  }
+
+  @override
+  void dispose() {
+    _router.dispose();
+    _refresh.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final themeMode = context.watch<ThemeModeCubit>().state;
+    final locale = context.watch<LanguageCubit>().state;
+
+    final lightTheme = HosthubDiploraV1ThemePreset.applyMaterialTheme(
+      baseTheme: ThemeData.light(),
+      brightness: Brightness.light,
+    );
+    final darkTheme = HosthubDiploraV1ThemePreset.applyMaterialTheme(
+      baseTheme: ThemeData.dark(),
+      brightness: Brightness.dark,
+    );
+
+    final localizationDelegates = <LocalizationsDelegate<dynamic>>[
+      S.delegate,
+      AppErrorLocalizations.delegate,
+      GlobalMaterialLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+      GlobalCupertinoLocalizations.delegate,
+      FormBuilderLocalizations.delegate,
+      LocaleNamesLocalizationsDelegate(),
+    ];
+    final supportedLocales = <Locale>[
+      ...S.delegate.supportedLocales,
+      ...AppErrorLocalizations.supportedLocales,
+    ];
+
+    return ToastificationWrapper(
+      child: MaterialApp.router(
+        routerConfig: _router,
+        builder: (context, child) {
+          final styledTheme = HosthubDiploraV1ThemePreset.styledTheme(
+            lightMaterialTheme: lightTheme,
+          );
+
+          final appChild = SessionBlocListeners(
+            child: child ?? const SizedBox.shrink(),
+          );
+          return StyledWidgetsTheme(
+            styledThemeData: styledTheme,
+            child: appChild,
+          );
+        },
+        scrollBehavior: TouchAndMouseScrollBehavior(),
+        title: "HostHub",
+        theme: lightTheme,
+        darkTheme: darkTheme,
+        themeMode: themeMode,
+        localizationsDelegates: localizationDelegates,
+        locale: locale,
+        supportedLocales: supportedLocales,
+      ),
+    );
+  }
+}
