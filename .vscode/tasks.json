@@ -1,0 +1,40 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Ensure Local Website Preview Running (DEV only)",
+      "type": "shell",
+      "command": "PREVIEW_WEB_HOLD=1 ./scripts/ensure_preview_web.sh",
+      "isBackground": true,
+      "runOptions": {
+        "instanceLimit": 1
+      },
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [
+        {
+          "owner": "hosthub-preview",
+          "pattern": [
+            {
+              "regexp": "^(__HOSTHUB_PREVIEW_PROBLEM__):(.*)$",
+              "kind": "file",
+              "file": 1,
+              "message": 2
+            }
+          ],
+          "background": {
+            "activeOnStart": true,
+            "beginsPattern": "^(Starting website preview server|Preview website already running on)",
+            "endsPattern": "^(Preview website is ready on|Preview website already running on)"
+          }
+        }
+      ],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "showReuseMessage": false
+      }
+    }
+  ]
+}

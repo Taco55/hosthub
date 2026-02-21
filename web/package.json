@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "postinstall": "node scripts/patch-next-fast-immediate.js",
-    "dev": "next dev --webpack --disable-source-maps --port 3001",
+    "dev": "next dev --webpack --disable-source-maps --port 43001",
     "build": "next build --webpack",
     "build:cf": "opennextjs-cloudflare build",
     "preview": "npm run build:cf && opennextjs-cloudflare preview",

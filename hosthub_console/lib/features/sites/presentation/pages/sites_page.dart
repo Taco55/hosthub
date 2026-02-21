@@ -31,6 +31,20 @@ class _SitesPageState extends State<SitesPage> {
     _futureSites = repo.fetchSites();
   }
 
+  String _siteContentRoute(SiteSummary site) {
+    final nameSegment = _toRouteSegment(site.name);
+    return '/sites/$nameSegment/${site.id}';
+  }
+
+  String _toRouteSegment(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return 'site';
+    final normalized = trimmed
+        .replaceAll('/', '-')
+        .replaceAll(RegExp(r'\s+'), '-');
+    return Uri.encodeComponent(normalized);
+  }
+
   Future<void> _createSite() async {
     if (_creating) return;
     setState(() => _creating = true);
@@ -53,9 +67,9 @@ class _SitesPageState extends State<SitesPage> {
       setState(_loadSites);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (mounted) setState(() => _creating = false);
     }
@@ -79,9 +93,7 @@ class _SitesPageState extends State<SitesPage> {
             title: context.s.sitesTitle,
             description: context.s.sitesDescription,
             leftChild: Center(
-              child: Text(
-                context.s.sitesLoadFailed(snapshot.error.toString()),
-              ),
+              child: Text(context.s.sitesLoadFailed(snapshot.error.toString())),
             ),
           );
         }
@@ -92,7 +104,7 @@ class _SitesPageState extends State<SitesPage> {
         if (sites.isNotEmpty && !_redirected) {
           _redirected = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) context.go('/sites/${sites.first.id}');
+            if (mounted) context.go(_siteContentRoute(sites.first));
           });
           return ConsolePageScaffold(
             title: context.s.sitesTitle,

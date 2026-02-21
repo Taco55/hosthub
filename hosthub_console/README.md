@@ -30,13 +30,13 @@ flutter run -d chrome \
 ### Preview website from CMS
 
 The CMS "Preview website" button opens:
-- `http://localhost:3001/preview/<locale>` when `CMS_PREVIEW_DOMAIN=localhost:3001` is provided (debug/local).
+- `http://localhost:43001/preview/<locale>` when `CMS_PREVIEW_DOMAIN=localhost:43001` is provided (debug/local).
 - otherwise `https://<primary-domain>/preview/<locale>` using `site_domains.is_primary` from Supabase.
 
 In this workspace the VS Code launch config already sets:
 
 ```text
---dart-define=CMS_PREVIEW_DOMAIN=localhost:3001
+--dart-define=CMS_PREVIEW_DOMAIN=localhost:43001
 ```
 
 ## Supabase policies

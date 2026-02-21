@@ -37,13 +37,14 @@ GoRouter createRouter({required Listenable refreshListenable}) {
           return MultiBlocProvider(
             providers: [
               BlocProvider<ServerSettingsCubit>(
-                create: (context) =>
-                    ServerSettingsCubit(context.read<AdminSettingsRepository>()),
+                create: (context) => ServerSettingsCubit(
+                  context.read<AdminSettingsRepository>(),
+                ),
               ),
               BlocProvider<CalendarCubit>(
                 create: (context) => CalendarCubit(
-                  channelManagerRepository:
-                      context.read<ChannelManagerRepository>(),
+                  channelManagerRepository: context
+                      .read<ChannelManagerRepository>(),
                 ),
               ),
             ],
@@ -59,6 +60,13 @@ GoRouter createRouter({required Listenable refreshListenable}) {
           GoRoute(
             path: '/sites',
             builder: (context, state) => const SitesPage(),
+          ),
+          GoRoute(
+            path: '/sites/:siteName/:siteId',
+            builder: (context, state) {
+              final siteId = state.pathParameters['siteId']!;
+              return SiteContentPage(siteId: siteId);
+            },
           ),
           GoRoute(
             path: '/sites/:siteId',

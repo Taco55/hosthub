@@ -11,8 +11,8 @@ future migration path to a dedicated HostHub domain.
 
 ## Local development model
 
-- HostHub admin: `http://localhost:3000`
-- Website + preview: `http://localhost:3001` and `http://localhost:3001/preview/<locale>`
+- HostHub admin: `http://localhost:43000`
+- Website + preview: `http://localhost:43001` and `http://localhost:43001/preview/<locale>`
 
 Reason: keep admin and website as separate local apps to avoid reverse-proxy
 complexity during development.
@@ -23,7 +23,7 @@ HostHub resolves preview URLs in this order:
 
 1. `CMS_PREVIEW_DOMAIN` (build-time override; debug/local use)
 2. `site_domains.is_primary` from Supabase
-3. fallback `localhost:3001`
+3. fallback `localhost:43001`
 
 Relevant code:
 
@@ -83,6 +83,6 @@ Admin:
 
 ```bash
 cd hosthub_console
-flutter run -d web-server --web-port=3000 \
-  --dart-define=CMS_PREVIEW_DOMAIN=localhost:3001
+flutter run -d web-server --web-port=43000 \
+  --dart-define=CMS_PREVIEW_DOMAIN=localhost:43001
 ```

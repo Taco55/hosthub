@@ -15,7 +15,7 @@ You can then run the console with `flutter run -d chrome --dart-define APP_ENVIR
 
 The CMS "Preview website" button opens `/preview/<locale>` on the website host.
 
-Run the website locally (port 3001):
+Run the website locally (port 43001):
 
 ```bash
 cd web
@@ -23,14 +23,23 @@ npm install
 npm run dev
 ```
 
-Run the admin console locally (port 3000):
+Or use the helper that starts it if needed:
+
+```bash
+./scripts/ensure_preview_web.sh
+```
+
+The VS Code launch configuration runs this helper automatically as a pre-launch
+task, so preview should be available whenever you start HostHub from launch.
+
+Run the admin console locally (port 43000):
 
 ```bash
 cd hosthub_console
-flutter run -d web-server --web-port=3000
+flutter run -d web-server --web-port=43000
 ```
 
-In VS Code launch, `CMS_PREVIEW_DOMAIN=localhost:3001` is set for debug so preview opens your local website even when a production domain exists in `site_domains`.
+In VS Code launch, `CMS_PREVIEW_DOMAIN=localhost:43001` is set for debug so preview opens your local website even when a production domain exists in `site_domains`.
 
 No production deploy is triggered by these local steps.
 
@@ -44,8 +53,8 @@ Current (keep production unchanged):
 - HostHub admin: `https://trysilpanorama.com/admin`
 
 Local development:
-- HostHub admin: `http://localhost:3000`
-- Website + preview: `http://localhost:3001` and `http://localhost:3001/preview/<locale>`
+- HostHub admin: `http://localhost:43000`
+- Website + preview: `http://localhost:43001` and `http://localhost:43001/preview/<locale>`
 
 When HostHub gets its own domain later:
 1. Update Cloudflare Worker routes in `cloudflare/wrangler.toml`.

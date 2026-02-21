@@ -45,3 +45,6 @@ supabase/.temp/
 
 # Logs
 *.log
+
+# Local helper runtime files
+.tmp/

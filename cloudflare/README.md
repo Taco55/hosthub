@@ -26,6 +26,15 @@ Dry run:
 ./cloudflare/scripts/deploy_hosthub.sh --dry-run
 ```
 
+Custom env file:
+
+```bash
+./cloudflare/scripts/deploy_hosthub.sh --env-file /path/to/hosthub-cloudflare-prd.env
+```
+
+If `--env-file` is provided and the file does not exist, deploy exits with an
+error (no fallback).
+
 ## Deploy env file
 
 The script uses global `wrangler login` auth by default. To use explicit
@@ -45,6 +54,16 @@ HOSTHUB_ADMIN_PATH=/admin
 `HOSTHUB_ADMIN_PATH` controls:
 - Flutter build base-href used by deploy script
 - Worker prefix used to serve admin assets
+
+Additional optional env vars:
+
+```
+# Enable Flutter wasm dry-run warnings (default is disabled for cleaner deploy logs)
+HOSTHUB_WASM_DRY_RUN=1
+
+# Override pinned wrangler version (default: 4.67.0)
+HOSTHUB_WRANGLER_VERSION=4.67.0
+```
 
 ## Routes
 

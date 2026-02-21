@@ -24,8 +24,8 @@ npm install
 npm run dev
 ```
 
-By default this workspace runs on `http://localhost:3001` so the HostHub admin
-console (typically `http://localhost:3000`) can open `/preview/<locale>` in a
+By default this workspace runs on `http://localhost:43001` so the HostHub admin
+console (typically `http://localhost:43000`) can open `/preview/<locale>` in a
 separate local app.
 
 ## Typecheck

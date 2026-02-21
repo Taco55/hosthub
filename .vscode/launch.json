@@ -3,6 +3,7 @@
   "configurations": [
     {
       "name": "HostHub Console DEV Web",
+      "preLaunchTask": "Ensure Local Website Preview Running (DEV only)",
       "request": "launch",
       "type": "dart",
       "flutterMode": "debug",
@@ -12,9 +13,10 @@
       "args": [
         "--dart-define-from-file=../../hosthub_secrets/hosthub-shared.env",
         "--dart-define-from-file=../../hosthub_secrets/hosthub-dev.env",
-        "--dart-define=CMS_PREVIEW_DOMAIN=localhost:3001",
+        "--dart-define=CMS_PREVIEW_DOMAIN=localhost:43001",
+        "--web-browser-flag=--user-data-dir=.dart_tool/chrome-profile-hosthub",
         "--web-hostname=localhost",
-        "--web-port=3000",
+        "--web-port=43000",
         "--no-start-paused"
       ]
     }

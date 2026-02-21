@@ -85,7 +85,7 @@ class CmsState extends Equatable {
     final configuredDomain = kCmsPreviewDomain.trim();
     final resolvedDomain = configuredDomain.isNotEmpty
         ? configuredDomain
-        : (primaryDomain ?? 'localhost:3001');
+        : (primaryDomain ?? 'localhost:43001');
     final normalizedDomain = resolvedDomain
         .replaceFirst(RegExp(r'^https?://'), '')
         .replaceAll(RegExp(r'/$'), '');
