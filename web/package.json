@@ -1,0 +1,51 @@
+{
+  "name": "trysilpanorama",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "postinstall": "node scripts/patch-next-fast-immediate.js",
+    "dev": "next dev --webpack --disable-source-maps --port 3001",
+    "build": "next build --webpack",
+    "build:cf": "opennextjs-cloudflare build",
+    "preview": "npm run build:cf && opennextjs-cloudflare preview",
+    "deploy": "npm run build:cf && opennextjs-cloudflare deploy",
+    "upload": "npm run build:cf && opennextjs-cloudflare upload",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "start": "next start",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "resize-images": "node scripts/resize-images.js"
+  },
+  "dependencies": {
+    "@opennextjs/cloudflare": "^1.14.7",
+    "@radix-ui/react-accordion": "^1.2.12",
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@react-email/render": "^2.0.1",
+    "@supabase/supabase-js": "^2.97.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.542.0",
+    "next": "16.1.1",
+    "node-ical": "^0.20.1",
+    "react": "19.2.3",
+    "react-day-picker": "^9.9.0",
+    "react-dom": "19.2.3",
+    "resend": "^6.6.0",
+    "tailwind-merge": "^3.3.1",
+    "yet-another-react-lightbox": "^3.25.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.1",
+    "sharp": "^0.34.5",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "wrangler": "^4.53.0"
+  }
+}

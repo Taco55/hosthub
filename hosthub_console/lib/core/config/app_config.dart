@@ -28,6 +28,10 @@ const kTestFlightUrl = String.fromEnvironment(
   'TESTFLIGHT_URL',
   defaultValue: '',
 );
+const kCmsPreviewDomain = String.fromEnvironment(
+  'CMS_PREVIEW_DOMAIN',
+  defaultValue: '',
+);
 
 const _isProductBuild = bool.fromEnvironment('dart.vm.product');
 
@@ -145,8 +149,7 @@ class AppConfig {
     };
 
     final resolvedEnableLogging = enableLogging ?? defaults.enableLogging;
-    final resolvedEnableApiLogger =
-        enableApiLogger ?? defaults.enableApiLogger;
+    final resolvedEnableApiLogger = enableApiLogger ?? defaults.enableApiLogger;
     final resolvedEnableRouterLogging =
         enableRouterLogging ?? resolvedEnableLogging;
 
@@ -168,10 +171,7 @@ class AppConfig {
       placesApiKey: kPlacesGoogleApiKey,
       adminBaseUrl: _parseOptionalUri('ADMIN_BASE_URL', kAdminBaseUrl),
       lodgifyBaseUrl: _ensureTrailingSlash(
-        _parseRequiredUri(
-          'LODGIFY_BASE_URL',
-          kLodgifyBaseUrl,
-        ),
+        _parseRequiredUri('LODGIFY_BASE_URL', kLodgifyBaseUrl),
       ),
       testFlightUrl: _parseOptionalUri('TESTFLIGHT_URL', kTestFlightUrl),
       enableDevTools: enableDevTools ?? defaults.enableDevTools,

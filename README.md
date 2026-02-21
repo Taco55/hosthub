@@ -5,11 +5,55 @@ This workspace hosts the Flutter web HostHub console that talks to the Supabase 
 ## Setup
 
 ```bash
-cd hosthub/hosthub_console
+cd hosthub_console
 flutter pub get
 ```
 
-You can then run the console with `flutter run -d chrome --dart-define APP_ENVIRONMENT=dev` from `hosthub/hosthub_console` (see `hosthub/hosthub_console/assets/env/dev.env.example` for the required `SUPABASE_URL` / `SUPABASE_ANON_KEY`).
+You can then run the console with `flutter run -d chrome --dart-define APP_ENVIRONMENT=dev` from `hosthub_console` (see `hosthub_console/assets/env/dev.env.example` for the required `SUPABASE_URL` / `SUPABASE_ANON_KEY`).
+
+## Website preview (local debug)
+
+The CMS "Preview website" button opens `/preview/<locale>` on the website host.
+
+Run the website locally (port 3001):
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+Run the admin console locally (port 3000):
+
+```bash
+cd hosthub_console
+flutter run -d web-server --web-port=3000
+```
+
+In VS Code launch, `CMS_PREVIEW_DOMAIN=localhost:3001` is set for debug so preview opens your local website even when a production domain exists in `site_domains`.
+
+No production deploy is triggered by these local steps.
+
+In production builds (without `CMS_PREVIEW_DOMAIN`), the console preview button uses the site's `site_domains.is_primary = true` domain and opens `https://<primary-domain>/preview/<locale>`.
+
+## Domain and routing strategy
+
+Current (keep production unchanged):
+- Website: `https://trysilpanorama.com/<locale>`
+- Website preview: `https://trysilpanorama.com/preview/<locale>`
+- HostHub admin: `https://trysilpanorama.com/admin`
+
+Local development:
+- HostHub admin: `http://localhost:3000`
+- Website + preview: `http://localhost:3001` and `http://localhost:3001/preview/<locale>`
+
+When HostHub gets its own domain later:
+1. Update Cloudflare Worker routes in `cloudflare/wrangler.toml`.
+2. Update deploy env (`HOSTHUB_PUBLIC_DOMAIN`, optionally `HOSTHUB_ADMIN_PATH`).
+3. Set `site_domains.is_primary` in Supabase for the site that should drive preview links.
+4. Remove debug override `CMS_PREVIEW_DOMAIN` from launch/build configs for production.
+
+Full reference: `docs/preview_and_routing.md`.
 
 ## Supabase CLI / database
 

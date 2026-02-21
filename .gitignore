@@ -27,13 +27,17 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 **/.next/
+**/.open-next/
+**/.wrangler/
+**/dist/
+*.tsbuildinfo
 
 # Local env / secrets
 .env
 .env.*
 !.env.example
+**/.dev.vars
 **/secrets/
-hosthub_cloudflare/.wrangler/
 
 # Supabase local artifacts
 supabase/.branches/

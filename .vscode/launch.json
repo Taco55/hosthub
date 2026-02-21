@@ -12,6 +12,8 @@
       "args": [
         "--dart-define-from-file=../../hosthub_secrets/hosthub-shared.env",
         "--dart-define-from-file=../../hosthub_secrets/hosthub-dev.env",
+        "--dart-define=CMS_PREVIEW_DOMAIN=localhost:3001",
+        "--web-hostname=localhost",
         "--web-port=3000",
         "--no-start-paused"
       ]

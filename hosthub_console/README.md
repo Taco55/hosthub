@@ -27,6 +27,18 @@ flutter run -d chrome \
   --dart-define APP_ENVIRONMENT=dev
 ```
 
+### Preview website from CMS
+
+The CMS "Preview website" button opens:
+- `http://localhost:3001/preview/<locale>` when `CMS_PREVIEW_DOMAIN=localhost:3001` is provided (debug/local).
+- otherwise `https://<primary-domain>/preview/<locale>` using `site_domains.is_primary` from Supabase.
+
+In this workspace the VS Code launch config already sets:
+
+```text
+--dart-define=CMS_PREVIEW_DOMAIN=localhost:3001
+```
+
 ## Supabase policies
 
-The admin console requires the policies defined in `../../supabase/policies/admin_access.sql`. Apply them to your Supabase project so users with `profiles.is_admin = true` can query other accounts and lists.
+The admin console requires the policies defined in `../supabase/policies/admin_access.sql`. Apply them to your Supabase project so users with `profiles.is_admin = true` can query other accounts and lists.

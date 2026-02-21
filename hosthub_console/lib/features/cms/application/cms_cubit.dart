@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:app_errors/app_errors.dart';
 
+import 'package:hosthub_console/core/config/app_config.dart';
 import 'package:hosthub_console/features/cms/data/cms_repository.dart';
 
 enum CmsStatus { initial, loading, loaded, error }
@@ -67,12 +68,10 @@ class CmsState extends Equatable {
   }
 
   ContentDocument? documentFor(String contentType, String slug) {
-    return filteredDocuments
-        .cast<ContentDocument?>()
-        .firstWhere(
-          (d) => d!.contentType == contentType && d.slug == slug,
-          orElse: () => null,
-        );
+    return filteredDocuments.cast<ContentDocument?>().firstWhere(
+      (d) => d!.contentType == contentType && d.slug == slug,
+      orElse: () => null,
+    );
   }
 
   /// The effective content for a document: dirty (edited) or persisted.
@@ -83,9 +82,19 @@ class CmsState extends Equatable {
   /// Preview URL for opening the website with CMS content.
   String get previewUrl {
     final locale = selectedLocale ?? site?.defaultLocale ?? 'en';
-    final domain = primaryDomain ?? 'localhost:3001';
-    final scheme = domain.contains('localhost') ? 'http' : 'https';
-    return '$scheme://$domain/preview/$locale';
+    final configuredDomain = kCmsPreviewDomain.trim();
+    final resolvedDomain = configuredDomain.isNotEmpty
+        ? configuredDomain
+        : (primaryDomain ?? 'localhost:3001');
+    final normalizedDomain = resolvedDomain
+        .replaceFirst(RegExp(r'^https?://'), '')
+        .replaceAll(RegExp(r'/$'), '');
+    final scheme =
+        normalizedDomain.contains('localhost') ||
+            normalizedDomain.startsWith('127.0.0.1')
+        ? 'http'
+        : 'https';
+    return '$scheme://$normalizedDomain/preview/$locale';
   }
 
   CmsState copyWith({
@@ -113,25 +122,26 @@ class CmsState extends Equatable {
       savingDocuments: savingDocuments ?? this.savingDocuments,
       publishingDocuments: publishingDocuments ?? this.publishingDocuments,
       versions: clearVersions ? null : (versions ?? this.versions),
-      versionHistoryDocId:
-          clearVersions ? null : (versionHistoryDocId ?? this.versionHistoryDocId),
+      versionHistoryDocId: clearVersions
+          ? null
+          : (versionHistoryDocId ?? this.versionHistoryDocId),
     );
   }
 
   @override
   List<Object?> get props => [
-        status,
-        site,
-        primaryDomain,
-        documents,
-        selectedLocale,
-        error,
-        dirtyContent,
-        savingDocuments,
-        publishingDocuments,
-        versions,
-        versionHistoryDocId,
-      ];
+    status,
+    site,
+    primaryDomain,
+    documents,
+    selectedLocale,
+    error,
+    dirtyContent,
+    savingDocuments,
+    publishingDocuments,
+    versions,
+    versionHistoryDocId,
+  ];
 }
 
 class CmsCubit extends Cubit<CmsState> {
@@ -158,19 +168,23 @@ class CmsCubit extends Cubit<CmsState> {
       final site = results[0] as SiteSummary?;
       final documents = results[1] as List<ContentDocument>;
       final domain = results[2] as String?;
-      emit(state.copyWith(
-        status: CmsStatus.loaded,
-        site: site,
-        documents: documents,
-        primaryDomain: domain,
-        selectedLocale: site?.defaultLocale ?? 'en',
-      ));
+      emit(
+        state.copyWith(
+          status: CmsStatus.loaded,
+          site: site,
+          documents: documents,
+          primaryDomain: domain,
+          selectedLocale: site?.defaultLocale ?? 'en',
+        ),
+      );
     } catch (error, stack) {
       if (isClosed) return;
-      emit(state.copyWith(
-        status: CmsStatus.error,
-        error: DomainError.from(error, stack: stack),
-      ));
+      emit(
+        state.copyWith(
+          status: CmsStatus.error,
+          error: DomainError.from(error, stack: stack),
+        ),
+      );
     }
   }
 
@@ -214,9 +228,9 @@ class CmsCubit extends Cubit<CmsState> {
     final content = state.dirtyContent[documentId];
     if (content == null) return;
 
-    emit(state.copyWith(
-      savingDocuments: {...state.savingDocuments, documentId},
-    ));
+    emit(
+      state.copyWith(savingDocuments: {...state.savingDocuments, documentId}),
+    );
     try {
       await _cmsRepository.saveDocumentDraft(
         documentId: documentId,
@@ -231,17 +245,21 @@ class CmsCubit extends Cubit<CmsState> {
 
       final dirty = Map<String, Map<String, dynamic>>.from(state.dirtyContent)
         ..remove(documentId);
-      emit(state.copyWith(
-        documents: docs,
-        dirtyContent: dirty,
-        savingDocuments: {...state.savingDocuments}..remove(documentId),
-      ));
+      emit(
+        state.copyWith(
+          documents: docs,
+          dirtyContent: dirty,
+          savingDocuments: {...state.savingDocuments}..remove(documentId),
+        ),
+      );
     } catch (error, stack) {
       if (isClosed) return;
-      emit(state.copyWith(
-        savingDocuments: {...state.savingDocuments}..remove(documentId),
-        error: DomainError.from(error, stack: stack),
-      ));
+      emit(
+        state.copyWith(
+          savingDocuments: {...state.savingDocuments}..remove(documentId),
+          error: DomainError.from(error, stack: stack),
+        ),
+      );
     }
   }
 
@@ -263,9 +281,11 @@ class CmsCubit extends Cubit<CmsState> {
     final doc = state.documents.firstWhere((d) => d.id == documentId);
     final content = state.dirtyContent[documentId] ?? doc.content;
 
-    emit(state.copyWith(
-      publishingDocuments: {...state.publishingDocuments, documentId},
-    ));
+    emit(
+      state.copyWith(
+        publishingDocuments: {...state.publishingDocuments, documentId},
+      ),
+    );
     try {
       await _cmsRepository.publishDocument(
         documentId: documentId,
@@ -280,17 +300,23 @@ class CmsCubit extends Cubit<CmsState> {
 
       final dirty = Map<String, Map<String, dynamic>>.from(state.dirtyContent)
         ..remove(documentId);
-      emit(state.copyWith(
-        documents: docs,
-        dirtyContent: dirty,
-        publishingDocuments: {...state.publishingDocuments}..remove(documentId),
-      ));
+      emit(
+        state.copyWith(
+          documents: docs,
+          dirtyContent: dirty,
+          publishingDocuments: {...state.publishingDocuments}
+            ..remove(documentId),
+        ),
+      );
     } catch (error, stack) {
       if (isClosed) return;
-      emit(state.copyWith(
-        publishingDocuments: {...state.publishingDocuments}..remove(documentId),
-        error: DomainError.from(error, stack: stack),
-      ));
+      emit(
+        state.copyWith(
+          publishingDocuments: {...state.publishingDocuments}
+            ..remove(documentId),
+          error: DomainError.from(error, stack: stack),
+        ),
+      );
     }
   }
 
@@ -311,15 +337,10 @@ class CmsCubit extends Cubit<CmsState> {
     try {
       final versions = await _cmsRepository.fetchDocumentVersions(documentId);
       if (isClosed) return;
-      emit(state.copyWith(
-        versions: versions,
-        versionHistoryDocId: documentId,
-      ));
+      emit(state.copyWith(versions: versions, versionHistoryDocId: documentId));
     } catch (error, stack) {
       if (isClosed) return;
-      emit(state.copyWith(
-        error: DomainError.from(error, stack: stack),
-      ));
+      emit(state.copyWith(error: DomainError.from(error, stack: stack)));
     }
   }
 
@@ -350,9 +371,7 @@ class CmsCubit extends Cubit<CmsState> {
       emit(state.copyWith(documents: docs, dirtyContent: dirty));
     } catch (error, stack) {
       if (isClosed) return;
-      emit(state.copyWith(
-        error: DomainError.from(error, stack: stack),
-      ));
+      emit(state.copyWith(error: DomainError.from(error, stack: stack)));
     }
   }
 
