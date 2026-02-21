@@ -1,0 +1,71 @@
+{
+  "result": {
+    "id": "2b1b082f35448e3ea4610cf9ed3d3f90",
+    "name": "diplora.nl",
+    "status": "pending",
+    "paused": false,
+    "type": "full",
+    "development_mode": 0,
+    "name_servers": [
+      "liz.ns.cloudflare.com",
+      "norm.ns.cloudflare.com"
+    ],
+    "original_name_servers": [
+      "jason.ns.cloudflare.com",
+      "carioca.ns.cloudflare.com"
+    ],
+    "original_registrar": "metaregistrar b.v. (id: 0000)",
+    "original_dnshost": null,
+    "modified_on": "2026-02-21T16:16:46.431496Z",
+    "created_on": "2026-02-21T16:16:36.813870Z",
+    "activated_on": null,
+    "vanity_name_servers": [],
+    "vanity_name_servers_ips": null,
+    "meta": {
+      "step": 2,
+      "custom_certificate_quota": 0,
+      "page_rule_quota": 3,
+      "phishing_detected": false
+    },
+    "owner": {
+      "id": null,
+      "type": "user",
+      "email": null
+    },
+    "account": {
+      "id": "f034b4fe0d0e13aac751e0163863d7de",
+      "name": "Taco@diplora.nl's Account"
+    },
+    "tenant": {
+      "id": null,
+      "name": null
+    },
+    "tenant_unit": {
+      "id": null
+    },
+    "permissions": [
+      "#zone:read",
+      "#zone_settings:read",
+      "#dns_records:read",
+      "#worker:edit",
+      "#worker:read",
+      "#cache_purge:edit",
+      "#dns_records:edit"
+    ],
+    "plan": {
+      "id": "0feeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "name": "Free Website",
+      "price": 0,
+      "currency": "USD",
+      "frequency": "",
+      "is_subscribed": false,
+      "can_subscribe": false,
+      "legacy_id": "free",
+      "legacy_discount": false,
+      "externally_managed": false
+    }
+  },
+  "success": true,
+  "errors": [],
+  "messages": []
+}

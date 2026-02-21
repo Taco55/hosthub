@@ -6,7 +6,7 @@ import 'package:app_errors/app_errors.dart';
 import 'package:hosthub_console/core/core.dart';
 import 'package:hosthub_console/features/auth/presentation/widgets/env_version_badge.dart';
 import 'package:hosthub_console/shared/l10n/l10n.dart';
-import 'package:hosthub_console/shared/resources/resources.dart';
+import 'package:hosthub_console/shared/resources/custom_images.dart';
 import 'package:hosthub_console/shared/widgets/widgets.dart';
 
 const double _kLoginFormMaxWidth = 420;
@@ -348,11 +348,7 @@ class _LoginFormState extends State<LoginForm> {
     return Stack(
       children: [
         result,
-        const Positioned(
-          right: 16,
-          bottom: 16,
-          child: EnvVersionBadge(),
-        ),
+        const Positioned(right: 16, bottom: 16, child: EnvVersionBadge()),
       ],
     );
   }
@@ -462,7 +458,7 @@ class _GoogleSignInButton extends StatelessWidget {
                 children: [
                   ExcludeSemantics(
                     child: Image(
-                      image: OrganizeImage.googleIcon,
+                      image: CustomImage.googleIcon,
                       width: 24,
                       height: 24,
                       fit: BoxFit.contain,

@@ -11,7 +11,7 @@
       "program": "${workspaceFolder}/hosthub_console/lib/main.dart",
       "cwd": "${workspaceFolder}/hosthub_console",
       "args": [
-        "--dart-define-from-file=../../hosthub_secrets/hosthub-shared.env",
+        "--dart-define-from-file=../../hosthub_secrets/hosthub-prd.env",
         "--dart-define-from-file=../../hosthub_secrets/hosthub-dev.env",
         "--dart-define=CMS_PREVIEW_DOMAIN=localhost:43001",
         "--web-browser-flag=--user-data-dir=.dart_tool/chrome-profile-hosthub",

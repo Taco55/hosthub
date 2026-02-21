@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { Locale, getDictionary } from "@/lib/i18n";
-import { site } from "@/lib/content";
 import { Button } from "@/components/ui/button";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { cn } from "@/lib/utils";
@@ -13,9 +12,11 @@ import { Menu, X } from "lucide-react";
 
 type HeaderProps = {
   locale: Locale;
+  siteName: string;
+  bookingHref: string;
 };
 
-export function Header({ locale }: HeaderProps) {
+export function Header({ locale, siteName, bookingHref }: HeaderProps) {
   const t = getDictionary(locale);
   const pathname = usePathname() ?? "/";
   const isPreview = pathname.startsWith("/preview/");
@@ -24,9 +25,7 @@ export function Header({ locale }: HeaderProps) {
   const [hasScrolledHalfhero, setHasScrolledHalfHero] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const isSolid = !isHome || hasScrolledHalfhero;
-  const bookingHref =
-    process.env.NEXT_PUBLIC_LODGIFY_CHECKOUT_URL ??
-    "https://checkout.lodgify.com/fagerasen701/706211/reservation?currency=NOK&adults=1";
+  const showBookingCta = Boolean(bookingHref);
   const navLinks = [
     { href: base, label: t.nav.home },
     { href: `${base}/gallery`, label: t.nav.gallery },
@@ -111,7 +110,7 @@ export function Header({ locale }: HeaderProps) {
               <Menu className="h-5 w-5" />
             </button>
             <Link href={base} className="font-sans text-xl font-semibold tracking-tight">
-              {site.name}
+              {siteName}
             </Link>
           </div>
           <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
@@ -123,13 +122,15 @@ export function Header({ locale }: HeaderProps) {
           </nav>
           <div className="flex items-center gap-3">
             <LocaleSwitcher locale={locale} inverted={!isSolid} />
-            <Button
-              asChild
-              size="sm"
-              className={cn("hidden sm:inline-flex", !isSolid ? "shadow-sm" : undefined)}
-            >
-              <a href={bookingHref}>{t.cta.bookNow}</a>
-            </Button>
+            {showBookingCta ? (
+              <Button
+                asChild
+                size="sm"
+                className={cn("hidden sm:inline-flex", !isSolid ? "shadow-sm" : undefined)}
+              >
+                <a href={bookingHref}>{t.cta.bookNow}</a>
+              </Button>
+            ) : null}
           </div>
         </div>
       </header>
@@ -149,7 +150,7 @@ export function Header({ locale }: HeaderProps) {
           >
             <div className="flex items-center justify-between">
               <span className="font-sans text-lg font-semibold tracking-tight text-foreground">
-                {site.name}
+                {siteName}
               </span>
               <button
                 type="button"
@@ -172,20 +173,22 @@ export function Header({ locale }: HeaderProps) {
                 </Link>
               ))}
             </nav>
-            <Button
-              asChild
-              size="sm"
-              variant="default"
-              className="w-full rounded-2xl border border-border/70 bg-[hsl(var(--background)/0.92)] text-foreground shadow-sm shadow-foreground/10"
-            >
-              <Link
-                href={bookingHref}
-                onClick={() => setIsMenuOpen(false)}
-                className="block w-full text-center"
+            {showBookingCta ? (
+              <Button
+                asChild
+                size="sm"
+                variant="default"
+                className="w-full rounded-2xl border border-border/70 bg-[hsl(var(--background)/0.92)] text-foreground shadow-sm shadow-foreground/10"
               >
-                {t.cta.bookNow}
-              </Link>
-            </Button>
+                <Link
+                  href={bookingHref}
+                  onClick={() => setIsMenuOpen(false)}
+                  className="block w-full text-center"
+                >
+                  {t.cta.bookNow}
+                </Link>
+              </Button>
+            ) : null}
           </section>
         </div>
       )}

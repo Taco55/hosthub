@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
 import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaffold.dart';
+import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/server_settings/application/server_settings_cubit.dart';
 import 'package:hosthub_console/features/server_settings/domain/admin_settings.dart';
 import 'package:hosthub_console/shared/widgets/widgets.dart';
@@ -101,16 +102,12 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
                                     style: Theme.of(context)
                                         .textTheme
                                         .headlineSmall
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                                        ?.copyWith(fontWeight: FontWeight.w600),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     context.s.serverSettingsSubtitle,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyLarge
+                                    style: Theme.of(context).textTheme.bodyLarge
                                         ?.copyWith(
                                           color: Theme.of(
                                             context,
@@ -158,8 +155,7 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
                             ),
                             StyledTile(
                               title: context.s.emailUserOnCreateTitle,
-                              subtitle:
-                                  context.s.emailUserOnCreateDescription,
+                              subtitle: context.s.emailUserOnCreateDescription,
                               trailing: Switch(
                                 value: _emailUserOnCreate,
                                 onChanged:
@@ -173,6 +169,8 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
                             ),
                           ],
                         ),
+                        const SizedBox(height: 16),
+                        const _ListingsAdminSection(),
                         const SizedBox(height: 16),
                         Align(
                           alignment: Alignment.centerLeft,
@@ -227,5 +225,288 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
       _maintenanceMode = defaults.maintenanceModeEnabled;
       _emailUserOnCreate = defaults.emailUserOnCreate;
     });
+  }
+}
+
+class _ListingsAdminSection extends StatefulWidget {
+  const _ListingsAdminSection();
+
+  @override
+  State<_ListingsAdminSection> createState() => _ListingsAdminSectionState();
+}
+
+class _ListingsAdminSectionState extends State<_ListingsAdminSection> {
+  final TextEditingController _nameController = TextEditingController();
+  bool _isCreating = false;
+  int? _deletingPropertyId;
+
+  bool get _isMutating => _isCreating || _deletingPropertyId != null;
+
+  bool get _canCreate => !_isMutating && _nameController.text.trim().isNotEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController.addListener(_onNameChanged);
+
+    final cubit = context.read<PropertyContextCubit>();
+    if (cubit.state.status == PropertyContextStatus.initial) {
+      cubit.loadProperties();
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.removeListener(_onNameChanged);
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  void _onNameChanged() {
+    if (!mounted) return;
+    setState(() {});
+  }
+
+  Future<void> _createProperty() async {
+    final name = _nameController.text.trim();
+    if (name.isEmpty || _isMutating) return;
+
+    setState(() => _isCreating = true);
+    try {
+      await context.read<PropertyRepository>().createProperty(name: name);
+      if (!mounted) return;
+      _nameController.clear();
+      await context.read<PropertyContextCubit>().loadProperties();
+      if (!mounted) return;
+      showStyledToast(
+        context,
+        type: ToastificationType.success,
+        description: 'Listing "$name" toegevoegd.',
+      );
+    } catch (error, stack) {
+      if (!mounted) return;
+      final domainError = error is DomainError
+          ? error
+          : DomainError.from(error, stack: stack);
+      await showAppError(context, AppError.fromDomain(context, domainError));
+    } finally {
+      if (mounted) {
+        setState(() => _isCreating = false);
+      }
+    }
+  }
+
+  Future<void> _deleteProperty(PropertySummary property) async {
+    if (_isMutating) return;
+    final shouldDelete = await _confirmDelete(property);
+    if (!mounted || !shouldDelete) return;
+
+    setState(() => _deletingPropertyId = property.id);
+    try {
+      await context.read<PropertyRepository>().deleteProperty(property.id);
+      if (!mounted) return;
+      await context.read<PropertyContextCubit>().loadProperties();
+      if (!mounted) return;
+      showStyledToast(
+        context,
+        type: ToastificationType.success,
+        description: 'Listing "${property.name}" verwijderd.',
+      );
+    } catch (error, stack) {
+      if (!mounted) return;
+      final domainError = error is DomainError
+          ? error
+          : DomainError.from(error, stack: stack);
+      await showAppError(context, AppError.fromDomain(context, domainError));
+    } finally {
+      if (mounted) {
+        setState(() => _deletingPropertyId = null);
+      }
+    }
+  }
+
+  Future<bool> _confirmDelete(PropertySummary property) async {
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Listing verwijderen'),
+          content: Text(
+            'Weet je zeker dat je "${property.name}" wilt verwijderen?',
+          ),
+          actions: [
+            StyledButton(
+              title: context.s.cancelButton,
+              onPressed: () => Navigator.of(context).pop(false),
+              minHeight: 40,
+            ),
+            StyledButton(
+              title: context.s.deleteButton,
+              onPressed: () => Navigator.of(context).pop(true),
+              minHeight: 40,
+              backgroundColor: Theme.of(context).colorScheme.error,
+              labelColor: Theme.of(context).colorScheme.onError,
+            ),
+          ],
+        );
+      },
+    );
+    return result ?? false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return StyledSection(
+      header: 'Listings',
+      grouped: false,
+      children: [
+        Text(
+          'Voeg handmatig een listing toe of verwijder listings om een nieuwe website-opzet te testen zonder Lodgify-sync.',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 12),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isCompact = constraints.maxWidth < 760;
+            final field = StyledFormField(
+              controller: _nameController,
+              label: context.s.propertySetupManualNameLabel,
+              placeholder: context.s.propertySetupManualNameLabel,
+              enabled: !_isMutating,
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) {
+                if (_canCreate) _createProperty();
+              },
+            );
+            final button = StyledButton(
+              title: context.s.propertySetupManualButton,
+              onPressed: _canCreate ? _createProperty : null,
+              enabled: _canCreate,
+              minHeight: 44,
+              leftIconData: _isCreating ? null : Icons.add,
+              showLeftIcon: !_isCreating,
+              showProgressIndicatorWhenDisabled: _isCreating,
+            );
+
+            if (isCompact) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [field, const SizedBox(height: 8), button],
+              );
+            }
+
+            return Row(
+              children: [
+                Expanded(child: field),
+                const SizedBox(width: 12),
+                button,
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 16),
+        BlocBuilder<PropertyContextCubit, PropertyContextState>(
+          builder: (context, state) {
+            final properties = state.properties;
+            final isLoading =
+                state.status == PropertyContextStatus.loading &&
+                properties.isEmpty;
+
+            if (isLoading) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            if (state.status == PropertyContextStatus.error &&
+                properties.isEmpty) {
+              return Text(
+                'Kon listings niet laden.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.error,
+                ),
+              );
+            }
+
+            return StyledDataTable(
+              variant: StyledTableVariant.card,
+              dense: true,
+              uppercaseHeaderLabels: false,
+              columns: const [
+                StyledDataColumn(
+                  columnHeaderLabel: 'ID',
+                  flex: 1,
+                  minWidth: 64,
+                ),
+                StyledDataColumn(
+                  columnHeaderLabel: 'Naam',
+                  flex: 3,
+                  minWidth: 220,
+                ),
+                StyledDataColumn(
+                  columnHeaderLabel: 'Lodgify ID',
+                  flex: 2,
+                  minWidth: 180,
+                ),
+                StyledDataColumn(
+                  columnHeaderLabel: 'Acties',
+                  flex: 2,
+                  minWidth: 140,
+                ),
+              ],
+              itemCount: properties.length,
+              rowBuilder: (tableContext, index) {
+                final property = properties[index];
+                final lodgifyId = property.lodgifyId?.trim();
+                final isDeleting = _deletingPropertyId == property.id;
+                final canDelete = !_isMutating || isDeleting;
+
+                return [
+                  Text(
+                    property.id.toString(),
+                    style: Theme.of(tableContext).textTheme.bodyMedium,
+                  ),
+                  Text(
+                    property.name,
+                    style: Theme.of(tableContext).textTheme.bodyMedium
+                        ?.copyWith(fontWeight: FontWeight.w600),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    lodgifyId == null || lodgifyId.isEmpty ? '-' : lodgifyId,
+                    style: Theme.of(tableContext).textTheme.bodyMedium,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: StyledButton(
+                      title: context.s.deleteButton,
+                      onPressed: canDelete && !isDeleting
+                          ? () => _deleteProperty(property)
+                          : null,
+                      enabled: canDelete && !isDeleting,
+                      showProgressIndicatorWhenDisabled: isDeleting,
+                      minHeight: 36,
+                      minWidth: 104,
+                      backgroundColor: theme.colorScheme.error,
+                      labelColor: theme.colorScheme.onError,
+                    ),
+                  ),
+                ];
+              },
+              emptyLabel: 'Nog geen listings gevonden.',
+            );
+          },
+        ),
+      ],
+    );
   }
 }

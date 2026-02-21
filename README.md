@@ -47,18 +47,23 @@ In production builds (without `CMS_PREVIEW_DOMAIN`), the console preview button 
 
 ## Domain and routing strategy
 
-Current (keep production unchanged):
+Current production:
 - Website: `https://trysilpanorama.com/<locale>`
 - Website preview: `https://trysilpanorama.com/preview/<locale>`
-- HostHub admin: `https://trysilpanorama.com/admin`
+- HostHub admin: `https://admin.trysilpanorama.com`
+
+Generic website mode (single deploy, multiple domains/subdomains):
+- Website runtime can resolve `site_id` by request host via `site_domains.domain`.
+- Fallback remains `NEXT_PUBLIC_CMS_SITE_ID` when host lookup is unavailable.
+- See `web/README.md` section "Generic multi-site mode" for required env vars.
 
 Local development:
 - HostHub admin: `http://localhost:43000`
 - Website + preview: `http://localhost:43001` and `http://localhost:43001/preview/<locale>`
 
-When HostHub gets its own domain later:
+When changing the admin host/path:
 1. Update Cloudflare Worker routes in `cloudflare/wrangler.toml`.
-2. Update deploy env (`HOSTHUB_PUBLIC_DOMAIN`, optionally `HOSTHUB_ADMIN_PATH`).
+2. Update deploy env (`HOSTHUB_PUBLIC_DOMAIN`, `HOSTHUB_ADMIN_PATH` if needed).
 3. Set `site_domains.is_primary` in Supabase for the site that should drive preview links.
 4. Remove debug override `CMS_PREVIEW_DOMAIN` from launch/build configs for production.
 
@@ -80,5 +85,31 @@ The CMS schema migrations are included in `supabase/migrations/` (for example `2
 
 1. Use the `Sites` page to add a site and it will be linked to your profile automatically.
 2. Insert content types / documents via Supabase SQL (the Flutter UI currently lists documents and can serve as a reference for future editors).
+
+## Provision a new CMS site (one command)
+
+You can create a new site, attach a primary domain, and clone baseline
+`cms_documents` from a template site:
+
+```bash
+node scripts/provision_cms_site.mjs \
+  --name "My New Chalet" \
+  --domain chalet2.trysilpanorama.com \
+  --source-site-id <template-site-uuid>
+```
+
+Dry run:
+
+```bash
+node scripts/provision_cms_site.mjs \
+  --name "My New Chalet" \
+  --domain chalet2.trysilpanorama.com \
+  --source-site-id <template-site-uuid> \
+  --dry-run
+```
+
+Required env vars:
+- `NEXT_PUBLIC_SUPABASE_URL` (or `SUPABASE_URL`)
+- `SUPABASE_SERVICE_ROLE_KEY`
 
 See `hosthub_console/CMS_PLAN.md` for the full content model, RLS strategy, and roadmap toward releases/CRM.

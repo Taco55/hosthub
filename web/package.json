@@ -7,6 +7,7 @@
     "dev": "next dev --webpack --disable-source-maps --port 43001",
     "build": "next build --webpack",
     "build:cf": "opennextjs-cloudflare build",
+    "cms:snapshot": "node scripts/generate-cms-snapshot.mjs",
     "preview": "npm run build:cf && opennextjs-cloudflare preview",
     "deploy": "npm run build:cf && opennextjs-cloudflare deploy",
     "upload": "npm run build:cf && opennextjs-cloudflare upload",

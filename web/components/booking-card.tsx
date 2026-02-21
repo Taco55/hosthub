@@ -10,7 +10,7 @@ type BookingCardProps = {
 
 export function BookingCard({ locale, bookingUrl }: BookingCardProps) {
   const checkoutUrl =
-    process.env.NEXT_PUBLIC_LODGIFY_CHECKOUT_URL ?? bookingUrl ?? "";
+    bookingUrl ?? process.env.NEXT_PUBLIC_LODGIFY_CHECKOUT_URL ?? "";
   const currency = process.env.NEXT_PUBLIC_LODGIFY_CURRENCY ?? "NOK";
 
   return <BookingWidget locale={locale} checkoutUrl={checkoutUrl} currency={currency} />;

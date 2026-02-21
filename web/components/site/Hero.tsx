@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Container } from "@/components/site/Container";
 import { HeroCrossfadeBackground } from "@/components/site/HeroCrossfadeBackground";
 import { ParallaxImage } from "@/components/site/Parallax";
-import { getHeroImages } from "@/lib/heroImages";
 import { getDictionary, type Locale } from "@/lib/i18n";
 import { heroImageSizes, type ResponsiveImage } from "@/lib/responsive-images";
 
@@ -13,6 +12,7 @@ type HeroProps = {
   locationShort: string;
   imageSrc: string;
   imageAlt: string;
+  heroImages?: ResponsiveImage[];
   primaryCtaHref?: string;
   secondaryCtaHref: string;
   parallaxEnabled?: boolean;
@@ -25,12 +25,12 @@ export function Hero({
   locationShort,
   imageSrc,
   imageAlt,
+  heroImages = [],
   primaryCtaHref = "#booking",
   secondaryCtaHref,
   parallaxEnabled = true,
 }: HeroProps) {
   const t = getDictionary(locale);
-  const heroImages = getHeroImages();
   const heroImage = heroImages[0];
   const fallbackImage: ResponsiveImage = {
     src: encodeURI(imageSrc),

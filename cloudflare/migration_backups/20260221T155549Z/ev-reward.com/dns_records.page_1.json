@@ -1,0 +1,78 @@
+{
+  "result": [
+    {
+      "id": "3bd6f820b73d5f0b5aa6e07d1ac73263",
+      "name": "ev-reward.com",
+      "type": "CNAME",
+      "content": "ev-reward.pages.dev",
+      "proxiable": true,
+      "proxied": true,
+      "ttl": 1,
+      "settings": {
+        "flatten_cname": false
+      },
+      "meta": {},
+      "comment": null,
+      "tags": [],
+      "created_on": "2025-09-08T20:35:51.195691Z",
+      "modified_on": "2025-09-08T20:35:51.195691Z"
+    },
+    {
+      "id": "1d11c72e134b6df2d8ca484f19a85488",
+      "name": "www.ev-reward.com",
+      "type": "CNAME",
+      "content": "ev-reward.pages.dev",
+      "proxiable": true,
+      "proxied": true,
+      "ttl": 1,
+      "settings": {
+        "flatten_cname": false
+      },
+      "meta": {},
+      "comment": null,
+      "tags": [],
+      "created_on": "2025-09-08T20:39:45.616137Z",
+      "modified_on": "2025-09-08T20:39:45.616137Z"
+    },
+    {
+      "id": "83ec7d28da5f7a30fd9f0c009fecf219",
+      "name": "_cf-custom-hostname.ev-reward.com",
+      "type": "TXT",
+      "content": "\"48542853-ccba-481b-930f-fa7802fbb424\"",
+      "proxiable": false,
+      "proxied": false,
+      "ttl": 1,
+      "settings": {},
+      "meta": {},
+      "comment": null,
+      "tags": [],
+      "created_on": "2025-09-08T20:04:57.554427Z",
+      "modified_on": "2025-09-08T20:04:57.554427Z"
+    },
+    {
+      "id": "50515c6ad1038bfeae1b7b377b9d8fbc",
+      "name": "ev-reward.com",
+      "type": "TXT",
+      "content": "\"google-site-verification=6C_-InizLkUmL9GW00Q1GBWakdRKS7l8LQxrZ1OgDAM\"",
+      "proxiable": false,
+      "proxied": false,
+      "ttl": 3600,
+      "settings": {},
+      "meta": {},
+      "comment": null,
+      "tags": [],
+      "created_on": "2025-09-08T21:12:29.654831Z",
+      "modified_on": "2025-09-08T21:12:29.654831Z"
+    }
+  ],
+  "success": true,
+  "errors": [],
+  "messages": [],
+  "result_info": {
+    "page": 1,
+    "per_page": 500,
+    "count": 4,
+    "total_count": 4,
+    "total_pages": 1
+  }
+}

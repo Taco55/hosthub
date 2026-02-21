@@ -1,0 +1,220 @@
+[
+  {
+    "id": "47ed248d034641dc93db2f3bc9a72ed0",
+    "name": "admin.trysilpanorama.com",
+    "type": "A",
+    "content": "192.0.2.1",
+    "proxiable": true,
+    "proxied": true,
+    "ttl": 1,
+    "settings": {},
+    "meta": {},
+    "comment": null,
+    "tags": [],
+    "created_on": "2026-02-21T15:51:58.465055Z",
+    "modified_on": "2026-02-21T15:51:58.465055Z"
+  },
+  {
+    "id": "69dcbfee13255681dbba8b06a4a55195",
+    "name": "_acme-challenge.trysilpanorama.com",
+    "type": "CNAME",
+    "content": "trysilpanorama.com.aee18eb3ee84a094.dcv.cloudflare.com",
+    "proxiable": true,
+    "proxied": false,
+    "ttl": 1,
+    "settings": {
+      "flatten_cname": false
+    },
+    "meta": {},
+    "comment": null,
+    "tags": [],
+    "created_on": "2025-12-24T19:22:22.879456Z",
+    "modified_on": "2025-12-27T17:26:33.740136Z"
+  },
+  {
+    "id": "d8acb6b7acd619687f892efbe207a76d",
+    "name": "www.trysilpanorama.com",
+    "type": "CNAME",
+    "content": "trysilpanorama.com",
+    "proxiable": true,
+    "proxied": true,
+    "ttl": 1,
+    "settings": {
+      "flatten_cname": false
+    },
+    "meta": {},
+    "comment": null,
+    "tags": [],
+    "created_on": "2026-01-01T08:06:18.735278Z",
+    "modified_on": "2026-01-01T08:06:33.397298Z"
+  },
+  {
+    "id": "6d507abe6eebd46f5d246960780ed345",
+    "name": "send.trysilpanorama.com",
+    "type": "MX",
+    "content": "feedback-smtp.eu-west-1.amazonses.com",
+    "priority": 10,
+    "proxiable": false,
+    "proxied": false,
+    "ttl": 3600,
+    "settings": {},
+    "meta": {},
+    "comment": null,
+    "tags": [],
+    "created_on": "2025-12-29T13:35:45.390717Z",
+    "modified_on": "2025-12-29T13:35:45.390717Z"
+  },
+  {
+    "id": "b5c96a27dd8f8264e6a2b56b85c2fdef",
+    "name": "trysilpanorama.com",
+    "type": "MX",
+    "content": "route3.mx.cloudflare.net",
+    "priority": 66,
+    "proxiable": false,
+    "proxied": false,
+    "ttl": 1,
+    "settings": {},
+    "meta": {
+      "email_routing": true,
+      "read_only": true
+    },
+    "comment": null,
+    "tags": [],
+    "created_on": "2025-12-29T14:33:01.969522Z",
+    "modified_on": "2025-12-29T14:33:01.969522Z"
+  },
+  {
+    "id": "cda9bfc55bbc1b9a0f0d965b988e1c7d",
+    "name": "trysilpanorama.com",
+    "type": "MX",
+    "content": "route2.mx.cloudflare.net",
+    "priority": 79,
+    "proxiable": false,
+    "proxied": false,
+    "ttl": 1,
+    "settings": {},
+    "meta": {
+      "email_routing": true,
+      "read_only": true
+    },
+    "comment": null,
+    "tags": [],
+    "created_on": "2025-12-29T14:33:01.946931Z",
+    "modified_on": "2025-12-29T14:33:01.946931Z"
+  },
+  {
+    "id": "7e83fc707afcfabcc20ee2df85706e2f",
+    "name": "trysilpanorama.com",
+    "type": "MX",
+    "content": "route1.mx.cloudflare.net",
+    "priority": 73,
+    "proxiable": false,
+    "proxied": false,
+    "ttl": 1,
+    "settings": {},
+    "meta": {
+      "email_routing": true,
+      "read_only": true
+    },
+    "comment": null,
+    "tags": [],
+    "created_on": "2025-12-29T14:33:01.923188Z",
+    "modified_on": "2025-12-29T14:33:01.923188Z"
+  },
+  {
+    "id": "c3e29a9635d682d9f12329d73d1d4de8",
+    "name": "cf2024-1._domainkey.trysilpanorama.com",
+    "type": "TXT",
+    "content": "\"v=DKIM1; h=sha256; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAiweykoi+o48IOGuP7GR3X0MOExCUDY/BCRHoWBnh3rChl7WhdyCxW3jgq1daEjPPqoi7sJvdg5hEQVsgVRQP4DcnQDVjGMbASQtrY4WmB1VebF+RPJB2ECPsEDTpeiI5ZyUAwJaVX7r6bznU67g7LvFq35yIo4sdlmtZGV+i0H4cpYH9+3JJ78k\" \"m4KXwaf9xUJCWF6nxeD+qG6Fyruw1Qlbds2r85U9dkNDVAS3gioCvELryh1TxKGiVTkg4wqHTyHfWsp7KD3WQHYJn0RyfJJu6YEmL77zonn7p2SRMvTMP3ZEXibnC9gz3nnhR6wcYL8Q7zXypKTMD58bTixDSJwIDAQAB\"",
+    "proxiable": false,
+    "proxied": false,
+    "ttl": 1,
+    "settings": {},
+    "meta": {
+      "email_routing": true,
+      "read_only": true
+    },
+    "comment": null,
+    "tags": [],
+    "created_on": "2025-12-29T14:33:02.014139Z",
+    "modified_on": "2025-12-29T14:33:02.014139Z"
+  },
+  {
+    "id": "8729ac0b10a7f1cdf3718bc2339170e5",
+    "name": "_cf-custom-hostname.trysilpanorama.com",
+    "type": "TXT",
+    "content": "\"60ad57bc-c950-4d28-9b98-02391c345806\"",
+    "proxiable": false,
+    "proxied": false,
+    "ttl": 300,
+    "settings": {},
+    "meta": {},
+    "comment": null,
+    "tags": [],
+    "created_on": "2025-12-24T19:22:22.939528Z",
+    "modified_on": "2025-12-24T19:22:22.939528Z"
+  },
+  {
+    "id": "f28af8485c7b547ad76eef9d113ed82e",
+    "name": "resend._domainkey.trysilpanorama.com",
+    "type": "TXT",
+    "content": "\"p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQChanLW407H8PvB8GzdBVs22nDmy0mLY/TvqgFPJ9W0L9bMaFMn1Oad670kSZsRpPjpTe4aHpnnXr3PNt8BWzSIia/rRHs7CMT3lgaB1k2n7zA0P3vKwaBo2O1jdggXI5bIziv73J3yaAbBUNJRfAF7lqw7RyH1tee3KvgQjifCJQIDAQAB\"",
+    "proxiable": false,
+    "proxied": false,
+    "ttl": 3600,
+    "settings": {},
+    "meta": {},
+    "comment": null,
+    "tags": [],
+    "created_on": "2025-12-29T13:35:45.277259Z",
+    "modified_on": "2025-12-29T13:35:45.277259Z"
+  },
+  {
+    "id": "ef3b5e800c1713db7293f2a1528dc05e",
+    "name": "send.trysilpanorama.com",
+    "type": "TXT",
+    "content": "\"v=spf1 include:amazonses.com ~all\"",
+    "proxiable": false,
+    "proxied": false,
+    "ttl": 3600,
+    "settings": {},
+    "meta": {},
+    "comment": null,
+    "tags": [],
+    "created_on": "2025-12-29T13:35:45.282966Z",
+    "modified_on": "2025-12-29T13:35:45.282966Z"
+  },
+  {
+    "id": "d2e87590889b545db4a6924b0310a555",
+    "name": "trysilpanorama.com",
+    "type": "TXT",
+    "content": "\"v=spf1 include:_spf.mx.cloudflare.net ~all\"",
+    "proxiable": false,
+    "proxied": false,
+    "ttl": 1,
+    "settings": {},
+    "meta": {},
+    "comment": null,
+    "tags": [],
+    "created_on": "2025-12-29T14:33:01.984504Z",
+    "modified_on": "2025-12-29T14:33:01.984504Z"
+  },
+  {
+    "id": "119870a0e2c80266296c6a70c22dff63",
+    "name": "trysilpanorama.com",
+    "type": "AAAA",
+    "content": "100::",
+    "proxiable": true,
+    "proxied": true,
+    "ttl": 1,
+    "settings": {},
+    "meta": {
+      "origin_worker_id": "8b371fff1bbc3c04076f06ac4b38931f8133bf5c",
+      "read_only": true
+    },
+    "comment": null,
+    "tags": [],
+    "created_on": "2025-12-29T20:45:17.182939Z",
+    "modified_on": "2025-12-29T20:45:17.182939Z"
+  }
+]

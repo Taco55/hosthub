@@ -17,6 +17,12 @@ SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your-anon-key
 ```
 
+Optional (defaults to Lodgify public API):
+
+```text
+LODGIFY_BASE_URL=https://api.lodgify.com
+```
+
 Select the env file at runtime with `--dart-define APP_ENVIRONMENT=stg` (defaults to `dev`).
 
 ## Run locally

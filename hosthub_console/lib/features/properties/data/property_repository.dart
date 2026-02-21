@@ -29,6 +29,15 @@ class PropertySummary {
       ),
     );
   }
+
+  @override
+  String toString() {
+    final lodgify = (lodgifyId ?? '').trim();
+    return 'PropertySummary('
+        'id: $id, '
+        'name: $name, '
+        'lodgifyId: ${lodgify.isEmpty ? '-' : lodgify})';
+  }
 }
 
 class PropertyDetails {
@@ -158,8 +167,9 @@ class PropertyRepository extends SupabaseRepository {
   Future<List<PropertySummary>> fetchProperties() async {
     try {
       final response = await supabase.from('properties').select();
-      final properties =
-          response.map((row) => PropertySummary.fromMap(row)).toList();
+      final properties = response
+          .map((row) => PropertySummary.fromMap(row))
+          .toList();
       properties.sort((a, b) => a.name.compareTo(b.name));
       return properties;
     } catch (error, stack) {
@@ -194,6 +204,19 @@ class PropertyRepository extends SupabaseRepository {
         stack,
         reason: DomainErrorReason.cannotSaveData,
         context: {'op': 'createProperty', 'name': name},
+      );
+    }
+  }
+
+  Future<void> deleteProperty(int id) async {
+    try {
+      await supabase.from('properties').delete().eq('id', id);
+    } catch (error, stack) {
+      throw mapError(
+        error,
+        stack,
+        reason: DomainErrorReason.cannotSaveData,
+        context: {'op': 'deleteProperty', 'property_id': id},
       );
     }
   }

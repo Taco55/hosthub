@@ -1,183 +1,266 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 import 'package:web/web.dart' as web;
 
 import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaffold.dart';
 import 'package:hosthub_console/features/cms/cms.dart';
+import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/sites/presentation/widgets/content_section_renderer.dart';
 import 'package:hosthub_console/shared/widgets/widgets.dart';
 
-class SiteContentPage extends StatelessWidget {
+class SiteContentPage extends StatefulWidget {
   const SiteContentPage({super.key, required this.siteId});
 
   final String siteId;
 
   @override
+  State<SiteContentPage> createState() => _SiteContentPageState();
+}
+
+class _SiteContentPageState extends State<SiteContentPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<CmsCubit>().loadSiteContent(siteId: widget.siteId);
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant SiteContentPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.siteId == widget.siteId) return;
+    context.read<CmsCubit>().loadSiteContent(siteId: widget.siteId);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocProvider<CmsCubit>(
-      create: (context) =>
-          CmsCubit(cmsRepository: context.read<CmsRepository>())
-            ..loadSiteContent(siteId: siteId),
-      child: const _SiteContentBody(),
-    );
+    return const _SiteContentBody();
   }
 }
 
 class _SiteContentBody extends StatelessWidget {
   const _SiteContentBody();
 
+  String _resolvePageTitle(BuildContext context, CmsState state) {
+    final propertyName = context
+        .read<PropertyContextCubit>()
+        .state
+        .currentProperty
+        ?.name
+        .trim();
+    if (propertyName != null && propertyName.isNotEmpty) {
+      return propertyName;
+    }
+
+    final siteConfigName = _resolveSiteConfigName(state);
+    if (siteConfigName != null) {
+      return siteConfigName;
+    }
+
+    final siteName = state.site?.name.trim();
+    if (siteName != null && siteName.isNotEmpty) {
+      return siteName;
+    }
+
+    return context.s.cmsContentTitle;
+  }
+
+  String? _resolveSiteConfigName(CmsState state) {
+    final siteConfigDocs = state.documents
+        .where((doc) => doc.contentType == 'site_config')
+        .toList();
+    if (siteConfigDocs.isEmpty) return null;
+
+    ContentDocument? pickByLocale(String? locale) {
+      if (locale == null || locale.isEmpty) return null;
+      for (final doc in siteConfigDocs) {
+        if (doc.locale == locale) return doc;
+      }
+      return null;
+    }
+
+    final preferredDoc =
+        pickByLocale(state.selectedLocale) ??
+        pickByLocale(state.site?.defaultLocale) ??
+        siteConfigDocs.first;
+    final rawName = preferredDoc.content['name'];
+    if (rawName is! String) return null;
+    final trimmed = rawName.trim();
+    return trimmed.isEmpty ? null : trimmed;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<CmsCubit, CmsState>(
-      builder: (context, state) {
-        final siteName = state.site?.name ?? context.s.cmsContentTitle;
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<PropertyContextCubit, PropertyContextState>(
+          listenWhen: (previous, current) =>
+              previous.currentProperty?.id != current.currentProperty?.id &&
+              previous.currentProperty != null,
+          listener: (context, state) {
+            final currentPath = GoRouterState.of(context).uri.path;
+            if (currentPath == '/sites') return;
+            context.go('/sites');
+          },
+        ),
+      ],
+      child: BlocBuilder<CmsCubit, CmsState>(
+        builder: (context, state) {
+          final pageTitle = _resolvePageTitle(context, state);
 
-        if (state.status == CmsStatus.initial ||
-            state.status == CmsStatus.loading) {
-          return ConsolePageScaffold(
-            title: siteName,
-            description: context.s.cmsContentDescription,
-            leftChild: const Center(child: CircularProgressIndicator()),
-          );
-        }
+          if (state.status == CmsStatus.initial ||
+              state.status == CmsStatus.loading) {
+            return ConsolePageScaffold(
+              title: pageTitle,
+              description: context.s.cmsContentDescription,
+              leftChild: const Center(child: CircularProgressIndicator()),
+            );
+          }
 
-        if (state.status == CmsStatus.error) {
-          return ConsolePageScaffold(
-            title: siteName,
-            description: context.s.cmsContentDescription,
-            leftChild: Center(
-              child: Text(
-                context.s.cmsLoadFailed(state.error?.message ?? ''),
-              ),
-            ),
-          );
-        }
-
-        final docs = state.filteredDocuments;
-        final locales = state.site?.locales ?? ['en'];
-        final selectedLocale = state.selectedLocale ?? locales.first;
-        final localeIndex =
-            locales.indexOf(selectedLocale).clamp(0, locales.length - 1);
-
-        // Group documents by content_type
-        final siteConfig =
-            docs.where((d) => d.contentType == 'site_config').toList();
-        final cabin = docs.where((d) => d.contentType == 'cabin').toList();
-        final pageHome = docs
-            .where((d) => d.contentType == 'page' && d.slug == 'home')
-            .toList();
-        final pagePractical = docs
-            .where((d) => d.contentType == 'page' && d.slug == 'practical')
-            .toList();
-        final pageArea = docs
-            .where((d) => d.contentType == 'page' && d.slug == 'area')
-            .toList();
-        final pagePrivacy = docs
-            .where((d) => d.contentType == 'page' && d.slug == 'privacy')
-            .toList();
-        final contactForm =
-            docs.where((d) => d.contentType == 'contact_form').toList();
-
-        final showVersionPane = state.versionHistoryDocId != null;
-
-        return ConsolePageScaffold(
-          title: siteName,
-          description: context.s.cmsContentDescription,
-          isDirty: state.isDirty,
-          isSaving: state.isSaving,
-          onSave: state.isDirty
-              ? () => context.read<CmsCubit>().saveAllDrafts()
-              : null,
-          actionText: state.isSaving
-              ? context.s.cmsSaveDraftButton
-              : state.isDirty
-                  ? context.s.cmsSaveDraftButton
-                  : null,
-          actions: [
-            if (state.isDirty || state.isPublishing)
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: StyledButton(
-                  title: context.s.cmsPublishButton,
-                  onPressed: () => _confirmPublish(context, state),
-                  enabled: !state.isPublishing,
-                  showProgressIndicatorWhenDisabled: state.isPublishing,
-                  leftIconData: Icons.publish,
-                  showLeftIcon: true,
-                  minHeight: 40,
+          if (state.status == CmsStatus.error) {
+            return ConsolePageScaffold(
+              title: pageTitle,
+              description: context.s.cmsContentDescription,
+              leftChild: Center(
+                child: Text(
+                  context.s.cmsLoadFailed(state.error?.message ?? ''),
                 ),
               ),
-          ],
-          showRightPane: showVersionPane,
-          rightChild: showVersionPane
-              ? _VersionHistoryPane(
-                  versions: state.versions ?? [],
-                  documentId: state.versionHistoryDocId!,
-                )
-              : null,
-          bottom: _BottomBar(
-            locales: locales,
-            selectedIndex: localeIndex,
-            previewUrl: state.previewUrl,
+            );
+          }
+
+          final docs = state.filteredDocuments;
+          final locales = state.site?.locales ?? ['en'];
+          final selectedLocale = state.selectedLocale ?? locales.first;
+          final localeIndex = locales
+              .indexOf(selectedLocale)
+              .clamp(0, locales.length - 1);
+
+          // Group documents by content_type
+          final siteConfig = docs
+              .where((d) => d.contentType == 'site_config')
+              .toList();
+          final cabin = docs.where((d) => d.contentType == 'cabin').toList();
+          final pageHome = docs
+              .where((d) => d.contentType == 'page' && d.slug == 'home')
+              .toList();
+          final pagePractical = docs
+              .where((d) => d.contentType == 'page' && d.slug == 'practical')
+              .toList();
+          final pageArea = docs
+              .where((d) => d.contentType == 'page' && d.slug == 'area')
+              .toList();
+          final pagePrivacy = docs
+              .where((d) => d.contentType == 'page' && d.slug == 'privacy')
+              .toList();
+          final contactForm = docs
+              .where((d) => d.contentType == 'contact_form')
+              .toList();
+
+          final showVersionPane = state.versionHistoryDocId != null;
+
+          return ConsolePageScaffold(
+            title: pageTitle,
+            description: context.s.cmsContentDescription,
             isDirty: state.isDirty,
-            onLocaleChanged: (index) {
-              _handleLocaleChange(context, state, locales, index);
-            },
-          ),
-          leftChild: docs.isEmpty
-              ? Center(child: Text(context.s.cmsNoContent))
-              : ListView(
-                  padding: const EdgeInsets.only(top: 8),
-                  children: [
-                    if (siteConfig.isNotEmpty)
-                      _ContentSection(
-                        title: context.s.cmsSiteConfigSection,
-                        documents: siteConfig,
-                        state: state,
-                      ),
-                    if (cabin.isNotEmpty)
-                      _ContentSection(
-                        title: context.s.cmsCabinSection,
-                        documents: cabin,
-                        state: state,
-                      ),
-                    if (pageHome.isNotEmpty)
-                      _ContentSection(
-                        title: context.s.cmsHomePageSection,
-                        documents: pageHome,
-                        state: state,
-                      ),
-                    if (pagePractical.isNotEmpty)
-                      _ContentSection(
-                        title: context.s.cmsPracticalPageSection,
-                        documents: pagePractical,
-                        state: state,
-                      ),
-                    if (pageArea.isNotEmpty)
-                      _ContentSection(
-                        title: context.s.cmsAreaPageSection,
-                        documents: pageArea,
-                        state: state,
-                      ),
-                    if (pagePrivacy.isNotEmpty)
-                      _ContentSection(
-                        title: context.s.cmsPrivacyPageSection,
-                        documents: pagePrivacy,
-                        state: state,
-                      ),
-                    if (contactForm.isNotEmpty)
-                      _ContentSection(
-                        title: context.s.cmsContactFormSection,
-                        documents: contactForm,
-                        state: state,
-                      ),
-                    const SizedBox(height: 32),
-                  ],
+            isSaving: state.isSaving,
+            onSave: state.isDirty
+                ? () => context.read<CmsCubit>().saveAllDrafts()
+                : null,
+            actionText: state.isSaving
+                ? context.s.cmsSaveDraftButton
+                : state.isDirty
+                ? context.s.cmsSaveDraftButton
+                : null,
+            actions: [
+              if (state.isDirty || state.isPublishing)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: StyledButton(
+                    title: context.s.cmsPublishButton,
+                    onPressed: () => _confirmPublish(context, state),
+                    enabled: !state.isPublishing,
+                    showProgressIndicatorWhenDisabled: state.isPublishing,
+                    leftIconData: Icons.publish,
+                    showLeftIcon: true,
+                    minHeight: 40,
+                  ),
                 ),
-        );
-      },
+            ],
+            showRightPane: showVersionPane,
+            rightChild: showVersionPane
+                ? _VersionHistoryPane(
+                    versions: state.versions ?? [],
+                    documentId: state.versionHistoryDocId!,
+                  )
+                : null,
+            bottom: _BottomBar(
+              locales: locales,
+              selectedIndex: localeIndex,
+              previewUrl: state.previewUrl,
+              isDirty: state.isDirty,
+              onLocaleChanged: (index) {
+                _handleLocaleChange(context, state, locales, index);
+              },
+            ),
+            leftChild: docs.isEmpty
+                ? Center(child: Text(context.s.cmsNoContent))
+                : ListView(
+                    padding: const EdgeInsets.only(top: 8),
+                    children: [
+                      if (siteConfig.isNotEmpty)
+                        _ContentSection(
+                          title: context.s.cmsSiteConfigSection,
+                          documents: siteConfig,
+                          state: state,
+                        ),
+                      if (cabin.isNotEmpty)
+                        _ContentSection(
+                          title: context.s.cmsCabinSection,
+                          documents: cabin,
+                          state: state,
+                        ),
+                      if (pageHome.isNotEmpty)
+                        _ContentSection(
+                          title: context.s.cmsHomePageSection,
+                          documents: pageHome,
+                          state: state,
+                        ),
+                      if (pagePractical.isNotEmpty)
+                        _ContentSection(
+                          title: context.s.cmsPracticalPageSection,
+                          documents: pagePractical,
+                          state: state,
+                        ),
+                      if (pageArea.isNotEmpty)
+                        _ContentSection(
+                          title: context.s.cmsAreaPageSection,
+                          documents: pageArea,
+                          state: state,
+                        ),
+                      if (pagePrivacy.isNotEmpty)
+                        _ContentSection(
+                          title: context.s.cmsPrivacyPageSection,
+                          documents: pagePrivacy,
+                          state: state,
+                        ),
+                      if (contactForm.isNotEmpty)
+                        _ContentSection(
+                          title: context.s.cmsContactFormSection,
+                          documents: contactForm,
+                          state: state,
+                        ),
+                      const SizedBox(height: 32),
+                    ],
+                  ),
+          );
+        },
+      ),
     );
   }
 
@@ -411,10 +494,7 @@ class _StatusBadge extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _VersionHistoryPane extends StatelessWidget {
-  const _VersionHistoryPane({
-    required this.versions,
-    required this.documentId,
-  });
+  const _VersionHistoryPane({required this.versions, required this.documentId});
 
   final List<DocumentVersion> versions;
   final String documentId;
@@ -479,8 +559,7 @@ class _VersionHistoryPane extends StatelessWidget {
                       style: theme.textTheme.bodySmall,
                     ),
                     trailing: TextButton(
-                      onPressed: () =>
-                          _confirmRestore(context, cubit, v),
+                      onPressed: () => _confirmRestore(context, cubit, v),
                       child: Text(context.s.cmsRestoreButton),
                     ),
                   );

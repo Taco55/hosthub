@@ -1,0 +1,39 @@
+;;
+;; Domain:     ev-reward.com.
+;; Exported:   2026-02-21 15:55:55
+;;
+;; This file is intended for use for informational and archival
+;; purposes ONLY and MUST be edited before use on a production
+;; DNS server.  In particular, you must:
+;;   -- update the SOA record with the correct authoritative name server
+;;   -- update the SOA record with the contact e-mail address information
+;;   -- update the NS record(s) with the authoritative name servers for this domain.
+;;
+;; For further information, please consult the BIND documentation
+;; located on the following website:
+;;
+;; http://www.isc.org/
+;;
+;; And RFC 1035:
+;;
+;; http://www.ietf.org/rfc/rfc1035.txt
+;;
+;; Please note that we do NOT offer technical support for any use
+;; of this zone data, the BIND name server, or any other third-party
+;; DNS software.
+;;
+;; Use at your own risk.
+;; SOA Record
+ev-reward.com	3600	IN	SOA	carioca.ns.cloudflare.com. dns.cloudflare.com. 2052335595 10000 2400 604800 3600
+
+;; NS Records
+ev-reward.com.	86400	IN	NS	carioca.ns.cloudflare.com.
+ev-reward.com.	86400	IN	NS	jason.ns.cloudflare.com.
+
+;; CNAME Records
+ev-reward.com.	1	IN	CNAME	ev-reward.pages.dev. ; cf_tags=cf-proxied:true
+www.ev-reward.com.	1	IN	CNAME	ev-reward.pages.dev. ; cf_tags=cf-proxied:true
+
+;; TXT Records
+_cf-custom-hostname.ev-reward.com.	1	IN	TXT	"48542853-ccba-481b-930f-fa7802fbb424"
+ev-reward.com.	3600	IN	TXT	"google-site-verification=6C_-InizLkUmL9GW00Q1GBWakdRKS7l8LQxrZ1OgDAM"

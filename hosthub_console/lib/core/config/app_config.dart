@@ -22,7 +22,7 @@ const kAdminBaseUrl = String.fromEnvironment(
 );
 const kLodgifyBaseUrl = String.fromEnvironment(
   'LODGIFY_BASE_URL',
-  defaultValue: '',
+  defaultValue: 'https://api.lodgify.com',
 );
 const kTestFlightUrl = String.fromEnvironment(
   'TESTFLIGHT_URL',

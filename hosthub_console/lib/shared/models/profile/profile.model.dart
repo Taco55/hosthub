@@ -31,6 +31,6 @@ sealed class Profile with _$Profile {
   @override
   String toString() {
     return 'Profile(id: $id, email: $email, username: $username, '
-        'isAdmin: $isAdmin';
+        'isAdmin: $isAdmin)';
   }
 }

@@ -4,9 +4,13 @@ import { notFound } from "next/navigation";
 import { GalleryGrid } from "@/components/gallery-grid";
 import { SectionHeading } from "@/components/section-heading";
 import { Container } from "@/components/site/Container";
-import { localizedContent } from "@/lib/content";
+import { getLocalizedContent, getSiteConfig } from "@/lib/content-provider";
 import { getGalleryImages } from "@/lib/gallery";
 import { getDictionary, isLocale } from "@/lib/i18n";
+import {
+  resolveRuntimeSiteContext,
+  toSiteContentOptions,
+} from "@/lib/runtime-site-context";
 
 type PageProps = {
   params: Promise<{ locale: string }>;
@@ -18,10 +22,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return {};
   }
 
+  const runtimeSite = await resolveRuntimeSiteContext();
+  const localized = await getLocalizedContent(
+    locale,
+    toSiteContentOptions(runtimeSite),
+  );
   const t = getDictionary(locale);
   return {
     title: t.pages.gallery,
-    description: localizedContent[locale].tagline,
+    description: localized.tagline,
   };
 }
 
@@ -31,9 +40,14 @@ export default async function GalleryPage({ params }: PageProps) {
     notFound();
   }
 
+  const runtimeSite = await resolveRuntimeSiteContext();
   const t = getDictionary(locale);
-  const content = localizedContent[locale];
-  const images = getGalleryImages(locale);
+  const contentOptions = toSiteContentOptions(runtimeSite);
+  const [content, siteConfig] = await Promise.all([
+    getLocalizedContent(locale, contentOptions),
+    getSiteConfig(locale, contentOptions),
+  ]);
+  const images = getGalleryImages(siteConfig, locale);
 
   return (
     <Container className="py-10 lg:py-14">

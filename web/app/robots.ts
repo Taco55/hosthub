@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 
 import { getSiteBaseUrl } from "@/lib/site-url";
 import { localeAliases, locales } from "@/lib/i18n";
+import { resolveRuntimeSiteContext } from "@/lib/runtime-site-context";
 
 const disallowPaths = Array.from(
   new Set([
@@ -11,8 +12,11 @@ const disallowPaths = Array.from(
   ]),
 );
 
-export default function robots(): MetadataRoute.Robots {
-  const baseUrl = getSiteBaseUrl();
+export const dynamic = "force-dynamic";
+
+export default async function robots(): Promise<MetadataRoute.Robots> {
+  const runtimeSite = await resolveRuntimeSiteContext();
+  const baseUrl = getSiteBaseUrl(runtimeSite.baseUrl);
 
   return {
     rules: [

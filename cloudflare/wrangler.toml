@@ -4,12 +4,10 @@ compatibility_date = "2026-02-18"
 workers_dev = true
 
 # Keep routes managed from this repo.
-# Current production domain:
-# - https://trysilpanorama.com/admin*
-# - https://www.trysilpanorama.com/admin*
+# Current admin domain:
+# - https://admin.trysilpanorama.com/*
 routes = [
-  { pattern = "trysilpanorama.com/admin*", zone_name = "trysilpanorama.com" },
-  { pattern = "www.trysilpanorama.com/admin*", zone_name = "trysilpanorama.com" },
+  { pattern = "admin.trysilpanorama.com/*", zone_name = "trysilpanorama.com" },
 ]
 
 [assets]
@@ -17,6 +15,5 @@ directory = "../hosthub_console/build/web"
 binding = "ASSETS"
 
 [vars]
-# Must match the path configured in route patterns above.
-# Can be changed later if HostHub gets its own path/domain.
-HOSTHUB_ADMIN_PATH = "/admin"
+# Use root path on admin subdomain.
+HOSTHUB_ADMIN_PATH = "/"

@@ -34,6 +34,16 @@ class SiteSummary {
       createdAt: DateTime.parse(map['created_at'] as String),
     );
   }
+
+  @override
+  String toString() {
+    return 'SiteSummary('
+        'id: $id, '
+        'name: $name, '
+        'defaultLocale: $defaultLocale, '
+        'locales: $locales, '
+        'timezone: $timezone)';
+  }
 }
 
 class ContentDocument {
@@ -77,6 +87,19 @@ class ContentDocument {
       updatedBy: map['updated_by'] as String?,
     );
   }
+
+  @override
+  String toString() {
+    return 'ContentDocument('
+        'id: $id, '
+        'siteId: $siteId, '
+        'contentType: $contentType, '
+        'slug: $slug, '
+        'locale: $locale, '
+        'status: $status, '
+        'updatedAt: ${updatedAt.toIso8601String()}, '
+        'contentKeys: ${content.keys.length})';
+  }
 }
 
 class DocumentVersion {
@@ -105,6 +128,15 @@ class DocumentVersion {
       publishedAt: DateTime.parse(map['published_at'] as String),
       publishedBy: map['published_by'] as String?,
     );
+  }
+
+  @override
+  String toString() {
+    return 'DocumentVersion('
+        'id: $id, '
+        'documentId: $documentId, '
+        'version: $version, '
+        'publishedAt: ${publishedAt.toIso8601String()})';
   }
 }
 
@@ -215,17 +247,17 @@ class CmsRepository extends SupabaseRepository {
     String? contentType,
   }) async {
     try {
-      var query = supabase
-          .from('cms_documents')
-          .select()
-          .eq('site_id', siteId);
+      var query = supabase.from('cms_documents').select().eq('site_id', siteId);
       if (locale != null) {
         query = query.eq('locale', locale);
       }
       if (contentType != null) {
         query = query.eq('content_type', contentType);
       }
-      final response = await query.order('content_type').order('slug').order('locale');
+      final response = await query
+          .order('content_type')
+          .order('slug')
+          .order('locale');
       return (response as List<dynamic>)
           .map((row) => ContentDocument.fromMap(row as Map<String, dynamic>))
           .toList();
@@ -263,10 +295,13 @@ class CmsRepository extends SupabaseRepository {
     required Map<String, dynamic> content,
   }) async {
     try {
-      await supabase.from('cms_documents').update({
-        'content': content,
-        'updated_by': supabase.auth.currentUser?.id,
-      }).eq('id', documentId);
+      await supabase
+          .from('cms_documents')
+          .update({
+            'content': content,
+            'updated_by': supabase.auth.currentUser?.id,
+          })
+          .eq('id', documentId);
     } catch (error, stack) {
       throw mapError(
         error,
@@ -310,11 +345,14 @@ class CmsRepository extends SupabaseRepository {
     required Map<String, dynamic> content,
   }) async {
     try {
-      await supabase.from('cms_documents').update({
-        'content': content,
-        'status': 'draft',
-        'updated_by': supabase.auth.currentUser?.id,
-      }).eq('id', documentId);
+      await supabase
+          .from('cms_documents')
+          .update({
+            'content': content,
+            'status': 'draft',
+            'updated_by': supabase.auth.currentUser?.id,
+          })
+          .eq('id', documentId);
     } catch (error, stack) {
       throw mapError(
         error,
@@ -342,12 +380,15 @@ class CmsRepository extends SupabaseRepository {
       });
 
       // 2. Set document to published
-      await supabase.from('cms_documents').update({
-        'content': content,
-        'status': 'published',
-        'published_at': DateTime.now().toUtc().toIso8601String(),
-        'updated_by': userId,
-      }).eq('id', documentId);
+      await supabase
+          .from('cms_documents')
+          .update({
+            'content': content,
+            'status': 'published',
+            'published_at': DateTime.now().toUtc().toIso8601String(),
+            'updated_by': userId,
+          })
+          .eq('id', documentId);
     } catch (error, stack) {
       throw mapError(
         error,
@@ -359,9 +400,7 @@ class CmsRepository extends SupabaseRepository {
   }
 
   /// Fetches all published versions for a document, newest first.
-  Future<List<DocumentVersion>> fetchDocumentVersions(
-    String documentId,
-  ) async {
+  Future<List<DocumentVersion>> fetchDocumentVersions(String documentId) async {
     try {
       final response = await supabase
           .from('cms_document_versions')
@@ -369,19 +408,14 @@ class CmsRepository extends SupabaseRepository {
           .eq('document_id', documentId)
           .order('version', ascending: false);
       return (response as List<dynamic>)
-          .map(
-            (row) => DocumentVersion.fromMap(row as Map<String, dynamic>),
-          )
+          .map((row) => DocumentVersion.fromMap(row as Map<String, dynamic>))
           .toList();
     } catch (error, stack) {
       throw mapError(
         error,
         stack,
         reason: DomainErrorReason.cannotLoadData,
-        context: {
-          'op': 'fetchDocumentVersions',
-          'documentId': documentId,
-        },
+        context: {'op': 'fetchDocumentVersions', 'documentId': documentId},
       );
     }
   }

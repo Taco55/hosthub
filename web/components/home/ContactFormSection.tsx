@@ -4,17 +4,13 @@ import { useRef, useState, type FormEvent } from "react";
 
 import { SectionHeading } from "@/components/section-heading";
 import { Container } from "@/components/site/Container";
-import type { Locale } from "@/lib/i18n";
-import { contactFormSection } from "@/lib/content";
+import type { ContactFormSectionContent } from "@/lib/content";
 
 type ContactFormSectionProps = {
-  locale: Locale;
+  content: ContactFormSectionContent;
 };
 
-const CONTACT_EMAIL = "info@trysilpanorama.com";
-
-export function ContactFormSection({ locale }: ContactFormSectionProps) {
-  const content = contactFormSection[locale];
+export function ContactFormSection({ content }: ContactFormSectionProps) {
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [loading, setLoading] = useState(false);
   const startedAtRef = useRef(Date.now());
@@ -55,20 +51,22 @@ export function ContactFormSection({ locale }: ContactFormSectionProps) {
     }
   }
 
-  const emailIndex = content.subtitle.indexOf(CONTACT_EMAIL);
+  const contactEmail =
+    content.subtitle.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] ?? null;
+  const emailIndex = contactEmail ? content.subtitle.indexOf(contactEmail) : -1;
   const subtitleNodes =
-    emailIndex === -1 ? (
+    !contactEmail || emailIndex === -1 ? (
       content.subtitle
     ) : (
       <>
         {content.subtitle.slice(0, emailIndex)}
         <a
-          href={`mailto:${CONTACT_EMAIL}`}
+          href={`mailto:${contactEmail}`}
           className="font-semibold text-slate-900 underline underline-offset-4 hover:text-slate-950"
         >
-          {CONTACT_EMAIL}
+          {contactEmail}
         </a>
-        {content.subtitle.slice(emailIndex + CONTACT_EMAIL.length)}
+        {content.subtitle.slice(emailIndex + contactEmail.length)}
       </>
     );
 

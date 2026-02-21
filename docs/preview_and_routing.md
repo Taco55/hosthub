@@ -1,13 +1,22 @@
 # HostHub Preview and Routing
 
-This document defines the current routing model, local debug flow, and the
-future migration path to a dedicated HostHub domain.
+This document defines the current routing model and local debug flow.
 
-## Current production model (unchanged)
+## Current production model
 
 - Website: `https://trysilpanorama.com/<locale>`
 - Website preview: `https://trysilpanorama.com/preview/<locale>`
-- HostHub admin: `https://trysilpanorama.com/admin`
+- HostHub admin: `https://admin.trysilpanorama.com`
+
+## Generic multi-site website mode
+
+- The website app can resolve CMS `site_id` per request host (`site_domains.domain`)
+  when `CMS_DOMAIN_LOOKUP_ENABLED=true` and `SUPABASE_SERVICE_ROLE_KEY` is set.
+- If host lookup does not resolve, website runtime falls back to
+  `NEXT_PUBLIC_CMS_SITE_ID`.
+- This enables one website deployment to serve multiple subdomains/sites from CMS.
+- Hero/gallery/booking runtime settings are read from `site_config/main`
+  (`bookingUrl`, `heroImages`, `galleryAllFilenames`, `gallery`).
 
 ## Local development model
 
@@ -34,7 +43,8 @@ Relevant code:
 
 Worker scope:
 
-- Serves only admin path (`/admin` by default)
+- Serves admin on the configured host/path (default host
+  `admin.trysilpanorama.com`, default path `/`)
 - Does not serve website preview pages (`/preview/...`)
 
 Relevant files:
@@ -45,29 +55,21 @@ Relevant files:
 
 ## Cloudflare deploy env variables
 
-Optional variables for `secrets/hosthub-cloudflare-prd.env`:
+Optional variables for `secrets/hosthub-prd.env`:
 
 ```text
 CLOUDFLARE_API_TOKEN=<token>
 CLOUDFLARE_ACCOUNT_ID=<account-id>
 CLOUDFLARE_ZONE_ID=<zone-id>
-HOSTHUB_PUBLIC_DOMAIN=trysilpanorama.com
+HOSTHUB_PUBLIC_DOMAIN=admin.trysilpanorama.com
 HOSTHUB_ZONE_NAME=trysilpanorama.com
-HOSTHUB_ADMIN_PATH=/admin
+HOSTHUB_ADMIN_PATH=/
 ```
 
 Notes:
 
 - `HOSTHUB_ADMIN_PATH` controls Flutter `--base-href` during deploy.
 - `HOSTHUB_ADMIN_PATH` must match Worker route patterns in `cloudflare/wrangler.toml`.
-
-## Future migration checklist (HostHub own domain)
-
-1. Update Cloudflare route patterns in `cloudflare/wrangler.toml`.
-2. Update deploy env (`HOSTHUB_PUBLIC_DOMAIN`, optionally `HOSTHUB_ADMIN_PATH`).
-3. Set/verify `site_domains.is_primary` for preview domain selection.
-4. Remove `CMS_PREVIEW_DOMAIN` from production launch/build configuration.
-5. Redeploy website + admin worker.
 
 ## Quick local start
 

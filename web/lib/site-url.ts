@@ -20,6 +20,6 @@ function normalizeBaseUrl(raw: string | undefined) {
   }
 }
 
-export function getSiteBaseUrl() {
-  return normalizeBaseUrl(process.env.NEXT_PUBLIC_SITE_URL);
+export function getSiteBaseUrl(override?: string) {
+  return normalizeBaseUrl(override ?? process.env.NEXT_PUBLIC_SITE_URL);
 }

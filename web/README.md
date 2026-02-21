@@ -9,7 +9,7 @@ Modern, fast marketing + booking funnel site for the Fageråsen 701 cabin in Try
 - Booking funnel with Lodgify availability and quote proxy endpoints
 - Gallery with lightbox, practical info, area guides, and privacy page
 - SEO metadata, JSON‑LD structured data, sitemap.xml, and robots.txt
-- Content stored in a single typed file for easy future CMS integration
+- CMS-backed content with typed fallback snapshot support
 
 ## Requirements
 - Node.js 20+
@@ -59,6 +59,17 @@ LODGIFY_API_KEY="your-rotated-lodgify-api-key"
 LODGIFY_PROPERTY_ID="123456"
 LODGIFY_ROOM_TYPE_ID="654321"
 LODGIFY_API_BASE="https://api.lodgify.com"
+
+# CMS runtime
+NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
+NEXT_PUBLIC_CMS_SITE_ID="fallback-site-uuid"
+CMS_ENABLED="true"
+CMS_QUERY_TIMEOUT_MS="1200"
+
+# Optional, for host/subdomain -> site_domains lookup
+CMS_DOMAIN_LOOKUP_ENABLED="true"
+SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
 ```
 
 Lodgify API key notes:
@@ -70,6 +81,73 @@ Lodgify API key notes:
 - `lib/content.ts` holds the structured `cabinContent` drop-in data plus the localized content used by legacy pages.
 - `lib/i18n.ts` holds navigation and UI string translations.
 - `lib/content.ts` also holds the hero list, full gallery list, and the 6-image homepage selection.
+
+## CMS snapshot fallback
+- Runtime content reads go through `lib/content-provider.ts`.
+- Fallback order is:
+  1) Supabase published content
+  2) `lib/content.generated.ts` snapshot
+  3) static `lib/content.ts`
+- Generate/update the snapshot with:
+```bash
+npm run cms:snapshot -- \
+  --site-id <cms-site-id> \
+  --supabase-url https://<project>.supabase.co \
+  --api-key <service-role-key>
+```
+- You can also rely on env vars: `NEXT_PUBLIC_CMS_SITE_ID`, `NEXT_PUBLIC_SUPABASE_URL`, and `SUPABASE_SERVICE_ROLE_KEY`.
+- Optional runtime timeout for CMS calls: `CMS_QUERY_TIMEOUT_MS` (default `1200`).
+- Recommended: run this script automatically after each CMS publish to keep fallback content fresh.
+
+## Generic multi-site mode
+- Runtime site resolution lives in `lib/runtime-site-context.ts`.
+- Resolution order is:
+  1) request host/subdomain lookup in `site_domains.domain` (requires `SUPABASE_SERVICE_ROLE_KEY`)
+  2) fallback `NEXT_PUBLIC_CMS_SITE_ID`
+  3) content-provider fallback chain (snapshot/static)
+- If you run one deployment for many subdomains, keep `site_domains.domain` up to date per CMS site.
+- `sitemap.xml` and `robots.txt` use the request host in this mode.
+
+### Site config contract (CMS)
+
+`site_config/main` can carry generic per-site runtime settings:
+
+```json
+{
+  "name": "My Chalet",
+  "location": "Trysil, Norway",
+  "capacity": 8,
+  "bedrooms": 3,
+  "bathrooms": 2,
+  "mapEmbedUrl": "https://...",
+  "mapLinkUrl": "https://...",
+  "bookingUrl": "https://checkout.lodgify.com/...",
+  "heroImages": ["/images/hero/hero-1.jpg", "/images/hero/hero-2.jpg"],
+  "imagePaths": {
+    "base": "/images",
+    "hero": "/images/hero",
+    "galleryAll": "/images/all",
+    "highlights": "/images/highlights"
+  },
+  "galleryAllFilenames": ["gallery-1.jpg", "gallery-2.jpg"],
+  "gallery": [
+    {
+      "src": "/images/all/gallery-1.jpg",
+      "alt": {
+        "nl": "Voorbeeld alt NL",
+        "en": "Example alt EN",
+        "no": "Eksempel alt NO"
+      }
+    }
+  ]
+}
+```
+
+Notes:
+- `bookingUrl` is used by header/footer/home/book pages.
+- `heroImages` drives hero background + crossfade.
+- Gallery pages use `galleryAllFilenames` + `imagePaths.galleryAll`.
+- Homepage preview uses `gallery` when present; otherwise it uses the first 6 entries from `galleryAllFilenames` in the same order.
 
 ## Hero images
 - Place hero background images in `public/images/hero/` and list them in `lib/content.ts`.

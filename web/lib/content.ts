@@ -832,6 +832,29 @@ export type LocalizedContent = {
   };
 };
 
+export type SiteConfig = {
+  name: string;
+  location: string;
+  capacity: number;
+  bedrooms: number;
+  bathrooms: number;
+  imagePaths: {
+    base: string;
+    hero: string;
+    galleryAll: string;
+    highlights: string;
+  };
+  galleryAllFilenames: string[];
+  heroImages: string[];
+  gallery: Array<{
+    src: string;
+    alt: Localized<string>;
+  }>;
+  mapEmbedUrl: string;
+  mapLinkUrl: string;
+  bookingUrl: string;
+};
+
 const imagePaths = {
   base: "/images",
   hero: "/images/hero",
@@ -922,7 +945,7 @@ const getHighlightImages = (locale: Locale): LocalizedImage[] =>
     alt: image.alt[locale],
   }));
 
-export const site = {
+export const site: SiteConfig = {
   name: "Fageråsen 701",
   location: "Fageråsen, Trysil, Norway",
   capacity: 8,
@@ -995,6 +1018,7 @@ export const site = {
     "https://www.openstreetmap.org/export/embed.html?bbox=12.155%2C61.322%2C12.175%2C61.342&layer=mapnik&marker=61.332251%2C12.165275",
   mapLinkUrl:
     "https://www.openstreetmap.org/?mlat=61.332251&mlon=12.165275#map=16/61.332251/12.165275",
+  bookingUrl: "",
 };
 
 export const primaryHeroImage =

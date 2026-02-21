@@ -5,6 +5,10 @@ import { Container } from "@/components/site/Container";
 import { Card, CardContent } from "@/components/ui/card";
 import { getPrivacyContent } from "@/lib/content-provider";
 import { getDictionary, isLocale } from "@/lib/i18n";
+import {
+  resolveRuntimeSiteContext,
+  toSiteContentOptions,
+} from "@/lib/runtime-site-context";
 
 type PageProps = {
   params: Promise<{ locale: string }>;
@@ -16,8 +20,12 @@ export default async function PreviewPrivacyPage({ params }: PageProps) {
     notFound();
   }
 
+  const runtimeSite = await resolveRuntimeSiteContext();
   const t = getDictionary(locale);
-  const privacy = await getPrivacyContent(locale, { preview: true });
+  const privacy = await getPrivacyContent(
+    locale,
+    toSiteContentOptions(runtimeSite, true),
+  );
 
   return (
     <Container className="max-w-5xl py-10 lg:py-14">

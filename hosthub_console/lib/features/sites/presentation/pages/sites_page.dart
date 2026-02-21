@@ -45,6 +45,40 @@ class _SitesPageState extends State<SitesPage> {
     return Uri.encodeComponent(normalized);
   }
 
+  SiteSummary _resolvePreferredSite(
+    List<SiteSummary> sites,
+    PropertySummary? currentProperty,
+  ) {
+    if (sites.isEmpty) {
+      throw StateError('Cannot resolve preferred site for an empty list.');
+    }
+    final propertyName = currentProperty?.name.trim();
+    if (propertyName == null || propertyName.isEmpty) {
+      return sites.first;
+    }
+    final normalizedPropertyName = _normalizeComparableName(propertyName);
+
+    for (final site in sites) {
+      if (_normalizeComparableName(site.name) == normalizedPropertyName) {
+        return site;
+      }
+    }
+
+    for (final site in sites) {
+      final normalizedSiteName = _normalizeComparableName(site.name);
+      final overlaps =
+          normalizedSiteName.contains(normalizedPropertyName) ||
+          normalizedPropertyName.contains(normalizedSiteName);
+      if (overlaps) return site;
+    }
+
+    return sites.first;
+  }
+
+  String _normalizeComparableName(String value) {
+    return value.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+  }
+
   Future<void> _createSite() async {
     if (_creating) return;
     setState(() => _creating = true);
@@ -77,67 +111,82 @@ class _SitesPageState extends State<SitesPage> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<SiteSummary>>(
-      future: _futureSites,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return ConsolePageScaffold(
-            title: context.s.sitesTitle,
-            description: context.s.sitesDescription,
-            leftChild: const Center(child: CircularProgressIndicator()),
-          );
-        }
+    return BlocListener<PropertyContextCubit, PropertyContextState>(
+      listenWhen: (previous, current) =>
+          previous.currentProperty?.id != current.currentProperty?.id,
+      listener: (context, state) {
+        _redirected = false;
+        setState(_loadSites);
+      },
+      child: FutureBuilder<List<SiteSummary>>(
+        future: _futureSites,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return ConsolePageScaffold(
+              title: context.s.sitesTitle,
+              description: context.s.sitesDescription,
+              leftChild: const Center(child: CircularProgressIndicator()),
+            );
+          }
 
-        if (snapshot.hasError) {
+          if (snapshot.hasError) {
+            return ConsolePageScaffold(
+              title: context.s.sitesTitle,
+              description: context.s.sitesDescription,
+              leftChild: Center(
+                child: Text(
+                  context.s.sitesLoadFailed(snapshot.error.toString()),
+                ),
+              ),
+            );
+          }
+
+          final sites = snapshot.data ?? [];
+
+          // Auto-redirect to the site that best matches the selected property.
+          if (sites.isNotEmpty && !_redirected) {
+            final currentProperty = context
+                .read<PropertyContextCubit>()
+                .state
+                .currentProperty;
+            final preferredSite = _resolvePreferredSite(sites, currentProperty);
+            _redirected = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) context.go(_siteContentRoute(preferredSite));
+            });
+            return ConsolePageScaffold(
+              title: context.s.sitesTitle,
+              description: context.s.sitesDescription,
+              leftChild: const Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          // No sites – show create button
           return ConsolePageScaffold(
             title: context.s.sitesTitle,
             description: context.s.sitesDescription,
             leftChild: Center(
-              child: Text(context.s.sitesLoadFailed(snapshot.error.toString())),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    context.s.sitesEmpty,
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                  const SizedBox(height: 24),
+                  StyledButton(
+                    title: context.s.sitesCreateButton,
+                    onPressed: _creating ? null : _createSite,
+                    minHeight: 44,
+                    leftIconData: Icons.add,
+                    showLeftIcon: true,
+                  ),
+                ],
+              ),
             ),
           );
-        }
-
-        final sites = snapshot.data ?? [];
-
-        // Auto-redirect to the first site's content page
-        if (sites.isNotEmpty && !_redirected) {
-          _redirected = true;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) context.go(_siteContentRoute(sites.first));
-          });
-          return ConsolePageScaffold(
-            title: context.s.sitesTitle,
-            description: context.s.sitesDescription,
-            leftChild: const Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        // No sites – show create button
-        return ConsolePageScaffold(
-          title: context.s.sitesTitle,
-          description: context.s.sitesDescription,
-          leftChild: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  context.s.sitesEmpty,
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-                const SizedBox(height: 24),
-                StyledButton(
-                  title: context.s.sitesCreateButton,
-                  onPressed: _creating ? null : _createSite,
-                  minHeight: 44,
-                  leftIconData: Icons.add,
-                  showLeftIcon: true,
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+        },
+      ),
     );
   }
 }

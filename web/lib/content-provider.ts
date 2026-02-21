@@ -2,8 +2,13 @@
  * Content provider facade.
  *
  * Tries to load content from Supabase CMS when CMS_ENABLED=true and a
- * NEXT_PUBLIC_CMS_SITE_ID is configured. Falls back to the static content
- * from `content.ts` when CMS is not available or a document is missing.
+ * site id is configured. The site id can come from:
+ * 1) `options.siteId` (runtime override, e.g. resolved from request host)
+ * 2) `NEXT_PUBLIC_CMS_SITE_ID` (default/fallback)
+ *
+ * Falls back to generated snapshot content from `content.generated.ts`, and
+ * finally to static `content.ts`, when CMS is unavailable or a document is
+ * missing.
  *
  * This means the production website keeps working identically when CMS env
  * vars are not set.
@@ -15,6 +20,7 @@ import type {
   ContactFormSectionContent,
   LocalizedContent,
   PracticalContent,
+  SiteConfig,
 } from "./content";
 import {
   getCabinContent as getStaticCabinContent,
@@ -22,40 +28,61 @@ import {
   contactFormSection,
   site,
 } from "./content";
+import { generatedContentSnapshot } from "./content.generated";
 import { fetchDocument } from "./supabase/cms";
 
 const CMS_ENABLED = process.env.CMS_ENABLED === "true";
 const CMS_SITE_ID = process.env.NEXT_PUBLIC_CMS_SITE_ID ?? "";
 
-function cmsActive(options?: { preview?: boolean }) {
-  return (CMS_ENABLED || options?.preview) && CMS_SITE_ID;
-}
-
-type ContentOptions = {
+export type ContentOptions = {
   /** When true, also fetches draft documents (for preview mode). */
   preview?: boolean;
+  /** Optional runtime override for multi-site setups. */
+  siteId?: string;
 };
 
-// ---------------------------------------------------------------------------
-// Site config
-// ---------------------------------------------------------------------------
+function resolveSiteId(options?: ContentOptions) {
+  const fromOptions = options?.siteId?.trim();
+  if (fromOptions) return fromOptions;
+  return CMS_SITE_ID;
+}
 
-type SiteConfig = typeof site;
+function cmsActive(siteId: string, options?: ContentOptions) {
+  return Boolean((CMS_ENABLED || options?.preview) && siteId);
+}
+
+function fromGenerated<T>(record: Partial<Record<Locale, T>>, locale: Locale): T | null {
+  return record[locale] ?? null;
+}
+
+function mergeSiteConfig(override: Partial<SiteConfig>): SiteConfig {
+  return {
+    ...site,
+    ...override,
+    imagePaths: {
+      ...site.imagePaths,
+      ...(override.imagePaths ?? {}),
+    },
+  };
+}
 
 export async function getSiteConfig(
   locale: Locale,
   options?: ContentOptions,
 ): Promise<SiteConfig> {
-  if (cmsActive(options)) {
+  const siteId = resolveSiteId(options);
+  if (cmsActive(siteId, options)) {
     const doc = await fetchDocument<Partial<SiteConfig>>(
-      CMS_SITE_ID,
+      siteId,
       "site_config",
       "main",
       locale,
       { includeDrafts: options?.preview },
     );
-    if (doc) return { ...site, ...doc };
+    if (doc) return mergeSiteConfig(doc);
   }
+  const generated = fromGenerated(generatedContentSnapshot.siteConfig, locale);
+  if (generated) return mergeSiteConfig(generated);
   return site;
 }
 
@@ -67,9 +94,10 @@ export async function getCabinContent(
   locale: Locale,
   options?: ContentOptions,
 ): Promise<CabinContent> {
-  if (cmsActive(options)) {
+  const siteId = resolveSiteId(options);
+  if (cmsActive(siteId, options)) {
     const doc = await fetchDocument<CabinContent>(
-      CMS_SITE_ID,
+      siteId,
       "cabin",
       "main",
       locale,
@@ -77,6 +105,8 @@ export async function getCabinContent(
     );
     if (doc) return doc;
   }
+  const generated = fromGenerated(generatedContentSnapshot.cabin, locale);
+  if (generated) return generated;
   return getStaticCabinContent(locale);
 }
 
@@ -88,9 +118,10 @@ export async function getLocalizedContent(
   locale: Locale,
   options?: ContentOptions,
 ): Promise<LocalizedContent> {
-  if (cmsActive(options)) {
+  const siteId = resolveSiteId(options);
+  if (cmsActive(siteId, options)) {
     const doc = await fetchDocument<Partial<LocalizedContent>>(
-      CMS_SITE_ID,
+      siteId,
       "page",
       "home",
       locale,
@@ -98,6 +129,8 @@ export async function getLocalizedContent(
     );
     if (doc) return { ...localizedContent[locale], ...doc };
   }
+  const generated = fromGenerated(generatedContentSnapshot.home, locale);
+  if (generated) return { ...localizedContent[locale], ...generated };
   return localizedContent[locale];
 }
 
@@ -109,9 +142,10 @@ export async function getPracticalContent(
   locale: Locale,
   options?: ContentOptions,
 ): Promise<PracticalContent> {
-  if (cmsActive(options)) {
+  const siteId = resolveSiteId(options);
+  if (cmsActive(siteId, options)) {
     const doc = await fetchDocument<PracticalContent>(
-      CMS_SITE_ID,
+      siteId,
       "page",
       "practical",
       locale,
@@ -119,6 +153,8 @@ export async function getPracticalContent(
     );
     if (doc) return doc;
   }
+  const generated = fromGenerated(generatedContentSnapshot.practical, locale);
+  if (generated) return generated;
   return localizedContent[locale].practical;
 }
 
@@ -132,9 +168,10 @@ export async function getAreaContent(
   locale: Locale,
   options?: ContentOptions,
 ): Promise<AreaContent> {
-  if (cmsActive(options)) {
+  const siteId = resolveSiteId(options);
+  if (cmsActive(siteId, options)) {
     const doc = await fetchDocument<AreaContent>(
-      CMS_SITE_ID,
+      siteId,
       "page",
       "area",
       locale,
@@ -142,6 +179,8 @@ export async function getAreaContent(
     );
     if (doc) return doc;
   }
+  const generated = fromGenerated(generatedContentSnapshot.area, locale);
+  if (generated) return generated;
   return localizedContent[locale].area;
 }
 
@@ -155,9 +194,10 @@ export async function getPrivacyContent(
   locale: Locale,
   options?: ContentOptions,
 ): Promise<PrivacyContent> {
-  if (cmsActive(options)) {
+  const siteId = resolveSiteId(options);
+  if (cmsActive(siteId, options)) {
     const doc = await fetchDocument<PrivacyContent>(
-      CMS_SITE_ID,
+      siteId,
       "page",
       "privacy",
       locale,
@@ -165,6 +205,8 @@ export async function getPrivacyContent(
     );
     if (doc) return doc;
   }
+  const generated = fromGenerated(generatedContentSnapshot.privacy, locale);
+  if (generated) return generated;
   return localizedContent[locale].privacy;
 }
 
@@ -176,9 +218,10 @@ export async function getContactFormContent(
   locale: Locale,
   options?: ContentOptions,
 ): Promise<ContactFormSectionContent> {
-  if (cmsActive(options)) {
+  const siteId = resolveSiteId(options);
+  if (cmsActive(siteId, options)) {
     const doc = await fetchDocument<ContactFormSectionContent>(
-      CMS_SITE_ID,
+      siteId,
       "contact_form",
       "main",
       locale,
@@ -186,5 +229,7 @@ export async function getContactFormContent(
     );
     if (doc) return doc;
   }
+  const generated = fromGenerated(generatedContentSnapshot.contactForm, locale);
+  if (generated) return generated;
   return contactFormSection[locale];
 }

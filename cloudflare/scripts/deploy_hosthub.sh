@@ -13,12 +13,14 @@ LEGACY_ENV_FILE=""
 ENV_FILE=""
 ENV_FILE_EXPLICIT=0
 DRY_RUN=0
-HOSTHUB_PUBLIC_DOMAIN="${HOSTHUB_PUBLIC_DOMAIN:-trysilpanorama.com}"
+HOSTHUB_PUBLIC_DOMAIN="${HOSTHUB_PUBLIC_DOMAIN:-admin.trysilpanorama.com}"
 HOSTHUB_ZONE_NAME="${HOSTHUB_ZONE_NAME:-trysilpanorama.com}"
-HOSTHUB_ADMIN_PATH="${HOSTHUB_ADMIN_PATH:-/admin}"
+HOSTHUB_ADMIN_PATH="${HOSTHUB_ADMIN_PATH:-/}"
 HOSTHUB_WASM_DRY_RUN="${HOSTHUB_WASM_DRY_RUN:-0}"
 HOSTHUB_WRANGLER_VERSION="${HOSTHUB_WRANGLER_VERSION:-4.67.0}"
 LIVE_VERSION_URL=""
+FLUTTER_DART_DEFINES=()
+FLUTTER_DART_DEFINE_KEYS=()
 
 require_command() {
   local cmd="$1"
@@ -60,6 +62,24 @@ load_env_file() {
   set +a
 }
 
+require_non_empty_env() {
+  local key="$1"
+  local value="${!key:-}"
+  if [[ -z "${value//[[:space:]]/}" ]]; then
+    echo "Missing required env value: ${key}" >&2
+    exit 1
+  fi
+}
+
+append_dart_define_if_set() {
+  local key="$1"
+  local value="${!key:-}"
+  if [[ -n "${value}" ]]; then
+    FLUTTER_DART_DEFINES+=("--dart-define=${key}=${value}")
+    FLUTTER_DART_DEFINE_KEYS+=("${key}")
+  fi
+}
+
 usage() {
   cat <<EOF
 Usage: $(basename "$0") [--env-file <path>] [--dry-run]
@@ -77,8 +97,8 @@ resolve_repo_root
 HOSTHUB_DIR="${REPO_ROOT}/hosthub_console"
 PUBSPEC_PATH="${HOSTHUB_DIR}/pubspec.yaml"
 REPO_PARENT="$(cd "${REPO_ROOT}/.." && pwd)"
-DEFAULT_ENV_FILE="${REPO_ROOT}/secrets/hosthub-cloudflare-prd.env"
-WORKSPACE_SECRETS_ENV_FILE="${REPO_PARENT}/hosthub_secrets/hosthub-cloudflare-prd.env"
+DEFAULT_ENV_FILE="${REPO_ROOT}/secrets/hosthub-prd.env"
+WORKSPACE_SECRETS_ENV_FILE="${REPO_PARENT}/hosthub_secrets/hosthub-prd.env"
 LEGACY_ENV_FILE="${CF_DIR}/secrets/hosthub-prd.env"
 ENV_FILE="${DEFAULT_ENV_FILE}"
 
@@ -127,15 +147,48 @@ else
   echo "  - ${LEGACY_ENV_FILE}"
 fi
 
+APP_ENVIRONMENT="${APP_ENVIRONMENT:-prd}"
+require_non_empty_env "SUPABASE_URL"
+if [[ -z "${SUPABASE_ANON_KEY:-}" && -z "${SUPABASE_KEY:-}" ]]; then
+  echo "Missing required env value: SUPABASE_ANON_KEY (preferred) or SUPABASE_KEY." >&2
+  exit 1
+fi
+
+append_dart_define_if_set "APP_ENVIRONMENT"
+append_dart_define_if_set "SUPABASE_URL"
+append_dart_define_if_set "SUPABASE_ANON_KEY"
+append_dart_define_if_set "SUPABASE_KEY"
+append_dart_define_if_set "GOOGLE_API_KEY"
+append_dart_define_if_set "PLACES_GOOGLE_API_KEY"
+append_dart_define_if_set "ADMIN_BASE_URL"
+append_dart_define_if_set "LODGIFY_BASE_URL"
+append_dart_define_if_set "TESTFLIGHT_URL"
+append_dart_define_if_set "CMS_PREVIEW_DOMAIN"
+
+if [[ -z "${SUPABASE_ANON_KEY:-}" && -n "${SUPABASE_KEY:-}" ]]; then
+  echo "Warning: SUPABASE_ANON_KEY is empty; using legacy SUPABASE_KEY define."
+fi
+
 if [[ "${HOSTHUB_ADMIN_PATH}" != /* ]]; then
   HOSTHUB_ADMIN_PATH="/${HOSTHUB_ADMIN_PATH}"
 fi
-HOSTHUB_ADMIN_PATH="${HOSTHUB_ADMIN_PATH%/}"
-if [[ -z "${HOSTHUB_ADMIN_PATH}" ]]; then
-  HOSTHUB_ADMIN_PATH="/admin"
+
+if [[ "${HOSTHUB_ADMIN_PATH}" == "/" ]]; then
+  HOSTHUB_ADMIN_PATH="/"
+else
+  HOSTHUB_ADMIN_PATH="${HOSTHUB_ADMIN_PATH%/}"
+  if [[ -z "${HOSTHUB_ADMIN_PATH}" ]]; then
+    HOSTHUB_ADMIN_PATH="/"
+  fi
 fi
 
-LIVE_VERSION_URL="https://${HOSTHUB_PUBLIC_DOMAIN}${HOSTHUB_ADMIN_PATH}/hosthub-version.json"
+if [[ "${HOSTHUB_ADMIN_PATH}" == "/" ]]; then
+  LIVE_VERSION_URL="https://${HOSTHUB_PUBLIC_DOMAIN}/hosthub-version.json"
+  FLUTTER_BASE_HREF="/"
+else
+  LIVE_VERSION_URL="https://${HOSTHUB_PUBLIC_DOMAIN}${HOSTHUB_ADMIN_PATH}/hosthub-version.json"
+  FLUTTER_BASE_HREF="${HOSTHUB_ADMIN_PATH}/"
+fi
 
 if [[ ! -f "${PUBSPEC_PATH}" ]]; then
   echo "Unable to find ${PUBSPEC_PATH}." >&2
@@ -160,17 +213,25 @@ echo "HostHub public domain: ${HOSTHUB_PUBLIC_DOMAIN}"
 echo "Cloudflare zone: ${HOSTHUB_ZONE_NAME}"
 echo "Admin path: ${HOSTHUB_ADMIN_PATH}"
 echo "Wrangler version: ${HOSTHUB_WRANGLER_VERSION}"
+echo "Flutter APP_ENVIRONMENT: ${APP_ENVIRONMENT}"
+if [[ "${#FLUTTER_DART_DEFINE_KEYS[@]}" -gt 0 ]]; then
+  echo "Flutter dart-defines: ${FLUTTER_DART_DEFINE_KEYS[*]}"
+fi
+if ! grep -q "${HOSTHUB_PUBLIC_DOMAIN}" "${CF_DIR}/wrangler.toml"; then
+  echo "Warning: wrangler.toml routes do not include host ${HOSTHUB_PUBLIC_DOMAIN}."
+fi
 if ! grep -q "zone_name = \"${HOSTHUB_ZONE_NAME}\"" "${CF_DIR}/wrangler.toml"; then
   echo "Warning: wrangler.toml routes do not include zone_name=${HOSTHUB_ZONE_NAME}."
 fi
-if ! grep -q "${HOSTHUB_ADMIN_PATH//\//\\/}\*" "${CF_DIR}/wrangler.toml"; then
+if [[ "${HOSTHUB_ADMIN_PATH}" != "/" ]] && ! grep -q "${HOSTHUB_ADMIN_PATH//\//\\/}\*" "${CF_DIR}/wrangler.toml"; then
   echo "Warning: wrangler.toml routes do not include admin path ${HOSTHUB_ADMIN_PATH}*."
 fi
 
 echo "Building Flutter web..."
 (
   cd "${HOSTHUB_DIR}"
-  FLUTTER_BUILD_CMD=(flutter build web --release --base-href "${HOSTHUB_ADMIN_PATH}/")
+  FLUTTER_BUILD_CMD=(flutter build web --release --base-href "${FLUTTER_BASE_HREF}")
+  FLUTTER_BUILD_CMD+=("${FLUTTER_DART_DEFINES[@]}")
   if [[ "${HOSTHUB_WASM_DRY_RUN}" != "1" ]]; then
     FLUTTER_BUILD_CMD+=(--no-wasm-dry-run)
   fi

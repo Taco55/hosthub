@@ -12,9 +12,20 @@ import { Hero } from "@/components/site/Hero";
 import { KeyFactsGrid } from "@/components/site/KeyFactsGrid";
 import { LocationBlock } from "@/components/site/LocationBlock";
 import { primaryHeroImage } from "@/lib/content";
-import { getCabinContent, getLocalizedContent, getSiteConfig } from "@/lib/content-provider";
+import { resolveBookingUrl } from "@/lib/booking-url";
+import {
+  getCabinContent,
+  getContactFormContent,
+  getLocalizedContent,
+  getSiteConfig,
+} from "@/lib/content-provider";
 import { getGalleryImages } from "@/lib/gallery";
+import { getHeroImages } from "@/lib/heroImages";
 import { getDictionary, isLocale } from "@/lib/i18n";
+import {
+  resolveRuntimeSiteContext,
+  toSiteContentOptions,
+} from "@/lib/runtime-site-context";
 import { getSiteBaseUrl } from "@/lib/site-url";
 import {
   buildResponsiveImage,
@@ -32,13 +43,17 @@ export default async function PreviewHomePage({ params }: PageProps) {
     notFound();
   }
 
-  const preview = true;
-  const opts = { preview };
-  const content = await getCabinContent(locale, opts);
-  const localized = await getLocalizedContent(locale, opts);
-  const site = await getSiteConfig(locale, opts);
+  const runtimeSite = await resolveRuntimeSiteContext();
+  const opts = toSiteContentOptions(runtimeSite, true);
+  const [content, localized, siteConfig, contactForm] = await Promise.all([
+    getCabinContent(locale, opts),
+    getLocalizedContent(locale, opts),
+    getSiteConfig(locale, opts),
+    getContactFormContent(locale, opts),
+  ]);
   const t = getDictionary(locale);
-  const images = getGalleryImages(locale, "preview");
+  const images = getGalleryImages(siteConfig, locale, "preview");
+  const heroImages = getHeroImages(siteConfig);
   const highlightImages = localized.highlightImages?.map((image) => ({
     ...buildResponsiveImage(image.src, {
       widths: highlightImageWidths,
@@ -47,11 +62,10 @@ export default async function PreviewHomePage({ params }: PageProps) {
     }),
     alt: image.alt,
   }));
-  const bookingUrl =
-    process.env.NEXT_PUBLIC_LODGIFY_CHECKOUT_URL ?? process.env.LODGIFY_BOOKING_URL ?? "";
+  const bookingUrl = resolveBookingUrl(siteConfig);
   const bookingPageHref = `/preview/${locale}/book`;
   const bookingCtaHref = bookingUrl || bookingPageHref;
-  const baseUrl = getSiteBaseUrl();
+  const baseUrl = getSiteBaseUrl(runtimeSite.baseUrl);
   const heroImage = images[0];
   const heroImageSrc = heroImage?.src ?? primaryHeroImage;
   const heroImageAlt = content.meta.name;
@@ -97,31 +111,20 @@ export default async function PreviewHomePage({ params }: PageProps) {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "LodgingBusiness",
-    name: site.name,
+    name: siteConfig.name,
     alternateName: content.meta.name,
     description: content.hero.subtitle,
     image: [`${baseUrl}${heroImageSrc}`],
     url: `${baseUrl}/${locale}`,
-      address: {
-        "@type": "PostalAddress",
-        addressLocality: "Trysil",
-        addressCountry: "NO",
-        streetAddress: "Fageråsen 701",
-      },
-      geo: {
-        "@type": "GeoCoordinates",
-        latitude: 61.332251,
-        longitude: 12.165275,
-      },
     amenityFeature: amenityFeature.map((amenity) => ({
       "@type": "LocationFeatureSpecification",
       name: amenity,
       value: true,
     })),
-    numberOfRooms: site.bedrooms,
+    numberOfRooms: siteConfig.bedrooms,
     occupancy: {
       "@type": "QuantitativeValue",
-      value: site.capacity,
+      value: siteConfig.capacity,
       unitText: "guests",
     },
     sameAs: bookingUrl ? [bookingUrl] : undefined,
@@ -139,6 +142,7 @@ export default async function PreviewHomePage({ params }: PageProps) {
         locationShort={content.meta.locationShort}
         imageSrc={heroImageSrc}
         imageAlt={heroImageAlt}
+        heroImages={heroImages}
         primaryCtaHref={bookingCtaHref}
         secondaryCtaHref="#gallery"
       />
@@ -159,8 +163,8 @@ export default async function PreviewHomePage({ params }: PageProps) {
             locationShort={content.meta.locationShort}
             distances={locationHighlights}
             mapQuery={content.location.mapQuery}
-            mapEmbedUrl={site.mapEmbedUrl}
-            mapLinkUrl={site.mapLinkUrl}
+            mapEmbedUrl={siteConfig.mapEmbedUrl}
+            mapLinkUrl={siteConfig.mapLinkUrl}
             ctaLabel={t.misc.openMap}
           />
           <section className="space-y-6">
@@ -177,7 +181,7 @@ export default async function PreviewHomePage({ params }: PageProps) {
           </section>
         </div>
       </Container>
-      <ContactFormSection locale={locale} />
+      <ContactFormSection content={contactForm} />
     </div>
   );
 }

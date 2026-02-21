@@ -1,16 +1,11 @@
 import 'package:flutter/material.dart';
-
-import 'package:hosthub_console/shared/resources/resources.dart';
+import '../resources/custom_images.dart';
 
 /// Displays the favicon / logo of a booking channel based on the source string.
 ///
 /// Falls back to a coloured circle with the first letter when no logo matches.
 class BookingSourceIcon extends StatelessWidget {
-  const BookingSourceIcon({
-    super.key,
-    required this.source,
-    this.size = 18,
-  });
+  const BookingSourceIcon({super.key, required this.source, this.size = 18});
 
   final String? source;
   final double size;
@@ -35,10 +30,7 @@ class BookingSourceIcon extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: info.color,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: info.color, shape: BoxShape.circle),
       alignment: Alignment.center,
       child: Text(
         info.label,
@@ -74,7 +66,7 @@ class BookingSourceIcon extends StatelessWidget {
     final s = source?.toLowerCase().trim() ?? '';
     if (s.contains('airbnb')) {
       return _SourceInfo(
-        image: OrganizeImage.airbnbIcon,
+        image: CustomImage.airbnbIcon,
         color: const Color(0xFFFF5A5F),
         label: 'A',
         name: 'Airbnb',
@@ -82,7 +74,7 @@ class BookingSourceIcon extends StatelessWidget {
     }
     if (s.contains('booking')) {
       return _SourceInfo(
-        image: OrganizeImage.bookingIcon,
+        image: CustomImage.bookingIcon,
         color: const Color(0xFF003580),
         label: 'B',
         name: 'Booking.com',
@@ -90,7 +82,7 @@ class BookingSourceIcon extends StatelessWidget {
     }
     if (s.contains('vrbo') || s.contains('homeaway')) {
       return _SourceInfo(
-        image: OrganizeImage.vrboIcon,
+        image: CustomImage.vrboIcon,
         color: const Color(0xFF3B5998),
         label: 'V',
         name: 'VRBO',
@@ -98,7 +90,7 @@ class BookingSourceIcon extends StatelessWidget {
     }
     if (s.contains('expedia')) {
       return _SourceInfo(
-        image: OrganizeImage.expediaIcon,
+        image: CustomImage.expediaIcon,
         color: const Color(0xFFFFCC00),
         label: 'E',
         name: 'Expedia',
@@ -110,7 +102,7 @@ class BookingSourceIcon extends StatelessWidget {
         s.contains('website') ||
         s.contains('lodgify')) {
       return _SourceInfo(
-        image: OrganizeImage.lodgifyIcon,
+        image: CustomImage.lodgifyIcon,
         color: const Color(0xFF099773),
         label: 'W',
         name: 'Website',

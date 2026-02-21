@@ -8,6 +8,8 @@ import '../data/property_repository.dart';
 enum PropertyContextStatus { initial, loading, loaded, error }
 
 class PropertyContextState extends Equatable {
+  static const _currentPropertyUnchanged = Object();
+
   const PropertyContextState({
     required this.status,
     required this.properties,
@@ -29,24 +31,31 @@ class PropertyContextState extends Equatable {
   PropertyContextState copyWith({
     PropertyContextStatus? status,
     List<PropertySummary>? properties,
-    PropertySummary? currentProperty,
+    Object? currentProperty = _currentPropertyUnchanged,
     DomainError? error,
   }) {
     return PropertyContextState(
       status: status ?? this.status,
       properties: properties ?? this.properties,
-      currentProperty: currentProperty ?? this.currentProperty,
+      currentProperty: identical(currentProperty, _currentPropertyUnchanged)
+          ? this.currentProperty
+          : currentProperty as PropertySummary?,
       error: error,
     );
   }
 
   @override
-  List<Object?> get props => [
-    status,
-    properties,
-    currentProperty,
-    error,
-  ];
+  List<Object?> get props => [status, properties, currentProperty, error];
+
+  @override
+  String toString() {
+    final current = currentProperty;
+    return 'PropertyContextState('
+        'status=$status, '
+        'properties=${properties.length}, '
+        'current=${current == null ? '-' : '${current.name}(${current.id})'}, '
+        'hasError=${error != null})';
+  }
 }
 
 class PropertyContextCubit extends Cubit<PropertyContextState> {
@@ -60,9 +69,7 @@ class PropertyContextCubit extends Cubit<PropertyContextState> {
 
   Future<void> loadProperties() async {
     if (state.status == PropertyContextStatus.loading) return;
-    emit(
-      state.copyWith(status: PropertyContextStatus.loading, error: null),
-    );
+    emit(state.copyWith(status: PropertyContextStatus.loading, error: null));
 
     try {
       final properties = await _repository.fetchProperties();
@@ -70,11 +77,11 @@ class PropertyContextCubit extends Cubit<PropertyContextState> {
       if (properties.isEmpty) {
         current = null;
       } else if (current != null) {
-        current = properties.firstWhere(
+        final index = properties.indexWhere(
           (property) => property.id == current!.id,
-          orElse: () => current!,
         );
-      } else if (current == null) {
+        current = index >= 0 ? properties[index] : properties.first;
+      } else {
         current = properties.first;
       }
 

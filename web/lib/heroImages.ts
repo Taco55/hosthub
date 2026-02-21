@@ -1,6 +1,6 @@
 import "server-only";
 
-import { site } from "@/lib/content";
+import type { SiteConfig } from "@/lib/content";
 import {
   buildResponsiveImage,
   heroImageSizes,
@@ -8,9 +8,8 @@ import {
   type ResponsiveImage,
 } from "@/lib/responsive-images";
 
-const heroImages = site.heroImages ?? [];
-
-export function getHeroImages(): ResponsiveImage[] {
+export function getHeroImages(siteConfig: SiteConfig): ResponsiveImage[] {
+  const heroImages = siteConfig.heroImages ?? [];
   return heroImages.map((image) =>
     buildResponsiveImage(image, {
       widths: heroImageWidths,

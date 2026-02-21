@@ -142,6 +142,37 @@ class CmsState extends Equatable {
     versions,
     versionHistoryDocId,
   ];
+
+  @override
+  String toString() {
+    final byType = <String, int>{};
+    for (final document in documents) {
+      byType.update(
+        document.contentType,
+        (value) => value + 1,
+        ifAbsent: () => 1,
+      );
+    }
+    final docsByType = byType.entries
+        .map((entry) => '${entry.key}:${entry.value}')
+        .join(', ');
+    final siteName = site?.name ?? '-';
+    final siteId = site?.id ?? '-';
+
+    return 'CmsState('
+        'status=$status, '
+        'site=$siteName($siteId), '
+        'primaryDomain=${primaryDomain ?? '-'}, '
+        'documents=${documents.length}'
+        '${docsByType.isNotEmpty ? ', docsByType={$docsByType}' : ''}, '
+        'selectedLocale=${selectedLocale ?? '-'}, '
+        'dirty=${dirtyContent.length}, '
+        'saving=${savingDocuments.length}, '
+        'publishing=${publishingDocuments.length}, '
+        'versions=${versions?.length ?? 0}, '
+        'versionHistoryDocId=${versionHistoryDocId ?? '-'}, '
+        'hasError=${error != null})';
+  }
 }
 
 class CmsCubit extends Cubit<CmsState> {
@@ -157,7 +188,18 @@ class CmsCubit extends Cubit<CmsState> {
 
   Future<void> loadSiteContent({required String siteId}) async {
     if (state.status == CmsStatus.loading) return;
-    emit(state.copyWith(status: CmsStatus.loading, error: null));
+    final siteChanged = state.site?.id != siteId;
+    emit(
+      state.copyWith(
+        status: CmsStatus.loading,
+        error: null,
+        documents: siteChanged ? const [] : null,
+        dirtyContent: siteChanged ? const {} : null,
+        savingDocuments: siteChanged ? const <String>{} : null,
+        publishingDocuments: siteChanged ? const <String>{} : null,
+        clearVersions: siteChanged,
+      ),
+    );
     try {
       final results = await Future.wait([
         _cmsRepository.fetchSite(siteId),
@@ -175,6 +217,10 @@ class CmsCubit extends Cubit<CmsState> {
           documents: documents,
           primaryDomain: domain,
           selectedLocale: site?.defaultLocale ?? 'en',
+          dirtyContent: const {},
+          savingDocuments: const <String>{},
+          publishingDocuments: const <String>{},
+          clearVersions: true,
         ),
       );
     } catch (error, stack) {

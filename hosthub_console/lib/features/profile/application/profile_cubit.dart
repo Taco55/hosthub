@@ -40,6 +40,14 @@ class ProfileState extends Equatable {
 
   @override
   List<Object?> get props => [status, profile, error];
+
+  @override
+  String toString() {
+    return 'ProfileState('
+        'status=$status, '
+        'profile=${profile ?? '-'}, '
+        'hasError=${error != null})';
+  }
 }
 
 class ProfileCubit extends Cubit<ProfileState> {

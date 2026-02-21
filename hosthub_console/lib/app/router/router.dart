@@ -10,6 +10,7 @@ import 'package:hosthub_console/features/auth/auth.dart';
 import 'package:hosthub_console/features/auth/presentation/auth_gate.dart';
 import 'package:hosthub_console/features/auth/presentation/pages/password_reset_redirect_page.dart';
 import 'package:hosthub_console/features/calendar/calendar.dart';
+import 'package:hosthub_console/features/cms/cms.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/revenue/revenue.dart';
 import 'package:hosthub_console/features/server_settings/data/admin_settings_repository.dart';
@@ -20,10 +21,10 @@ import 'package:hosthub_console/shared/domain/channel_manager/channel_manager_re
 
 GoRouter createRouter({required Listenable refreshListenable}) {
   return GoRouter(
-    initialLocation: '/sites',
+    initialLocation: '/calendar',
     refreshListenable: refreshListenable,
     routes: [
-      GoRoute(path: '/', redirect: (context, state) => '/sites'),
+      GoRoute(path: '/', redirect: (context, state) => '/calendar'),
       GoRoute(
         path: '/reset',
         builder: (context, state) {
@@ -46,6 +47,10 @@ GoRouter createRouter({required Listenable refreshListenable}) {
                   channelManagerRepository: context
                       .read<ChannelManagerRepository>(),
                 ),
+              ),
+              BlocProvider<CmsCubit>(
+                create: (context) =>
+                    CmsCubit(cmsRepository: context.read<CmsRepository>()),
               ),
             ],
             child: AuthGate(

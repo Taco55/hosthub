@@ -7,6 +7,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { IconBadge } from "@/components/ui/IconBadge";
 import { getAreaContent } from "@/lib/content-provider";
 import { getDictionary, isLocale } from "@/lib/i18n";
+import {
+  resolveRuntimeSiteContext,
+  toSiteContentOptions,
+} from "@/lib/runtime-site-context";
 
 type PageProps = {
   params: Promise<{ locale: string }>;
@@ -18,8 +22,12 @@ export default async function PreviewAreaPage({ params }: PageProps) {
     notFound();
   }
 
+  const runtimeSite = await resolveRuntimeSiteContext();
   const t = getDictionary(locale);
-  const area = await getAreaContent(locale, { preview: true });
+  const area = await getAreaContent(
+    locale,
+    toSiteContentOptions(runtimeSite, true),
+  );
 
   const icons = [Snowflake, Sun];
 

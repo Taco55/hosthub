@@ -61,7 +61,7 @@ export function BookingWidget({ locale, checkoutUrl, currency, className }: Book
   const checkoutHref =
     checkoutUrl ??
     process.env.NEXT_PUBLIC_LODGIFY_CHECKOUT_URL ??
-    "https://checkout.lodgify.com/fagerasen701/706211/reservation?currency=NOK&adults=1";
+    "";
   const currencyFallback =
     currency ?? process.env.NEXT_PUBLIC_LODGIFY_CURRENCY ?? "NOK";
 

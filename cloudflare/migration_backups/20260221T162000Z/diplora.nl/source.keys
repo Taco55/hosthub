@@ -1,0 +1,14 @@
+AAAA|stg-docs.diplora.nl|100::|null
+A|*.diplora.nl|35.172.94.1|null
+A|diplora.nl|35.172.94.1|null
+CNAME|_dmarc.diplora.nl|dmarc-none.mijndomein.nl|null
+CNAME|dashboard.diplora.nl|dashboard-production-bjb.pages.dev|null
+CNAME|staging.dashboard.diplora.nl|dashboard-staging-6xw.pages.dev|null
+CNAME|www.diplora.nl|mijndomein.partnerwebsitedns.com|null
+MX|diplora.nl|mx1.mijndomein.nl|5
+MX|diplora.nl|mx2.mijndomein.nl|6
+MX|send.diplora.nl|feedback-smtp.eu-west-1.amazonses.com|10
+TXT|diplora.nl|"google-site-verification=UqhohEH-XQwlfIsRsXhj1ar4SYvT_dQ-7MC5kR-Eb1g"|null
+TXT|diplora.nl|"v=spf1 a mx include:spf.mijndomeinhosting.nl ~all"|null
+TXT|resend._domainkey.diplora.nl|"p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCfm776xZsjVAfiI7orxtx+qemOeLDDAnSw2dkafSB9fvn/ILmUeIXYIWrm87tpeuG3g/tyz8YYA5GiZ8cMqnKaLwH3Gva8ZnAx8+JvQHXVz3OxW+DVOttNhRlEHvywPI7qeHfdHQVbFOd4D8iWD6VuwFMz0jEXmoiSKi9mfRhqwIDAQAB"|null
+TXT|send.diplora.nl|"v=spf1 include:amazonses.com ~all"|null

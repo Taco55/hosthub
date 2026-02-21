@@ -10,8 +10,12 @@ import { Policies } from "@/components/site/Policies";
 import { LayoutFacilitiesCard } from "@/components/sections/LayoutFacilitiesCard";
 import { IconBadge } from "@/components/ui/IconBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { localizedContent } from "@/lib/content";
+import { getPracticalContent } from "@/lib/content-provider";
 import { isLocale } from "@/lib/i18n";
+import {
+  resolveRuntimeSiteContext,
+  toSiteContentOptions,
+} from "@/lib/runtime-site-context";
 
 type PageProps = {
   params: Promise<{ locale: string }>;
@@ -23,7 +27,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return {};
   }
 
-  const practical = localizedContent[locale].practical;
+  const runtimeSite = await resolveRuntimeSiteContext();
+  const practical = await getPracticalContent(
+    locale,
+    toSiteContentOptions(runtimeSite),
+  );
   return {
     title: practical.header.title,
     description: practical.header.subtitle,
@@ -36,7 +44,11 @@ export default async function PracticalPage({ params }: PageProps) {
     notFound();
   }
 
-  const practical = localizedContent[locale].practical;
+  const runtimeSite = await resolveRuntimeSiteContext();
+  const practical = await getPracticalContent(
+    locale,
+    toSiteContentOptions(runtimeSite),
+  );
   const arrivalAccess = practical.arrivalAccess;
   const parkingCharging = practical.parkingCharging;
 

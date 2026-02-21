@@ -26,10 +26,7 @@ class ContentSectionRenderer extends StatelessWidget {
   Widget build(BuildContext context) {
     switch (document.contentType) {
       case 'site_config':
-        return _SiteConfigEditor(
-          content: content,
-          onChanged: onContentChanged,
-        );
+        return _SiteConfigEditor(content: content, onChanged: onContentChanged);
       case 'cabin':
         return _CabinContentEditor(
           content: content,
@@ -79,9 +76,9 @@ Widget _subsection(BuildContext context, String title) {
     padding: const EdgeInsets.only(top: 12, bottom: 6),
     child: Text(
       title,
-      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-        fontWeight: FontWeight.w600,
-      ),
+      style: Theme.of(
+        context,
+      ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
     ),
   );
 }
@@ -116,7 +113,8 @@ Widget _editableField(
       label: label,
       controller: controller,
       maxLines: maxLines,
-      keyboardType: keyboardType ?? (maxLines > 1 ? TextInputType.multiline : null),
+      keyboardType:
+          keyboardType ?? (maxLines > 1 ? TextInputType.multiline : null),
     ),
   );
 }
@@ -350,12 +348,11 @@ class _TitledGroupArrayEditorState extends State<_TitledGroupArrayEditor> {
 
   List<Map<String, dynamic>> _serialize() {
     return _rows.map((r) {
-      final lines =
-          r.items.text.split('\n').where((l) => l.isNotEmpty).toList();
-      return <String, dynamic>{
-        'title': r.title.text,
-        widget.itemsKey: lines,
-      };
+      final lines = r.items.text
+          .split('\n')
+          .where((l) => l.isNotEmpty)
+          .toList();
+      return <String, dynamic>{'title': r.title.text, widget.itemsKey: lines};
     }).toList();
   }
 
@@ -436,6 +433,198 @@ class _TitledGroupArrayEditorState extends State<_TitledGroupArrayEditor> {
 }
 
 // ---------------------------------------------------------------------------
+// Reorderable String List Editor
+// ---------------------------------------------------------------------------
+
+class _ReorderableStringListEditor extends StatefulWidget {
+  const _ReorderableStringListEditor({
+    required this.items,
+    required this.itemLabel,
+    required this.addButtonLabel,
+    required this.onChanged,
+    this.placeholder,
+    this.helperText,
+  });
+
+  final List<String> items;
+  final String itemLabel;
+  final String addButtonLabel;
+  final String? placeholder;
+  final String? helperText;
+  final ValueChanged<List<String>> onChanged;
+
+  @override
+  State<_ReorderableStringListEditor> createState() =>
+      _ReorderableStringListEditorState();
+}
+
+class _ReorderableStringListEditorState
+    extends State<_ReorderableStringListEditor> {
+  late List<TextEditingController> _rows;
+
+  @override
+  void initState() {
+    super.initState();
+    _rows = _buildRows(widget.items);
+  }
+
+  @override
+  void didUpdateWidget(covariant _ReorderableStringListEditor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!_sameItems(oldWidget.items, widget.items)) {
+      _disposeAll();
+      _rows = _buildRows(widget.items);
+      setState(() {});
+    }
+  }
+
+  bool _sameItems(List<String> left, List<String> right) {
+    if (identical(left, right)) return true;
+    if (left.length != right.length) return false;
+    for (var i = 0; i < left.length; i++) {
+      if (left[i] != right[i]) return false;
+    }
+    return true;
+  }
+
+  List<TextEditingController> _buildRows(List<String> items) {
+    return items.map((item) {
+      final c = TextEditingController(text: item);
+      c.addListener(_onRowsChanged);
+      return c;
+    }).toList();
+  }
+
+  void _onRowsChanged() {
+    if (!mounted) return;
+    widget.onChanged(_serialize());
+  }
+
+  List<String> _serialize() => _rows.map((c) => c.text).toList();
+
+  void _addRow() {
+    final c = TextEditingController();
+    c.addListener(_onRowsChanged);
+    setState(() {
+      _rows.add(c);
+    });
+    widget.onChanged(_serialize());
+  }
+
+  void _removeRow(int index) {
+    final c = _rows.removeAt(index);
+    c.dispose();
+    setState(() {});
+    widget.onChanged(_serialize());
+  }
+
+  void _reorder(int oldIndex, int newIndex) {
+    if (newIndex > oldIndex) newIndex -= 1;
+    final item = _rows.removeAt(oldIndex);
+    _rows.insert(newIndex, item);
+    setState(() {});
+    widget.onChanged(_serialize());
+  }
+
+  void _disposeAll() {
+    for (final c in _rows) {
+      c.dispose();
+    }
+  }
+
+  @override
+  void dispose() {
+    _disposeAll();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (widget.helperText != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                widget.helperText!,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          if (_rows.isNotEmpty)
+            ReorderableListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              buildDefaultDragHandles: false,
+              itemCount: _rows.length,
+              onReorder: _reorder,
+              itemBuilder: (context, index) {
+                final controller = _rows[index];
+                return Container(
+                  key: ObjectKey(controller),
+                  margin: const EdgeInsets.only(bottom: 6),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: StyledFormField(
+                          label: '${widget.itemLabel} ${index + 1}',
+                          placeholder: widget.placeholder,
+                          controller: controller,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 5),
+                        child: Column(
+                          children: [
+                            ReorderableDragStartListener(
+                              index: index,
+                              child: const Icon(Icons.drag_indicator),
+                            ),
+                            const SizedBox(height: 6),
+                            StyledIconButton(
+                              iconData: Icons.remove_circle_outline,
+                              onPressed: () => _removeRow(index),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          if (_rows.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Text(
+                'No items yet.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          StyledButton(
+            title: widget.addButtonLabel,
+            onPressed: _addRow,
+            leftIconData: Icons.add,
+            showLeftIcon: true,
+            minHeight: 38,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Site Config Editor
 // ---------------------------------------------------------------------------
 
@@ -454,8 +643,16 @@ class _SiteConfigEditorState extends State<_SiteConfigEditor> {
   late TextEditingController _capacity;
   late TextEditingController _bedrooms;
   late TextEditingController _bathrooms;
+  late TextEditingController _bookingUrl;
+  late TextEditingController _imageBase;
+  late TextEditingController _imageHero;
+  late TextEditingController _imageGalleryAll;
+  late TextEditingController _imageHighlights;
   late TextEditingController _mapEmbedUrl;
   late TextEditingController _mapLinkUrl;
+  late List<String> _heroImages;
+  late List<String> _galleryAllFilenames;
+  late List<Map<String, dynamic>> _galleryPreviewItems;
 
   @override
   void initState() {
@@ -474,11 +671,30 @@ class _SiteConfigEditorState extends State<_SiteConfigEditor> {
   }
 
   void _init(Map<String, dynamic> c) {
+    final imagePaths = _map(c['imagePaths']);
     _name = _ctrl(c['name'], _onChanged);
     _location = _ctrl(c['location'], _onChanged);
     _capacity = _ctrl(c['capacity'], _onChanged);
     _bedrooms = _ctrl(c['bedrooms'], _onChanged);
     _bathrooms = _ctrl(c['bathrooms'], _onChanged);
+    _bookingUrl = _ctrl(c['bookingUrl'], _onChanged);
+    _imageBase = _ctrl(imagePaths['base'], _onChanged);
+    _imageHero = _ctrl(imagePaths['hero'], _onChanged);
+    _imageGalleryAll = _ctrl(imagePaths['galleryAll'], _onChanged);
+    _imageHighlights = _ctrl(imagePaths['highlights'], _onChanged);
+    _heroImages = List<String>.from(_strList(c['heroImages']));
+    _galleryAllFilenames = List<String>.from(
+      _strList(c['galleryAllFilenames']),
+    );
+    _galleryPreviewItems = _mapList(c['gallery']).map((item) {
+      final alt = _map(item['alt']);
+      return <String, dynamic>{
+        'src': _str(item['src']),
+        'alt_nl': _str(alt['nl']),
+        'alt_en': _str(alt['en']),
+        'alt_no': _str(alt['no']),
+      };
+    }).toList();
     _mapEmbedUrl = _ctrl(c['mapEmbedUrl'], _onChanged);
     _mapLinkUrl = _ctrl(c['mapLinkUrl'], _onChanged);
   }
@@ -488,16 +704,70 @@ class _SiteConfigEditorState extends State<_SiteConfigEditor> {
     widget.onChanged(_serialize());
   }
 
+  void _onHeroImagesChanged(List<String> value) {
+    setState(() {
+      _heroImages = value;
+    });
+    widget.onChanged(_serialize());
+  }
+
+  void _onGalleryAllFilenamesChanged(List<String> value) {
+    setState(() {
+      _galleryAllFilenames = value;
+    });
+    widget.onChanged(_serialize());
+  }
+
+  void _onGalleryPreviewChanged(List<Map<String, dynamic>> value) {
+    setState(() {
+      _galleryPreviewItems = value;
+    });
+    widget.onChanged(_serialize());
+  }
+
   Map<String, dynamic> _serialize() {
-    return {
+    final next = Map<String, dynamic>.from(widget.content);
+    final imagePaths = _map(next['imagePaths']);
+    imagePaths['base'] = _imageBase.text;
+    imagePaths['hero'] = _imageHero.text;
+    imagePaths['galleryAll'] = _imageGalleryAll.text;
+    imagePaths['highlights'] = _imageHighlights.text;
+
+    next.addAll({
       'name': _name.text,
       'location': _location.text,
       'capacity': int.tryParse(_capacity.text) ?? _capacity.text,
       'bedrooms': int.tryParse(_bedrooms.text) ?? _bedrooms.text,
       'bathrooms': int.tryParse(_bathrooms.text) ?? _bathrooms.text,
+      'bookingUrl': _bookingUrl.text,
+      'imagePaths': imagePaths,
+      'heroImages': _heroImages
+          .map((item) => item.trim())
+          .where((item) => item.isNotEmpty)
+          .toList(),
+      'galleryAllFilenames': _galleryAllFilenames
+          .map((item) => item.trim())
+          .where((item) => item.isNotEmpty)
+          .toList(),
+      'gallery': _galleryPreviewItems
+          .map((item) {
+            final src = _str(item['src']).trim();
+            if (src.isEmpty) return null;
+            return <String, dynamic>{
+              'src': src,
+              'alt': {
+                'nl': _str(item['alt_nl']).trim(),
+                'en': _str(item['alt_en']).trim(),
+                'no': _str(item['alt_no']).trim(),
+              },
+            };
+          })
+          .whereType<Map<String, dynamic>>()
+          .toList(),
       'mapEmbedUrl': _mapEmbedUrl.text,
       'mapLinkUrl': _mapLinkUrl.text,
-    };
+    });
+    return next;
   }
 
   void _disposeAll() {
@@ -506,6 +776,11 @@ class _SiteConfigEditorState extends State<_SiteConfigEditor> {
     _capacity.dispose();
     _bedrooms.dispose();
     _bathrooms.dispose();
+    _bookingUrl.dispose();
+    _imageBase.dispose();
+    _imageHero.dispose();
+    _imageGalleryAll.dispose();
+    _imageHighlights.dispose();
     _mapEmbedUrl.dispose();
     _mapLinkUrl.dispose();
   }
@@ -523,12 +798,66 @@ class _SiteConfigEditorState extends State<_SiteConfigEditor> {
       children: [
         _editableField('Name', _name),
         _editableField('Location', _location),
-        _editableField('Capacity', _capacity,
-            keyboardType: TextInputType.number),
-        _editableField('Bedrooms', _bedrooms,
-            keyboardType: TextInputType.number),
-        _editableField('Bathrooms', _bathrooms,
-            keyboardType: TextInputType.number),
+        _editableField(
+          'Capacity',
+          _capacity,
+          keyboardType: TextInputType.number,
+        ),
+        _editableField(
+          'Bedrooms',
+          _bedrooms,
+          keyboardType: TextInputType.number,
+        ),
+        _editableField(
+          'Bathrooms',
+          _bathrooms,
+          keyboardType: TextInputType.number,
+        ),
+        _editableField('Booking URL', _bookingUrl),
+        _subsection(context, 'Image Paths'),
+        _editableField('Base Path', _imageBase),
+        _editableField('Hero Path', _imageHero),
+        _editableField('Gallery Path', _imageGalleryAll),
+        _editableField('Highlights Path', _imageHighlights),
+        _subsection(context, 'Hero Images'),
+        _ReorderableStringListEditor(
+          items: _heroImages,
+          itemLabel: 'Hero image',
+          addButtonLabel: 'Add hero image',
+          placeholder: '/images/hero/photo.jpeg',
+          helperText: 'Use full image paths. Reorder via drag handle.',
+          onChanged: _onHeroImagesChanged,
+        ),
+        _subsection(context, 'Gallery Images'),
+        _ReorderableStringListEditor(
+          items: _galleryAllFilenames,
+          itemLabel: 'Gallery filename',
+          addButtonLabel: 'Add gallery image',
+          placeholder: 'photo-001.jpeg',
+          helperText: 'Use filenames only; path comes from Gallery Path.',
+          onChanged: _onGalleryAllFilenamesChanged,
+        ),
+        _subsection(context, 'Homepage Gallery Preview'),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Text(
+            'Optional curated set used for homepage preview. '
+            'Leave empty to auto-use the first gallery images.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+        _ObjectArrayEditor(
+          items: _galleryPreviewItems,
+          fieldDefs: const [
+            (key: 'src', label: 'Image src', maxLines: 1),
+            (key: 'alt_nl', label: 'Alt (nl)', maxLines: 1),
+            (key: 'alt_en', label: 'Alt (en)', maxLines: 1),
+            (key: 'alt_no', label: 'Alt (no)', maxLines: 1),
+          ],
+          onChanged: _onGalleryPreviewChanged,
+        ),
         _editableField('Map Embed URL', _mapEmbedUrl),
         _editableField('Map Link URL', _mapLinkUrl),
       ],
@@ -571,9 +900,7 @@ class _PrivacyPageEditorState extends State<_PrivacyPageEditor> {
 
   void _init(Map<String, dynamic> c) {
     _intro = _ctrl(c['intro'], _onChanged);
-    _bullets = TextEditingController(
-      text: _strList(c['bullets']).join('\n'),
-    );
+    _bullets = TextEditingController(text: _strList(c['bullets']).join('\n'));
     _bullets.addListener(_onChanged);
   }
 
@@ -667,8 +994,10 @@ class _ContactFormEditorState extends State<_ContactFormEditor> {
     _periodLabel = _ctrl(_map(form['period'])['label'], _onChanged);
     _periodPlaceholder = _ctrl(_map(form['period'])['placeholder'], _onChanged);
     _messageLabel = _ctrl(_map(form['message'])['label'], _onChanged);
-    _messagePlaceholder =
-        _ctrl(_map(form['message'])['placeholder'], _onChanged);
+    _messagePlaceholder = _ctrl(
+      _map(form['message'])['placeholder'],
+      _onChanged,
+    );
     _submit = _ctrl(form['submit'], _onChanged);
     _success = _ctrl(form['success'], _onChanged);
     _error = _ctrl(form['error'], _onChanged);
@@ -684,7 +1013,10 @@ class _ContactFormEditorState extends State<_ContactFormEditor> {
       'title': _title.text,
       'subtitle': _subtitle.text,
       'form': {
-        'name': {'label': _nameLabel.text, 'placeholder': _namePlaceholder.text},
+        'name': {
+          'label': _nameLabel.text,
+          'placeholder': _namePlaceholder.text,
+        },
         'email': {
           'label': _emailLabel.text,
           'placeholder': _emailPlaceholder.text,
@@ -866,8 +1198,10 @@ class _HomePageEditorState extends State<_HomePageEditor> {
       'tagline': _tagline.text,
       'keyFacts': _keyFacts,
       'highlights': _highlights,
-      'amenities':
-          _amenities.text.split('\n').where((l) => l.isNotEmpty).toList(),
+      'amenities': _amenities.text
+          .split('\n')
+          .where((l) => l.isNotEmpty)
+          .toList(),
       'reviews': _reviews,
       'faq': _faq,
       'location': {'description': _locationDesc.text},
@@ -1142,10 +1476,7 @@ class _CabinContentEditorState extends State<_CabinContentEditor> {
         'title': _layoutTitle.text,
         'items': _lines(_layoutItems),
       },
-      'location': {
-        'title': _locationTitle.text,
-        'distances': _distances,
-      },
+      'location': {'title': _locationTitle.text, 'distances': _distances},
       'accessAndTransport': {
         'title': _accessTitle.text,
         'car': _lines(_accessCar),
@@ -1154,10 +1485,7 @@ class _CabinContentEditorState extends State<_CabinContentEditor> {
         'parking': _lines(_accessParking),
         'notes': _lines(_accessNotes),
       },
-      'amenities': {
-        'title': _amenitiesTitle.text,
-        'groups': _amenityGroups,
-      },
+      'amenities': {'title': _amenitiesTitle.text, 'groups': _amenityGroups},
       'houseRules': {
         'title': _rulesTitle.text,
         'bullets': _lines(_rulesBullets),
@@ -1167,10 +1495,7 @@ class _CabinContentEditorState extends State<_CabinContentEditor> {
         'cleaningNote': _rulesCleaningNote.text,
         'wifiNote': _rulesWifiNote.text,
       },
-      'policies': {
-        'title': _policiesTitle.text,
-        'blocks': _policyBlocks,
-      },
+      'policies': {'title': _policiesTitle.text, 'blocks': _policyBlocks},
     };
   }
 
@@ -1245,7 +1570,10 @@ class _CabinContentEditorState extends State<_CabinContentEditor> {
         const SizedBox(height: 8),
 
         // Description
-        _subsection(context, 'Description (paragraphs separated by blank line)'),
+        _subsection(
+          context,
+          'Description (paragraphs separated by blank line)',
+        ),
         _editableField('Description', _description, maxLines: 8),
         const SizedBox(height: 8),
 
@@ -1280,9 +1608,11 @@ class _CabinContentEditorState extends State<_CabinContentEditor> {
         _label(context, 'Airports'),
         _editableField('Airports (one per line)', _accessAirports, maxLines: 4),
         _label(context, 'Public Transport'),
-        _editableField('Public transport (one per line)',
-            _accessPublicTransport,
-            maxLines: 4),
+        _editableField(
+          'Public transport (one per line)',
+          _accessPublicTransport,
+          maxLines: 4,
+        ),
         _label(context, 'Parking'),
         _editableField('Parking (one per line)', _accessParking, maxLines: 4),
         _label(context, 'Notes'),
@@ -1461,10 +1791,7 @@ class _PracticalPageEditorState extends State<_PracticalPageEditor> {
 
   Map<String, dynamic> _serialize() {
     return {
-      'header': {
-        'title': _headerTitle.text,
-        'subtitle': _headerSubtitle.text,
-      },
+      'header': {'title': _headerTitle.text, 'subtitle': _headerSubtitle.text},
       'quickFacts': _quickFacts,
       'arrivalAccess': {
         'title': _arrivalTitle.text,
@@ -1585,8 +1912,11 @@ class _PracticalPageEditorState extends State<_PracticalPageEditor> {
 
         _subsection(context, 'Good to Know'),
         _editableField('Section title', _goodToKnowTitle),
-        _editableField('Bullets (one per line)', _goodToKnowBullets,
-            maxLines: 6),
+        _editableField(
+          'Bullets (one per line)',
+          _goodToKnowBullets,
+          maxLines: 6,
+        ),
 
         _subsection(context, 'Contact & Help'),
         _editableField('Section title', _contactTitle),
@@ -1652,10 +1982,7 @@ class _AreaPageEditorState extends State<_AreaPageEditor> {
   }
 
   Map<String, dynamic> _serialize() {
-    return {
-      'intro': _intro.text,
-      'sections': _sections,
-    };
+    return {'intro': _intro.text, 'sections': _sections};
   }
 
   void _disposeAll() {
@@ -1689,10 +2016,7 @@ class _AreaPageEditorState extends State<_AreaPageEditor> {
 
 /// Area sections have title + description + bullets, which needs a custom editor.
 class _AreaSectionsEditor extends StatefulWidget {
-  const _AreaSectionsEditor({
-    required this.sections,
-    required this.onChanged,
-  });
+  const _AreaSectionsEditor({required this.sections, required this.onChanged});
 
   final List<Map<String, dynamic>> sections;
   final ValueChanged<List<Map<String, dynamic>>> onChanged;
@@ -1703,11 +2027,13 @@ class _AreaSectionsEditor extends StatefulWidget {
 
 class _AreaSectionsEditorState extends State<_AreaSectionsEditor> {
   late List<
-      ({
-        TextEditingController title,
-        TextEditingController description,
-        TextEditingController bullets,
-      })> _rows;
+    ({
+      TextEditingController title,
+      TextEditingController description,
+      TextEditingController bullets,
+    })
+  >
+  _rows;
 
   @override
   void initState() {
@@ -1726,11 +2052,13 @@ class _AreaSectionsEditorState extends State<_AreaSectionsEditor> {
   }
 
   List<
-      ({
-        TextEditingController title,
-        TextEditingController description,
-        TextEditingController bullets,
-      })> _buildRows(List<Map<String, dynamic>> sections) {
+    ({
+      TextEditingController title,
+      TextEditingController description,
+      TextEditingController bullets,
+    })
+  >
+  _buildRows(List<Map<String, dynamic>> sections) {
     return sections.map((s) {
       final title = TextEditingController(text: _str(s['title']));
       final description = TextEditingController(text: _str(s['description']));
@@ -1754,8 +2082,10 @@ class _AreaSectionsEditorState extends State<_AreaSectionsEditor> {
       return <String, dynamic>{
         'title': r.title.text,
         'description': r.description.text,
-        'bullets':
-            r.bullets.text.split('\n').where((l) => l.isNotEmpty).toList(),
+        'bullets': r.bullets.text
+            .split('\n')
+            .where((l) => l.isNotEmpty)
+            .toList(),
       };
     }).toList();
   }
@@ -1811,11 +2141,16 @@ class _AreaSectionsEditorState extends State<_AreaSectionsEditor> {
                   child: Column(
                     children: [
                       _editableField('Title', _rows[i].title),
-                      _editableField('Description', _rows[i].description,
-                          maxLines: 3),
                       _editableField(
-                          'Bullets (one per line)', _rows[i].bullets,
-                          maxLines: 4),
+                        'Description',
+                        _rows[i].description,
+                        maxLines: 3,
+                      ),
+                      _editableField(
+                        'Bullets (one per line)',
+                        _rows[i].bullets,
+                        maxLines: 4,
+                      ),
                     ],
                   ),
                 ),

@@ -11,6 +11,10 @@ import { IconBadge } from "@/components/ui/IconBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getPracticalContent } from "@/lib/content-provider";
 import { isLocale } from "@/lib/i18n";
+import {
+  resolveRuntimeSiteContext,
+  toSiteContentOptions,
+} from "@/lib/runtime-site-context";
 
 type PageProps = {
   params: Promise<{ locale: string }>;
@@ -22,7 +26,11 @@ export default async function PreviewPracticalPage({ params }: PageProps) {
     notFound();
   }
 
-  const practical = await getPracticalContent(locale, { preview: true });
+  const runtimeSite = await resolveRuntimeSiteContext();
+  const practical = await getPracticalContent(
+    locale,
+    toSiteContentOptions(runtimeSite, true),
+  );
   const arrivalAccess = practical.arrivalAccess;
   const parkingCharging = practical.parkingCharging;
 

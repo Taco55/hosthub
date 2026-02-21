@@ -1,0 +1,82 @@
+{
+  "result": [
+    {
+      "id": "d9d179d60a0f69fcf4f8f3cc0f4e037a",
+      "name": "diplora.nl",
+      "status": "active",
+      "paused": false,
+      "type": "full",
+      "development_mode": -14849117,
+      "name_servers": [
+        "carioca.ns.cloudflare.com",
+        "jason.ns.cloudflare.com"
+      ],
+      "original_name_servers": [
+        "nsn2.mijndomein.nl",
+        "nsn1.mijndomein.nl"
+      ],
+      "original_registrar": "metaregistrar b.v. (id: )",
+      "original_dnshost": null,
+      "modified_on": "2025-09-02T05:55:03.857031Z",
+      "created_on": "2025-09-01T18:57:47.382431Z",
+      "activated_on": "2025-09-02T05:55:03.857031Z",
+      "vanity_name_servers": [],
+      "vanity_name_servers_ips": null,
+      "meta": {
+        "step": 2,
+        "custom_certificate_quota": 0,
+        "page_rule_quota": 3,
+        "phishing_detected": false
+      },
+      "owner": {
+        "id": null,
+        "type": "user",
+        "email": null
+      },
+      "account": {
+        "id": "f8f4a59bdd62273d0a6c2dced4876cf7",
+        "name": "Taco.kind@gmail.com's Account"
+      },
+      "tenant": {
+        "id": null,
+        "name": null
+      },
+      "tenant_unit": {
+        "id": null
+      },
+      "permissions": [
+        "#dns_records:read",
+        "#zone:read",
+        "#worker:edit",
+        "#worker:read",
+        "#zone_settings:read",
+        "#zone_settings:edit",
+        "#ssl:edit",
+        "#ssl:read",
+        "#dns_records:edit"
+      ],
+      "plan": {
+        "id": "0feeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "name": "Free Website",
+        "price": 0,
+        "currency": "USD",
+        "frequency": "",
+        "is_subscribed": false,
+        "can_subscribe": false,
+        "legacy_id": "free",
+        "legacy_discount": false,
+        "externally_managed": false
+      }
+    }
+  ],
+  "result_info": {
+    "page": 1,
+    "per_page": 20,
+    "total_pages": 1,
+    "count": 1,
+    "total_count": 1
+  },
+  "success": true,
+  "errors": [],
+  "messages": []
+}
