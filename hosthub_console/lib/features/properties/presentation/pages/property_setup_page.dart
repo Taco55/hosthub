@@ -41,9 +41,9 @@ class PropertySetupPage extends StatelessWidget {
               return;
             }
             if (shouldAdd) {
-              await context
-                  .read<UserSettingsCubit>()
-                  .addMissingProperties(missing);
+              await context.read<UserSettingsCubit>().addMissingProperties(
+                missing,
+              );
               if (!context.mounted) return;
               context.read<PropertyContextCubit>().loadProperties();
             } else {
@@ -55,13 +55,23 @@ class PropertySetupPage extends StatelessWidget {
         BlocListener<UserSettingsCubit, UserSettingsState>(
           listenWhen: (previous, current) =>
               previous.toast != current.toast && current.toast != null,
-          listener: (context, state) {
+          listener: (context, state) async {
             final toast = state.toast;
             if (toast == null) return;
+            final message = _toastMessage(context, toast.message);
+            if (toast.type == UserSettingsToastType.error) {
+              await showAppError(
+                context,
+                AppError.custom(title: context.s.error, alert: message),
+              );
+              if (!context.mounted) return;
+              context.read<UserSettingsCubit>().clearToast();
+              return;
+            }
             showStyledToast(
               context,
               type: _toastType(toast.type),
-              description: _toastMessage(context, toast.message),
+              description: message,
             );
             context.read<UserSettingsCubit>().clearToast();
           },
@@ -293,8 +303,7 @@ class _ManualCreateContentState extends State<_ManualCreateContent> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final canCreate =
-        _nameController.text.trim().isNotEmpty && !_isCreating;
+    final canCreate = _nameController.text.trim().isNotEmpty && !_isCreating;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -467,8 +476,7 @@ Future<bool> _showMissingPropertiesDialog(
                                               .s
                                               .lodgifyMissingPropertiesAddAction
                                         : context.s.lodgifySyncLabel,
-                                    style:
-                                        theme.textTheme.bodyMedium?.copyWith(
+                                    style: theme.textTheme.bodyMedium?.copyWith(
                                       color: styledTheme.buttons.labelColor,
                                       fontWeight: FontWeight.w500,
                                     ),

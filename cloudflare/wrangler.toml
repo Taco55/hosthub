@@ -13,6 +13,8 @@ routes = [
 [assets]
 directory = "../hosthub_console/build/web"
 binding = "ASSETS"
+not_found_handling = "none"
+run_worker_first = true
 
 [vars]
 # Use root path on admin subdomain.

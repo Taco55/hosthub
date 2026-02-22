@@ -7,6 +7,7 @@ import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaf
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/server_settings/application/server_settings_cubit.dart';
 import 'package:hosthub_console/features/server_settings/domain/admin_settings.dart';
+import 'package:hosthub_console/features/users/presentation/dialogs/create_user_dialog.dart';
 import 'package:hosthub_console/shared/widgets/widgets.dart';
 
 class ServerSettingsPage extends StatefulWidget {
@@ -170,6 +171,8 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
                           ],
                         ),
                         const SizedBox(height: 16),
+                        const _UsersAdminSection(),
+                        const SizedBox(height: 16),
                         const _ListingsAdminSection(),
                         const SizedBox(height: 16),
                         Align(
@@ -225,6 +228,68 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
       _maintenanceMode = defaults.maintenanceModeEnabled;
       _emailUserOnCreate = defaults.emailUserOnCreate;
     });
+  }
+}
+
+class _UsersAdminSection extends StatefulWidget {
+  const _UsersAdminSection();
+
+  @override
+  State<_UsersAdminSection> createState() => _UsersAdminSectionState();
+}
+
+class _UsersAdminSectionState extends State<_UsersAdminSection> {
+  bool _isCreatingUser = false;
+
+  Future<void> _handleCreateUser() async {
+    if (_isCreatingUser) return;
+
+    setState(() => _isCreatingUser = true);
+    try {
+      final created = await showCreateUserDialog(context);
+      if (!mounted || created != true) return;
+
+      showStyledToast(
+        context,
+        type: ToastificationType.success,
+        description:
+            '${context.s.userCreated} ${context.s.adminRightsDisabled}',
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isCreatingUser = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return StyledSection(
+      header: context.s.usersTitle,
+      grouped: false,
+      children: [
+        Text(
+          '${context.s.createUserDescription} ${context.s.adminRightsDisabled}',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: StyledButton(
+            title: context.s.createUserButton,
+            onPressed: _isCreatingUser ? null : _handleCreateUser,
+            enabled: !_isCreatingUser,
+            minHeight: 40,
+            showLeftIcon: true,
+            leftIconData: Icons.person_add_outlined,
+          ),
+        ),
+      ],
+    );
   }
 }
 

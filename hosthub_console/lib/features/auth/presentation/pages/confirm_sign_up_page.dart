@@ -71,12 +71,10 @@ class _ConfirmSignUpPageState extends State<ConfirmSignUpPage> {
           await showAppError(context, appError);
         }
         if (state.status == AuthStatus.codeResent && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('A new code has been sent to your email.'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 4),
-            ),
+          showStyledToast(
+            context,
+            type: ToastificationType.success,
+            description: 'A new code has been sent to your email.',
           );
         }
       },

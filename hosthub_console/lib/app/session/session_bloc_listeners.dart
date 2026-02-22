@@ -59,7 +59,12 @@ class _SessionBlocListenersState extends State<SessionBlocListeners> {
     return MultiBlocListener(
       listeners: [
         BlocListener<AuthBloc, AuthState>(
-          listenWhen: (previous, current) => previous.status != current.status,
+          listenWhen: (previous, current) {
+            if (previous.status != current.status) return true;
+            return current.status == AuthStatus.authenticated &&
+                current.step == AuthenticatorStep.loadingProfile &&
+                previous.step != AuthenticatorStep.loadingProfile;
+          },
           listener: (context, state) {
             if (state.status == AuthStatus.authenticated) {
               context.read<ProfileCubit>().loadProfile();
@@ -93,11 +98,19 @@ class _SessionBlocListenersState extends State<SessionBlocListeners> {
               return;
             }
 
+            if (state.status == ProfileStatus.error) {
+              // Prevent AuthGate from remaining on the loading spinner forever.
+              context.read<AuthBloc>().add(const AuthEvent.profileLoaded());
+            }
+
             final error = state.error;
             if (error == null) return;
 
             final appError = AppError.fromDomain(context, error);
-            if (appError.requiresLogout) {
+            final shouldSignOut =
+                state.status == ProfileStatus.requiresSignOut ||
+                appError.requiresLogout;
+            if (shouldSignOut) {
               context.read<AuthBloc>().add(const AuthEvent.signOutRequested());
             }
 

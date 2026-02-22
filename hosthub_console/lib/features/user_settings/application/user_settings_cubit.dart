@@ -227,16 +227,15 @@ class UserSettingsCubit extends Cubit<UserSettingsState> {
     }
   }
 
-  Future<void> syncLodgify({
-    bool allowWhenBusy = false,
-  }) async {
+  Future<void> syncLodgify({bool allowWhenBusy = false}) async {
     final settings = state.settings;
     if (settings == null || !settings.lodgifyConnected) return;
     if (_isBusy && !allowWhenBusy) return;
 
     emit(state.copyWith(status: UserSettingsStatus.syncing));
     try {
-      final channelProperties = await _channelManagerRepository.fetchProperties();
+      final channelProperties = await _channelManagerRepository
+          .fetchProperties();
       final existing = await _propertyRepository.fetchProperties();
       final existingNames = existing
           .map((property) => property.name.trim().toLowerCase())
@@ -275,9 +274,7 @@ class UserSettingsCubit extends Cubit<UserSettingsState> {
     }
   }
 
-  Future<void> addMissingProperties(
-    List<ChannelProperty> missing,
-  ) async {
+  Future<void> addMissingProperties(List<ChannelProperty> missing) async {
     final settings = state.settings;
     if (settings == null) return;
     if (_isBusy) return;
@@ -371,10 +368,7 @@ class UserSettingsCubit extends Cubit<UserSettingsState> {
           status: UserSettingsStatus.ready,
           errorMessage: error.toString(),
           domainError: DomainError.from(error, stack: stack),
-          toast: const UserSettingsToast(
-            type: UserSettingsToastType.error,
-            message: UserSettingsToastMessage.lodgifyApiKeySaveFailed,
-          ),
+          clearToast: true,
         ),
       );
     }

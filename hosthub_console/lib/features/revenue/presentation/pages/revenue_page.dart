@@ -11,7 +11,6 @@ import 'package:hosthub_console/features/calendar/application/calendar_cubit.dar
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/server_settings/data/admin_settings_repository.dart';
 import 'package:hosthub_console/features/server_settings/domain/admin_settings.dart';
-import 'package:hosthub_console/shared/domain/channel_manager/channel_manager_repository.dart';
 import 'package:hosthub_console/shared/domain/channel_manager/models/models.dart';
 import 'package:hosthub_console/shared/l10n/l10n.dart';
 import 'package:hosthub_console/shared/widgets/widgets.dart';
@@ -23,11 +22,7 @@ class RevenuePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => CalendarCubit(
-          channelManagerRepository: context.read<ChannelManagerRepository>()),
-      child: const _RevenuePageBody(),
-    );
+    return const _RevenuePageBody();
   }
 }
 
@@ -83,7 +78,9 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
             context
                 .read<PropertyRepository>()
                 .updatePropertyCurrency(property.id, currency)
-                .catchError((_) {/* best-effort */});
+                .catchError((_) {
+                  /* best-effort */
+                });
           },
         ),
         BlocListener<CalendarCubit, CalendarState>(
@@ -112,7 +109,8 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
             _periodAnchor,
             now,
           );
-          final propertyName = property?.name ?? context.s.revenueUnknownProperty;
+          final propertyName =
+              property?.name ?? context.s.revenueUnknownProperty;
           final propertyId = property?.lodgifyId?.trim() ?? '';
           final canRefresh =
               propertyId.isNotEmpty && state.status != CalendarStatus.loading;
@@ -149,8 +147,7 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
 
           return ConsolePageScaffold(
             title: context.s.menuRevenue,
-            description:
-                context.s.revenueDescription(propertyName),
+            description: context.s.revenueDescription(propertyName),
             actions: [
               Tooltip(
                 message: context.s.revenueRefreshTooltip,
@@ -172,8 +169,7 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
                   onPeriodChanged: (value) {
                     setState(() {
                       _period = value;
-                      _periodAnchor =
-                          _startOfPeriod(value, DateTime.now());
+                      _periodAnchor = _startOfPeriod(value, DateTime.now());
                     });
                     _loadForProperty(property, force: true);
                   },
@@ -207,10 +203,9 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
                               _period,
                               DateTime.now(),
                             );
-                            _periodAnchor =
-                                candidate.isAfter(latestStart)
-                                    ? latestStart
-                                    : candidate;
+                            _periodAnchor = candidate.isAfter(latestStart)
+                                ? latestStart
+                                : candidate;
                           });
                           _loadForProperty(property, force: true);
                         }
@@ -317,44 +312,110 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
           layout: const StyledTableLayout(headerHeight: 58),
           columns: [
             StyledDataColumn(
-              columnHeader: Text(S.of(context).revenueColumnBooker, maxLines: 2, overflow: TextOverflow.ellipsis),
-              flex: 3, minWidth: 180,
+              columnHeader: Text(
+                S.of(context).revenueColumnBooker,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              flex: 3,
+              minWidth: 180,
             ),
             StyledDataColumn(
-              columnHeader: Text(S.of(context).revenueColumnCheckIn, maxLines: 2, overflow: TextOverflow.ellipsis),
-              flex: 2, minWidth: 120,
+              columnHeader: Text(
+                S.of(context).revenueColumnCheckIn,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              flex: 2,
+              minWidth: 120,
             ),
             StyledDataColumn(
-              columnHeader: Text(S.of(context).revenueColumnCheckOut, maxLines: 2, overflow: TextOverflow.ellipsis),
-              flex: 2, minWidth: 120,
+              columnHeader: Text(
+                S.of(context).revenueColumnCheckOut,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              flex: 2,
+              minWidth: 120,
             ),
             StyledDataColumn(
-              columnHeader: Text(S.of(context).revenueColumnNights, maxLines: 2, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right),
-              flex: 1, minWidth: 80, alignment: Alignment.centerRight, headerAlignment: Alignment.centerRight,
+              columnHeader: Text(
+                S.of(context).revenueColumnNights,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.right,
+              ),
+              flex: 1,
+              minWidth: 80,
+              alignment: Alignment.centerRight,
+              headerAlignment: Alignment.centerRight,
             ),
             StyledDataColumn(
-              columnHeader: Text(S.of(context).revenueColumnNightlyRate, maxLines: 2, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right),
-              flex: 2, minWidth: 128, alignment: Alignment.centerRight, headerAlignment: Alignment.centerRight,
+              columnHeader: Text(
+                S.of(context).revenueColumnNightlyRate,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.right,
+              ),
+              flex: 2,
+              minWidth: 128,
+              alignment: Alignment.centerRight,
+              headerAlignment: Alignment.centerRight,
             ),
             StyledDataColumn(
-              columnHeader: Text(S.of(context).revenueColumnTotal, maxLines: 2, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right),
-              flex: 2, minWidth: 128, alignment: Alignment.centerRight, headerAlignment: Alignment.centerRight,
+              columnHeader: Text(
+                S.of(context).revenueColumnTotal,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.right,
+              ),
+              flex: 2,
+              minWidth: 128,
+              alignment: Alignment.centerRight,
+              headerAlignment: Alignment.centerRight,
             ),
             StyledDataColumn(
-              columnHeader: Text(S.of(context).revenueColumnFixedCosts, maxLines: 2, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right),
-              flex: 2, minWidth: 128, alignment: Alignment.centerRight, headerAlignment: Alignment.centerRight,
+              columnHeader: Text(
+                S.of(context).revenueColumnFixedCosts,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.right,
+              ),
+              flex: 2,
+              minWidth: 128,
+              alignment: Alignment.centerRight,
+              headerAlignment: Alignment.centerRight,
             ),
             StyledDataColumn(
-              columnHeader: Text(S.of(context).revenueColumnChannelFee, maxLines: 2, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right),
-              flex: 2, minWidth: 128, alignment: Alignment.centerRight, headerAlignment: Alignment.centerRight,
+              columnHeader: Text(
+                S.of(context).revenueColumnChannelFee,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.right,
+              ),
+              flex: 2,
+              minWidth: 128,
+              alignment: Alignment.centerRight,
+              headerAlignment: Alignment.centerRight,
             ),
             StyledDataColumn(
-              columnHeader: Text(S.of(context).revenueColumnNet, maxLines: 2, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right),
-              flex: 2, minWidth: 128, alignment: Alignment.centerRight, headerAlignment: Alignment.centerRight,
+              columnHeader: Text(
+                S.of(context).revenueColumnNet,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.right,
+              ),
+              flex: 2,
+              minWidth: 128,
+              alignment: Alignment.centerRight,
+              headerAlignment: Alignment.centerRight,
             ),
             const StyledDataColumn(
               columnHeader: Icon(Icons.hub_outlined, size: 16),
-              flex: 1, width: 56, alignment: Alignment.center, headerAlignment: Alignment.center,
+              flex: 1,
+              width: 56,
+              alignment: Alignment.center,
+              headerAlignment: Alignment.center,
             ),
           ],
           itemCount: rows.length,
@@ -466,7 +527,18 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
     final requestKey =
         '$lodgifyId:${range.start.toIso8601String()}:${range.end.toIso8601String()}';
 
-    if (!force && _lastRequestKey == requestKey) return;
+    final calendarState = context.read<CalendarCubit>().state;
+    final hasSameCalendarRequest =
+        calendarState.propertyId == lodgifyId &&
+        calendarState.rangeStart == range.start &&
+        calendarState.rangeEnd == range.end &&
+        (calendarState.status == CalendarStatus.loading ||
+            calendarState.status == CalendarStatus.loaded);
+
+    if (!force && (_lastRequestKey == requestKey || hasSameCalendarRequest)) {
+      _lastRequestKey = requestKey;
+      return;
+    }
     _lastRequestKey = requestKey;
 
     context.read<CalendarCubit>().loadCalendar(
@@ -502,7 +574,11 @@ class _RevenueHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         StyledSegmentedControl(
-          labels: [s.revenuePeriodMonth, s.revenuePeriodQuarter, s.revenuePeriodYear],
+          labels: [
+            s.revenuePeriodMonth,
+            s.revenuePeriodQuarter,
+            s.revenuePeriodYear,
+          ],
           selectedIndex: period.index,
           onChanged: (index) {
             onPeriodChanged(_RevenuePeriod.values[index]);
@@ -883,7 +959,10 @@ String _periodDisplayLabel(
       return DateFormat('MMMM yyyy', locale).format(periodStart);
     case _RevenuePeriod.quarter:
       final quarter = ((periodStart.month - 1) ~/ 3) + 1;
-      return s.revenueQuarterLabel(quarter.toString(), periodStart.year.toString());
+      return s.revenueQuarterLabel(
+        quarter.toString(),
+        periodStart.year.toString(),
+      );
     case _RevenuePeriod.year:
       return periodStart.year.toString();
   }
@@ -895,9 +974,7 @@ List<Reservation> _sortedBookings(List<Reservation> entries) {
   return bookings;
 }
 
-List<Reservation> _entriesForRevenue(
-  List<Reservation> entries,
-) {
+List<Reservation> _entriesForRevenue(List<Reservation> entries) {
   final strict = _sortedBookings(entries);
   final relaxed = entries.where(_isLikelyRevenueEntry).toList();
   _sortEntriesByStart(relaxed);
@@ -1061,11 +1138,7 @@ String _guestDisplayName(Reservation entry, {required String fallback}) {
   return name;
 }
 
-
-String _guestBreakdown(
-  Reservation entry, {
-  String unknownLabel = '-',
-}) {
+String _guestBreakdown(Reservation entry, {String unknownLabel = '-'}) {
   final adults = entry.adultCount;
   final children = entry.childCount;
   final hasBreakdown = adults != null || children != null;
@@ -1651,10 +1724,7 @@ num? _channelCostFallback(
   final cost = selector(config);
   if (cost.amount <= 0) return null;
   final nights = _stayNights(entry.startDate, entry.endDate) ?? 1;
-  final resolved = cost.resolve(
-    guests: entry.guestCount ?? 1,
-    nights: nights,
-  );
+  final resolved = cost.resolve(guests: entry.guestCount ?? 1, nights: nights);
   return resolved > 0 ? _normalizeMoney(resolved) : null;
 }
 
@@ -1682,8 +1752,9 @@ double _channelFeePercentageForSource(
   PropertySummary? property,
 ) {
   // Use per-channel commission override from channel settings if available.
-  final override =
-      property?.channelSettings.configForSource(source).commissionPercentage;
+  final override = property?.channelSettings
+      .configForSource(source)
+      .commissionPercentage;
   if (override != null) return override;
 
   // Fall back to admin defaults.
@@ -1870,7 +1941,10 @@ class _ReservationDetailsDialog extends StatelessWidget {
     );
     final prettyRaw = const JsonEncoder.withIndent('  ').convert(entry.raw);
     final nights = _stayNights(entry.startDate, entry.endDate);
-    final guestName = _guestDisplayName(entry, fallback: s.revenueUnknownBooker);
+    final guestName = _guestDisplayName(
+      entry,
+      fallback: s.revenueUnknownBooker,
+    );
 
     final dialogBg = theme.brightness == Brightness.light
         ? Colors.white
@@ -1912,10 +1986,7 @@ class _ReservationDetailsDialog extends StatelessWidget {
                       isFirstSection: true,
                       header: s.reservationSectionBooker,
                       children: [
-                        StyledTile(
-                          title: s.reservationName,
-                          value: guestName,
-                        ),
+                        StyledTile(title: s.reservationName, value: guestName),
                         StyledTile(
                           title: s.reservationEmail,
                           value: _valueOrDash(entry.guestEmail),
@@ -2140,11 +2211,7 @@ class _CircularCloseButton extends StatelessWidget {
           onTap: onPressed,
           child: const Padding(
             padding: EdgeInsets.all(10),
-            child: Icon(
-              Icons.close,
-              size: 20,
-              color: Color(0xFF37474F),
-            ),
+            child: Icon(Icons.close, size: 20, color: Color(0xFF37474F)),
           ),
         ),
       ),
@@ -2277,13 +2344,10 @@ _ReservationRevenueData _extractReservationRevenueData(
           ['pricing', 'cleaning'],
           ['financials', 'cleaning'],
         ]) ??
-        _feeFromPriceTypes(
-          raw,
-          (label) {
-            final l = label.toLowerCase();
-            return l.contains('clean') || l.contains('schoon');
-          },
-        ) ??
+        _feeFromPriceTypes(raw, (label) {
+          final l = label.toLowerCase();
+          return l.contains('clean') || l.contains('schoon');
+        }) ??
         _channelCostFallback(property, entry, (c) => c.cleaningCost),
   );
   _addReservationBreakdownItem(
@@ -2312,14 +2376,13 @@ _ReservationRevenueData _extractReservationRevenueData(
           ['financials', 'linen'],
           ['financials', 'linens'],
         ]) ??
-        _feeFromPriceTypes(
-          raw,
-          (label) {
-            final l = label.toLowerCase();
-            return l.contains('linen') || l.contains('linnen') ||
-                l.contains('bedlinen') || l.contains('bed linen');
-          },
-        ) ??
+        _feeFromPriceTypes(raw, (label) {
+          final l = label.toLowerCase();
+          return l.contains('linen') ||
+              l.contains('linnen') ||
+              l.contains('bedlinen') ||
+              l.contains('bed linen');
+        }) ??
         _channelCostFallback(property, entry, (c) => c.linenCost),
   );
   _addReservationBreakdownItem(
@@ -2384,4 +2447,3 @@ void _addReservationBreakdownItem(
   if (normalized == null) return;
   items.add(_ReservationRevenueBreakdownItem(label: label, amount: normalized));
 }
-

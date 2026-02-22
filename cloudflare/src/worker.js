@@ -8,6 +8,11 @@ function normalizeBasePath(value, fallback = "/") {
   return trimmed;
 }
 
+function isLikelyAssetPath(pathname) {
+  const lastSegment = pathname.split("/").pop() ?? "";
+  return lastSegment.includes(".");
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -30,6 +35,22 @@ export default {
       ? url.pathname || "/"
       : url.pathname.slice(adminBasePath.length) || "/";
     const assetUrl = new URL(`${assetPath}${url.search}`, url.origin);
-    return env.ASSETS.fetch(new Request(assetUrl.toString(), request));
+    const assetRequest = new Request(assetUrl.toString(), request);
+    const assetResponse = await env.ASSETS.fetch(assetRequest);
+    const method = request.method.toUpperCase();
+    const isDocumentRequest = method === "GET" || method === "HEAD";
+    const isAppRoute = isDocumentRequest && !isLikelyAssetPath(assetPath);
+    const isRedirect =
+      assetResponse.status >= 300 && assetResponse.status < 400;
+    const shouldFallbackToShell =
+      isAppRoute && (assetResponse.status === 404 || isRedirect);
+
+    if (!shouldFallbackToShell) {
+      return assetResponse;
+    }
+
+    // SPA fallback for Flutter routes like /calendar and /settings.
+    const shellUrl = new URL(`/${url.search}`, url.origin);
+    return env.ASSETS.fetch(new Request(shellUrl.toString(), request));
   },
 };

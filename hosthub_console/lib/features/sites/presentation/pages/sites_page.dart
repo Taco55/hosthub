@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:app_errors/app_errors.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:styled_widgets/styled_widgets.dart';
@@ -99,11 +100,12 @@ class _SitesPageState extends State<SitesPage> {
       // Reload and let the redirect logic handle navigation
       _redirected = false;
       setState(_loadSites);
-    } catch (e) {
+    } catch (error, stack) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      final domainError = error is DomainError
+          ? error
+          : DomainError.from(error, stack: stack);
+      await showAppError(context, AppError.fromDomain(context, domainError));
     } finally {
       if (mounted) setState(() => _creating = false);
     }

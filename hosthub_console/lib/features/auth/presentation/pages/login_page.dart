@@ -78,8 +78,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return BlocConsumer<AuthBloc, AuthState>(
       listenWhen: (previous, current) =>
-          previous.status != current.status &&
-          current.status == AuthStatus.error,
+          current.status == AuthStatus.error && current.domainError != null,
       listener: (context, state) async {
         final domainError = state.domainError;
         if (domainError == null) return;

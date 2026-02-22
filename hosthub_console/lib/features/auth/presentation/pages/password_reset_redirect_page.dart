@@ -11,10 +11,7 @@ import 'package:hosthub_console/features/auth/presentation/utils/url_sanitizer.d
     as url_sanitizer;
 
 class PasswordResetRedirectPage extends StatefulWidget {
-  const PasswordResetRedirectPage({
-    super.key,
-    required this.payload,
-  });
+  const PasswordResetRedirectPage({super.key, required this.payload});
 
   final AuthRedirectPayload payload;
 
@@ -59,7 +56,8 @@ class _PasswordResetRedirectPageState extends State<PasswordResetRedirectPage> {
     final form = _formKey.currentState;
     if (form == null || !form.validate()) return;
 
-    final email = context.read<AuthBloc>().state.email ??
+    final email =
+        context.read<AuthBloc>().state.email ??
         widget.payload.queryParameters['email'] ??
         '';
 
@@ -84,7 +82,11 @@ class _PasswordResetRedirectPageState extends State<PasswordResetRedirectPage> {
       listener: (context, state) async {
         if (state.status == AuthStatus.authenticated &&
             state.step == AuthenticatorStep.confirmSignInWithNewPassword) {
-          if (mounted) setState(() { _sessionReady = true; _loading = false; });
+          if (mounted)
+            setState(() {
+              _sessionReady = true;
+              _loading = false;
+            });
         }
         if (state.status == AuthStatus.error && state.domainError != null) {
           if (mounted) setState(() => _loading = false);
@@ -93,12 +95,10 @@ class _PasswordResetRedirectPageState extends State<PasswordResetRedirectPage> {
         }
         if (state.status == AuthStatus.newPasswordConfirmed) {
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Password updated successfully.'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 3),
-            ),
+          showStyledToast(
+            context,
+            type: ToastificationType.success,
+            description: 'Password updated successfully.',
           );
           context.read<AuthBloc>().add(const AuthEvent.authFlowReset());
         }
@@ -140,9 +140,7 @@ class _PasswordResetRedirectPageState extends State<PasswordResetRedirectPage> {
 
     // Loading while refreshing session from token
     if (_loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     // Session ready — show new password form
@@ -169,9 +167,7 @@ class _PasswordResetRedirectPageState extends State<PasswordResetRedirectPage> {
               enablePasswordToggle: true,
               textInputAction: TextInputAction.next,
               validators: [
-                FormBuilderValidators.required(
-                  errorText: 'Password required',
-                ),
+                FormBuilderValidators.required(errorText: 'Password required'),
                 FormBuilderValidators.minLength(
                   6,
                   errorText: 'Password must be at least 6 characters',

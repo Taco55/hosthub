@@ -80,12 +80,27 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           );
           return;
         }
+        // This initialize call can finish after profile load already completed.
+        // In that case we must not regress to loadingProfile, otherwise AuthGate
+        // shows an indefinite spinner.
+        if (state.status == AuthStatus.authenticated &&
+            state.step == AuthenticatorStep.done) {
+          return;
+        }
+
+        if (state.status == AuthStatus.authenticated &&
+            state.step == AuthenticatorStep.loadingProfile) {
+          return;
+        }
+
         emit(
-          const AuthState(
+          state.copyWith(
             status: AuthStatus.authenticated,
             step: AuthenticatorStep.loadingProfile,
+            domainError: null,
           ),
         );
+        return;
       } else if (state.status == AuthStatus.unauthenticated &&
           state.step != null) {
         return;
@@ -287,6 +302,27 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthenticationSucceeded event,
     Emitter<AuthState> emit,
   ) async {
+    // Supabase may emit signed-in events multiple times (e.g. token refresh).
+    // If the app is already fully authenticated, avoid regressing to
+    // loadingProfile and blocking the UI behind AuthGate.
+    if (state.status == AuthStatus.authenticated &&
+        state.step == AuthenticatorStep.done) {
+      emit(
+        state.copyWith(
+          status: AuthStatus.authenticated,
+          step: AuthenticatorStep.done,
+          email: event.user.email,
+          domainError: null,
+        ),
+      );
+      return;
+    }
+
+    if (state.status == AuthStatus.authenticated &&
+        state.step == AuthenticatorStep.loadingProfile) {
+      return;
+    }
+
     emit(
       state.copyWith(
         status: AuthStatus.authenticated,
@@ -580,7 +616,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(
         state.copyWith(
           status: AuthStatus.error,
-          domainError: payload.domainError ??
+          domainError:
+              payload.domainError ??
               DomainError.of(
                 DomainErrorCode.unauthorized,
                 message: payload.error ?? 'The link has expired.',
@@ -608,9 +645,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     emit(state.copyWith(status: AuthStatus.loading));
     try {
-      await _authService.refreshSessionFromRefreshToken(
-        payload.refreshToken!,
-      );
+      await _authService.refreshSessionFromRefreshToken(payload.refreshToken!);
       emit(
         state.copyWith(
           status: AuthStatus.authenticated,

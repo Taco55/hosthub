@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'package:app_errors/app_errors.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -181,13 +182,12 @@ class SectionScaffold extends StatelessWidget {
       if (!context.mounted) return;
       context.read<ProfileCubit>().updateProfile(updated);
       _showToast(context, context.s.userUpdated, ToastificationType.success);
-    } catch (error) {
+    } catch (error, stack) {
       if (!context.mounted) return;
-      _showToast(
-        context,
-        context.s.updateProfileFailed('$error'),
-        ToastificationType.error,
-      );
+      final domainError = error is DomainError
+          ? error
+          : DomainError.from(error, stack: stack);
+      await showAppError(context, AppError.fromDomain(context, domainError));
     }
   }
 
@@ -205,13 +205,12 @@ class SectionScaffold extends StatelessWidget {
         context.s.passwordChanged,
         ToastificationType.success,
       );
-    } catch (error) {
+    } catch (error, stack) {
       if (!context.mounted) return;
-      _showToast(
-        context,
-        context.s.passwordChangeFailedWithReason('$error'),
-        ToastificationType.error,
-      );
+      final domainError = error is DomainError
+          ? error
+          : DomainError.from(error, stack: stack);
+      await showAppError(context, AppError.fromDomain(context, domainError));
     }
   }
 

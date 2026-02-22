@@ -38,13 +38,23 @@ class _UserSettingsView extends StatelessWidget {
         BlocListener<UserSettingsCubit, UserSettingsState>(
           listenWhen: (previous, current) =>
               previous.toast != current.toast && current.toast != null,
-          listener: (context, state) {
+          listener: (context, state) async {
             final toast = state.toast;
             if (toast == null) return;
+            final message = _toastMessage(context, toast.message);
+            if (toast.type == UserSettingsToastType.error) {
+              await showAppError(
+                context,
+                AppError.custom(title: context.s.error, alert: message),
+              );
+              if (!context.mounted) return;
+              context.read<UserSettingsCubit>().clearToast();
+              return;
+            }
             showStyledToast(
               context,
               type: _toastType(toast.type),
-              description: _toastMessage(context, toast.message),
+              description: message,
             );
             context.read<UserSettingsCubit>().clearToast();
           },
@@ -274,8 +284,7 @@ class _UserSettingsSection extends StatelessWidget {
                 showProgressIndicatorWhenDisabled: isBusy,
                 backgroundColorDisabled:
                     styledTheme.buttons.disabledBackgroundColor,
-                labelColorDisabled:
-                    styledTheme.buttons.disabledLabelColor,
+                labelColorDisabled: styledTheme.buttons.disabledLabelColor,
                 enableShrinking: false,
                 width: 120,
                 minWidth: 120,
@@ -372,12 +381,18 @@ class _ChannelFeeDefaultsSectionState
 
   void _save(AdminSettings current) {
     final updated = current.copyWith(
-      bookingChannelFeePercentage:
-          _parseCtrl(_bookingController, current.bookingChannelFeePercentage),
-      airbnbChannelFeePercentage:
-          _parseCtrl(_airbnbController, current.airbnbChannelFeePercentage),
-      otherChannelFeePercentage:
-          _parseCtrl(_otherController, current.otherChannelFeePercentage),
+      bookingChannelFeePercentage: _parseCtrl(
+        _bookingController,
+        current.bookingChannelFeePercentage,
+      ),
+      airbnbChannelFeePercentage: _parseCtrl(
+        _airbnbController,
+        current.airbnbChannelFeePercentage,
+      ),
+      otherChannelFeePercentage: _parseCtrl(
+        _otherController,
+        current.otherChannelFeePercentage,
+      ),
     );
     context.read<ServerSettingsCubit>().save(updated);
   }
@@ -400,21 +415,21 @@ class _ChannelFeeDefaultsSectionState
         }
       },
       builder: (context, state) {
-        final isLoading = state.status == ServerSettingsStatus.loading &&
+        final isLoading =
+            state.status == ServerSettingsStatus.loading &&
             state.settings == null;
         if (isLoading) {
           return StyledSection(
             header: context.s.channelFeeDefaultsHeader,
             grouped: false,
-            children: const [
-              Center(child: CircularProgressIndicator()),
-            ],
+            children: const [Center(child: CircularProgressIndicator())],
           );
         }
 
         final settings = state.settings ?? AdminSettings.defaults();
         final isMutating = state.status == ServerSettingsStatus.mutating;
-        final canSave = _loadedSettings != null &&
+        final canSave =
+            _loadedSettings != null &&
             _hasChanges(_loadedSettings!) &&
             !isMutating;
 
@@ -508,8 +523,7 @@ class _ChannelFeeInputTile extends StatelessWidget {
         child: StyledFormField(
           controller: controller,
           enabled: enabled,
-          keyboardType:
-              const TextInputType.numberWithOptions(decimal: true),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
           textInputAction: TextInputAction.next,
           placeholder: '0',
         ),
@@ -861,8 +875,7 @@ Future<bool> _showMissingPropertiesDialog(
                                               .lodgifyMissingPropertiesAddAction
                                         : context.s.lodgifySyncLabel,
                                     style: theme.textTheme.bodyMedium?.copyWith(
-                                      color:
-                                          styledTheme.buttons.labelColor,
+                                      color: styledTheme.buttons.labelColor,
                                       fontWeight: FontWeight.w500,
                                     ),
                                     maxLines: 1,

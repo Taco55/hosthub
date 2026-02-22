@@ -53,11 +53,7 @@ class AdminUserRepository {
         error,
         stack,
         reason: DomainErrorReason.cannotLoadData,
-        context: {
-          'op': 'fetchProfiles',
-          'query': trimmedQuery,
-          'limit': limit,
-        },
+        context: {'op': 'fetchProfiles', 'query': trimmedQuery, 'limit': limit},
       );
     }
   }
@@ -227,6 +223,7 @@ class AdminUserRepository {
         username: (normalizedUsername?.isEmpty ?? true)
             ? null
             : normalizedUsername,
+        isAdmin: false,
       );
       await _client.from(Profile.tableName).upsert(profile.toJson());
 

@@ -63,9 +63,8 @@ class ProfileCubit extends Cubit<ProfileState> {
 
   Future<void> loadProfile() async {
     emit(state.copyWith(status: ProfileStatus.loading, error: null));
-    await _sessionManager.ensureFreshSession();
-
     try {
+      await _sessionManager.ensureFreshSession();
       var profile = await _profileRepository.getProfile();
 
       if (profile == null) {
@@ -102,14 +101,25 @@ class ProfileCubit extends Cubit<ProfileState> {
         return;
       }
       emit(state.copyWith(status: ProfileStatus.error, error: error));
+    } catch (error, stack) {
+      final domainError = DomainError.from(error, stack: stack);
+      if (await _handleAuthConstraint(domainError)) {
+        emit(
+          state.copyWith(
+            status: ProfileStatus.requiresSignOut,
+            error: domainError,
+          ),
+        );
+        return;
+      }
+      emit(state.copyWith(status: ProfileStatus.error, error: domainError));
     }
   }
 
   Future<void> updateProfile(Profile profile) async {
     emit(state.copyWith(status: ProfileStatus.updating, error: null));
-    await _sessionManager.ensureFreshSession();
-
     try {
+      await _sessionManager.ensureFreshSession();
       await _profileRepository.updateProfile(profile);
       emit(
         state.copyWith(
@@ -126,6 +136,18 @@ class ProfileCubit extends Cubit<ProfileState> {
         return;
       }
       emit(state.copyWith(status: ProfileStatus.error, error: error));
+    } catch (error, stack) {
+      final domainError = DomainError.from(error, stack: stack);
+      if (await _handleAuthConstraint(domainError)) {
+        emit(
+          state.copyWith(
+            status: ProfileStatus.requiresSignOut,
+            error: domainError,
+          ),
+        );
+        return;
+      }
+      emit(state.copyWith(status: ProfileStatus.error, error: domainError));
     }
   }
 

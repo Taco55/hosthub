@@ -89,22 +89,18 @@ class _PasswordResetCodePageState extends State<PasswordResetCodePage> {
         }
         if (state.status == AuthStatus.codeResent) {
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('A new code has been sent to your email.'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 4),
-            ),
+          showStyledToast(
+            context,
+            type: ToastificationType.success,
+            description: 'A new code has been sent to your email.',
           );
         }
         if (state.status == AuthStatus.newPasswordConfirmed) {
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Password updated successfully.'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 3),
-            ),
+          showStyledToast(
+            context,
+            type: ToastificationType.success,
+            description: 'Password updated successfully.',
           );
           context.read<AuthBloc>().add(const AuthEvent.authFlowReset());
         }
