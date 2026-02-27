@@ -5,8 +5,8 @@ import 'package:app_errors/app_errors.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:hosthub_console/shared/models/models.dart';
-import 'package:hosthub_console/shared/widgets/widgets.dart';
+import 'package:hosthub_console/core/models/models.dart';
+import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
 import 'package:hosthub_console/features/auth/auth.dart';
@@ -64,9 +64,7 @@ class SectionScaffold extends StatelessWidget {
           onLogout: authState.status == AuthStatus.authenticated
               ? () {
                   if (!isPinned) closeDrawer();
-                  context.read<AuthBloc>().add(
-                    const AuthEvent.signOutRequested(),
-                  );
+                  context.read<AuthBloc>().add(const AuthEvent.logout());
                 }
               : null,
           onAccountTap: profileState.profile == null
@@ -91,8 +89,12 @@ class SectionScaffold extends StatelessWidget {
       },
       bodyBuilder: (context, isPinned) {
         final propertyState = context.watch<PropertyContextCubit>().state;
-        if (propertyState.status == PropertyContextStatus.loaded &&
-            propertyState.properties.isEmpty) {
+        final shouldForcePropertySetup =
+            propertyState.status == PropertyContextStatus.loaded &&
+            propertyState.properties.isEmpty &&
+            selectedItem != MenuItem.settings &&
+            selectedItem != MenuItem.adminOptions;
+        if (shouldForcePropertySetup) {
           return const PropertySetupPage();
         }
         return builder(context, isPinned);

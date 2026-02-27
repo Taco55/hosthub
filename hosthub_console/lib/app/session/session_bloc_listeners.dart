@@ -7,7 +7,7 @@ import 'package:hosthub_console/features/auth/auth.dart';
 import 'package:hosthub_console/features/profile/profile.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/user_settings/user_settings.dart';
-import 'package:hosthub_console/shared/l10n/application/language_cubit.dart';
+import 'package:hosthub_console/core/l10n/application/language_cubit.dart';
 
 class SessionBlocListeners extends StatefulWidget {
   const SessionBlocListeners({super.key, required this.child});
@@ -59,12 +59,7 @@ class _SessionBlocListenersState extends State<SessionBlocListeners> {
     return MultiBlocListener(
       listeners: [
         BlocListener<AuthBloc, AuthState>(
-          listenWhen: (previous, current) {
-            if (previous.status != current.status) return true;
-            return current.status == AuthStatus.authenticated &&
-                current.step == AuthenticatorStep.loadingProfile &&
-                previous.step != AuthenticatorStep.loadingProfile;
-          },
+          listenWhen: (previous, current) => previous.status != current.status,
           listener: (context, state) {
             if (state.status == AuthStatus.authenticated) {
               context.read<ProfileCubit>().loadProfile();
@@ -89,18 +84,9 @@ class _SessionBlocListenersState extends State<SessionBlocListeners> {
               previous.status != current.status ||
               previous.error != current.error,
           listener: (context, state) async {
-            if (state.status == ProfileStatus.loaded) {
-              context.read<AuthBloc>().add(const AuthEvent.profileLoaded());
-            }
-
             if (state.status != ProfileStatus.error &&
                 state.status != ProfileStatus.requiresSignOut) {
               return;
-            }
-
-            if (state.status == ProfileStatus.error) {
-              // Prevent AuthGate from remaining on the loading spinner forever.
-              context.read<AuthBloc>().add(const AuthEvent.profileLoaded());
             }
 
             final error = state.error;
@@ -111,7 +97,7 @@ class _SessionBlocListenersState extends State<SessionBlocListeners> {
                 state.status == ProfileStatus.requiresSignOut ||
                 appError.requiresLogout;
             if (shouldSignOut) {
-              context.read<AuthBloc>().add(const AuthEvent.signOutRequested());
+              context.read<AuthBloc>().add(const AuthEvent.logout());
             }
 
             final ctx = navigatorContext ?? context;

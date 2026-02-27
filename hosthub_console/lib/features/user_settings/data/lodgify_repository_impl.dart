@@ -1,4 +1,4 @@
-import 'package:hosthub_console/shared/services/lodgify_service.dart';
+import 'package:hosthub_console/core/services/lodgify_service.dart';
 import 'package:hosthub_console/features/user_settings/data/lodgify_repository.dart';
 
 class LodgifyRepositoryImpl implements LodgifyRepository {

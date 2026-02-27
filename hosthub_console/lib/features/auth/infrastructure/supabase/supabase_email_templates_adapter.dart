@@ -9,8 +9,51 @@ import 'package:hosthub_console/core/core.dart';
 
 import 'package:hosthub_console/features/auth/domain/models/email_template_config.dart';
 import 'package:hosthub_console/features/auth/domain/ports/email_templates_port.dart';
-import 'package:hosthub_console/features/auth/infrastructure/local/local_email_templates_adapter.dart';
 import 'package:app_errors/app_errors.dart';
+
+const Map<String, String> _emailTemplateFallbacks = {
+  'assets/email_templates/sign_up_confirmation.html': '''
+<!DOCTYPE html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Bevestig je e-mailadres</title>
+  </head>
+  <body style="margin:0;padding:0;background-color:#f6f6f6;font-family:Arial,Helvetica,sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f6f6f6">
+      <tr>
+        <td align="center" style="padding:24px 12px;">
+          <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color:#ffffff;border-radius:12px;padding:32px;box-shadow:0 2px 10px rgba(0,0,0,0.04);">
+            <tr>
+              <td>
+                <img src="cid:logo-image" alt="HostHub logo" style="max-width:140px;margin-bottom:24px;" />
+                <h2 style="color:#1c1c1c;font-size:26px;margin:0 0 16px 0;">Bevestig je e-mailadres</h2>
+                {{env_banner}}
+                <p style="color:#1c1c1c;font-size:16px;line-height:1.6;margin:0 0 12px 0;">{{greeting_line}}</p>
+                <p style="color:#1c1c1c;font-size:16px;line-height:1.6;margin:0 0 12px 0;">
+                  Bedankt voor je aanmelding bij HostHub. Bevestig je e-mailadres om je account te activeren.
+                </p>
+                {{action_section}}
+                {{otp_section}}
+                <hr style="border:none;border-top:1px solid #ededed;margin:32px 0;" />
+                <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 12px 0;">
+                  Vragen of hulp nodig? Stuur ons een bericht via
+                  <a href="mailto:{{support_email}}" style="color:#1c5d99;text-decoration:none;">{{support_email}}</a>.
+                </p>
+                <p style="color:#94a3b8;font-size:12px;line-height:1.4;margin:24px 0 0 0;">
+                  Deze e-mail is automatisch verstuurd omdat er een account is aangemaakt met dit e-mailadres.
+                </p>
+              </td>
+            </tr>
+          </table>
+          <p style="font-size:12px;color:#94a3b8;margin:24px 0 0 0;">© {{year}} HostHub. Alle rechten voorbehouden.</p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+''',
+};
 
 class SupabaseEmailTemplatesAdapter implements EmailTemplatesPort {
   SupabaseEmailTemplatesAdapter({
@@ -210,7 +253,7 @@ class SupabaseEmailTemplatesAdapter implements EmailTemplatesPort {
       _templateCache[path] = contents;
       return contents;
     } on FlutterError catch (error) {
-      final fallback = emailTemplateFallbacks[path];
+      final fallback = _emailTemplateFallbacks[path];
       if (fallback != null) {
         developer.log(
           'Email template asset missing, using in-memory fallback.',

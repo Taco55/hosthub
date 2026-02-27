@@ -11,9 +11,9 @@ import 'package:hosthub_console/features/calendar/application/calendar_cubit.dar
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/server_settings/data/admin_settings_repository.dart';
 import 'package:hosthub_console/features/server_settings/domain/admin_settings.dart';
-import 'package:hosthub_console/shared/domain/channel_manager/models/models.dart';
-import 'package:hosthub_console/shared/l10n/l10n.dart';
-import 'package:hosthub_console/shared/widgets/widgets.dart';
+import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
+import 'package:hosthub_console/core/l10n/l10n.dart';
+import 'package:hosthub_console/core/widgets/widgets.dart';
 
 enum _RevenuePeriod { month, quarter, year }
 

@@ -79,7 +79,7 @@ All Supabase helpers live under `supabase/`. Run commands from that directory:
 - `make dump-schema-local` – snapshots the schema for inspection.
 - `make sync-env-to-local ENV=dev` – resets the local schema from a remote project.
 
-The CMS schema migrations are included in `supabase/migrations/` (for example `20260218_000001_create_cms_tables.sql` and follow-up migrations), so running `supabase start` and then `make apply-migrations-local` will ensure the schema exists locally.
+The CMS schema migrations are included in `supabase/migrations/` (for example `20260218000001_create_cms_tables.sql` and follow-up migrations), so running `supabase start` and then `make apply-migrations-local` will ensure the schema exists locally.
 
 ## Content workflow
 

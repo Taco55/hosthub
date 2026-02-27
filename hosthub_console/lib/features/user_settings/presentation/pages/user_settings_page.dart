@@ -9,11 +9,11 @@ import 'package:timeago/timeago.dart' as timeago;
 
 import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaffold.dart';
 import 'package:app_errors/app_errors.dart';
-import 'package:hosthub_console/shared/l10n/l10n.dart';
-import 'package:hosthub_console/shared/models/models.dart';
-import 'package:hosthub_console/shared/domain/channel_manager/models/models.dart';
-import 'package:hosthub_console/shared/widgets/widgets.dart';
-import 'package:hosthub_console/shared/l10n/application/language_cubit.dart';
+import 'package:hosthub_console/core/l10n/l10n.dart';
+import 'package:hosthub_console/core/models/models.dart';
+import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
+import 'package:hosthub_console/core/widgets/widgets.dart';
+import 'package:hosthub_console/core/l10n/application/language_cubit.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/server_settings/application/server_settings_cubit.dart';
 import 'package:hosthub_console/features/server_settings/domain/admin_settings.dart';
@@ -654,8 +654,8 @@ Future<_LodgifyApiKeyDialogResult?> _showLodgifyApiKeyDialog(
     context,
     title: context.s.lodgifyApiKeyLabel,
     isDismissible: false,
-    actionText: hasApiKey ? context.s.saveButton : context.s.add,
-    leadingText: context.s.cancelButton,
+    actionLabel: hasApiKey ? context.s.saveButton : context.s.add,
+    leadingLabel: context.s.cancelButton,
     showAction: true,
     showLeading: true,
     closeOnAction: false,

@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:hosthub_console/shared/l10n/l10n.dart';
+import 'package:hosthub_console/core/l10n/l10n.dart';
 
 import 'package:hosthub_console/features/users/data/admin_user_repository.dart';
 import 'package:hosthub_console/features/users/domain/models/admin_user_detail.dart';

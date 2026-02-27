@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:hosthub_console/shared/models/models.dart';
+import 'package:hosthub_console/core/models/models.dart';
 
 import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaffold.dart';
 import 'package:hosthub_console/features/users/application/admin_user_detail_cubit.dart';
@@ -16,8 +16,8 @@ import 'package:hosthub_console/features/users/presentation/dialogs/user_setting
 import 'package:hosthub_console/features/users/presentation/widgets/profile_info_row.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 import 'package:app_errors/app_errors.dart';
-import 'package:hosthub_console/shared/l10n/l10n.dart';
-import 'package:hosthub_console/shared/widgets/widgets.dart';
+import 'package:hosthub_console/core/l10n/l10n.dart';
+import 'package:hosthub_console/core/widgets/widgets.dart';
 
 class UserDetailPage extends StatefulWidget {
   const UserDetailPage({super.key, required this.userId});

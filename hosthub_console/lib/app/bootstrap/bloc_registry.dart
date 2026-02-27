@@ -2,7 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:hosthub_console/features/auth/auth.dart';
 import 'package:hosthub_console/core/core.dart';
-import 'package:hosthub_console/shared/l10n/application/language_cubit.dart';
+import 'package:hosthub_console/core/l10n/application/language_cubit.dart';
 
 import 'package:talker_bloc_logger/talker_bloc_logger.dart';
 

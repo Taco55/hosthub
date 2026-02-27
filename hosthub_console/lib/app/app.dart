@@ -10,10 +10,10 @@ import 'package:toastification/toastification.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 import 'package:app_errors/app_errors.dart';
 import 'package:hosthub_console/core/core.dart';
-import 'package:hosthub_console/shared/l10n/l10n.dart';
-import 'package:hosthub_console/shared/widgets/widgets.dart';
-import 'package:hosthub_console/shared/services/services.dart';
-import 'package:hosthub_console/shared/l10n/application/language_cubit.dart';
+import 'package:hosthub_console/core/l10n/l10n.dart';
+import 'package:hosthub_console/core/widgets/auth/auth_ui_styled_overrides.dart';
+import 'package:hosthub_console/core/widgets/widgets.dart';
+import 'package:hosthub_console/core/l10n/application/language_cubit.dart';
 
 import 'package:hosthub_console/app/router/router.dart';
 import 'package:hosthub_console/app/router/go_router_refresh_stream.dart';
@@ -24,7 +24,7 @@ import 'package:hosthub_console/features/cms/cms.dart';
 import 'package:hosthub_console/features/profile/profile.dart';
 import 'package:hosthub_console/features/server_settings/data/admin_settings_repository.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
-import 'package:hosthub_console/shared/domain/channel_manager/channel_manager_repository.dart';
+import 'package:hosthub_console/features/channel_manager/domain/channel_manager_repository.dart';
 import 'package:hosthub_console/features/user_settings/user_settings.dart';
 import 'package:hosthub_console/features/users/users.dart';
 
@@ -52,10 +52,9 @@ class ConsoleApp extends StatelessWidget {
           value: I.get<AdminSettingsRepository>(),
         ),
         BlocProvider<AuthBloc>(
-          create: (_) => AuthBloc(
-            authService: I.get<AuthPort>(),
-            localStorage: I.get<LocalStorageManager>(),
-          )..add(const AuthEvent.initialize()),
+          create: (_) =>
+              AuthBloc(authService: I.get<AuthPort>())
+                ..add(const AuthEvent.appStart()),
         ),
         BlocProvider<SettingsCubit>(
           create: (_) => SettingsCubit(
@@ -136,6 +135,7 @@ class _ConsoleRouterHostState extends State<_ConsoleRouterHost> {
 
     final localizationDelegates = <LocalizationsDelegate<dynamic>>[
       S.delegate,
+      authUiDelegate,
       AppErrorLocalizations.delegate,
       GlobalMaterialLocalizations.delegate,
       GlobalWidgetsLocalizations.delegate,
@@ -161,7 +161,10 @@ class _ConsoleRouterHostState extends State<_ConsoleRouterHost> {
           );
           return StyledWidgetsTheme(
             styledThemeData: styledTheme,
-            child: appChild,
+            child: AuthUiOverrides.data(
+              data: styledAuthUiOverrides,
+              child: appChild,
+            ),
           );
         },
         scrollBehavior: TouchAndMouseScrollBehavior(),

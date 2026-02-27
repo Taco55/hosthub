@@ -1,7 +1,7 @@
 import 'package:app_errors/app_errors.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:hosthub_console/shared/models/models.dart';
+import 'package:hosthub_console/core/models/models.dart';
 
 class SettingsRepository {
   SettingsRepository(this._client);

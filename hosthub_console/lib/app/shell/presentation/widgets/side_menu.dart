@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:hosthub_console/shared/models/models.dart';
+import 'package:hosthub_console/core/models/models.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 
 import 'menu_item.dart';
-import 'package:hosthub_console/shared/widgets/widgets.dart';
+import 'package:hosthub_console/core/widgets/widgets.dart';
 
 class SideMenu extends StatelessWidget {
   const SideMenu({

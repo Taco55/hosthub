@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:hosthub_console/shared/widgets/widgets.dart';
+import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
 import '../../data/property_repository.dart';

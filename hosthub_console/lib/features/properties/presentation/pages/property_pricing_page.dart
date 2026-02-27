@@ -7,7 +7,7 @@ import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaf
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/server_settings/data/admin_settings_repository.dart';
 import 'package:hosthub_console/features/server_settings/domain/admin_settings.dart';
-import 'package:hosthub_console/shared/widgets/widgets.dart';
+import 'package:hosthub_console/core/widgets/widgets.dart';
 
 class PropertyPricingPage extends StatelessWidget {
   const PropertyPricingPage({super.key});

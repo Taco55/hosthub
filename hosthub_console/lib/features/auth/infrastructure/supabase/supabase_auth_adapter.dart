@@ -8,14 +8,11 @@ import 'package:hosthub_console/core/core.dart';
 
 import 'package:hosthub_console/features/auth/domain/ports/auth_port.dart';
 import 'package:hosthub_console/features/auth/infrastructure/supabase/supabase_onboarding_adapter.dart';
-import 'package:hosthub_console/features/auth/application/current_user.dart';
 import 'package:hosthub_console/features/auth/infrastructure/supabase/supabase_repository.dart';
 import 'package:app_errors/app_errors.dart';
 
 class SupabaseAuthAdapter extends SupabaseRepository implements AuthPort {
-  SupabaseAuthAdapter({
-    required SupabaseOnboardingAdapter onboardingAdapter,
-  })
+  SupabaseAuthAdapter({required SupabaseOnboardingAdapter onboardingAdapter})
     : _userOnboardingService = onboardingAdapter,
       super(sb.Supabase.instance.client);
 
@@ -93,9 +90,7 @@ class SupabaseAuthAdapter extends SupabaseRepository implements AuthPort {
       supabase.auth.onAuthStateChange.map((authState) {
         final user = authState.session?.user;
         return AuthSessionChange(
-          user: user == null
-              ? null
-              : AuthUser(id: user.id, email: user.email),
+          user: user == null ? null : AuthUser(id: user.id, email: user.email),
         );
       });
 
@@ -209,6 +204,11 @@ class SupabaseAuthAdapter extends SupabaseRepository implements AuthPort {
     }
   }
 
+  @override
+  Future<void> sendResetEmail(String email) async {
+    await resetPassword(email);
+  }
+
   // @override
   // Future<void> resendSignUpCode(
   //   String username,
@@ -264,7 +264,13 @@ class SupabaseAuthAdapter extends SupabaseRepository implements AuthPort {
   AuthUser? get currentUser {
     final user = supabase.auth.currentUser;
     if (user == null) return null;
-    return AuthUser(id: user.id, email: user.email);
+    final provider = user.appMetadata['provider'];
+    return AuthUser(
+      id: user.id,
+      email: user.email,
+      phone: user.phone,
+      isAnonymous: provider == 'anon' || provider == 'anonymous',
+    );
   }
 
   @override
@@ -307,6 +313,11 @@ class SupabaseAuthAdapter extends SupabaseRepository implements AuthPort {
         context: _context('deleteCurrentUser'),
       );
     }
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    await deleteCurrentUser();
   }
 
   @override
@@ -403,17 +414,6 @@ class SupabaseAuthAdapter extends SupabaseRepository implements AuthPort {
         emailRedirectTo: redirectUri,
         shouldCreateUser: shouldCreateUser,
       );
-      try {
-        await _userOnboardingService.captureSignInMagicLinkPreview(
-          email: trimmed,
-          redirectUriOverride: redirectTo,
-        );
-      } catch (previewError, previewStack) {
-        log(
-          'Magic link preview capture failed: $previewError',
-          stackTrace: previewStack,
-        );
-      }
     } on DomainError {
       rethrow;
     } catch (error, stack) {
@@ -431,6 +431,11 @@ class SupabaseAuthAdapter extends SupabaseRepository implements AuthPort {
   }
 
   @override
+  Future<void> sendMagicLink(String email) async {
+    await signInWithOtp(email);
+  }
+
+  @override
   Future<void> confirmSignInWithOtp(String email, String code) async {
     try {
       await supabase.auth.verifyOTP(
@@ -445,6 +450,36 @@ class SupabaseAuthAdapter extends SupabaseRepository implements AuthPort {
         error,
         stack,
         context: _context('confirmSignInWithOtp', {'email': email}),
+      );
+    }
+  }
+
+  @override
+  Future<String> verifyOtp(String email, String code) async {
+    try {
+      final response = await supabase.auth.verifyOTP(
+        email: email,
+        token: code.trim(),
+        type: sb.OtpType.magiclink,
+      );
+      final refreshToken =
+          response.session?.refreshToken ??
+          supabase.auth.currentSession?.refreshToken;
+      if (refreshToken == null || refreshToken.isEmpty) {
+        throw DomainErrorCode.unauthorized.err(
+          reason: DomainErrorReason.invalidVerificationCode,
+          message: 'OTP verification did not return a refresh token',
+          context: _context('verifyOtp', {'email': email}),
+        );
+      }
+      return refreshToken;
+    } on DomainError {
+      rethrow;
+    } catch (error, stack) {
+      throw mapError(
+        error,
+        stack,
+        context: _context('verifyOtp', {'email': email}),
       );
     }
   }
@@ -488,20 +523,26 @@ class SupabaseAuthAdapter extends SupabaseRepository implements AuthPort {
         type: sb.OtpType.recovery,
       );
       // Step 2: Update the user's password.
-      await supabase.auth.updateUser(
-        sb.UserAttributes(password: newPassword),
-      );
+      await supabase.auth.updateUser(sb.UserAttributes(password: newPassword));
     } on DomainError {
       rethrow;
     } catch (error, stack) {
       throw mapError(
         error,
         stack,
-        context: _context(
-          'confirmResetPasswordWithOtp',
-          {'email': email},
-        ),
+        context: _context('confirmResetPasswordWithOtp', {'email': email}),
       );
+    }
+  }
+
+  @override
+  Future<void> confirmResetPassword(String newPassword) async {
+    try {
+      await supabase.auth.updateUser(sb.UserAttributes(password: newPassword));
+    } on DomainError {
+      rethrow;
+    } catch (error, stack) {
+      throw mapError(error, stack, context: _context('confirmResetPassword'));
     }
   }
 
@@ -518,6 +559,16 @@ class SupabaseAuthAdapter extends SupabaseRepository implements AuthPort {
         context: _context('refreshSessionFromRefreshToken'),
       );
     }
+  }
+
+  @override
+  Future<void> refreshSessionFromToken(String refreshToken) async {
+    await refreshSessionFromRefreshToken(refreshToken);
+  }
+
+  @override
+  Future<void> resendSignUpCode(String username) async {
+    await resendSignUpEmail(username);
   }
 }
 

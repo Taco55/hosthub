@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
 import 'package:hosthub_console/features/cms/data/cms_repository.dart';
-import 'package:hosthub_console/shared/widgets/widgets.dart';
+import 'package:hosthub_console/core/widgets/widgets.dart';
 
 /// Renders a [ContentDocument]'s JSONB content as editable UI sections
 /// based on its [ContentDocument.contentType].

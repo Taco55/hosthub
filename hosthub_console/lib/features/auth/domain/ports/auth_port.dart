@@ -1,14 +1,12 @@
 import 'dart:async';
 
-class AuthUser {
-  const AuthUser({
-    required this.id,
-    required this.email,
-  });
+import 'package:auth_ui_flutter/auth_ui_flutter.dart' as auth_ui;
 
-  final String id;
-  final String? email;
-}
+typedef AuthUser = auth_ui.AuthUser;
+typedef SignUpResult = auth_ui.SignUpResult;
+typedef SignInResult = auth_ui.SignInResult;
+typedef AuthSignInStep = auth_ui.AuthSignInStep;
+typedef AuthSignUpStep = auth_ui.AuthSignUpStep;
 
 class AuthSessionChange {
   const AuthSessionChange({this.user});
@@ -28,11 +26,25 @@ enum OAuthProvider {
   twitter,
 }
 
-abstract class AuthPort {
+abstract class AuthPort implements auth_ui.AuthServiceInterface {
+  @override
   AuthUser? get currentUser;
 
+  @override
   Future<SignInResult> signIn(String username, String password);
+  @override
   Future<SignUpResult> signUp(String username, String password);
+
+  @override
+  Future<void> sendResetEmail(String email);
+  @override
+  Future<void> sendMagicLink(String email);
+  @override
+  Future<String> verifyOtp(String email, String code);
+  @override
+  Future<void> refreshSessionFromToken(String refreshToken);
+  @override
+  Future<void> confirmResetPassword(String newPassword);
 
   /// Sends a magic link / OTP.
   /// [shouldCreateUser] defaults to true so new accounts are provisioned automatically.
@@ -44,6 +56,7 @@ abstract class AuthPort {
   });
   Future<void> confirmSignInWithOtp(String email, String code);
 
+  @override
   Future<void> signOut();
 
   bool get isGuestUser;
@@ -52,14 +65,23 @@ abstract class AuthPort {
 
   /// This will not check whether or not those tokens are valid. To check
   /// if tokens are valid, see [isValidSession].
+  @override
   bool get isLoggedIn;
   Future<bool> validateCurrentUserExists();
 
   Future<bool> resetPassword(String username);
 
+  @override
+  Future<void> resendSignUpCode(String username);
   Future<void> resendSignUpEmail(String username);
 
+  @override
   Future<SignUpResult> confirmSignUp(String username, String code);
+
+  /// Consumer-facing alias from [AuthServiceInterface].
+  /// Implementations can delegate to [deleteCurrentUser].
+  @override
+  Future<void> deleteAccount();
 
   Future<void> deleteCurrentUser();
 
@@ -72,6 +94,7 @@ abstract class AuthPort {
   Future<void> refreshSessionIfNeeded();
 
   /// Confirms a password reset by verifying the OTP and setting a new password.
+  @override
   Future<void> confirmResetPasswordWithOtp(
     String email,
     String code,
@@ -80,54 +103,4 @@ abstract class AuthPort {
 
   /// Refreshes the session using a refresh token (e.g. from a deep link redirect).
   Future<void> refreshSessionFromRefreshToken(String refreshToken);
-}
-
-enum AuthSignInStep {
-  /// The sign-in is not complete and must be confirmed with an SMS code.
-  confirmSignInWithSmsMfaCode,
-
-  /// The sign-in is not complete and must be confirmed with the user's new
-  /// password.
-  confirmSignInWithNewPassword,
-
-  /// The sign-in is not complete and the user must reset their password before
-  /// proceeding.
-  resetPassword,
-
-  /// The sign-in is not complete and the user's sign up must be confirmed
-  /// before proceeding.
-  confirmSignUp,
-
-  /// The sign-in is complete.
-  done,
-}
-
-enum AuthSignUpStep {
-  /// The user is successfully registered but requires an additional
-  /// confirmation before the sign up is considered complete.
-  confirmSignUp,
-
-  /// The user is successfully registered and sign up is complete.
-  done,
-}
-
-class SignUpResult {
-  const SignUpResult({
-    required this.isSignUpComplete,
-    required this.nextStep,
-    this.userId,
-  });
-
-  final bool isSignUpComplete;
-  final AuthSignUpStep nextStep;
-
-  /// The user ID of the signed-up user.
-  final String? userId;
-}
-
-class SignInResult {
-  const SignInResult({required this.isSignedIn, required this.nextStep});
-
-  final bool isSignedIn;
-  final AuthSignInStep nextStep;
 }

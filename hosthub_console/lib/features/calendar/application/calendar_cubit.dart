@@ -2,8 +2,8 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:app_errors/app_errors.dart';
 
-import 'package:hosthub_console/shared/domain/channel_manager/channel_manager_repository.dart';
-import 'package:hosthub_console/shared/domain/channel_manager/models/models.dart';
+import 'package:hosthub_console/features/channel_manager/domain/channel_manager_repository.dart';
+import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
 
 enum CalendarStatus { initial, loading, loaded, error }
 

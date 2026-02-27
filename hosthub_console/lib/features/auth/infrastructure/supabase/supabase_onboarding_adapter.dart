@@ -3,9 +3,6 @@ import 'dart:developer' as developer;
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:hosthub_console/core/core.dart';
-
-import 'package:hosthub_console/features/auth/application/magic_link_debug_store.dart';
 import 'package:hosthub_console/features/auth/domain/ports/email_templates_port.dart';
 import 'package:hosthub_console/features/auth/infrastructure/supabase/supabase_repository.dart';
 import 'package:hosthub_console/features/auth/domain/ports/onboarding_port.dart';
@@ -28,8 +25,6 @@ class SupabaseOnboardingAdapter extends SupabaseRepository {
   final OnboardingPort _settingsRepository;
   final String _passwordResetRedirectUri;
   final String _signInRedirectUri;
-
-  bool _magicLinkPreviewDisabled = false;
 
   String get signInRedirectUri => _signInRedirectUri;
 
@@ -93,14 +88,6 @@ class SupabaseOnboardingAdapter extends SupabaseRepository {
       actionLink: link.actionLink,
       otp: link.otp,
     );
-
-    if (_isMagicLinkPreviewEnabled) {
-      MagicLinkDebugStore.instance.setLink(
-        link.actionLink,
-        email: trimmedEmail,
-        otp: link.otp,
-      );
-    }
   }
 
   Future<void> sendSignUpConfirmationEmail({
@@ -124,65 +111,6 @@ class SupabaseOnboardingAdapter extends SupabaseRepository {
       name: name,
       otp: link.otp,
     );
-
-    if (_isMagicLinkPreviewEnabled) {
-      MagicLinkDebugStore.instance.setLink(
-        link.actionLink,
-        email: trimmedEmail,
-        otp: link.otp,
-      );
-    }
-  }
-
-  Future<void> captureSignInMagicLinkPreview({
-    required String email,
-    String? redirectUriOverride,
-  }) async {
-    if (!AppConfig.current.isMagicLinkPreviewSupported) {
-      developer.log(
-        'Magic link preview disabled; skipping capture for $email',
-        name: 'SupabaseOnboardingAdapter',
-      );
-      return;
-    }
-
-    if (_magicLinkPreviewDisabled) return;
-
-    try {
-      final trimmedEmail = email.trim();
-      final link = await _generateLink(
-        functionName: 'generate_magic_link_and_otp',
-        email: trimmedEmail,
-        defaultRedirect: _signInRedirectUri,
-        overrideRedirect: redirectUriOverride,
-        operation: 'captureMagicLinkPreview',
-      );
-
-      developer.log(
-        'Magic link captured for preview: ${link.actionLink}',
-        name: 'SupabaseOnboardingAdapter',
-      );
-      MagicLinkDebugStore.instance.setLink(
-        link.actionLink,
-        email: trimmedEmail,
-        otp: link.otp,
-      );
-    } on DomainError catch (error) {
-      if (_shouldSuppressMagicLinkPreviewError(error)) {
-        _disableMagicLinkPreview(error);
-        final existingContext = error.context ?? const {};
-        throw error.copyWith(
-          message:
-              'Supabase function generate_magic_link_and_otp not available',
-          context: {
-            ...existingContext,
-            'function_name': 'generate_magic_link_and_otp',
-            'magic_link_preview_disabled': true,
-          },
-        );
-      }
-      rethrow;
-    }
   }
 
   Future<_ResetLinkResult> _generateResetLink({
@@ -249,31 +177,6 @@ class SupabaseOnboardingAdapter extends SupabaseRepository {
     final trimmed = override?.trim();
     if (trimmed != null && trimmed.isNotEmpty) return trimmed;
     return defaultValue;
-  }
-
-  bool get _isMagicLinkPreviewEnabled =>
-      AppConfig.current.isMagicLinkPreviewSupported &&
-      !_magicLinkPreviewDisabled;
-
-  void _disableMagicLinkPreview(DomainError error) {
-    if (_magicLinkPreviewDisabled) return;
-    _magicLinkPreviewDisabled = true;
-    MagicLinkDebugStore.instance.clear();
-    final status = error.context?['function_status'];
-    final reason = error.message ?? error.code.name;
-    final details = status != null ? '$reason (status: $status)' : reason;
-    developer.log(
-      'Magic link preview disabled; Supabase function unavailable ($details).',
-      name: 'SupabaseOnboardingAdapter',
-    );
-  }
-
-  bool _shouldSuppressMagicLinkPreviewError(DomainError error) {
-    if (error.code != DomainErrorCode.notFound) return false;
-    final cause = error.cause;
-    if (cause is FunctionException) return true;
-    final status = error.context?['function_status']?.toString();
-    return status == '404';
   }
 
   Map<String, dynamic> _ensureMap(dynamic data) {

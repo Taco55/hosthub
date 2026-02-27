@@ -2,7 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:app_errors/app_errors.dart';
 
-import 'package:hosthub_console/shared/models/models.dart';
+import 'package:hosthub_console/core/models/models.dart';
 
 import 'package:hosthub_console/features/users/domain/models/admin_user_detail.dart';
 

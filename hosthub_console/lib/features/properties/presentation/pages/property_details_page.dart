@@ -8,7 +8,7 @@ import 'package:timeago/timeago.dart' as timeago;
 import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaffold.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/user_settings/user_settings.dart';
-import 'package:hosthub_console/shared/widgets/widgets.dart';
+import 'package:hosthub_console/core/widgets/widgets.dart';
 
 class PropertyDetailsPage extends StatelessWidget {
   const PropertyDetailsPage({super.key});

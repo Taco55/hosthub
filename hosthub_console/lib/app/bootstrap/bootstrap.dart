@@ -9,8 +9,8 @@ import 'package:hosthub_console/features/profile/profile_di.dart';
 import 'package:hosthub_console/features/properties/properties_di.dart';
 import 'package:hosthub_console/features/server_settings/server_settings_di.dart';
 import 'package:hosthub_console/features/users/users_di.dart';
-import 'package:hosthub_console/shared/integrations/lodgify/lodgify_di.dart';
-import 'package:hosthub_console/shared/services/services.dart';
+import 'package:hosthub_console/features/channel_manager/infrastructure/lodgify/lodgify_di.dart';
+import 'package:hosthub_console/core/services/services.dart';
 
 void initializeAppConfig({
   required bool enableLogging,

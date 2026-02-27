@@ -9,7 +9,7 @@ import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaf
 import 'package:hosthub_console/features/cms/cms.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/sites/presentation/widgets/content_section_renderer.dart';
-import 'package:hosthub_console/shared/widgets/widgets.dart';
+import 'package:hosthub_console/core/widgets/widgets.dart';
 
 class SiteContentPage extends StatefulWidget {
   const SiteContentPage({super.key, required this.siteId});

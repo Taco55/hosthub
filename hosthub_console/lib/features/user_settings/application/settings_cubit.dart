@@ -2,7 +2,7 @@ import 'package:app_errors/app_errors.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:hosthub_console/shared/models/models.dart';
+import 'package:hosthub_console/core/models/models.dart';
 
 import 'package:hosthub_console/features/user_settings/data/user_settings_repository.dart';
 import 'package:hosthub_console/features/user_settings/domain/current_user_provider.dart';

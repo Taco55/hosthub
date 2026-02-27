@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import 'package:hosthub_console/shared/widgets/widgets.dart';
+import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
 class ConsolePageScaffold extends StatefulWidget {

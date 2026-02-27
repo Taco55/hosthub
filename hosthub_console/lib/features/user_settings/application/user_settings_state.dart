@@ -1,7 +1,7 @@
 import 'package:app_errors/app_errors.dart';
 
-import 'package:hosthub_console/shared/models/models.dart';
-import 'package:hosthub_console/shared/domain/channel_manager/models/models.dart';
+import 'package:hosthub_console/core/models/models.dart';
+import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
 import 'package:hosthub_console/features/user_settings/domain/user_settings_actions.dart';
 
 enum UserSettingsStatus {

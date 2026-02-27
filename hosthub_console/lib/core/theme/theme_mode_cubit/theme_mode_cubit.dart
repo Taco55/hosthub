@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:hosthub_console/shared/l10n/l10n.dart';
+import 'package:hosthub_console/core/l10n/l10n.dart';
 
 class ThemeModeCubit extends Cubit<ThemeMode> {
   ThemeModeCubit({ThemeMode? themeMode}) : super(themeMode ?? ThemeMode.system);

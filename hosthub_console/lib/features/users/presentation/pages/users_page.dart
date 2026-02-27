@@ -9,8 +9,8 @@ import 'package:hosthub_console/features/auth/auth.dart';
 import 'package:hosthub_console/features/users/application/users_cubit.dart';
 import 'package:hosthub_console/features/users/presentation/dialogs/create_user_dialog.dart';
 import 'package:styled_widgets/styled_widgets.dart';
-import 'package:hosthub_console/shared/l10n/l10n.dart';
-import 'package:hosthub_console/shared/widgets/widgets.dart';
+import 'package:hosthub_console/core/l10n/l10n.dart';
+import 'package:hosthub_console/core/widgets/widgets.dart';
 
 class UsersPage extends StatefulWidget {
   const UsersPage({super.key});

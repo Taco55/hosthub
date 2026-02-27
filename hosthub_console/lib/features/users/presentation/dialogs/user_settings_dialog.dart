@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'package:hosthub_console/shared/models/models.dart';
+import 'package:hosthub_console/core/models/models.dart';
 import 'package:styled_widgets/styled_widgets.dart';
-import 'package:hosthub_console/shared/widgets/widgets.dart';
+import 'package:hosthub_console/core/widgets/widgets.dart';
 
 Future<void> showUserSettingsDialog(
   BuildContext context, {

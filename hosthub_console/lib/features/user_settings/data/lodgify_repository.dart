@@ -1,4 +1,4 @@
-import 'package:hosthub_console/shared/services/lodgify_service.dart';
+import 'package:hosthub_console/core/services/lodgify_service.dart';
 
 abstract class LodgifyRepository {
   Future<List<LodgifyPropertySummary>> fetchProperties();

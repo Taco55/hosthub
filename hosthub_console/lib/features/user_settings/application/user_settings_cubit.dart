@@ -1,9 +1,9 @@
 import 'package:app_errors/app_errors.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:hosthub_console/shared/models/models.dart';
-import 'package:hosthub_console/shared/domain/channel_manager/channel_manager_repository.dart';
-import 'package:hosthub_console/shared/domain/channel_manager/models/models.dart';
+import 'package:hosthub_console/core/models/models.dart';
+import 'package:hosthub_console/features/channel_manager/domain/channel_manager_repository.dart';
+import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/user_settings/application/settings_cubit.dart';
 import 'package:hosthub_console/features/user_settings/application/user_settings_state.dart';

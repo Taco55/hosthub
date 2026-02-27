@@ -7,7 +7,7 @@ import 'package:styled_widgets/styled_widgets.dart';
 import 'package:hosthub_console/features/cms/cms.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaffold.dart';
-import 'package:hosthub_console/shared/widgets/widgets.dart';
+import 'package:hosthub_console/core/widgets/widgets.dart';
 
 class SitesPage extends StatefulWidget {
   const SitesPage({super.key});

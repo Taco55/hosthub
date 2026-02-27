@@ -5,11 +5,16 @@ import { env } from "../_shared/env.ts";
 import { buildCorsHeaders } from "../_shared/http.ts";
 
 const SUPABASE_URL = env("SUPABASE_URL");
-const SERVICE_ROLE_KEY = env("SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SECRET_KEY");
+const SERVICE_ROLE_KEY = env(
+  "SUPABASE_SERVICE_ROLE_KEY",
+  "SUPABASE_SECRET_KEY",
+);
 const ADMIN_BASE_URL = env("ADMIN_BASE_URL", "ADMIN_DASHBOARD_BASE_URL");
 
 if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-  throw new Error("Missing Supabase configuration for password reset function.");
+  throw new Error(
+    "Missing Supabase configuration for password reset function.",
+  );
 }
 
 const client = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
@@ -38,7 +43,7 @@ const normalizeRedirect = (value: string | undefined) => {
   const base = ADMIN_BASE_URL.trim().replace(/\/+$/, "");
   if (!base) return undefined;
 
-  return `${base}/#/reset-password`;
+  return `${base}/reset-password`;
 };
 
 Deno.serve(async (req) => {

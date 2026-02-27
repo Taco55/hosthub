@@ -33,8 +33,6 @@ const kCmsPreviewDomain = String.fromEnvironment(
   defaultValue: '',
 );
 
-const _isProductBuild = bool.fromEnvironment('dart.vm.product');
-
 class AppConfig {
   final AppEnvironment environment;
   final String clientAppKey;
@@ -56,9 +54,6 @@ class AppConfig {
 
   /// If false, auth errors show inline instead of modal dialogs.
   final bool authErrorsInDialog;
-
-  /// Allows showing captured magic links locally; disabled in product builds.
-  final bool enableMagicLinkPreview;
 
   /// Controls Bloc observer logging; typically tied to kDebugMode.
   final bool enableLogging;
@@ -86,7 +81,6 @@ class AppConfig {
     required this.enableDevTools,
     required this.enableFirebase,
     required this.authErrorsInDialog,
-    required this.enableMagicLinkPreview,
     required this.enableLogging,
     required this.enableApiLogger,
     required this.enableRouterLogging,
@@ -110,7 +104,6 @@ class AppConfig {
     bool? enableDevTools,
     bool? enableFirebase,
     bool? authErrorsInDialog,
-    bool? enableMagicLinkPreview,
     bool? enableLogging,
     bool? enableApiLogger,
     bool? enableRouterLogging,
@@ -123,7 +116,6 @@ class AppConfig {
         enableDevTools: true,
         enableFirebase: false,
         authErrorsInDialog: true,
-        enableMagicLinkPreview: true,
         enableLogging: true,
         enableApiLogger: true,
         enableRouterLogging: true,
@@ -132,7 +124,6 @@ class AppConfig {
         enableDevTools: true,
         enableFirebase: true,
         authErrorsInDialog: true,
-        enableMagicLinkPreview: true,
         enableLogging: true,
         enableApiLogger: true,
         enableRouterLogging: true,
@@ -141,7 +132,6 @@ class AppConfig {
         enableDevTools: false,
         enableFirebase: true,
         authErrorsInDialog: true,
-        enableMagicLinkPreview: false,
         enableLogging: false,
         enableApiLogger: false,
         enableRouterLogging: false,
@@ -177,8 +167,6 @@ class AppConfig {
       enableDevTools: enableDevTools ?? defaults.enableDevTools,
       enableFirebase: enableFirebase ?? defaults.enableFirebase,
       authErrorsInDialog: authErrorsInDialog ?? defaults.authErrorsInDialog,
-      enableMagicLinkPreview:
-          enableMagicLinkPreview ?? defaults.enableMagicLinkPreview,
       enableLogging: resolvedEnableLogging,
       enableApiLogger: resolvedEnableApiLogger,
       enableRouterLogging: resolvedEnableRouterLogging,
@@ -202,11 +190,6 @@ class AppConfig {
 
   bool get isFirebaseEnabled => enableFirebase;
 
-  bool get isMagicLinkPreviewSupported {
-    if (_isProductBuild) return false;
-    return enableMagicLinkPreview;
-  }
-
   String authRedirectUri({String path = '/login'}) =>
       '$deepLinkScheme://auth$path';
 
@@ -215,7 +198,7 @@ class AppConfig {
       'supabaseUrl=$supabaseUrl admin=${adminBaseUrl ?? '-'} '
       'lodgify=$lodgifyBaseUrl '
       'flags=[dev=$enableDevTools fb=$enableFirebase modal=$authErrorsInDialog '
-      'magicLinkPreview=$enableMagicLinkPreview log=$enableLogging apiLog=$enableApiLogger '
+      'log=$enableLogging apiLog=$enableApiLogger '
       'routerLog=$enableRouterLogging]]';
 
   @override

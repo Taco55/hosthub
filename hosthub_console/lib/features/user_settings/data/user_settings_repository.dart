@@ -1,4 +1,4 @@
-import 'package:hosthub_console/shared/models/models.dart';
+import 'package:hosthub_console/core/models/models.dart';
 
 abstract class UserSettingsRepository {
   Future<UserSettings?> fetch(String profileId);

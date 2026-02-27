@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:styled_widgets/styled_widgets.dart';
-import 'package:hosthub_console/shared/widgets/widgets.dart';
+import 'package:hosthub_console/core/widgets/widgets.dart';
 
 class EditUserProfileResult {
   const EditUserProfileResult({required this.email, this.username});

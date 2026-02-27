@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:hosthub_console/features/cms/cms.dart';
 import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaffold.dart';
-import 'package:hosthub_console/shared/widgets/widgets.dart';
+import 'package:hosthub_console/core/widgets/widgets.dart';
 
 class ContentDocumentsPage extends StatefulWidget {
   const ContentDocumentsPage({super.key});

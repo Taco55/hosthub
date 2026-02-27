@@ -6,8 +6,8 @@ import 'package:styled_widgets/styled_widgets.dart';
 import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaffold.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/user_settings/user_settings.dart';
-import 'package:hosthub_console/shared/domain/channel_manager/models/models.dart';
-import 'package:hosthub_console/shared/widgets/widgets.dart';
+import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
+import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:app_errors/app_errors.dart';
 
 class PropertySetupPage extends StatelessWidget {

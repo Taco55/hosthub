@@ -2,39 +2,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:hosthub_console/core/core.dart';
 import 'package:hosthub_console/features/auth/auth.dart';
-import 'package:hosthub_console/features/auth/infrastructure/local/fake_auth_adapter.dart';
-import 'package:hosthub_console/features/auth/infrastructure/local/local_email_templates_adapter.dart';
-import 'package:hosthub_console/features/auth/infrastructure/local/local_onboarding_adapter.dart';
 import 'package:hosthub_console/features/auth/infrastructure/supabase/supabase_auth_adapter.dart';
 import 'package:hosthub_console/features/auth/infrastructure/supabase/supabase_email_templates_adapter.dart';
 import 'package:hosthub_console/features/auth/infrastructure/supabase/supabase_onboarding_adapter.dart';
 import 'package:hosthub_console/features/server_settings/data/admin_settings_repository.dart';
 
 void registerAuthDependencies([SupabaseClient? client]) {
-  final useSupabase = AppConfig.current.supabaseAnonKey.trim().isNotEmpty;
-
-  if (!useSupabase) {
-    if (!I.isRegistered<OnboardingPort>()) {
-      I.registerSingleton<OnboardingPort>(
-        const LocalOnboardingAdapter(),
-        signalsReady: true,
-      );
-    }
-    if (!I.isRegistered<EmailTemplatesPort>()) {
-      I.registerSingleton<EmailTemplatesPort>(
-        const LocalEmailTemplatesAdapter(),
-        signalsReady: true,
-      );
-    }
-    if (!I.isRegistered<AuthPort>()) {
-      I.registerSingleton<AuthPort>(
-        FakeAuthAdapter(),
-        signalsReady: true,
-      );
-    }
-    return;
-  }
-
   final supabaseClient = client ?? Supabase.instance.client;
 
   if (!I.isRegistered<OnboardingPort>()) {
@@ -58,7 +31,7 @@ void registerAuthDependencies([SupabaseClient? client]) {
         emailRepository: I.get<EmailTemplatesPort>(),
         settingsRepository: I.get<OnboardingPort>(),
         passwordResetRedirectUri: AppConfig.current.authRedirectUri(
-          path: '/reset',
+          path: '/reset-password',
         ),
         signInRedirectUri: AppConfig.current.authRedirectUri(path: '/login'),
       ),
