@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_localized_locales/flutter_localized_locales.dart';
 import 'package:form_builder_validators/form_builder_validators.dart';
@@ -15,7 +16,7 @@ import 'package:hosthub_console/core/widgets/auth/auth_ui_styled_overrides.dart'
 import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:hosthub_console/core/l10n/application/language_cubit.dart';
 
-import 'package:hosthub_console/app/router/router.dart';
+import 'package:hosthub_console/app/router/hosthub_router.dart';
 import 'package:hosthub_console/app/router/go_router_refresh_stream.dart';
 import 'package:hosthub_console/app/shell/navigation/navigation_guard_controller.dart';
 import 'package:hosthub_console/app/session/session_bloc_listeners.dart';
@@ -27,6 +28,24 @@ import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/channel_manager/domain/channel_manager_repository.dart';
 import 'package:hosthub_console/features/user_settings/user_settings.dart';
 import 'package:hosthub_console/features/users/users.dart';
+
+const _authLoadingPath = '/auth-loading';
+const _calendarPath = '/calendar';
+
+AuthUiPaths get _authUiPaths => AuthUi.config.paths;
+
+AuthLoginErrorDisplayMode get _authErrorDisplayMode =>
+    AppConfig.current.authErrorsInDialog
+    ? AuthLoginErrorDisplayMode.dialogOnly
+    : AuthLoginErrorDisplayMode.inlineExpectedAuthErrors;
+
+const _debugDemoCredentials = <DemoCredential>[
+  DemoCredential(
+    shortcut: 'taco.',
+    email: 'taco.kind@gmail.com',
+    password: '1234abcd',
+  ),
+];
 
 class ConsoleApp extends StatelessWidget {
   const ConsoleApp({super.key});
@@ -109,7 +128,29 @@ class _ConsoleRouterHostState extends State<_ConsoleRouterHost> {
     super.initState();
     final authBloc = context.read<AuthBloc>();
     _refresh = GoRouterRefreshStream(authBloc.stream);
-    _router = createRouter(refreshListenable: _refresh);
+
+    final paths = _authUiPaths;
+    _router = HosthubRouter.create(
+      refreshListenable: _refresh,
+      redirect: (_, state) {
+        return generateRedirectFromAuthBloc(
+          authBloc: authBloc,
+          path: state.uri.path,
+          queryParameters: state.uri.queryParameters,
+          config: AuthRedirectConfig(
+            homePath: _calendarPath,
+            loadingPath: _authLoadingPath,
+            paths: paths,
+          ),
+        );
+      },
+      authUiPaths: paths,
+      homePath: _calendarPath,
+      authLoadingPath: _authLoadingPath,
+      authErrorDisplayMode: _authErrorDisplayMode,
+      demoCredentials: kDebugMode ? _debugDemoCredentials : const [],
+      debugLogDiagnostics: AppConfig.current.enableRouterLogging,
+    );
   }
 
   @override
@@ -124,11 +165,11 @@ class _ConsoleRouterHostState extends State<_ConsoleRouterHost> {
     final themeMode = context.watch<ThemeModeCubit>().state;
     final locale = context.watch<LanguageCubit>().state;
 
-    final lightTheme = HosthubDiploraV1ThemePreset.applyMaterialTheme(
+    final lightTheme = HosthubThemePreset.applyMaterialTheme(
       baseTheme: ThemeData.light(),
       brightness: Brightness.light,
     );
-    final darkTheme = HosthubDiploraV1ThemePreset.applyMaterialTheme(
+    final darkTheme = HosthubThemePreset.applyMaterialTheme(
       baseTheme: ThemeData.dark(),
       brightness: Brightness.dark,
     );
@@ -152,7 +193,7 @@ class _ConsoleRouterHostState extends State<_ConsoleRouterHost> {
       child: MaterialApp.router(
         routerConfig: _router,
         builder: (context, child) {
-          final styledTheme = HosthubDiploraV1ThemePreset.styledTheme(
+          final styledTheme = HosthubThemePreset.styledTheme(
             lightMaterialTheme: lightTheme,
           );
 

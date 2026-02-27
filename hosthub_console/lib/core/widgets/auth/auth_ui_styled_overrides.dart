@@ -54,12 +54,24 @@ Future<void> _showStyledAuthErrorDialog(
   AuthError error,
   String message,
 ) async {
+  final cause = error.cause;
+  if (cause is DomainError) {
+    await showAppError(context, AppError.fromDomain(context, cause));
+    return;
+  }
+
   await showStyledAlertDialog(
     context,
     title: AuthUiIntl.of(context).errorDialogTitle,
     message: message,
     dismissText: AuthUiIntl.of(context).errorDialogDismiss,
   );
+}
+
+String? _buildAuthErrorMessage(BuildContext context, AuthError error) {
+  final cause = error.cause;
+  if (cause is! DomainError) return null;
+  return AppError.fromDomain(context, cause).alert;
 }
 
 /// Builds an inline error widget using the app's styled error container.
@@ -85,6 +97,7 @@ Widget _buildStyledInlineError(BuildContext context, String message) {
 const styledAuthUiOverrides = AuthUiOverridesData(
   buttonBuilder: _buildStyledButton,
   formFieldBuilder: _buildStyledFormField,
+  errorMessageBuilder: _buildAuthErrorMessage,
   errorDialogBuilder: _showStyledAuthErrorDialog,
   inlineErrorBuilder: _buildStyledInlineError,
   minPasswordLength: 8,

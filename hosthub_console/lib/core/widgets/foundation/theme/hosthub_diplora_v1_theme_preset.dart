@@ -27,8 +27,8 @@ abstract final class HosthubDiploraV1Palette {
   static const Color onSurfaceVariantDark = Color(0xFF8AA0AF);
 }
 
-abstract final class HosthubDiploraV1ThemePreset {
-  const HosthubDiploraV1ThemePreset._();
+abstract final class HosthubThemePreset {
+  const HosthubThemePreset._();
 
   static ColorScheme materialColorScheme(Brightness brightness) {
     final isLight = brightness == Brightness.light;

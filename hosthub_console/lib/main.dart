@@ -12,18 +12,7 @@ import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:hosthub_console/features/auth/auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const _authUiConfig = AuthUiConfig(
-  usePathRouting: true,
-  paths: AuthUiPaths(
-    login: '/login',
-    forgotPassword: '/forgot-password',
-    resetPassword: '/reset-password',
-    setPassword: '/set-password',
-    resetPasswordCode: '/reset-password-code',
-    resetPasswordSent: '/reset-password-sent',
-    verifyOtp: '/verify-otp',
-  ),
-);
+const _authUiConfig = AuthUiConfig(usePathRouting: true);
 
 void main() {
   runZonedGuarded(
