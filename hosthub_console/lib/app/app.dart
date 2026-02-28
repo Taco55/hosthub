@@ -30,7 +30,7 @@ import 'package:hosthub_console/features/user_settings/user_settings.dart';
 import 'package:hosthub_console/features/users/users.dart';
 
 const _authLoadingPath = '/auth-loading';
-const _calendarPath = '/calendar';
+const _reservationsPath = '/reservations';
 
 AuthUiPaths get _authUiPaths => AuthUi.config.paths;
 
@@ -141,14 +141,14 @@ class _ConsoleRouterHostState extends State<_ConsoleRouterHost> {
           path: state.uri.path,
           queryParameters: state.uri.queryParameters,
           config: AuthRedirectConfig(
-            homePath: _calendarPath,
+            homePath: _reservationsPath,
             loadingPath: _authLoadingPath,
             paths: paths,
           ),
         );
       },
       authUiPaths: paths,
-      homePath: _calendarPath,
+      homePath: _reservationsPath,
       authLoadingPath: _authLoadingPath,
       authErrorDisplayMode: _authErrorDisplayMode,
       demoCredentials: kDebugMode ? _debugDemoCredentials : const [],

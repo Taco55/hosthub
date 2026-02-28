@@ -2,9 +2,10 @@ import 'package:app_errors/app_errors.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:hosthub_console/core/core.dart';
 import 'package:hosthub_console/core/models/models.dart';
-import 'package:hosthub_console/core/lifecycle/session_manager.dart';
 import 'package:hosthub_console/features/profile/data/profile_repository.dart';
+import 'package:hosthub_console/features/team/data/site_member_repository.dart';
 
 enum ProfileStatus {
   initial,
@@ -84,6 +85,15 @@ class ProfileCubit extends Cubit<ProfileState> {
 
         await _profileRepository.updateProfile(newProfile);
         profile = newProfile;
+      }
+
+      // Accept any pending site invitations for this user
+      try {
+        if (I.isRegistered<SiteMemberRepository>()) {
+          await I.get<SiteMemberRepository>().acceptPendingInvitations();
+        }
+      } catch (_) {
+        // Non-critical: silently ignore
       }
 
       emit(

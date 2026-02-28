@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart' show debugPrint;
+
 import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
 
 /// Lodgify-specific DTO for calendar/reservation data.
@@ -193,39 +195,74 @@ class LodgifyCalendarDto {
           _readByPath(map, const ['roomTypes']) ??
           _readByPath(map, const ['rooms']);
       if (roomList is List && roomList.isNotEmpty) {
-        // Sum across all rooms (multiple rooms may each have people).
         var sumAdults = 0;
         var sumChildren = 0;
         var sumInfants = 0;
         var found = false;
-        for (final room in roomList) {
-          final roomMap = _asMap(room);
-          if (roomMap == null) continue;
-          final people = _asMap(
-            _readByPath(roomMap, const ['people']) ??
-                _readByPath(roomMap, const ['occupancy']),
+        for (final item in roomList) {
+          final itemMap = _asMap(item);
+          if (itemMap == null) continue;
+
+          // Collect all sources of people data: the item itself and any
+          // nested rooms[] within it (Lodgify V2 uses
+          // room_types[].rooms[].people).
+          final peopleSources = <Map<String, dynamic>>[];
+
+          final directPeople = _asMap(
+            _readByPath(itemMap, const ['people']) ??
+                _readByPath(itemMap, const ['occupancy']),
           );
-          if (people == null) continue;
-          found = true;
-          sumAdults += _readFirstInt(people, const [
-                ['adults'],
-                ['numberOfAdults'],
-                ['number_of_adults'],
-              ]) ??
-              0;
-          sumChildren += _readFirstInt(people, const [
-                ['children'],
-                ['numberOfChildren'],
-                ['number_of_children'],
-              ]) ??
-              0;
-          sumInfants += _readFirstInt(people, const [
-                ['infants'],
-                ['babies'],
-                ['numberOfInfants'],
-                ['number_of_infants'],
-              ]) ??
-              0;
+          if (directPeople != null) {
+            peopleSources.add(directPeople);
+          } else {
+            // Check nested rooms[] within this room_type.
+            final nestedRooms = _readByPath(itemMap, const ['rooms']);
+            if (nestedRooms is List) {
+              for (final nested in nestedRooms) {
+                final nestedMap = _asMap(nested);
+                if (nestedMap == null) continue;
+                final nestedPeople = _asMap(
+                  _readByPath(nestedMap, const ['people']) ??
+                      _readByPath(nestedMap, const ['occupancy']),
+                );
+                if (nestedPeople != null) peopleSources.add(nestedPeople);
+              }
+            }
+
+            // Handle people as a plain number (total guest count).
+            if (peopleSources.isEmpty) {
+              final rawPeople = _readByPath(itemMap, const ['people']);
+              final asInt = _coerceInt(rawPeople);
+              if (asInt != null) {
+                found = true;
+                sumAdults += asInt;
+                continue;
+              }
+            }
+          }
+
+          for (final people in peopleSources) {
+            found = true;
+            sumAdults += _readFirstInt(people, const [
+                  ['adults'],
+                  ['numberOfAdults'],
+                  ['number_of_adults'],
+                ]) ??
+                0;
+            sumChildren += _readFirstInt(people, const [
+                  ['children'],
+                  ['numberOfChildren'],
+                  ['number_of_children'],
+                ]) ??
+                0;
+            sumInfants += _readFirstInt(people, const [
+                  ['infants'],
+                  ['babies'],
+                  ['numberOfInfants'],
+                  ['number_of_infants'],
+                ]) ??
+                0;
+          }
         }
         if (found) {
           adults = sumAdults;
@@ -257,6 +294,20 @@ class LodgifyCalendarDto {
       final parts = [adults, children, infants].whereType<int>().toList();
       if (parts.isNotEmpty) {
         guestCount = parts.fold<int>(0, (sum, value) => sum + value);
+      }
+    }
+
+    if (guestCount == null && adults == null && children == null && infants == null) {
+      debugPrint(
+        '[LodgifyDTO] No guest counts found. '
+        'Top keys: ${map.keys.take(20).toList()}',
+      );
+      final rt = map['room_types'] ?? map['roomTypes'];
+      if (rt is List && rt.isNotEmpty && rt.first is Map) {
+        debugPrint(
+          '[LodgifyDTO] room_types[0] keys: '
+          '${(rt.first as Map).keys.toList()}',
+        );
       }
     }
 

@@ -1223,5 +1223,7 @@
   "revenueBreakdownServiceCosts": "Servicekosten",
   "revenueBreakdownOtherCosts": "Overige vaste kosten",
   "revenueBreakdownChannelFee": "Kanaal fee (Booking/Airbnb)",
-  "revenueBreakdownTax": "Belasting / btw"
+  "revenueBreakdownTax": "Belasting / btw",
+  "yes": "Ja",
+  "no": "Nee"
 }

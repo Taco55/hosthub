@@ -1,6 +1,6 @@
 enum MenuItem {
   sites,
-  calendar,
+  reservations,
   revenue,
   pricing,
   settings,

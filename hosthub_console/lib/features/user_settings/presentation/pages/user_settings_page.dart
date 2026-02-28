@@ -19,6 +19,11 @@ import 'package:hosthub_console/core/l10n/application/language_cubit.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/server_settings/application/server_settings_cubit.dart';
 import 'package:hosthub_console/features/server_settings/domain/admin_settings.dart';
+import 'package:hosthub_console/features/team/application/site_members_cubit.dart';
+import 'package:hosthub_console/features/team/domain/site_invitation.dart';
+import 'package:hosthub_console/features/team/domain/site_member.dart';
+import 'package:hosthub_console/features/team/domain/site_member_role.dart';
+import 'package:hosthub_console/features/team/presentation/dialogs/invite_member_dialog.dart';
 import 'package:hosthub_console/features/user_settings/user_settings.dart';
 
 class UserSettingsPage extends StatelessWidget {
@@ -298,7 +303,224 @@ class _UserSettingsSection extends StatelessWidget {
           ],
         ),
         const _ChannelFeeDefaultsSection(),
+        const _TeamSection(),
       ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Gebruikers Section
+// ---------------------------------------------------------------------------
+
+class _TeamSection extends StatefulWidget {
+  const _TeamSection();
+
+  @override
+  State<_TeamSection> createState() => _TeamSectionState();
+}
+
+class _TeamSectionState extends State<_TeamSection> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<SiteMembersCubit>().loadAccountTeam();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return BlocConsumer<SiteMembersCubit, SiteMembersState>(
+      listenWhen: (prev, curr) => prev.error != curr.error,
+      listener: (context, state) async {
+        if (state.error != null) {
+          final appError = AppError.fromDomain(context, state.error!);
+          await showAppError(context, appError);
+          if (context.mounted) {
+            context.read<SiteMembersCubit>().clearError();
+          }
+        }
+      },
+      builder: (context, state) {
+        final members = state.members;
+        final invitations = state.pendingInvitations;
+        final isLoading = state.isLoading && members.isEmpty;
+
+        return StyledSection(
+          header: 'Gebruikers',
+          grouped: false,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Nodig een gebruiker uit om samen je properties te beheren.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  StyledButton(
+                    title: 'Uitnodigen',
+                    leftIconData: Icons.person_add_outlined,
+                    showLeftIcon: true,
+                    onPressed: () => _handleInvite(context),
+                    minHeight: 40,
+                  ),
+                ],
+              ),
+            ),
+            if (isLoading)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else ...[
+              if (members.isNotEmpty)
+                _TeamMembersList(members: members),
+              if (invitations.isNotEmpty) ...[
+                if (members.isNotEmpty) const SizedBox(height: 16),
+                Text(
+                  'Openstaande uitnodigingen',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _TeamInvitationsList(invitations: invitations),
+              ],
+              if (members.isEmpty && invitations.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    'Je hebt nog geen gebruikers uitgenodigd.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _handleInvite(BuildContext context) async {
+    final result = await showInvitePartnerDialog(context);
+    if (result == true && context.mounted) {
+      showStyledToast(
+        context,
+        type: ToastificationType.success,
+        description: 'Uitnodiging verstuurd',
+      );
+    }
+  }
+}
+
+class _TeamMembersList extends StatelessWidget {
+  const _TeamMembersList({required this.members});
+
+  final List<SiteMember> members;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      children: members.map((member) {
+        return StyledTile(
+          title: member.displayName,
+          value: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.secondaryContainer,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              member.memberRole.label,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSecondaryContainer,
+              ),
+            ),
+          ),
+          trailing: member.memberRole != SiteMemberRole.owner
+              ? IconButton(
+                  icon: const Icon(Icons.remove_circle_outline, size: 20),
+                  tooltip: 'Verwijderen',
+                  onPressed: () => _confirmRemove(context, member),
+                )
+              : null,
+        );
+      }).toList(),
+    );
+  }
+
+  void _confirmRemove(BuildContext context, SiteMember member) {
+    showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Gebruiker verwijderen'),
+        content: Text(
+          'Weet je zeker dat je ${member.displayName} wilt verwijderen? '
+          'Deze gebruiker verliest toegang tot al je properties.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(context.s.cancelButton),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Verwijderen'),
+          ),
+        ],
+      ),
+    ).then((confirmed) {
+      if (confirmed == true && context.mounted) {
+        context.read<SiteMembersCubit>().removePartner(member);
+      }
+    });
+  }
+}
+
+class _TeamInvitationsList extends StatelessWidget {
+  const _TeamInvitationsList({required this.invitations});
+
+  final List<SiteInvitation> invitations;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      children: invitations.map((inv) {
+        return StyledTile(
+          title: inv.email,
+          value: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.tertiaryContainer,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              inv.memberRole.label,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onTertiaryContainer,
+              ),
+            ),
+          ),
+          trailing: IconButton(
+            icon: const Icon(Icons.cancel_outlined, size: 20),
+            tooltip: 'Annuleren',
+            onPressed: () {
+              context.read<SiteMembersCubit>().cancelPartnerInvitation(inv);
+            },
+          ),
+        );
+      }).toList(),
     );
   }
 }

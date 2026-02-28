@@ -1,6 +1,6 @@
 # melos_managed_dependency_overrides: keyboard_actions
 dependency_overrides:
   app_errors:
-    path: ../../../shared_libraries/app_errors
+    path: ../../../shared/libraries/app_errors
   styled_widgets:
-    path: ../../../shared_libraries/styled_widgets
+    path: ../../../shared/libraries/styled_widgets

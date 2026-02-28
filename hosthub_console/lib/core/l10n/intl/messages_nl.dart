@@ -1657,5 +1657,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "woman": MessageLookupByLibrary.simpleMessage("Vrouw"),
     "write": MessageLookupByLibrary.simpleMessage("Schrijven"),
     "yesLabel": MessageLookupByLibrary.simpleMessage("Ja"),
+    "yes": MessageLookupByLibrary.simpleMessage("Ja"),
+    "no": MessageLookupByLibrary.simpleMessage("Nee"),
   };
 }

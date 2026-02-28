@@ -106,8 +106,8 @@ class SectionScaffold extends StatelessWidget {
       case MenuItem.sites:
         router.go('/sites');
         break;
-      case MenuItem.calendar:
-        router.go('/calendar');
+      case MenuItem.reservations:
+        router.go('/reservations');
         break;
       case MenuItem.revenue:
         router.go('/revenue');

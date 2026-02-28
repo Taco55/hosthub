@@ -200,12 +200,23 @@ class CmsRepository extends SupabaseRepository {
       );
     }
     try {
-      await supabase.from('sites').insert({
-        'owner_profile_id': userId,
-        'name': name,
-        'default_locale': defaultLocale,
-        'locales': locales,
-        'timezone': timezone,
+      final response = await supabase
+          .from('sites')
+          .insert({
+            'owner_profile_id': userId,
+            'name': name,
+            'default_locale': defaultLocale,
+            'locales': locales,
+            'timezone': timezone,
+          })
+          .select('id')
+          .single();
+
+      // Auto-create owner membership
+      await supabase.from('site_members').insert({
+        'site_id': response['id'],
+        'profile_id': userId,
+        'role': 'owner',
       });
     } catch (error, stack) {
       throw mapError(

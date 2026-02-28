@@ -5,64 +5,48 @@ import 'package:app_errors/app_errors.dart';
 import 'package:hosthub_console/features/channel_manager/domain/channel_manager_repository.dart';
 import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
 
-enum CalendarStatus { initial, loading, loaded, error }
+enum ReservationsStatus { initial, loading, loaded, error }
 
-class CalendarState extends Equatable {
-  const CalendarState({
+class ReservationsState extends Equatable {
+  const ReservationsState({
     required this.status,
     required this.entries,
     required this.rangeStart,
     required this.rangeEnd,
-    this.nightlyRates = const {},
-    this.rateCurrency,
     this.propertyId,
     this.lastUpdated,
     this.error,
   });
 
-  const CalendarState.initial()
-    : status = CalendarStatus.initial,
+  const ReservationsState.initial()
+    : status = ReservationsStatus.initial,
       entries = const [],
-      nightlyRates = const {},
-      rateCurrency = null,
       rangeStart = null,
       rangeEnd = null,
       propertyId = null,
       lastUpdated = null,
       error = null;
 
-  final CalendarStatus status;
+  final ReservationsStatus status;
   final List<Reservation> entries;
-
-  /// Nightly rates keyed by date (midnight), used for showing prices on
-  /// non-booked days in the timeline calendar.
-  final Map<DateTime, num> nightlyRates;
-
-  /// Currency code from the channel manager's rate settings (e.g. "NOK").
-  final String? rateCurrency;
-
   final DateTime? rangeStart;
   final DateTime? rangeEnd;
   final String? propertyId;
   final DateTime? lastUpdated;
   final DomainError? error;
 
-  CalendarState copyWith({
-    CalendarStatus? status,
+  ReservationsState copyWith({
+    ReservationsStatus? status,
     List<Reservation>? entries,
-    Map<DateTime, num>? nightlyRates,
-    String? rateCurrency,
     DateTime? rangeStart,
     DateTime? rangeEnd,
     String? propertyId,
     DateTime? lastUpdated,
     DomainError? error,
   }) {
-    return CalendarState(
+    return ReservationsState(
       status: status ?? this.status,
       entries: entries ?? this.entries,
-      nightlyRates: nightlyRates ?? this.nightlyRates,
-      rateCurrency: rateCurrency ?? this.rateCurrency,
       rangeStart: rangeStart ?? this.rangeStart,
       rangeEnd: rangeEnd ?? this.rangeEnd,
       propertyId: propertyId ?? this.propertyId,
@@ -75,8 +59,6 @@ class CalendarState extends Equatable {
   List<Object?> get props => [
     status,
     entries,
-    nightlyRates,
-    rateCurrency,
     rangeStart,
     rangeEnd,
     propertyId,
@@ -118,7 +100,7 @@ class CalendarState extends Equatable {
         })
         .join(' | ');
 
-    return 'CalendarState('
+    return 'ReservationsState('
         'status=$status, '
         'entries=${entries.length}, '
         'withReservationId=$withReservationId, '
@@ -139,14 +121,14 @@ String? _dateOnly(DateTime? value) {
   return '$year-$month-$day';
 }
 
-class CalendarCubit extends Cubit<CalendarState> {
-  CalendarCubit({required ChannelManagerRepository channelManagerRepository})
+class ReservationsCubit extends Cubit<ReservationsState> {
+  ReservationsCubit({required ChannelManagerRepository channelManagerRepository})
     : _channelManagerRepository = channelManagerRepository,
-      super(const CalendarState.initial());
+      super(const ReservationsState.initial());
 
   final ChannelManagerRepository _channelManagerRepository;
 
-  Future<void> loadCalendar({
+  Future<void> loadReservations({
     required String propertyId,
     DateTime? start,
     DateTime? end,
@@ -158,7 +140,7 @@ class CalendarCubit extends Cubit<CalendarState> {
         end ??
         DateTime(now.year, now.month + 12, 0).add(const Duration(days: 14));
 
-    if (state.status == CalendarStatus.loading &&
+    if (state.status == ReservationsStatus.loading &&
         state.propertyId == propertyId &&
         state.rangeStart == rangeStart &&
         state.rangeEnd == rangeEnd) {
@@ -168,7 +150,7 @@ class CalendarCubit extends Cubit<CalendarState> {
     if (!isClosed) {
       emit(
         state.copyWith(
-          status: CalendarStatus.loading,
+          status: ReservationsStatus.loading,
           propertyId: propertyId,
           rangeStart: rangeStart,
           rangeEnd: rangeEnd,
@@ -178,30 +160,17 @@ class CalendarCubit extends Cubit<CalendarState> {
     }
 
     try {
-      // Fetch reservations and nightly rates in parallel.
-      final reservationsFuture = _channelManagerRepository.fetchReservations(
+      final entries = await _channelManagerRepository.fetchReservations(
         propertyId,
         start: rangeStart,
         end: rangeEnd,
       );
-      final ratesFuture = _channelManagerRepository
-          .fetchNightlyRates(propertyId, start: rangeStart, end: rangeEnd)
-          .catchError(
-            (_) => (rates: <DateTime, num>{}, currency: null as String?),
-          );
-
-      final results = await Future.wait([reservationsFuture, ratesFuture]);
-      final entries = results[0] as List<Reservation>;
-      final ratesResult =
-          results[1] as ({Map<DateTime, num> rates, String? currency});
 
       if (!isClosed) {
         emit(
           state.copyWith(
-            status: CalendarStatus.loaded,
+            status: ReservationsStatus.loaded,
             entries: entries,
-            nightlyRates: ratesResult.rates,
-            rateCurrency: ratesResult.currency,
             lastUpdated: DateTime.now(),
             error: null,
           ),
@@ -211,7 +180,7 @@ class CalendarCubit extends Cubit<CalendarState> {
       if (!isClosed) {
         emit(
           state.copyWith(
-            status: CalendarStatus.error,
+            status: ReservationsStatus.error,
             entries: const [],
             error: DomainError.from(error, stack: stack),
           ),
@@ -228,7 +197,6 @@ class CalendarCubit extends Cubit<CalendarState> {
       );
       if (isClosed) return;
 
-      // Update the local entry so the UI reflects the change immediately.
       final updatedEntries = state.entries.map((e) {
         if (e.reservationId == reservationId) {
           return e.copyWith(notes: notes);

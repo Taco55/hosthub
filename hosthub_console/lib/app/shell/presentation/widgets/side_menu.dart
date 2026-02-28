@@ -80,9 +80,9 @@ class SideMenu extends StatelessWidget {
                                     label: context.s.reservations,
                                     icon: Icons.calendar_month_outlined,
                                     selected:
-                                        selectedItem == MenuItem.calendar,
+                                        selectedItem == MenuItem.reservations,
                                     onTap: () =>
-                                        onItemSelected(MenuItem.calendar),
+                                        onItemSelected(MenuItem.reservations),
                                   ),
                                   _DrawerListTile(
                                     label: context.s.menuRevenue,

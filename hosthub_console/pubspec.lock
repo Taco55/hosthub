@@ -36,7 +36,7 @@ packages:
   app_errors:
     dependency: "direct main"
     description:
-      path: "../../../shared_libraries/app_errors"
+      path: "../../../shared/libraries/app_errors"
       relative: true
     source: path
     version: "0.2.6"
@@ -99,7 +99,7 @@ packages:
   auth_ui_flutter:
     dependency: "direct main"
     description:
-      path: "../../../shared_libraries/auth-ui-flutter"
+      path: "../../../shared/libraries/auth_ui_flutter"
       relative: true
     source: path
     version: "0.2.4"
@@ -979,7 +979,7 @@ packages:
   styled_widgets:
     dependency: "direct main"
     description:
-      path: "../../../shared_libraries/styled_widgets"
+      path: "../../../shared/libraries/styled_widgets"
       relative: true
     source: path
     version: "0.3.7"

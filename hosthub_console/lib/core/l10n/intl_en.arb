@@ -1219,5 +1219,7 @@
   "revenueBreakdownServiceCosts": "Service costs",
   "revenueBreakdownOtherCosts": "Other fixed costs",
   "revenueBreakdownChannelFee": "Channel fee (Booking/Airbnb)",
-  "revenueBreakdownTax": "Tax / VAT"
+  "revenueBreakdownTax": "Tax / VAT",
+  "yes": "Yes",
+  "no": "No"
 }

@@ -9,13 +9,15 @@ import 'package:styled_widgets/styled_widgets.dart';
 import 'package:web/web.dart' as web;
 
 import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaffold.dart';
-import 'package:hosthub_console/features/calendar/application/calendar_cubit.dart';
+import 'package:hosthub_console/features/reservations/application/nightly_rates_cubit.dart';
+import 'package:hosthub_console/features/reservations/application/reservations_cubit.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
+import 'package:hosthub_console/core/l10n/l10n.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:hosthub_console/features/user_settings/user_settings.dart';
 
-enum _CalendarViewMode { list, timeline }
+enum _ReservationsViewMode { list, timeline }
 
 enum _TimelineDensity { compact, comfortable }
 
@@ -60,24 +62,24 @@ class _ExportColumn {
   }
 }
 
-class CalendarPage extends StatelessWidget {
-  const CalendarPage({super.key});
+class ReservationsPage extends StatelessWidget {
+  const ReservationsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const _CalendarPageBody();
+    return const _ReservationsPageBody();
   }
 }
 
-class _CalendarPageBody extends StatefulWidget {
-  const _CalendarPageBody();
+class _ReservationsPageBody extends StatefulWidget {
+  const _ReservationsPageBody();
 
   @override
-  State<_CalendarPageBody> createState() => _CalendarPageBodyState();
+  State<_ReservationsPageBody> createState() => _ReservationsPageBodyState();
 }
 
-class _CalendarPageBodyState extends State<_CalendarPageBody> {
-  _CalendarViewMode _viewMode = _CalendarViewMode.list;
+class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
+  _ReservationsViewMode _viewMode = _ReservationsViewMode.list;
   DateTime _focusedMonth = DateTime(DateTime.now().year, DateTime.now().month);
   String? _lastPropertyId;
   bool _showHistorical = false;
@@ -110,7 +112,7 @@ class _CalendarPageBodyState extends State<_CalendarPageBody> {
           .read<PropertyContextCubit>()
           .state
           .currentProperty;
-      _loadCalendarForProperty(property);
+      _loadReservationsForProperty(property);
     });
   }
 
@@ -133,10 +135,10 @@ class _CalendarPageBodyState extends State<_CalendarPageBody> {
             final now = DateTime(DateTime.now().year, DateTime.now().month);
             setState(() => _focusedMonth = now);
             _continuousActiveMonth.value = now;
-            _loadCalendarForProperty(state.currentProperty);
+            _loadReservationsForProperty(state.currentProperty);
           },
         ),
-        BlocListener<CalendarCubit, CalendarState>(
+        BlocListener<NightlyRatesCubit, NightlyRatesState>(
           listenWhen: (previous, current) =>
               previous.rateCurrency != current.rateCurrency &&
               current.rateCurrency != null,
@@ -154,7 +156,21 @@ class _CalendarPageBodyState extends State<_CalendarPageBody> {
                 .catchError((_) {/* best-effort */});
           },
         ),
-        BlocListener<CalendarCubit, CalendarState>(
+        BlocListener<ReservationsCubit, ReservationsState>(
+          listenWhen: (previous, current) =>
+              previous.status != current.status &&
+              current.status == ReservationsStatus.loaded,
+          listener: (context, state) {
+            // Na het laden van reserveringen: laad tarieven.
+            final propertyId = _lastPropertyId;
+            if (propertyId == null || propertyId.isEmpty) return;
+            context.read<NightlyRatesCubit>().loadRates(
+              propertyId: propertyId,
+              focusedMonth: _focusedMonth,
+            );
+          },
+        ),
+        BlocListener<ReservationsCubit, ReservationsState>(
           listenWhen: (previous, current) =>
               previous.error != current.error && current.error != null,
           listener: (context, state) async {
@@ -163,11 +179,11 @@ class _CalendarPageBodyState extends State<_CalendarPageBody> {
             final appError = AppError.fromDomain(context, error);
             await showAppError(context, appError);
             if (!context.mounted) return;
-            context.read<CalendarCubit>().clearError();
+            context.read<ReservationsCubit>().clearError();
           },
         ),
       ],
-      child: BlocBuilder<CalendarCubit, CalendarState>(
+      child: BlocBuilder<ReservationsCubit, ReservationsState>(
         builder: (context, state) {
           final property = context
               .watch<PropertyContextCubit>()
@@ -210,16 +226,16 @@ class _CalendarPageBodyState extends State<_CalendarPageBody> {
           return ConsolePageScaffold(
             title: 'Reserveringen',
             description: 'Boekingen voor $propertyName uit Lodgify.',
-            showLoadingIndicator: state.status == CalendarStatus.loading,
+            showLoadingIndicator: state.status == ReservationsStatus.loading,
             leftChild: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _CalendarHeader(
+                _ReservationsHeader(
                   viewMode: _viewMode,
                   showHistorical: _showHistorical,
                   allStatuses: allStatuses,
                   hiddenStatuses: _hiddenStatuses,
-                  timelineDensity: _viewMode == _CalendarViewMode.timeline
+                  timelineDensity: _viewMode == _ReservationsViewMode.timeline
                       ? _timelineDensity
                       : null,
                   onViewChanged: (value) {
@@ -240,7 +256,7 @@ class _CalendarPageBodyState extends State<_CalendarPageBody> {
                   onTimelineDensityChanged: (value) {
                     setState(() => _timelineDensity = value);
                   },
-                  continuousMonths: _viewMode == _CalendarViewMode.timeline
+                  continuousMonths: _viewMode == _ReservationsViewMode.timeline
                       ? _continuousMonths
                       : null,
                   onContinuousMonthsChanged: (value) {
@@ -253,13 +269,13 @@ class _CalendarPageBodyState extends State<_CalendarPageBody> {
                     }
                   },
                   outOfMonthDisplay:
-                      _viewMode == _CalendarViewMode.timeline && !_continuousMonths
+                      _viewMode == _ReservationsViewMode.timeline && !_continuousMonths
                           ? _outOfMonthDisplay
                           : null,
                   onOutOfMonthDisplayChanged: (value) {
                     setState(() => _outOfMonthDisplay = value);
                   },
-                  exportMenu: _viewMode == _CalendarViewMode.list &&
+                  exportMenu: _viewMode == _ReservationsViewMode.list &&
                           bookings.isNotEmpty
                       ? _buildExportMenu(
                           context,
@@ -289,7 +305,7 @@ class _CalendarPageBodyState extends State<_CalendarPageBody> {
 
   Widget _buildContent(
     BuildContext context, {
-    required CalendarState state,
+    required ReservationsState state,
     required String? propertyId,
     required List<Reservation> entries,
     required DateFormat dateFormatter,
@@ -305,7 +321,7 @@ class _CalendarPageBodyState extends State<_CalendarPageBody> {
       );
     }
 
-    if (state.status == CalendarStatus.error) {
+    if (state.status == ReservationsStatus.error) {
       return Center(
         child: Text(
           'Boekingen konden niet worden geladen.',
@@ -315,12 +331,12 @@ class _CalendarPageBodyState extends State<_CalendarPageBody> {
       );
     }
 
-    if (state.status == CalendarStatus.loading && state.entries.isEmpty) {
+    if (state.status == ReservationsStatus.loading && state.entries.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
 
     // Timeline always includes historical; handle before empty check.
-    if (_viewMode == _CalendarViewMode.timeline) {
+    if (_viewMode == _ReservationsViewMode.timeline) {
       // Timeline always shows historical bookings; only apply status filter.
       final allBookings = _sortedBookings(state.entries);
       final timelineBookings = _hiddenStatuses.isEmpty
@@ -356,10 +372,11 @@ class _CalendarPageBodyState extends State<_CalendarPageBody> {
 
       // Fill in nightly rates from the availability API for days that
       // don't already have a label from reservation data.
-      for (final entry in state.nightlyRates.entries) {
+      final ratesState = context.watch<NightlyRatesCubit>().state;
+      for (final entry in ratesState.rates.entries) {
         dayLabels.putIfAbsent(
           entry.key,
-          () => _formatAmount(entry.value, state.rateCurrency),
+          () => _formatAmount(entry.value, ratesState.rateCurrency),
         );
       }
 
@@ -477,6 +494,12 @@ class _CalendarPageBodyState extends State<_CalendarPageBody> {
                         final prev = DateTime(
                             activeMonth.year, activeMonth.month - 1);
                         _continuousActiveMonth.value = prev;
+                        if (propertyId.isNotEmpty) {
+                          context.read<NightlyRatesCubit>().loadRates(
+                            propertyId: propertyId,
+                            focusedMonth: prev,
+                          );
+                        }
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           _scrollToMonth(prev);
                         });
@@ -485,6 +508,12 @@ class _CalendarPageBodyState extends State<_CalendarPageBody> {
                         final next = DateTime(
                             activeMonth.year, activeMonth.month + 1);
                         _continuousActiveMonth.value = next;
+                        if (propertyId.isNotEmpty) {
+                          context.read<NightlyRatesCubit>().loadRates(
+                            propertyId: propertyId,
+                            focusedMonth: next,
+                          );
+                        }
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           _scrollToMonth(next);
                         });
@@ -622,6 +651,12 @@ class _CalendarPageBodyState extends State<_CalendarPageBody> {
                 rangeEnd: state.rangeEnd,
                 onMonthChanged: (month) {
                   setState(() => _focusedMonth = month);
+                  if (propertyId.isNotEmpty) {
+                    context.read<NightlyRatesCubit>().loadRates(
+                      propertyId: propertyId,
+                      focusedMonth: month,
+                    );
+                  }
                 },
                 onEntryTap: (entry) {
                   final lodgifyEntry = entry.data as Reservation;
@@ -648,7 +683,7 @@ class _CalendarPageBodyState extends State<_CalendarPageBody> {
       );
     }
 
-    if (_viewMode == _CalendarViewMode.list) {
+    if (_viewMode == _ReservationsViewMode.list) {
       return _ReservationListView(
         entries: entries,
         dateFormatter: dateFormatter,
@@ -682,7 +717,7 @@ class _CalendarPageBodyState extends State<_CalendarPageBody> {
     required DateFormat dateFormatter,
     required DateFormat dateTimeFormatter,
   }) {
-    final rateCurrency = context.read<CalendarCubit>().state.rateCurrency;
+    final rateCurrency = context.read<NightlyRatesCubit>().state.rateCurrency;
     return showDialog<void>(
       context: context,
       builder: (dialogContext) {
@@ -696,7 +731,7 @@ class _CalendarPageBodyState extends State<_CalendarPageBody> {
     );
   }
 
-  void _loadCalendarForProperty(PropertySummary? property) {
+  void _loadReservationsForProperty(PropertySummary? property) {
     final lodgifyId = property?.lodgifyId?.trim();
     if (lodgifyId == null || lodgifyId.isEmpty) {
       _lastPropertyId = null;
@@ -704,10 +739,11 @@ class _CalendarPageBodyState extends State<_CalendarPageBody> {
     }
     if (_lastPropertyId == lodgifyId) return;
     _lastPropertyId = lodgifyId;
-    context.read<CalendarCubit>().loadCalendar(propertyId: lodgifyId);
+    context.read<ReservationsCubit>().loadReservations(propertyId: lodgifyId);
+    // Rates worden geladen via BlocListener zodra reserveringen klaar zijn.
   }
 
-  List<DateTime> _continuousMonthRange(CalendarState state) {
+  List<DateTime> _continuousMonthRange(ReservationsState state) {
     final start = state.rangeStart ??
         DateTime(DateTime.now().year, DateTime.now().month - 12);
     final end = state.rangeEnd ??
@@ -1114,8 +1150,8 @@ class _CalendarPageBodyState extends State<_CalendarPageBody> {
   }
 }
 
-class _CalendarHeader extends StatelessWidget {
-  const _CalendarHeader({
+class _ReservationsHeader extends StatelessWidget {
+  const _ReservationsHeader({
     required this.viewMode,
     required this.showHistorical,
     required this.allStatuses,
@@ -1132,11 +1168,11 @@ class _CalendarHeader extends StatelessWidget {
     this.exportMenu,
   });
 
-  final _CalendarViewMode viewMode;
+  final _ReservationsViewMode viewMode;
   final bool showHistorical;
   final List<String> allStatuses;
   final Set<String> hiddenStatuses;
-  final ValueChanged<_CalendarViewMode> onViewChanged;
+  final ValueChanged<_ReservationsViewMode> onViewChanged;
   final ValueChanged<bool> onShowHistoricalChanged;
   final ValueChanged<String> onStatusToggled;
   final _TimelineDensity? timelineDensity;
@@ -1150,7 +1186,7 @@ class _CalendarHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isTimeline = viewMode == _CalendarViewMode.timeline;
+    final isTimeline = viewMode == _ReservationsViewMode.timeline;
     final hasActiveFilter =
         hiddenStatuses.isNotEmpty || showHistorical;
 
@@ -1165,13 +1201,13 @@ class _CalendarHeader extends StatelessWidget {
               StyledSegmentedControl(
                 labels: const ['Lijst', 'Tijdlijn'],
                 selectedIndex: switch (viewMode) {
-                  _CalendarViewMode.list => 0,
-                  _CalendarViewMode.timeline => 1,
+                  _ReservationsViewMode.list => 0,
+                  _ReservationsViewMode.timeline => 1,
                 },
                 onChanged: (index) {
                   onViewChanged(switch (index) {
-                    0 => _CalendarViewMode.list,
-                    _ => _CalendarViewMode.timeline,
+                    0 => _ReservationsViewMode.list,
+                    _ => _ReservationsViewMode.timeline,
                   });
                 },
               ),
@@ -1441,6 +1477,7 @@ class _ReservationListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = S.of(context);
     final now = DateTime.now();
     final upcomingCount = entries
         .where((entry) => !_bookingEnded(entry, _dateOnly(now)))
@@ -1590,7 +1627,11 @@ class _ReservationListView extends StatelessWidget {
                       textAlign: TextAlign.right,
                     ),
                     textCell(
-                      entry.infantCount?.toString(),
+                      entry.infantCount == null
+                          ? null
+                          : entry.infantCount! > 0
+                              ? l10n.yes
+                              : l10n.no,
                       textAlign: TextAlign.right,
                     ),
                     textCell(entry.status),
@@ -1670,7 +1711,7 @@ class _ReservationDetailsDialogState extends State<_ReservationDetailsDialog> {
     });
 
     try {
-      await context.read<CalendarCubit>().updateNotes(
+      await context.read<ReservationsCubit>().updateNotes(
         reservationId,
         _notesController.text.trim(),
       );

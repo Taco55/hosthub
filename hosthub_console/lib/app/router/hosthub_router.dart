@@ -10,7 +10,7 @@ import 'package:hosthub_console/app/shell/presentation/widgets/menu_item.dart';
 import 'package:hosthub_console/app/shell/presentation/widgets/section_scaffold.dart';
 import 'package:hosthub_console/core/core.dart';
 import 'package:hosthub_console/features/auth/auth.dart';
-import 'package:hosthub_console/features/calendar/calendar.dart';
+import 'package:hosthub_console/features/reservations/reservations.dart';
 import 'package:hosthub_console/features/channel_manager/domain/channel_manager_repository.dart';
 import 'package:hosthub_console/features/cms/cms.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
@@ -18,6 +18,7 @@ import 'package:hosthub_console/features/revenue/revenue.dart';
 import 'package:hosthub_console/features/server_settings/data/admin_settings_repository.dart';
 import 'package:hosthub_console/features/server_settings/server_settings.dart';
 import 'package:hosthub_console/features/sites/sites.dart';
+import 'package:hosthub_console/features/team/team.dart';
 import 'package:hosthub_console/features/user_settings/user_settings.dart';
 
 class HosthubRouter {
@@ -110,8 +111,14 @@ class HosthubRouter {
                     context.read<AdminSettingsRepository>(),
                   ),
                 ),
-                BlocProvider<CalendarCubit>(
-                  create: (context) => CalendarCubit(
+                BlocProvider<ReservationsCubit>(
+                  create: (context) => ReservationsCubit(
+                    channelManagerRepository: context
+                        .read<ChannelManagerRepository>(),
+                  ),
+                ),
+                BlocProvider<NightlyRatesCubit>(
+                  create: (context) => NightlyRatesCubit(
                     channelManagerRepository: context
                         .read<ChannelManagerRepository>(),
                   ),
@@ -119,6 +126,11 @@ class HosthubRouter {
                 BlocProvider<CmsCubit>(
                   create: (context) =>
                       CmsCubit(cmsRepository: context.read<CmsRepository>()),
+                ),
+                BlocProvider<SiteMembersCubit>(
+                  create: (_) => SiteMembersCubit(
+                    repository: I.get<SiteMemberRepository>(),
+                  ),
                 ),
               ],
               child: SectionScaffold(
@@ -147,6 +159,19 @@ class HosthubRouter {
               },
             ),
             GoRoute(
+              path: '/sites/:siteId/team',
+              builder: (context, state) {
+                final siteId = state.pathParameters['siteId']!;
+                final siteName =
+                    state.uri.queryParameters['name'] ?? '';
+                context.read<SiteMembersCubit>().loadTeam(siteId);
+                return SiteTeamPage(
+                  siteId: siteId,
+                  siteName: siteName,
+                );
+              },
+            ),
+            GoRoute(
               path: '/properties/details',
               builder: (context, state) => const PropertyDetailsPage(),
             ),
@@ -160,7 +185,7 @@ class HosthubRouter {
             ),
             GoRoute(
               path: homePath,
-              builder: (context, state) => const CalendarPage(),
+              builder: (context, state) => const ReservationsPage(),
             ),
             GoRoute(
               path: '/revenue',
@@ -185,8 +210,8 @@ MenuItem _selectedMenuItem(String path) {
   if (path.startsWith('/settings')) {
     return MenuItem.settings;
   }
-  if (path.startsWith('/calendar')) {
-    return MenuItem.calendar;
+  if (path.startsWith('/reservations')) {
+    return MenuItem.reservations;
   }
   if (path.startsWith('/revenue')) {
     return MenuItem.revenue;

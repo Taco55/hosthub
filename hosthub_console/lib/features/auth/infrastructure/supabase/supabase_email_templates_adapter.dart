@@ -158,6 +158,39 @@ class SupabaseEmailTemplatesAdapter implements EmailTemplatesPort {
     );
   }
 
+  Future<void> sendSiteInvitationEmail(
+    String to, {
+    String? actionLink,
+    String? otp,
+    String? siteName,
+    bool isNewUser = true,
+  }) async {
+    final buttonLabel =
+        isNewUser ? 'Account aanmaken' : 'Open HostHub';
+    final actionIntro = isNewUser
+        ? 'Maak je account aan via de knop hieronder om toegang te krijgen.'
+        : 'Klik op de knop hieronder om direct naar HostHub te gaan.';
+
+    await _sendTemplatedEmail(
+      to: to,
+      subject: 'Je bent uitgenodigd voor ${siteName ?? 'een site'} op HostHub',
+      templatePath: 'assets/email_templates/site_invitation.html',
+      actionLink: actionLink,
+      otp: otp,
+      context: 'sendSiteInvitationEmail',
+      copy: EmailTemplateCopy(
+        actionIntro: actionIntro,
+        actionButtonLabel: buttonLabel,
+        actionFallback:
+            'Werkt de knop niet? Kopieer dan deze link en plak hem in je browser:',
+        otpIntroWithAction:
+            'Lukt het niet via de knop? Gebruik dan onderstaande code:',
+        otpIntroWithoutAction:
+            'Gebruik onderstaande code om in te loggen:',
+      ),
+    );
+  }
+
   Future<void> _sendTemplatedEmail({
     required String context,
     required String to,

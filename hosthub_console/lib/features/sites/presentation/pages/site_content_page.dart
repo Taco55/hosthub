@@ -178,6 +178,18 @@ class _SiteContentBody extends StatelessWidget {
                 ? context.s.cmsSaveDraftButton
                 : null,
             actions: [
+              IconButton(
+                icon: const Icon(Icons.group_outlined),
+                tooltip: 'Team',
+                onPressed: () {
+                  final siteId = context.read<CmsCubit>().state.site?.id;
+                  if (siteId != null) {
+                    context.push(
+                      '/sites/$siteId/team?name=${Uri.encodeComponent(pageTitle)}',
+                    );
+                  }
+                },
+              ),
               if (state.isDirty || state.isPublishing)
                 Padding(
                   padding: const EdgeInsets.only(right: 8),

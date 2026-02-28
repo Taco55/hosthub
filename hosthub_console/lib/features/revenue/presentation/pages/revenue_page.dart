@@ -7,7 +7,8 @@ import 'package:intl/intl.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
 import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaffold.dart';
-import 'package:hosthub_console/features/calendar/application/calendar_cubit.dart';
+import 'package:hosthub_console/features/reservations/application/nightly_rates_cubit.dart';
+import 'package:hosthub_console/features/reservations/application/reservations_cubit.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/server_settings/data/admin_settings_repository.dart';
 import 'package:hosthub_console/features/server_settings/domain/admin_settings.dart';
@@ -63,7 +64,7 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
             _loadForProperty(state.currentProperty);
           },
         ),
-        BlocListener<CalendarCubit, CalendarState>(
+        BlocListener<NightlyRatesCubit, NightlyRatesState>(
           listenWhen: (previous, current) =>
               previous.rateCurrency != current.rateCurrency &&
               current.rateCurrency != null,
@@ -83,7 +84,23 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
                 });
           },
         ),
-        BlocListener<CalendarCubit, CalendarState>(
+        BlocListener<ReservationsCubit, ReservationsState>(
+          listenWhen: (previous, current) =>
+              previous.status != current.status &&
+              current.status == ReservationsStatus.loaded,
+          listener: (context, state) {
+            final propertyId = state.propertyId;
+            if (propertyId == null || propertyId.isEmpty) return;
+            final range = _rangeForPeriod(_period, _periodAnchor);
+            final midpoint =
+                range.start.add(range.end.difference(range.start) ~/ 2);
+            context.read<NightlyRatesCubit>().loadRates(
+              propertyId: propertyId,
+              focusedMonth: DateTime(midpoint.year, midpoint.month),
+            );
+          },
+        ),
+        BlocListener<ReservationsCubit, ReservationsState>(
           listenWhen: (previous, current) =>
               previous.error != current.error && current.error != null,
           listener: (context, state) async {
@@ -92,11 +109,11 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
             final appError = AppError.fromDomain(context, error);
             await showAppError(context, appError);
             if (!context.mounted) return;
-            context.read<CalendarCubit>().clearError();
+            context.read<ReservationsCubit>().clearError();
           },
         ),
       ],
-      child: BlocBuilder<CalendarCubit, CalendarState>(
+      child: BlocBuilder<ReservationsCubit, ReservationsState>(
         builder: (context, state) {
           final property = context
               .watch<PropertyContextCubit>()
@@ -113,7 +130,7 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
               property?.name ?? context.s.revenueUnknownProperty;
           final propertyId = property?.lodgifyId?.trim() ?? '';
           final canRefresh =
-              propertyId.isNotEmpty && state.status != CalendarStatus.loading;
+              propertyId.isNotEmpty && state.status != ReservationsStatus.loading;
           final locale = Localizations.localeOf(context).toString();
           final dateFormatter = DateFormat('d MMM yyyy', locale);
           final dateTimeFormatter = DateFormat('d MMM yyyy HH:mm', locale);
@@ -160,7 +177,7 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
                 ),
               ),
             ],
-            showLoadingIndicator: state.status == CalendarStatus.loading,
+            showLoadingIndicator: state.status == ReservationsStatus.loading,
             leftChild: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -240,7 +257,7 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
 
   Widget _buildContent(
     BuildContext context, {
-    required CalendarState state,
+    required ReservationsState state,
     required PropertySummary? property,
     required String? propertyId,
     required DateFormat dateFormatter,
@@ -257,7 +274,7 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
       );
     }
 
-    if (state.status == CalendarStatus.error) {
+    if (state.status == ReservationsStatus.error) {
       return Center(
         child: Text(
           S.of(context).revenueLoadFailed,
@@ -267,7 +284,7 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
       );
     }
 
-    if (state.status == CalendarStatus.loading && state.entries.isEmpty) {
+    if (state.status == ReservationsStatus.loading && state.entries.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -527,13 +544,13 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
     final requestKey =
         '$lodgifyId:${range.start.toIso8601String()}:${range.end.toIso8601String()}';
 
-    final calendarState = context.read<CalendarCubit>().state;
+    final calendarState = context.read<ReservationsCubit>().state;
     final hasSameCalendarRequest =
         calendarState.propertyId == lodgifyId &&
         calendarState.rangeStart == range.start &&
         calendarState.rangeEnd == range.end &&
-        (calendarState.status == CalendarStatus.loading ||
-            calendarState.status == CalendarStatus.loaded);
+        (calendarState.status == ReservationsStatus.loading ||
+            calendarState.status == ReservationsStatus.loaded);
 
     if (!force && (_lastRequestKey == requestKey || hasSameCalendarRequest)) {
       _lastRequestKey = requestKey;
@@ -541,11 +558,12 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
     }
     _lastRequestKey = requestKey;
 
-    context.read<CalendarCubit>().loadCalendar(
+    context.read<ReservationsCubit>().loadReservations(
       propertyId: lodgifyId,
       start: range.start,
       end: range.end,
     );
+    // Rates worden geladen via BlocListener zodra reserveringen klaar zijn.
   }
 }
 

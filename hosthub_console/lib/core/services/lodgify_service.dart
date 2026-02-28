@@ -68,34 +68,13 @@ class LodgifyService {
   }) async {
     final headers = await _apiHeaders();
 
-    try {
-      // V2 does not support date-range filtering; it uses stayFilter instead.
-      // Date narrowing happens in the repository layer.
-      return await _fetchBookingsV2(
-        propertyId,
-        headers: headers,
-        queryParameters: queryParameters,
-      );
-    } on DioException catch (error) {
-      if (_shouldFallbackToV1(error)) {
-        return _fetchCalendarV1(
-          propertyId,
-          headers: headers,
-          start: start,
-          end: end,
-          queryParameters: queryParameters,
-        );
-      }
-      rethrow;
-    } on FormatException {
-      return _fetchCalendarV1(
-        propertyId,
-        headers: headers,
-        start: start,
-        end: end,
-        queryParameters: queryParameters,
-      );
-    }
+    // V2 does not support date-range filtering; it uses stayFilter instead.
+    // Date narrowing happens in the repository layer.
+    return _fetchBookingsV2(
+      propertyId,
+      headers: headers,
+      queryParameters: queryParameters,
+    );
   }
 
   /// Updates the internal notes for a reservation via the Lodgify V2 API.
@@ -338,46 +317,6 @@ class LodgifyService {
     }
 
     return allEntries;
-  }
-
-  Future<List<LodgifyCalendarEntry>> _fetchCalendarV1(
-    String propertyId, {
-    required Map<String, String> headers,
-    DateTime? start,
-    DateTime? end,
-    Map<String, String> queryParameters = const {},
-  }) async {
-    final params = <String, String>{...queryParameters};
-    if (start != null && !params.containsKey('start')) {
-      params['start'] = start.toIso8601String();
-    }
-    if (end != null && !params.containsKey('end')) {
-      params['end'] = end.toIso8601String();
-    }
-
-    return _apiClient.getRequest<List<LodgifyCalendarEntry>>(
-      endPoint: 'properties/$propertyId/calendar',
-      apiVersion: 'v1',
-      useAccesstoken: false,
-      queryParameters: params,
-      extraHeaders: headers,
-      dataConstructor: (data) {
-        final decoded = (data as Object?).asDecodedJsonOrSelf();
-        final list = decoded.extractList(
-          fallbackKeys: const ['calendar', 'items', 'data', 'results'],
-        );
-
-        return list
-            .whereType<Map<String, dynamic>>()
-            .map(LodgifyCalendarEntry.fromMap)
-            .toList();
-      },
-    );
-  }
-
-  bool _shouldFallbackToV1(DioException error) {
-    final status = error.response?.statusCode;
-    return status == 404 || status == 400 || status == 405;
   }
 }
 

@@ -26,4 +26,12 @@ abstract class EmailTemplatesPort {
     String? name,
     String? otp,
   });
+
+  Future<void> sendSiteInvitationEmail(
+    String to, {
+    String? actionLink,
+    String? otp,
+    String? siteName,
+    bool isNewUser = true,
+  });
 }

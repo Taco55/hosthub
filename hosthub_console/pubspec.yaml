@@ -10,15 +10,15 @@ dependencies:
   flutter:
     sdk: flutter
   app_errors:
-    path: ../../../shared_libraries/app_errors
+    path: ../../../shared/libraries/app_errors
   # styled_widgets:
   #   git:
   #     url: git@github.com:Taco55/styled_widgets.git
   #     ref: v0.1.0
   styled_widgets:
-    path: ../../../shared_libraries/styled_widgets
+    path: ../../../shared/libraries/styled_widgets
   auth_ui_flutter:
-    path: ../../../shared_libraries/auth-ui-flutter
+    path: ../../../shared/libraries/auth_ui_flutter
 
   flutter_localizations:
     sdk: flutter
