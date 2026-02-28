@@ -274,3 +274,13 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/generate_sign_up_link_and_otp/deno.json"
 entrypoint = "./functions/generate_sign_up_link_and_otp/index.ts"
+
+[functions.lodgify-reservations]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/lodgify-reservations/index.ts"
+
+[functions.lodgify-rates]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/lodgify-rates/index.ts"

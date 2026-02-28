@@ -1,4 +1,4 @@
-# HostHub — Supabase Makefile
+# HostHub — Makefile
 # ===================================
 #
 # Usage:  make help
@@ -12,8 +12,8 @@
 # Project configuration
 # ----------------------------
 PROJECT_NAME   := hosthub
-SUPABASE_DIR   := $(abspath $(dir $(realpath $(lastword $(MAKEFILE_LIST)))))
-WORKSPACE_ROOT := $(abspath $(SUPABASE_DIR)/..)
+WORKSPACE_ROOT := $(abspath $(dir $(realpath $(lastword $(MAKEFILE_LIST)))))
+SUPABASE_DIR   := $(WORKSPACE_ROOT)/supabase
 
 # Include shared Supabase targets
 include $(SUPABASE_DIR)/make/supabase-common.mk

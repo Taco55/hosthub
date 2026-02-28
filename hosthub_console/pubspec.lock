@@ -39,7 +39,7 @@ packages:
       path: "../../../shared_libraries/app_errors"
       relative: true
     source: path
-    version: "0.2.5"
+    version: "0.2.6"
   app_links:
     dependency: transitive
     description:
@@ -102,7 +102,7 @@ packages:
       path: "../../../shared_libraries/auth-ui-flutter"
       relative: true
     source: path
-    version: "0.10.0"
+    version: "0.2.4"
   bloc:
     dependency: transitive
     description:

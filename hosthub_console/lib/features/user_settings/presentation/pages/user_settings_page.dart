@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localized_locales/flutter_localized_locales.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaffold.dart';
 import 'package:app_errors/app_errors.dart';
+import 'package:hosthub_console/core/core.dart';
 import 'package:hosthub_console/core/l10n/l10n.dart';
 import 'package:hosthub_console/core/models/models.dart';
 import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
@@ -225,6 +227,7 @@ class _UserSettingsSection extends StatelessWidget {
             ),
           ],
         ),
+        const _AppBuildInfoSection(),
         StyledSection(
           header: context.s.connectionsSectionTitle,
           grouped: false,
@@ -296,6 +299,53 @@ class _UserSettingsSection extends StatelessWidget {
         ),
         const _ChannelFeeDefaultsSection(),
       ],
+    );
+  }
+}
+
+class _AppBuildInfoSection extends StatefulWidget {
+  const _AppBuildInfoSection();
+
+  @override
+  State<_AppBuildInfoSection> createState() => _AppBuildInfoSectionState();
+}
+
+class _AppBuildInfoSectionState extends State<_AppBuildInfoSection> {
+  late final Future<PackageInfo> _packageInfoFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _packageInfoFuture = PackageInfo.fromPlatform();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDutch = Localizations.localeOf(context).languageCode == 'nl';
+    final sectionTitle = isDutch ? 'App informatie' : 'Application info';
+    final versionTitle = isDutch ? 'Versie' : 'Version';
+    final environmentTitle = isDutch ? 'Omgeving' : 'Environment';
+    final environment = AppConfig.current.environment.name.toUpperCase();
+
+    return FutureBuilder<PackageInfo>(
+      future: _packageInfoFuture,
+      builder: (context, snapshot) {
+        final packageInfo = snapshot.data;
+        final buildNumber = packageInfo?.buildNumber.trim() ?? '';
+        final version = packageInfo?.version ?? '-';
+        final fullVersion = buildNumber.isEmpty
+            ? version
+            : '$version+$buildNumber';
+
+        return StyledSection(
+          header: sectionTitle,
+          grouped: false,
+          children: [
+            StyledTile(title: versionTitle, value: Text(fullVersion)),
+            StyledTile(title: environmentTitle, value: Text(environment)),
+          ],
+        );
+      },
     );
   }
 }

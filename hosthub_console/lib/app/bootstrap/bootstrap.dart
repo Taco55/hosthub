@@ -28,6 +28,7 @@ Future<SupabaseClient> initializeSupabase() async {
   await Supabase.initialize(
     url: AppConfig.current.supabaseUrl.toString(),
     anonKey: AppConfig.current.supabaseAnonKey,
+    authOptions: const FlutterAuthClientOptions(autoRefreshToken: true),
   );
 
   return Supabase.instance.client;

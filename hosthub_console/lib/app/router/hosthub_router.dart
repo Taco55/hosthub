@@ -1,9 +1,14 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-
+import 'package:auth_ui_flutter/auth_ui_flutter.dart'
+    as auth_ui
+    show AuthPackageVersionInfo;
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:hosthub_console/app/shell/presentation/widgets/menu_item.dart';
 import 'package:hosthub_console/app/shell/presentation/widgets/section_scaffold.dart';
+import 'package:hosthub_console/core/core.dart';
 import 'package:hosthub_console/features/auth/auth.dart';
 import 'package:hosthub_console/features/calendar/calendar.dart';
 import 'package:hosthub_console/features/channel_manager/domain/channel_manager_repository.dart';
@@ -43,6 +48,7 @@ class HosthubRouter {
             variant: AuthLayoutVariant.web,
             errorDisplayMode: authErrorDisplayMode,
             demoCredentials: demoCredentials.toList(growable: false),
+            versionInfo: const _LoginVersionInfo(),
             onAuthenticated: (ctx) => ctx.go(homePath),
             onForgotPassword: (ctx) => ctx.push(authUiPaths.forgotPassword),
           ),
@@ -195,4 +201,40 @@ MenuItem _selectedMenuItem(String path) {
     return MenuItem.propertyDetails;
   }
   return MenuItem.sites;
+}
+
+class _LoginVersionInfo extends StatefulWidget {
+  const _LoginVersionInfo();
+
+  @override
+  State<_LoginVersionInfo> createState() => _LoginVersionInfoState();
+}
+
+class _LoginVersionInfoState extends State<_LoginVersionInfo> {
+  late final Future<PackageInfo> _packageInfoFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _packageInfoFuture = PackageInfo.fromPlatform();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<PackageInfo>(
+      future: _packageInfoFuture,
+      builder: (context, snapshot) {
+        final info = snapshot.data;
+        final version = info?.version.trim() ?? '';
+        if (version.isEmpty) return const SizedBox.shrink();
+
+        return auth_ui.AuthPackageVersionInfo(
+          version: version,
+          buildNumber: info?.buildNumber,
+          environment: AppConfig.current.environment.name.toUpperCase(),
+          visible: kDebugMode,
+        );
+      },
+    );
+  }
 }

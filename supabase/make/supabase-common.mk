@@ -76,6 +76,25 @@ PG_MAJOR       := $(shell $(PG_DUMP) --version 2>/dev/null | sed -n 's/.* \([0-9
 # ----------------------------
 # On stg: asks "Run <action> on stg? [y/N]".
 # On prd: asks to type "prd" to confirm (double safety).
+
+## Resolve the Supabase management API token from env file, shell, or macOS keychain.
+define resolve-mgmt-token
+	MGMT_TOKEN="$${SUPABASE_ACCESS_TOKEN:-$${SUPABASE_MANAGEMENT_TOKEN:-$${SUPABASE_PAT:-}}}"; \
+	if [ -z "$$MGMT_TOKEN" ]; then \
+	  KEYCHAIN_RAW=$$(security find-generic-password -s "Supabase CLI" -a "supabase" -w 2>/dev/null || true); \
+	  if [ -n "$$KEYCHAIN_RAW" ]; then \
+	    case "$$KEYCHAIN_RAW" in \
+	      go-keyring-base64:*) \
+	        B64="$${KEYCHAIN_RAW#go-keyring-base64:}"; \
+	        MGMT_TOKEN=$$(printf "%s" "$$B64" | base64 --decode 2>/dev/null || printf "%s" "$$B64" | base64 -D 2>/dev/null || true); \
+	        ;; \
+	      *) MGMT_TOKEN="$$KEYCHAIN_RAW" ;; \
+	    esac; \
+	  fi; \
+	fi; \
+	: "$${MGMT_TOKEN:?Missing Management token (SUPABASE_ACCESS_TOKEN or SUPABASE_MANAGEMENT_TOKEN or SUPABASE_PAT) in $(ENV_FILE), shell env, or macOS keychain}"
+endef
+
 define confirm-remote
 	@if [ "$(ENV)" = "prd" ]; then \
 	  printf "\n  ⚠  You are about to run a $(1) action on PRODUCTION (prd).\n"; \
@@ -278,6 +297,52 @@ functions-deploy: preflight
 	done; \
 	echo "Deploy complete."
 
+## auth-config-show — Show the current Supabase Auth URL config (site_url + uri_allow_list).
+## Usage: make auth-config-show ENV=stg
+.PHONY: auth-config-show
+auth-config-show: preflight
+	@set -a; . "$(ENV_FILE)"; set +a; \
+	: "$${SUPABASE_URL:?Missing SUPABASE_URL in $(ENV_FILE)}"; \
+	$(resolve-mgmt-token) \
+	REF=$$(echo "$$SUPABASE_URL" | sed -E 's#https?://([^./]+)\.supabase\.co.*#\1#'); \
+	echo "Fetching auth config for $(ENV) (ref=$$REF)…"; \
+	curl -fsS "https://api.supabase.com/v1/projects/$$REF/config/auth" \
+	  -H "Authorization: Bearer $$MGMT_TOKEN" \
+	  -H "Content-Type: application/json"
+
+## auth-config-set — Set the Supabase Auth URL config (site_url + uri_allow_list).
+## SITE_URL defaults to DASHBOARD_BASE_URL from the env file.
+## REDIRECT_URLS defaults to "<SITE_URL>/**".
+## LOCAL_PORT adds "http://localhost:<LOCAL_PORT>/**" to REDIRECT_URLS.
+## Usage:
+##   make auth-config-set ENV=stg LOCAL_PORT=43000
+##   make auth-config-set ENV=stg SITE_URL=https://example.com REDIRECT_URLS='https://example.com/**,http://localhost:43000/**'
+.PHONY: auth-config-set
+auth-config-set: preflight
+	$(call confirm-remote,auth-config-set)
+	@set -a; . "$(ENV_FILE)"; set +a; \
+	: "$${SUPABASE_URL:?Missing SUPABASE_URL in $(ENV_FILE)}"; \
+	$(resolve-mgmt-token) \
+	REF=$$(echo "$$SUPABASE_URL" | sed -E 's#https?://([^./]+)\.supabase\.co.*#\1#'); \
+	SITE_URL="$${SITE_URL:-$${DASHBOARD_BASE_URL:-}}"; \
+	if [ -z "$$SITE_URL" ]; then \
+	  echo "Missing SITE_URL and DASHBOARD_BASE_URL is empty in $(ENV_FILE)"; \
+	  exit 1; \
+	fi; \
+	REDIRECT_URLS="$${REDIRECT_URLS:-$$SITE_URL/**}"; \
+	if [ -n "$$LOCAL_PORT" ]; then \
+	  REDIRECT_URLS="$$REDIRECT_URLS,http://localhost:$$LOCAL_PORT/**"; \
+	fi; \
+	echo "Updating auth config for $(ENV) (ref=$$REF)…"; \
+	echo "site_url=$$SITE_URL"; \
+	echo "uri_allow_list=$$REDIRECT_URLS"; \
+	curl -fsS -X PATCH "https://api.supabase.com/v1/projects/$$REF/config/auth" \
+	  -H "Authorization: Bearer $$MGMT_TOKEN" \
+	  -H "Content-Type: application/json" \
+	  -d "$$(printf '{"site_url":"%s","uri_allow_list":"%s"}' "$$SITE_URL" "$$REDIRECT_URLS")" \
+	  >/dev/null; \
+	echo "Auth config updated."
+
 ## functions-secrets-set — Push env secrets to the remote Supabase project.
 ## Which variables to push is controlled by FUNCTION_SECRET_VARS.
 .PHONY: functions-secrets-set
@@ -349,6 +414,9 @@ _common-help:
 	@echo "  make seed-remote ENV=stg                 Run seed files against remote DB"
 	@echo "  make functions-deploy ENV=stg             Deploy all edge functions"
 	@echo "  make functions-secrets-set ENV=stg        Push secrets to remote project"
+	@echo "  make auth-config-show ENV=stg             Show auth URL config (site_url, redirects)"
+	@echo "  make auth-config-set ENV=stg [LOCAL_PORT=…]"
+	@echo "                                           Set auth URL config (site_url, redirects)"
 	@echo ""
 	@echo "  OTHER"
 	@echo "  ──────────────────────────────────────"

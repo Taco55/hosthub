@@ -18,6 +18,20 @@
         "--web-port=43000",
         "--no-start-paused"
       ]
+    },
+    {
+      "name": "HostHub Console PRD Web",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "deviceId": "chrome",
+      "program": "${workspaceFolder}/hosthub_console/lib/main.dart",
+      "cwd": "${workspaceFolder}/hosthub_console",
+      "args": [
+        "--dart-define-from-file=../../hosthub_secrets/hosthub-prd.env",
+        "--dart-define=APP_ENVIRONMENT=prd",
+        "--no-start-paused"
+      ]
     }
   ]
 }

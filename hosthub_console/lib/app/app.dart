@@ -133,6 +133,9 @@ class _ConsoleRouterHostState extends State<_ConsoleRouterHost> {
     _router = HosthubRouter.create(
       refreshListenable: _refresh,
       redirect: (_, state) {
+        if (kDebugMode && state.uri.path == paths.login) {
+          return null;
+        }
         return generateRedirectFromAuthBloc(
           authBloc: authBloc,
           path: state.uri.path,

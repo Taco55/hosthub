@@ -8,21 +8,25 @@ class LodgifyService {
     required ApiClient apiClient,
     required Future<String?> Function() apiKeyProvider,
   }) : _apiClient = apiClient,
-       _apiKeyProvider = apiKeyProvider;
+       _apiHeaders = (() async {
+         final apiKey = (await apiKeyProvider())?.trim();
+         if (apiKey == null || apiKey.isEmpty) {
+           throw const LodgifyApiException('Missing Lodgify API key.');
+         }
+         return {'X-APIKEY': apiKey};
+       });
 
   final ApiClient _apiClient;
-  final Future<String?> Function() _apiKeyProvider;
+  final Future<Map<String, String>> Function() _apiHeaders;
 
   Future<List<LodgifyPropertySummary>> fetchProperties({
     Map<String, String> queryParameters = const {},
   }) async {
-    final apiKey = await _requireApiKey();
-
     return _apiClient.getRequest<List<LodgifyPropertySummary>>(
       endPoint: 'properties',
       useAccesstoken: false,
       queryParameters: queryParameters,
-      extraHeaders: {'X-APIKEY': apiKey},
+      extraHeaders: await _apiHeaders(),
       dataConstructor: (data) {
         final decoded = (data as Object?).asDecodedJsonOrSelf();
         final list = decoded.extractList(
@@ -41,13 +45,11 @@ class LodgifyService {
     String propertyId, {
     Map<String, String> queryParameters = const {},
   }) async {
-    final apiKey = await _requireApiKey();
-
     return _apiClient.getRequest<LodgifyPropertyDetails>(
       endPoint: 'properties/$propertyId',
       useAccesstoken: false,
       queryParameters: queryParameters,
-      extraHeaders: {'X-APIKEY': apiKey},
+      extraHeaders: await _apiHeaders(),
       dataConstructor: (data) {
         final decoded = (data as Object?).asDecodedJsonOrSelf();
         final map = decoded.extractMap(
@@ -64,21 +66,21 @@ class LodgifyService {
     DateTime? end,
     Map<String, String> queryParameters = const {},
   }) async {
-    final apiKey = await _requireApiKey();
+    final headers = await _apiHeaders();
 
     try {
       // V2 does not support date-range filtering; it uses stayFilter instead.
       // Date narrowing happens in the repository layer.
       return await _fetchBookingsV2(
         propertyId,
-        apiKey: apiKey,
+        headers: headers,
         queryParameters: queryParameters,
       );
     } on DioException catch (error) {
       if (_shouldFallbackToV1(error)) {
         return _fetchCalendarV1(
           propertyId,
-          apiKey: apiKey,
+          headers: headers,
           start: start,
           end: end,
           queryParameters: queryParameters,
@@ -88,7 +90,7 @@ class LodgifyService {
     } on FormatException {
       return _fetchCalendarV1(
         propertyId,
-        apiKey: apiKey,
+        headers: headers,
         start: start,
         end: end,
         queryParameters: queryParameters,
@@ -101,13 +103,11 @@ class LodgifyService {
     String reservationId,
     String notes,
   ) async {
-    final apiKey = await _requireApiKey();
-
     final response = await Supabase.instance.client.functions.invoke(
       'lodgify-reservations',
       method: HttpMethod.patch,
       queryParameters: {'reservationId': reservationId},
-      headers: {'X-APIKEY': apiKey},
+      headers: await _apiHeaders(),
       body: {'internalNotes': notes},
     );
 
@@ -135,7 +135,6 @@ class LodgifyService {
     DateTime? start,
     DateTime? end,
   }) async {
-    final apiKey = await _requireApiKey();
     final params = <String, String>{
       'property_id': propertyId.trim(),
     };
@@ -150,7 +149,7 @@ class LodgifyService {
       'lodgify-rates',
       method: HttpMethod.get,
       queryParameters: params,
-      headers: {'X-APIKEY': apiKey},
+      headers: await _apiHeaders(),
     );
 
     final status = response.status;
@@ -259,14 +258,6 @@ class LodgifyService {
     _apiClient.cancelActiveRequests('lodgify_service_dispose');
   }
 
-  Future<String> _requireApiKey() async {
-    final apiKey = (await _apiKeyProvider())?.trim();
-    if (apiKey == null || apiKey.isEmpty) {
-      throw const LodgifyApiException('Missing Lodgify API key.');
-    }
-    return apiKey;
-  }
-
   /// Fetches bookings from the Lodgify V2 reservations endpoint.
   ///
   /// The Lodgify `/v2/reservations/bookings` API does **not** support
@@ -284,7 +275,7 @@ class LodgifyService {
   /// concatenated before returning.
   Future<List<LodgifyCalendarEntry>> _fetchBookingsV2(
     String propertyId, {
-    required String apiKey,
+    required Map<String, String> headers,
     Map<String, String> queryParameters = const {},
   }) async {
     final params = <String, String>{...queryParameters};
@@ -307,7 +298,7 @@ class LodgifyService {
         'lodgify-reservations',
         method: HttpMethod.get,
         queryParameters: params,
-        headers: {'X-APIKEY': apiKey},
+        headers: headers,
       );
 
       final status = response.status;
@@ -351,7 +342,7 @@ class LodgifyService {
 
   Future<List<LodgifyCalendarEntry>> _fetchCalendarV1(
     String propertyId, {
-    required String apiKey,
+    required Map<String, String> headers,
     DateTime? start,
     DateTime? end,
     Map<String, String> queryParameters = const {},
@@ -369,7 +360,7 @@ class LodgifyService {
       apiVersion: 'v1',
       useAccesstoken: false,
       queryParameters: params,
-      extraHeaders: {'X-APIKEY': apiKey},
+      extraHeaders: headers,
       dataConstructor: (data) {
         final decoded = (data as Object?).asDecodedJsonOrSelf();
         final list = decoded.extractList(
