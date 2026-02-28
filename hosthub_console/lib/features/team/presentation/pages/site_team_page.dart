@@ -24,6 +24,8 @@ class SiteTeamPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
+
     return BlocConsumer<SiteMembersCubit, SiteMembersState>(
       listenWhen: (prev, curr) => prev.error != curr.error,
       listener: (context, state) async {
@@ -38,7 +40,7 @@ class SiteTeamPage extends StatelessWidget {
       builder: (context, state) {
         if (state.isLoading && state.members.isEmpty) {
           return ConsolePageScaffold(
-            title: 'Team',
+            title: s.teamTitle,
             description: siteName,
             onBack: () async {
               context.pop();
@@ -49,7 +51,7 @@ class SiteTeamPage extends StatelessWidget {
         }
 
         return ConsolePageScaffold(
-          title: 'Team',
+          title: s.teamTitle,
           description: siteName,
           onBack: () async {
             context.pop();
@@ -57,7 +59,7 @@ class SiteTeamPage extends StatelessWidget {
           },
           actions: [
             StyledButton(
-              title: 'Lid uitnodigen',
+              title: s.teamInviteMemberButton,
               leftIconData: Icons.person_add_outlined,
               showLeftIcon: true,
               onPressed: () => _handleInvite(context),
@@ -93,7 +95,7 @@ class SiteTeamPage extends StatelessWidget {
       showStyledToast(
         context,
         type: ToastificationType.success,
-        description: 'Uitnodiging verstuurd',
+        description: context.s.teamInvitationSent,
       );
     }
   }
@@ -110,33 +112,35 @@ class _MembersSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
+
     return StyledSection(
       isFirstSection: true,
-      header: 'Leden',
+      header: s.teamMembersSection,
       grouped: false,
       children: [
         if (members.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Text('Geen leden gevonden.'),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Text(s.teamNoMembers),
           )
         else
           StyledDataTable(
             variant: StyledTableVariant.card,
             dense: true,
-            columns: const [
+            columns: [
               StyledDataColumn(
-                columnHeaderLabel: 'Gebruiker',
+                columnHeaderLabel: s.teamUserColumn,
                 flex: 3,
                 minWidth: 180,
               ),
               StyledDataColumn(
-                columnHeaderLabel: 'Rol',
+                columnHeaderLabel: s.teamRoleColumn,
                 flex: 2,
                 minWidth: 120,
               ),
               StyledDataColumn(
-                columnHeaderLabel: 'Acties',
+                columnHeaderLabel: s.teamActionsColumn,
                 flex: 1,
                 minWidth: 80,
               ),
@@ -218,37 +222,30 @@ class _MemberActions extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    return IconButton(
-      icon: const Icon(Icons.remove_circle_outline, size: 20),
-      tooltip: 'Verwijderen',
-      onPressed: () => _confirmRemove(context),
+    return Tooltip(
+      message: context.s.teamRemoveMember,
+      child: StyledIconButton(
+        iconData: Icons.remove_circle_outline,
+        iconSize: 20,
+        onPressed: () => _confirmRemove(context),
+      ),
     );
   }
 
   void _confirmRemove(BuildContext context) {
-    showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Lid verwijderen'),
-        content: Text(
-          'Weet je zeker dat je ${member.displayName} wilt verwijderen?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(context.s.cancelButton),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Verwijderen'),
-          ),
-        ],
-      ),
-    ).then((confirmed) {
-      if (confirmed == true && context.mounted) {
+    final s = context.s;
+
+    showStyledAlertDialog(
+      context,
+      title: s.teamRemoveMemberTitle,
+      message: s.teamRemoveMemberConfirm(member.displayName),
+      dismissText: s.cancelButton,
+      actionText: s.teamRemoveMember,
+      isDestructiveAction: true,
+      onAction: () {
         context.read<SiteMembersCubit>().removeMember(member);
-      }
-    });
+      },
+    );
   }
 }
 
@@ -267,26 +264,28 @@ class _InvitationsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.s;
+
     return StyledSection(
-      header: 'Openstaande uitnodigingen',
+      header: s.teamPendingInvitations,
       grouped: false,
       children: [
         StyledDataTable(
           variant: StyledTableVariant.card,
           dense: true,
-          columns: const [
+          columns: [
             StyledDataColumn(
-              columnHeaderLabel: 'E-mail',
+              columnHeaderLabel: s.teamEmailColumn,
               flex: 3,
               minWidth: 180,
             ),
             StyledDataColumn(
-              columnHeaderLabel: 'Rol',
+              columnHeaderLabel: s.teamRoleColumn,
               flex: 2,
               minWidth: 100,
             ),
             StyledDataColumn(
-              columnHeaderLabel: 'Acties',
+              columnHeaderLabel: s.teamActionsColumn,
               flex: 2,
               minWidth: 140,
             ),
@@ -303,35 +302,41 @@ class _InvitationsSection extends StatelessWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.send_outlined, size: 18),
-                    tooltip: 'Opnieuw versturen',
-                    onPressed: () {
-                      context.read<SiteMembersCubit>().resendInvitation(
-                            invitation: inv,
-                            siteName: siteName,
-                          );
-                      showStyledToast(
-                        context,
-                        type: ToastificationType.success,
-                        description: 'Uitnodiging opnieuw verstuurd',
-                      );
-                    },
+                  Tooltip(
+                    message: s.teamResendInvitation,
+                    child: StyledIconButton(
+                      iconData: Icons.send_outlined,
+                      iconSize: 18,
+                      onPressed: () {
+                        context.read<SiteMembersCubit>().resendInvitation(
+                              invitation: inv,
+                              siteName: siteName,
+                            );
+                        showStyledToast(
+                          context,
+                          type: ToastificationType.success,
+                          description: s.teamInvitationResent,
+                        );
+                      },
+                    ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.cancel_outlined, size: 18),
-                    tooltip: 'Annuleren',
-                    onPressed: () {
-                      context
-                          .read<SiteMembersCubit>()
-                          .cancelInvitation(inv);
-                    },
+                  Tooltip(
+                    message: s.teamCancelInvitation,
+                    child: StyledIconButton(
+                      iconData: Icons.cancel_outlined,
+                      iconSize: 18,
+                      onPressed: () {
+                        context
+                            .read<SiteMembersCubit>()
+                            .cancelInvitation(inv);
+                      },
+                    ),
                   ),
                 ],
               ),
             ];
           },
-          emptyLabel: 'Geen openstaande uitnodigingen.',
+          emptyLabel: s.teamNoPendingInvitations,
         ),
       ],
     );

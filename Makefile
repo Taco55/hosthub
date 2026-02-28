@@ -19,10 +19,26 @@ SUPABASE_DIR   := $(WORKSPACE_ROOT)/supabase
 include $(SUPABASE_DIR)/make/supabase-common.mk
 
 # ============================
+# Combined deploy
+# ============================
+
+## deploy — Apply migrations, deploy all edge functions, and push secrets.
+## Usage: make deploy ENV=stg
+.PHONY: deploy
+deploy: apply-migrations functions-deploy functions-secrets-set
+	@echo ""
+	@echo "  ✓ Full deploy to $(ENV) complete (migrations + functions + secrets)."
+	@echo ""
+
+# ============================
 # Help
 # ============================
 .PHONY: help
 help: _common-help
+	@echo ""
+	@echo "  COMBINED"
+	@echo "  ──────────────────────────────────────"
+	@echo "  make deploy ENV=stg                      Apply migrations + deploy functions + push secrets"
 	@echo ""
 	@echo "  PROJECT-SPECIFIC"
 	@echo "  ──────────────────────────────────────"

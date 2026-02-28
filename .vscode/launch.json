@@ -20,7 +20,8 @@
       ]
     },
     {
-      "name": "HostHub Console PRD Web",
+      "name": "HostHub Console PRD Web (Local Fixed Port)",
+      "preLaunchTask": "Ensure Local Website Preview Running (DEV only)",
       "request": "launch",
       "type": "dart",
       "flutterMode": "debug",
@@ -30,6 +31,11 @@
       "args": [
         "--dart-define-from-file=../../hosthub_secrets/hosthub-prd.env",
         "--dart-define=APP_ENVIRONMENT=prd",
+        "--dart-define=ADMIN_BASE_URL=http://localhost:43002",
+        "--dart-define=DASHBOARD_BASE_URL=http://localhost:43002",
+        "--dart-define=CMS_PREVIEW_DOMAIN=localhost:43001",
+        "--web-hostname=localhost",
+        "--web-port=43002",
         "--no-start-paused"
       ]
     }

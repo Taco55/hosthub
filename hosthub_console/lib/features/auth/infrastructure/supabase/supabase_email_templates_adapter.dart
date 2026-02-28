@@ -9,6 +9,7 @@ import 'package:hosthub_console/core/core.dart';
 
 import 'package:hosthub_console/features/auth/domain/models/email_template_config.dart';
 import 'package:hosthub_console/features/auth/domain/ports/email_templates_port.dart';
+import 'package:hosthub_console/features/auth/infrastructure/supabase/auth_entry_link_builder.dart';
 import 'package:app_errors/app_errors.dart';
 
 const Map<String, String> _emailTemplateFallbacks = {
@@ -130,11 +131,18 @@ class SupabaseEmailTemplatesAdapter implements EmailTemplatesPort {
     String? name,
     String? otp,
   }) async {
+    final safeActionLink = _buildSafeAuthEntryLink(
+      to: to,
+      actionLink: actionLink,
+      otp: otp,
+      requireOtp: true,
+    );
+
     await _sendTemplatedEmail(
       to: to,
       subject: 'Welkom bij HostHub',
       templatePath: 'assets/email_templates/user_created.html',
-      actionLink: actionLink,
+      actionLink: safeActionLink,
       name: name,
       otp: otp,
       context: 'sendUserCreatedEmail',
@@ -147,11 +155,19 @@ class SupabaseEmailTemplatesAdapter implements EmailTemplatesPort {
     String? name,
     String? otp,
   }) async {
+    final safeActionLink = _buildSafeAuthEntryLink(
+      to: to,
+      actionLink: actionLink,
+      otp: otp,
+      otpType: 'recovery',
+      requireOtp: true,
+    );
+
     await _sendTemplatedEmail(
       to: to,
       subject: 'Wachtwoord resetten',
       templatePath: 'assets/email_templates/password_reset.html',
-      actionLink: actionLink,
+      actionLink: safeActionLink,
       name: name,
       otp: otp,
       context: 'sendPasswordResetEmail',
@@ -165,8 +181,14 @@ class SupabaseEmailTemplatesAdapter implements EmailTemplatesPort {
     String? siteName,
     bool isNewUser = true,
   }) async {
-    final buttonLabel =
-        isNewUser ? 'Account aanmaken' : 'Open HostHub';
+    final safeActionLink = _buildSafeAuthEntryLink(
+      to: to,
+      actionLink: actionLink,
+      otp: otp,
+      requireOtp: true,
+    );
+
+    final buttonLabel = isNewUser ? 'Account aanmaken' : 'Open HostHub';
     final actionIntro = isNewUser
         ? 'Maak je account aan via de knop hieronder om toegang te krijgen.'
         : 'Klik op de knop hieronder om direct naar HostHub te gaan.';
@@ -175,7 +197,7 @@ class SupabaseEmailTemplatesAdapter implements EmailTemplatesPort {
       to: to,
       subject: 'Je bent uitgenodigd voor ${siteName ?? 'een site'} op HostHub',
       templatePath: 'assets/email_templates/site_invitation.html',
-      actionLink: actionLink,
+      actionLink: safeActionLink,
       otp: otp,
       context: 'sendSiteInvitationEmail',
       copy: EmailTemplateCopy(
@@ -185,9 +207,33 @@ class SupabaseEmailTemplatesAdapter implements EmailTemplatesPort {
             'Werkt de knop niet? Kopieer dan deze link en plak hem in je browser:',
         otpIntroWithAction:
             'Lukt het niet via de knop? Gebruik dan onderstaande code:',
-        otpIntroWithoutAction:
-            'Gebruik onderstaande code om in te loggen:',
+        otpIntroWithoutAction: 'Gebruik onderstaande code om in te loggen:',
       ),
+    );
+  }
+
+  String _buildSafeAuthEntryLink({
+    required String to,
+    required String? actionLink,
+    required String? otp,
+    String? otpType,
+    bool requireOtp = false,
+  }) {
+    final trimmedActionLink = actionLink?.trim() ?? '';
+    if (trimmedActionLink.isEmpty) {
+      return trimmedActionLink;
+    }
+
+    final trimmedOtp = otp?.trim();
+    if (requireOtp && (trimmedOtp == null || trimmedOtp.isEmpty)) {
+      return trimmedActionLink;
+    }
+
+    return AuthEntryLinkBuilder.build(
+      actionLink: trimmedActionLink,
+      email: to,
+      otp: trimmedOtp,
+      otpType: otpType,
     );
   }
 

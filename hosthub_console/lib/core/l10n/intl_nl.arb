@@ -1225,5 +1225,44 @@
   "revenueBreakdownChannelFee": "Kanaal fee (Booking/Airbnb)",
   "revenueBreakdownTax": "Belasting / btw",
   "yes": "Ja",
-  "no": "Nee"
+  "no": "Nee",
+
+  "teamTitle": "Team",
+  "teamMembersSection": "Leden",
+  "teamNoMembers": "Geen leden gevonden.",
+  "teamInviteMemberButton": "Lid uitnodigen",
+  "teamInviteUserTitle": "Gebruiker uitnodigen",
+  "teamInviteMemberTitle": "Lid uitnodigen",
+  "teamInviteUserDescription": "Nodig een gebruiker uit om samen je properties te beheren.",
+  "teamInviteSiteDescription": "Nodig iemand uit om samen te werken aan \"{siteName}\".",
+  "@teamInviteSiteDescription": {
+    "placeholders": {
+      "siteName": {
+        "type": "String"
+      }
+    }
+  },
+  "teamInvitationFailed": "Uitnodiging mislukt",
+  "teamSendInvitation": "Uitnodiging versturen",
+  "teamInvitationSent": "Uitnodiging verstuurd",
+  "teamInvitationResent": "Uitnodiging opnieuw verstuurd",
+  "teamPendingInvitations": "Openstaande uitnodigingen",
+  "teamNoPendingInvitations": "Geen openstaande uitnodigingen.",
+  "teamUserColumn": "Gebruiker",
+  "teamRoleColumn": "Rol",
+  "teamActionsColumn": "Acties",
+  "teamEmailColumn": "E-mail",
+  "teamEmailPlaceholder": "E-mailadres",
+  "teamRemoveMember": "Verwijderen",
+  "teamRemoveMemberTitle": "Lid verwijderen",
+  "teamRemoveMemberConfirm": "Weet je zeker dat je {name} wilt verwijderen?",
+  "@teamRemoveMemberConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "teamResendInvitation": "Opnieuw versturen",
+  "teamCancelInvitation": "Annuleren"
 }

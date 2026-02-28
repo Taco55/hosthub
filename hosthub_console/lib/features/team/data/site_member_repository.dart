@@ -14,9 +14,9 @@ class SiteMemberRepository extends SupabaseRepository {
     required SupabaseClient supabase,
     required EmailTemplatesPort emailTemplates,
     required String setPasswordRedirectUri,
-  })  : _emailTemplates = emailTemplates,
-        _setPasswordRedirectUri = setPasswordRedirectUri,
-        super(supabase);
+  }) : _emailTemplates = emailTemplates,
+       _setPasswordRedirectUri = setPasswordRedirectUri,
+       super(supabase);
 
   final EmailTemplatesPort _emailTemplates;
   final String _setPasswordRedirectUri;
@@ -119,16 +119,12 @@ class SiteMemberRepository extends SupabaseRepository {
   }) async {
     try {
       // 1. Call edge function to generate link + create invitation record
-      final response = await supabase.functions.invoke(
-        'invite_site_member',
-        body: jsonEncode({
-          'siteId': siteId,
-          'email': email.trim().toLowerCase(),
-          'role': role.name,
-          'redirectTo': _setPasswordRedirectUri,
-        }),
-        headers: const {'Content-Type': 'application/json'},
-      );
+      final response = await _invokeInviteSiteMember({
+        'siteId': siteId,
+        'email': email.trim().toLowerCase(),
+        'role': role.name,
+        'redirectTo': _setPasswordRedirectUri,
+      });
 
       if (response.status != 200) {
         final data = _ensureMap(response.data);
@@ -175,16 +171,12 @@ class SiteMemberRepository extends SupabaseRepository {
     required String siteName,
   }) async {
     try {
-      final response = await supabase.functions.invoke(
-        'invite_site_member',
-        body: jsonEncode({
-          'siteId': invitation.siteId,
-          'email': invitation.email,
-          'role': invitation.role,
-          'redirectTo': _setPasswordRedirectUri,
-        }),
-        headers: const {'Content-Type': 'application/json'},
-      );
+      final response = await _invokeInviteSiteMember({
+        'siteId': invitation.siteId,
+        'email': invitation.email,
+        'role': invitation.role,
+        'redirectTo': _setPasswordRedirectUri,
+      });
 
       if (response.status != 200) {
         final data = _ensureMap(response.data);
@@ -213,10 +205,7 @@ class SiteMemberRepository extends SupabaseRepository {
         error,
         stack,
         reason: DomainErrorReason.cannotSaveData,
-        context: {
-          'op': 'resendInvitation',
-          'invitationId': invitation.id,
-        },
+        context: {'op': 'resendInvitation', 'invitationId': invitation.id},
       );
     }
   }
@@ -238,21 +227,23 @@ class SiteMemberRepository extends SupabaseRepository {
   }
 
   // ---------------------------------------------------------------------------
-  // Account-wide (all owned sites)
+  // Account-wide (all accessible sites)
   // ---------------------------------------------------------------------------
 
-  /// Fetch all members across all sites owned by the current user,
-  /// excluding the user themselves. Deduplicates by profileId.
+  /// Fetch all members across all accessible sites, excluding the current user.
+  /// Deduplicates by profileId, keeping the highest role.
   Future<List<SiteMember>> fetchMembersForOwner() async {
     final userId = supabase.auth.currentUser?.id;
     if (userId == null) return [];
     try {
+      final sites = await _fetchAccessibleSites();
+      if (sites.isEmpty) return [];
+      final siteIds = sites.map((s) => s['id'] as String).toList();
+
       final response = await supabase
           .from(_membersTable)
-          .select(
-            '$_memberSelect, sites!inner(owner_profile_id)',
-          )
-          .eq('sites.owner_profile_id', userId)
+          .select(_memberSelect)
+          .inFilter('site_id', siteIds)
           .neq('profile_id', userId)
           .order('created_at', ascending: true);
       final byProfile = <String, SiteMember>{};
@@ -260,8 +251,7 @@ class SiteMemberRepository extends SupabaseRepository {
         final member = SiteMember.fromMap(row as Map<String, dynamic>);
         final existing = byProfile[member.profileId];
         if (existing == null ||
-            _roleRank(member.memberRole) >
-                _roleRank(existing.memberRole)) {
+            _roleRank(member.memberRole) > _roleRank(existing.memberRole)) {
           byProfile[member.profileId] = member;
         }
       }
@@ -276,16 +266,20 @@ class SiteMemberRepository extends SupabaseRepository {
     }
   }
 
-  /// Fetch all pending invitations across all sites owned by the current user.
+  /// Fetch all pending invitations across all accessible sites.
   /// Deduplicates by email.
   Future<List<SiteInvitation>> fetchInvitationsForOwner() async {
     final userId = supabase.auth.currentUser?.id;
     if (userId == null) return [];
     try {
+      final sites = await _fetchAccessibleSites();
+      if (sites.isEmpty) return [];
+      final siteIds = sites.map((s) => s['id'] as String).toList();
+
       final response = await supabase
           .from(_invitationsTable)
-          .select('*, sites!inner(owner_profile_id)')
-          .eq('sites.owner_profile_id', userId)
+          .select()
+          .inFilter('site_id', siteIds)
           .eq('status', 'pending')
           .order('created_at', ascending: false);
       final byEmail = <String, SiteInvitation>{};
@@ -304,18 +298,19 @@ class SiteMemberRepository extends SupabaseRepository {
     }
   }
 
-  /// Invite a user to all sites owned by the current user.
+  /// Invite a user to all accessible sites.
   /// Calls the edge function for each site but sends only one email.
   Future<void> inviteToAllSites({
     required String email,
     required SiteMemberRole role,
   }) async {
     try {
-      final sites = await _fetchOwnedSites();
+      final sites = await _fetchAccessibleSites();
       if (sites.isEmpty) {
         throw DomainError.of(
           DomainErrorCode.validationFailed,
-          message: 'No sites found.',
+          message: 'No sites found for this account.',
+          context: {'op': 'inviteToAllSites', 'email': email},
         );
       }
 
@@ -325,16 +320,12 @@ class SiteMemberRepository extends SupabaseRepository {
 
       for (int i = 0; i < sites.length; i++) {
         final site = sites[i];
-        final response = await supabase.functions.invoke(
-          'invite_site_member',
-          body: jsonEncode({
-            'siteId': site['id'],
-            'email': email.trim().toLowerCase(),
-            'role': role.name,
-            'redirectTo': _setPasswordRedirectUri,
-          }),
-          headers: const {'Content-Type': 'application/json'},
-        );
+        final response = await _invokeInviteSiteMember({
+          'siteId': site['id'],
+          'email': email.trim().toLowerCase(),
+          'role': role.name,
+          'redirectTo': _setPasswordRedirectUri,
+        });
 
         if (response.status != 200) {
           final data = _ensureMap(response.data);
@@ -376,10 +367,10 @@ class SiteMemberRepository extends SupabaseRepository {
     }
   }
 
-  /// Remove a user from all sites owned by the current user.
+  /// Remove a user from all accessible sites.
   Future<void> removeFromAllSites(String profileId) async {
     try {
-      final sites = await _fetchOwnedSites();
+      final sites = await _fetchAccessibleSites();
       final siteIds = sites
           .map((s) => s['id']?.toString())
           .whereType<String>()
@@ -401,7 +392,7 @@ class SiteMemberRepository extends SupabaseRepository {
     }
   }
 
-  /// Cancel all pending invitations for an email across owned sites.
+  /// Cancel all pending invitations for an email across accessible sites.
   Future<void> cancelInvitationsByEmail(String email) async {
     try {
       final userId = supabase.auth.currentUser?.id;
@@ -423,13 +414,14 @@ class SiteMemberRepository extends SupabaseRepository {
     }
   }
 
-  Future<List<Map<String, dynamic>>> _fetchOwnedSites() async {
+  /// Fetch all sites the current user has access to (via RLS).
+  Future<List<Map<String, dynamic>>> _fetchAccessibleSites() async {
     final userId = supabase.auth.currentUser?.id;
     if (userId == null) return [];
     final response = await supabase
         .from('sites')
         .select('id, name')
-        .eq('owner_profile_id', userId);
+        .order('created_at', ascending: false);
     return (response as List<dynamic>).cast<Map<String, dynamic>>();
   }
 
@@ -452,10 +444,10 @@ class SiteMemberRepository extends SupabaseRepository {
     final user = supabase.auth.currentUser;
     if (user == null || user.email == null) return;
     try {
-      await supabase.rpc('accept_pending_invitations', params: {
-        'p_user_id': user.id,
-        'p_user_email': user.email!,
-      });
+      await supabase.rpc(
+        'accept_pending_invitations',
+        params: {'p_user_id': user.id, 'p_user_email': user.email!},
+      );
     } catch (_) {
       // Non-critical: silently ignore if function doesn't exist yet
     }
@@ -464,6 +456,94 @@ class SiteMemberRepository extends SupabaseRepository {
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
+
+  Future<FunctionResponse> _invokeInviteSiteMember(
+    Map<String, dynamic> payload,
+  ) async {
+    Future<FunctionResponse> invokeOnce() async {
+      final accessToken = supabase.auth.currentSession?.accessToken;
+      if (accessToken == null || accessToken.isEmpty) {
+        throw DomainErrorCode.unauthorized.err(
+          reason: DomainErrorReason.cannotSaveData,
+          message: 'No access token available for invite call',
+          context: const {'op': 'inviteSiteMember', 'auth_session': 'missing'},
+        );
+      }
+
+      return supabase.functions.invoke(
+        'invite_site_member',
+        body: jsonEncode(payload),
+        headers: {'Authorization': 'Bearer $accessToken'},
+      );
+    }
+
+    await _ensureFreshSessionForInvite();
+    try {
+      return await invokeOnce();
+    } on FunctionException catch (error) {
+      if (error.status != 401 || !_isInvalidJwt(error.details)) {
+        rethrow;
+      }
+
+      // Retry once after explicit refresh when edge runtime rejects JWT.
+      await _refreshSessionForInvite();
+      try {
+        return await invokeOnce();
+      } catch (_) {
+        rethrow;
+      }
+    }
+  }
+
+  Future<void> _ensureFreshSessionForInvite() async {
+    if (supabase.auth.currentUser == null) {
+      throw DomainErrorCode.unauthorized.err(
+        reason: DomainErrorReason.cannotSaveData,
+        message: 'User not logged in',
+        context: const {'supabase_user': null},
+      );
+    }
+
+    final session = supabase.auth.currentSession;
+    if (session == null) {
+      await _refreshSessionForInvite();
+      if (supabase.auth.currentSession == null) {
+        throw DomainErrorCode.unauthorized.err(
+          reason: DomainErrorReason.cannotSaveData,
+          message: 'No active auth session found',
+        );
+      }
+      return;
+    }
+
+    final exp = session.expiresAt;
+    if (exp == null) return;
+
+    final expiration = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
+    if (DateTime.now().isAfter(
+      expiration.subtract(const Duration(seconds: 30)),
+    )) {
+      await _refreshSessionForInvite();
+    }
+  }
+
+  Future<void> _refreshSessionForInvite() async {
+    try {
+      await supabase.auth.refreshSession();
+    } catch (error, stack) {
+      throw mapError(
+        error,
+        stack,
+        reason: DomainErrorReason.cannotSaveData,
+        context: const {'op': 'refreshSessionForInvite'},
+      );
+    }
+  }
+
+  bool _isInvalidJwt(Object? details) {
+    final normalized = (details?.toString() ?? '').toLowerCase();
+    return normalized.contains('invalid jwt');
+  }
 
   Map<String, dynamic> _ensureMap(dynamic data) {
     if (data is Map<String, dynamic>) return data;

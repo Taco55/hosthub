@@ -190,8 +190,14 @@ class AppConfig {
 
   bool get isFirebaseEnabled => enableFirebase;
 
-  String authRedirectUri({String path = '/login'}) =>
-      '$deepLinkScheme://auth$path';
+  String authRedirectUri({String path = '/login'}) {
+    final normalizedPath = path.startsWith('/') ? path : '/$path';
+    final webBase = adminBaseUrl?.toString().replaceAll(RegExp(r'/+$'), '');
+    if (webBase != null && webBase.isNotEmpty) {
+      return '$webBase$normalizedPath';
+    }
+    return '$deepLinkScheme://auth$normalizedPath';
+  }
 
   String toSafeString() =>
       '[AppConfig env=${environment.name} app=$clientAppKey '

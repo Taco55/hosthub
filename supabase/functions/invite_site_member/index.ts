@@ -8,6 +8,7 @@ const SERVICE_ROLE_KEY = env(
   "SUPABASE_SERVICE_ROLE_KEY",
   "SUPABASE_SECRET_KEY",
 );
+const DASHBOARD_BASE_URL = env("ADMIN_BASE_URL", "DASHBOARD_BASE_URL");
 
 if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
   throw new Error(
@@ -24,9 +25,60 @@ type InvitePayload = {
   redirectTo?: string;
 };
 
+type InviteLinkType = "invite" | "magiclink";
+
 const normalizeEmail = (value: string | undefined): string | undefined => {
   const trimmed = value?.trim().toLowerCase();
   return trimmed && trimmed.length > 0 ? trimmed : undefined;
+};
+
+const normalizeRedirect = (value: string | undefined): string | undefined => {
+  const trimmed = value?.trim();
+  if (trimmed && trimmed.length > 0) {
+    try {
+      const parsed = new URL(trimmed);
+      if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+        return trimmed;
+      }
+    } catch {
+      // Ignore malformed override and fallback to dashboard base when available.
+    }
+  }
+
+  if (!DASHBOARD_BASE_URL) return undefined;
+  const base = DASHBOARD_BASE_URL.trim().replace(/\/+$/, "");
+  if (!base) return undefined;
+
+  try {
+    const parsed = new URL(base);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return undefined;
+    }
+  } catch {
+    return undefined;
+  }
+
+  return `${base}/set-password`;
+};
+
+const rewriteRedirect = (actionLink: string, redirectTo: string): string => {
+  try {
+    const url = new URL(actionLink);
+    url.searchParams.set("redirect_to", redirectTo);
+    return url.toString();
+  } catch {
+    return actionLink;
+  }
+};
+
+const isAlreadyRegisteredError = (message: string | undefined): boolean => {
+  const normalized = (message ?? "").toLowerCase();
+  return normalized.includes("already") && normalized.includes("register");
+};
+
+const isUserNotFoundError = (message: string | undefined): boolean => {
+  const normalized = (message ?? "").toLowerCase();
+  return normalized.includes("user") && normalized.includes("not found");
 };
 
 Deno.serve(async (req) => {
@@ -68,7 +120,7 @@ Deno.serve(async (req) => {
   const siteId = payload.siteId?.trim();
   const email = normalizeEmail(payload.email);
   const role = payload.role?.trim();
-  const redirectTo = payload.redirectTo?.trim();
+  const redirectTo = normalizeRedirect(payload.redirectTo);
 
   if (!siteId) return jsonError(400, "Missing siteId");
   if (!email) return jsonError(400, "Missing email");
@@ -77,54 +129,94 @@ Deno.serve(async (req) => {
   }
 
   // ── Verify caller is site owner or admin ───────────────────────────────
-  const { data: accessCheck } = await adminClient.rpc("has_site_access", {
+  const { data: accessCheck, error: accessError } = await adminClient.rpc("has_site_access", {
     check_site_id: siteId,
     check_user_id: caller.id,
     min_role: "owner",
   });
+
+  if (accessError) {
+    return jsonResponse(
+      {
+        error: "Failed to verify site access",
+        details: accessError.message,
+      },
+      500,
+    );
+  }
 
   if (!accessCheck) {
     return jsonError(403, "You must be a site owner to invite members");
   }
 
   // ── Check for existing pending invitation ──────────────────────────────
-  const { data: existingInv } = await adminClient
+  const { data: existingInv, error: existingInvError } = await adminClient
     .from("site_invitations")
     .select("id, status")
     .eq("site_id", siteId)
     .eq("email", email)
     .maybeSingle();
 
+  if (existingInvError) {
+    return jsonResponse(
+      {
+        error: "Failed to check existing invitation",
+        details: existingInvError.message,
+      },
+      500,
+    );
+  }
+
   if (existingInv && existingInv.status === "pending") {
     return jsonError(409, "An invitation for this email is already pending");
   }
 
-  // ── Check if user already exists ───────────────────────────────────────
-  const { data: existingUsers } = await adminClient.auth.admin.listUsers({
-    page: 1,
-    perPage: 1,
-  });
+  // ── Check if profile already exists ────────────────────────────────────
+  const { data: existingProfile, error: profileLookupError } = await adminClient
+    .from("profiles")
+    .select("id")
+    .ilike("email", email)
+    .limit(1)
+    .maybeSingle();
 
-  // Search by email using the admin API
-  let existingUser = null;
-  const { data: userList } = await adminClient.auth.admin.listUsers();
-  if (userList?.users) {
-    existingUser = userList.users.find(
-      (u) => u.email?.toLowerCase() === email,
+  if (profileLookupError) {
+    return jsonResponse(
+      {
+        error: "Failed to resolve existing user profile",
+        details: profileLookupError.message,
+      },
+      500,
     );
   }
 
-  const isNewUser = !existingUser;
-
   // ── Generate auth link ─────────────────────────────────────────────────
   try {
-    const linkType = isNewUser ? "invite" : "magiclink";
-    const { data: linkData, error: linkError } =
+    let linkType: InviteLinkType = existingProfile ? "magiclink" : "invite";
+    let { data: linkData, error: linkError } =
       await adminClient.auth.admin.generateLink({
         type: linkType,
         email,
         options: redirectTo ? { redirectTo } : undefined,
       });
+
+    // Retry once with the alternate link type when the first attempt clearly
+    // mismatches account state (new vs existing user).
+    if (linkError) {
+      const shouldFallback =
+        (linkType === "invite" && isAlreadyRegisteredError(linkError.message)) ||
+        (linkType === "magiclink" && isUserNotFoundError(linkError.message));
+
+      if (shouldFallback) {
+        linkType = linkType === "invite" ? "magiclink" : "invite";
+        const retry = await adminClient.auth.admin.generateLink({
+          type: linkType,
+          email,
+          options: redirectTo ? { redirectTo } : undefined,
+        });
+        linkData = retry.data;
+        linkError = retry.error;
+      }
+    }
 
     if (linkError) {
       return jsonResponse(
@@ -136,8 +228,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    const actionLink = linkData?.properties?.action_link ?? null;
+    const rawActionLink = linkData?.properties?.action_link ?? null;
+    const actionLink = rawActionLink && redirectTo
+      ? rewriteRedirect(rawActionLink, redirectTo)
+      : rawActionLink;
     const emailOtp = linkData?.properties?.email_otp ?? null;
+    const isNewUser = linkType === "invite";
 
     // ── Upsert invitation record ───────────────────────────────────────
     const { data: invitation, error: invError } = await adminClient
@@ -169,23 +265,43 @@ Deno.serve(async (req) => {
     }
 
     // ── If existing user, auto-create site_member ────────────────────────
-    if (!isNewUser && existingUser) {
-      await adminClient
+    if (!isNewUser && existingProfile) {
+      const { error: memberUpsertError } = await adminClient
         .from("site_members")
         .upsert(
           {
             site_id: siteId,
-            profile_id: existingUser.id,
+            profile_id: existingProfile.id,
             role,
           },
           { onConflict: "site_id,profile_id" },
         );
 
+      if (memberUpsertError) {
+        return jsonResponse(
+          {
+            error: "Failed to add member to site",
+            details: memberUpsertError.message,
+          },
+          500,
+        );
+      }
+
       // Mark invitation as accepted immediately
-      await adminClient
+      const { error: invitationAcceptError } = await adminClient
         .from("site_invitations")
         .update({ status: "accepted" })
         .eq("id", invitation.id);
+
+      if (invitationAcceptError) {
+        return jsonResponse(
+          {
+            error: "Failed to finalize invitation",
+            details: invitationAcceptError.message,
+          },
+          500,
+        );
+      }
     }
 
     return jsonResponse({

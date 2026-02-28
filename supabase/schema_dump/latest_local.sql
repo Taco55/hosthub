@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict eyAMd8CPcZB3YEok3FHrtc5Hyxa5NSavxixIafWJBu7BZGJ1Ejx5ypRSbUaQgiv
+\restrict ss3NDXljt8RWI10ChMDjoPNhFmoIcyaWIlA1fDeDTTGZuOdVcxtMIaOGOIeaB0u
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -49,6 +49,19 @@ CREATE TYPE public.home_tab AS ENUM (
 ALTER TYPE public.home_tab OWNER TO postgres;
 
 --
+-- Name: site_member_role; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.site_member_role AS ENUM (
+    'owner',
+    'editor',
+    'viewer'
+);
+
+
+ALTER TYPE public.site_member_role OWNER TO postgres;
+
+--
 -- Name: subscription_status; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -64,6 +77,39 @@ CREATE TYPE public.subscription_status AS ENUM (
 
 
 ALTER TYPE public.subscription_status OWNER TO postgres;
+
+--
+-- Name: accept_pending_invitations(uuid, text); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.accept_pending_invitations(p_user_id uuid, p_user_email text) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+DECLARE
+    inv RECORD;
+BEGIN
+    FOR inv IN
+        SELECT id, site_id, role
+        FROM public.site_invitations
+        WHERE email = lower(trim(p_user_email))
+          AND status = 'pending'
+          AND expires_at > now()
+    LOOP
+        INSERT INTO public.site_members (site_id, profile_id, role)
+        VALUES (inv.site_id, p_user_id, inv.role)
+        ON CONFLICT (site_id, profile_id)
+            DO UPDATE SET role = EXCLUDED.role, updated_at = now();
+
+        UPDATE public.site_invitations
+        SET status = 'accepted'
+        WHERE id = inv.id;
+    END LOOP;
+END;
+$$;
+
+
+ALTER FUNCTION public.accept_pending_invitations(p_user_id uuid, p_user_email text) OWNER TO postgres;
 
 --
 -- Name: cms_next_version(); Type: FUNCTION; Schema: public; Owner: postgres
@@ -211,6 +257,39 @@ $$;
 
 
 ALTER FUNCTION public.handle_new_user() OWNER TO postgres;
+
+--
+-- Name: has_site_access(uuid, uuid, public.site_member_role); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.has_site_access(check_site_id uuid, check_user_id uuid, min_role public.site_member_role DEFAULT 'viewer'::public.site_member_role) RETURNS boolean
+    LANGUAGE sql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+    SELECT EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE id = check_user_id AND is_admin = true
+    )
+    OR EXISTS (
+        SELECT 1 FROM public.sites
+        WHERE id = check_site_id AND owner_profile_id = check_user_id
+    )
+    OR EXISTS (
+        SELECT 1 FROM public.site_members
+        WHERE site_id = check_site_id
+          AND profile_id = check_user_id
+          AND (
+            CASE min_role
+                WHEN 'viewer' THEN role IN ('viewer', 'editor', 'owner')
+                WHEN 'editor' THEN role IN ('editor', 'owner')
+                WHEN 'owner'  THEN role = 'owner'
+            END
+          )
+    );
+$$;
+
+
+ALTER FUNCTION public.has_site_access(check_site_id uuid, check_user_id uuid, min_role public.site_member_role) OWNER TO postgres;
 
 --
 -- Name: is_admin(uuid); Type: FUNCTION; Schema: public; Owner: postgres
@@ -472,6 +551,41 @@ CREATE TABLE public.site_domains (
 ALTER TABLE public.site_domains OWNER TO postgres;
 
 --
+-- Name: site_invitations; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.site_invitations (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    site_id uuid NOT NULL,
+    email text NOT NULL,
+    role public.site_member_role DEFAULT 'editor'::public.site_member_role NOT NULL,
+    status text DEFAULT 'pending'::text NOT NULL,
+    invited_by uuid,
+    expires_at timestamp with time zone DEFAULT (now() + '7 days'::interval) NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT site_invitations_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'accepted'::text, 'cancelled'::text])))
+);
+
+
+ALTER TABLE public.site_invitations OWNER TO postgres;
+
+--
+-- Name: site_members; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.site_members (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    site_id uuid NOT NULL,
+    profile_id uuid NOT NULL,
+    role public.site_member_role DEFAULT 'viewer'::public.site_member_role NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.site_members OWNER TO postgres;
+
+--
 -- Name: sites; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -621,6 +735,38 @@ ALTER TABLE ONLY public.site_domains
 
 
 --
+-- Name: site_invitations site_invitations_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.site_invitations
+    ADD CONSTRAINT site_invitations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: site_invitations site_invitations_site_id_email_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.site_invitations
+    ADD CONSTRAINT site_invitations_site_id_email_key UNIQUE (site_id, email);
+
+
+--
+-- Name: site_members site_members_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.site_members
+    ADD CONSTRAINT site_members_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: site_members site_members_site_id_profile_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.site_members
+    ADD CONSTRAINT site_members_site_id_profile_id_key UNIQUE (site_id, profile_id);
+
+
+--
 -- Name: sites sites_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -669,6 +815,34 @@ CREATE INDEX idx_cms_media_site ON public.cms_media USING btree (site_id);
 --
 
 CREATE INDEX idx_cms_media_tags ON public.cms_media USING gin (tags);
+
+
+--
+-- Name: idx_site_invitations_email; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_site_invitations_email ON public.site_invitations USING btree (email);
+
+
+--
+-- Name: idx_site_invitations_site_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_site_invitations_site_id ON public.site_invitations USING btree (site_id);
+
+
+--
+-- Name: idx_site_members_profile_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_site_members_profile_id ON public.site_members USING btree (profile_id);
+
+
+--
+-- Name: idx_site_members_site_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_site_members_site_id ON public.site_members USING btree (site_id);
 
 
 --
@@ -801,6 +975,38 @@ ALTER TABLE ONLY public.site_domains
 
 
 --
+-- Name: site_invitations site_invitations_invited_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.site_invitations
+    ADD CONSTRAINT site_invitations_invited_by_fkey FOREIGN KEY (invited_by) REFERENCES public.profiles(id) ON DELETE SET NULL;
+
+
+--
+-- Name: site_invitations site_invitations_site_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.site_invitations
+    ADD CONSTRAINT site_invitations_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.sites(id) ON DELETE CASCADE;
+
+
+--
+-- Name: site_members site_members_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.site_members
+    ADD CONSTRAINT site_members_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+
+
+--
+-- Name: site_members site_members_site_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.site_members
+    ADD CONSTRAINT site_members_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.sites(id) ON DELETE CASCADE;
+
+
+--
 -- Name: sites sites_owner_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -859,6 +1065,13 @@ CREATE POLICY "CMS media is publicly readable" ON public.cms_media FOR SELECT TO
 
 
 --
+-- Name: site_members Members can view site team; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Members can view site team" ON public.site_members FOR SELECT TO authenticated USING ((public.is_admin(auth.uid()) OR (profile_id = auth.uid()) OR public.has_site_access(site_id, auth.uid())));
+
+
+--
 -- Name: profiles Profiles are viewable by owner or admin; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -870,6 +1083,13 @@ CREATE POLICY "Profiles are viewable by owner or admin" ON public.profiles FOR S
 --
 
 CREATE POLICY "Published CMS documents are publicly readable" ON public.cms_documents FOR SELECT TO authenticated, anon USING ((status = 'published'::text));
+
+
+--
+-- Name: site_domains Site domain access; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Site domain access" ON public.site_domains TO authenticated USING ((public.is_admin(auth.uid()) OR public.has_site_access(site_id, auth.uid(), 'owner'::public.site_member_role))) WITH CHECK ((public.is_admin(auth.uid()) OR public.has_site_access(site_id, auth.uid(), 'owner'::public.site_member_role)));
 
 
 --
@@ -940,10 +1160,24 @@ CREATE POLICY "Site owners can manage CMS media collections" ON public.cms_media
 
 
 --
+-- Name: site_invitations Site owners can manage invitations; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Site owners can manage invitations" ON public.site_invitations TO authenticated USING ((public.is_admin(auth.uid()) OR public.has_site_access(site_id, auth.uid(), 'owner'::public.site_member_role))) WITH CHECK ((public.is_admin(auth.uid()) OR public.has_site_access(site_id, auth.uid(), 'owner'::public.site_member_role)));
+
+
+--
+-- Name: site_members Site owners can manage members; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Site owners can manage members" ON public.site_members TO authenticated USING ((public.is_admin(auth.uid()) OR public.has_site_access(site_id, auth.uid(), 'owner'::public.site_member_role))) WITH CHECK ((public.is_admin(auth.uid()) OR public.has_site_access(site_id, auth.uid(), 'owner'::public.site_member_role)));
+
+
+--
 -- Name: sites Site owners can manage sites; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY "Site owners can manage sites" ON public.sites USING ((public.is_admin(auth.uid()) OR (owner_profile_id = auth.uid()))) WITH CHECK ((public.is_admin(auth.uid()) OR (owner_profile_id = auth.uid())));
+CREATE POLICY "Site owners can manage sites" ON public.sites TO authenticated USING ((public.is_admin(auth.uid()) OR public.has_site_access(id, auth.uid()))) WITH CHECK ((public.is_admin(auth.uid()) OR (owner_profile_id = auth.uid())));
 
 
 --
@@ -954,6 +1188,13 @@ CREATE POLICY "Site owners can read CMS versions" ON public.cms_document_version
    FROM (public.cms_documents d
      JOIN public.sites s ON ((s.id = d.site_id)))
   WHERE ((d.id = cms_document_versions.document_id) AND (s.owner_profile_id = auth.uid()))))));
+
+
+--
+-- Name: site_invitations Site owners can view invitations; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Site owners can view invitations" ON public.site_invitations FOR SELECT TO authenticated USING ((public.is_admin(auth.uid()) OR public.has_site_access(site_id, auth.uid(), 'owner'::public.site_member_role)));
 
 
 --
@@ -1032,6 +1273,18 @@ ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.site_domains ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: site_invitations; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.site_invitations ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: site_members; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.site_members ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: sites; Type: ROW SECURITY; Schema: public; Owner: postgres
 --
 
@@ -1051,6 +1304,15 @@ GRANT USAGE ON SCHEMA public TO postgres;
 GRANT USAGE ON SCHEMA public TO anon;
 GRANT USAGE ON SCHEMA public TO authenticated;
 GRANT USAGE ON SCHEMA public TO service_role;
+
+
+--
+-- Name: FUNCTION accept_pending_invitations(p_user_id uuid, p_user_email text); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.accept_pending_invitations(p_user_id uuid, p_user_email text) TO anon;
+GRANT ALL ON FUNCTION public.accept_pending_invitations(p_user_id uuid, p_user_email text) TO authenticated;
+GRANT ALL ON FUNCTION public.accept_pending_invitations(p_user_id uuid, p_user_email text) TO service_role;
 
 
 --
@@ -1077,6 +1339,15 @@ GRANT ALL ON FUNCTION public.create_local_admin_user(admin_email text, admin_pas
 GRANT ALL ON FUNCTION public.handle_new_user() TO anon;
 GRANT ALL ON FUNCTION public.handle_new_user() TO authenticated;
 GRANT ALL ON FUNCTION public.handle_new_user() TO service_role;
+
+
+--
+-- Name: FUNCTION has_site_access(check_site_id uuid, check_user_id uuid, min_role public.site_member_role); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.has_site_access(check_site_id uuid, check_user_id uuid, min_role public.site_member_role) TO anon;
+GRANT ALL ON FUNCTION public.has_site_access(check_site_id uuid, check_user_id uuid, min_role public.site_member_role) TO authenticated;
+GRANT ALL ON FUNCTION public.has_site_access(check_site_id uuid, check_user_id uuid, min_role public.site_member_role) TO service_role;
 
 
 --
@@ -1197,6 +1468,24 @@ GRANT ALL ON TABLE public.site_domains TO service_role;
 
 
 --
+-- Name: TABLE site_invitations; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.site_invitations TO anon;
+GRANT ALL ON TABLE public.site_invitations TO authenticated;
+GRANT ALL ON TABLE public.site_invitations TO service_role;
+
+
+--
+-- Name: TABLE site_members; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.site_members TO anon;
+GRANT ALL ON TABLE public.site_members TO authenticated;
+GRANT ALL ON TABLE public.site_members TO service_role;
+
+
+--
 -- Name: TABLE sites; Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -1278,5 +1567,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON T
 -- PostgreSQL database dump complete
 --
 
-\unrestrict eyAMd8CPcZB3YEok3FHrtc5Hyxa5NSavxixIafWJBu7BZGJ1Ejx5ypRSbUaQgiv
+\unrestrict ss3NDXljt8RWI10ChMDjoPNhFmoIcyaWIlA1fDeDTTGZuOdVcxtMIaOGOIeaB0u
 

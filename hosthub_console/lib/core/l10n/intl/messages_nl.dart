@@ -107,13 +107,18 @@ class MessageLookup extends MessageLookupByLibrary {
   static String m38(table) =>
       "Kan de gegevens niet laden omdat Supabase de tabel \"${table}\" niet kan vinden. Voer de nieuwste database-migraties uit en vernieuw de schema-cache.";
 
-  static String m39(error) => "Kan adminrechten niet wijzigen: ${error}";
+  static String m39(siteName) =>
+      "Nodig iemand uit om samen te werken aan \"${siteName}\".";
 
-  static String m40(error) => "Kon profiel niet bijwerken: ${error}";
+  static String m40(name) => "Weet je zeker dat je ${name} wilt verwijderen?";
 
-  static String m41(error) => "Kon gebruiker niet verwijderen: ${error}";
+  static String m41(error) => "Kan adminrechten niet wijzigen: ${error}";
 
-  static String m42(email) => "Verificatiecode verstuurd naar ${email}";
+  static String m42(error) => "Kon profiel niet bijwerken: ${error}";
+
+  static String m43(error) => "Kon gebruiker niet verwijderen: ${error}";
+
+  static String m44(email) => "Verificatiecode verstuurd naar ${email}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1117,6 +1122,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "newPasswordLabel": MessageLookupByLibrary.simpleMessage(
       "Nieuw wachtwoord",
     ),
+    "no": MessageLookupByLibrary.simpleMessage("Nee"),
     "noAccountYet": MessageLookupByLibrary.simpleMessage("Nog geen account?"),
     "noAppsFound": MessageLookupByLibrary.simpleMessage("Geen apps gevonden."),
     "noDataFound": MessageLookupByLibrary.simpleMessage(
@@ -1574,6 +1580,56 @@ class MessageLookup extends MessageLookupByLibrary {
     "tableOfContent": MessageLookupByLibrary.simpleMessage("Inhoudsopgave"),
     "tag": MessageLookupByLibrary.simpleMessage("Tag"),
     "taxi": MessageLookupByLibrary.simpleMessage("Taxi"),
+    "teamActionsColumn": MessageLookupByLibrary.simpleMessage("Acties"),
+    "teamCancelInvitation": MessageLookupByLibrary.simpleMessage("Annuleren"),
+    "teamEmailColumn": MessageLookupByLibrary.simpleMessage("E-mail"),
+    "teamEmailPlaceholder": MessageLookupByLibrary.simpleMessage("E-mailadres"),
+    "teamInvitationFailed": MessageLookupByLibrary.simpleMessage(
+      "Uitnodiging mislukt",
+    ),
+    "teamInvitationResent": MessageLookupByLibrary.simpleMessage(
+      "Uitnodiging opnieuw verstuurd",
+    ),
+    "teamInvitationSent": MessageLookupByLibrary.simpleMessage(
+      "Uitnodiging verstuurd",
+    ),
+    "teamInviteMemberButton": MessageLookupByLibrary.simpleMessage(
+      "Lid uitnodigen",
+    ),
+    "teamInviteMemberTitle": MessageLookupByLibrary.simpleMessage(
+      "Lid uitnodigen",
+    ),
+    "teamInviteSiteDescription": m39,
+    "teamInviteUserDescription": MessageLookupByLibrary.simpleMessage(
+      "Nodig een gebruiker uit om samen je properties te beheren.",
+    ),
+    "teamInviteUserTitle": MessageLookupByLibrary.simpleMessage(
+      "Gebruiker uitnodigen",
+    ),
+    "teamMembersSection": MessageLookupByLibrary.simpleMessage("Leden"),
+    "teamNoMembers": MessageLookupByLibrary.simpleMessage(
+      "Geen leden gevonden.",
+    ),
+    "teamNoPendingInvitations": MessageLookupByLibrary.simpleMessage(
+      "Geen openstaande uitnodigingen.",
+    ),
+    "teamPendingInvitations": MessageLookupByLibrary.simpleMessage(
+      "Openstaande uitnodigingen",
+    ),
+    "teamRemoveMember": MessageLookupByLibrary.simpleMessage("Verwijderen"),
+    "teamRemoveMemberConfirm": m40,
+    "teamRemoveMemberTitle": MessageLookupByLibrary.simpleMessage(
+      "Lid verwijderen",
+    ),
+    "teamResendInvitation": MessageLookupByLibrary.simpleMessage(
+      "Opnieuw versturen",
+    ),
+    "teamRoleColumn": MessageLookupByLibrary.simpleMessage("Rol"),
+    "teamSendInvitation": MessageLookupByLibrary.simpleMessage(
+      "Uitnodiging versturen",
+    ),
+    "teamTitle": MessageLookupByLibrary.simpleMessage("Team"),
+    "teamUserColumn": MessageLookupByLibrary.simpleMessage("Gebruiker"),
     "text": MessageLookupByLibrary.simpleMessage("Tekst"),
     "thai": MessageLookupByLibrary.simpleMessage("Thais"),
     "theme": MessageLookupByLibrary.simpleMessage("Thema"),
@@ -1582,7 +1638,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "timer": MessageLookupByLibrary.simpleMessage("Timer"),
     "todoList": MessageLookupByLibrary.simpleMessage("Takenlijst"),
     "toggle": MessageLookupByLibrary.simpleMessage("Schakelen"),
-    "toggleAdminFailed": m39,
+    "toggleAdminFailed": m41,
     "tomato": MessageLookupByLibrary.simpleMessage("Tomaat"),
     "tooManyAttempts": MessageLookupByLibrary.simpleMessage("Te veel pogingen"),
     "trash": MessageLookupByLibrary.simpleMessage("Afval"),
@@ -1600,7 +1656,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Kon adminrechten niet bijwerken. Probeer opnieuw.",
     ),
     "updateButton": MessageLookupByLibrary.simpleMessage("Wijzigen"),
-    "updateProfileFailed": m40,
+    "updateProfileFailed": m42,
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "userCreated": MessageLookupByLibrary.simpleMessage(
       "Gebruiker aangemaakt.",
@@ -1608,7 +1664,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "userDeleteFailed": MessageLookupByLibrary.simpleMessage(
       "Kon gebruiker niet verwijderen.",
     ),
-    "userDeleteFailedWithReason": m41,
+    "userDeleteFailedWithReason": m43,
     "userDeleted": MessageLookupByLibrary.simpleMessage(
       "Gebruiker verwijderd.",
     ),
@@ -1635,7 +1691,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "vegetables": MessageLookupByLibrary.simpleMessage("Groenten"),
     "vegetarian": MessageLookupByLibrary.simpleMessage("Vegetarisch"),
     "verificationCode": MessageLookupByLibrary.simpleMessage("Verificatiecode"),
-    "verificationCodeSentText": m42,
+    "verificationCodeSentText": m44,
     "verify": MessageLookupByLibrary.simpleMessage("Verifiëren"),
     "verticalLine": MessageLookupByLibrary.simpleMessage("Verticale lijn"),
     "walking": MessageLookupByLibrary.simpleMessage("Lopen"),
@@ -1656,8 +1712,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "wok": MessageLookupByLibrary.simpleMessage("Wok"),
     "woman": MessageLookupByLibrary.simpleMessage("Vrouw"),
     "write": MessageLookupByLibrary.simpleMessage("Schrijven"),
-    "yesLabel": MessageLookupByLibrary.simpleMessage("Ja"),
     "yes": MessageLookupByLibrary.simpleMessage("Ja"),
-    "no": MessageLookupByLibrary.simpleMessage("Nee"),
+    "yesLabel": MessageLookupByLibrary.simpleMessage("Ja"),
   };
 }

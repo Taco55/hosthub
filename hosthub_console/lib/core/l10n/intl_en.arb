@@ -1221,5 +1221,44 @@
   "revenueBreakdownChannelFee": "Channel fee (Booking/Airbnb)",
   "revenueBreakdownTax": "Tax / VAT",
   "yes": "Yes",
-  "no": "No"
+  "no": "No",
+
+  "teamTitle": "Team",
+  "teamMembersSection": "Members",
+  "teamNoMembers": "No members found.",
+  "teamInviteMemberButton": "Invite member",
+  "teamInviteUserTitle": "Invite user",
+  "teamInviteMemberTitle": "Invite member",
+  "teamInviteUserDescription": "Invite a user to manage your properties together.",
+  "teamInviteSiteDescription": "Invite someone to collaborate on \"{siteName}\".",
+  "@teamInviteSiteDescription": {
+    "placeholders": {
+      "siteName": {
+        "type": "String"
+      }
+    }
+  },
+  "teamInvitationFailed": "Invitation failed",
+  "teamSendInvitation": "Send invitation",
+  "teamInvitationSent": "Invitation sent",
+  "teamInvitationResent": "Invitation resent",
+  "teamPendingInvitations": "Pending invitations",
+  "teamNoPendingInvitations": "No pending invitations.",
+  "teamUserColumn": "User",
+  "teamRoleColumn": "Role",
+  "teamActionsColumn": "Actions",
+  "teamEmailColumn": "Email",
+  "teamEmailPlaceholder": "Email address",
+  "teamRemoveMember": "Remove",
+  "teamRemoveMemberTitle": "Remove member",
+  "teamRemoveMemberConfirm": "Are you sure you want to remove {name}?",
+  "@teamRemoveMemberConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "teamResendInvitation": "Resend",
+  "teamCancelInvitation": "Cancel"
 }

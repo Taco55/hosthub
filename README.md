@@ -39,6 +39,19 @@ cd hosthub_console
 flutter run -d web-server --web-port=43000
 ```
 
+Run local debug against the production Supabase project on a fixed, non-conflicting port:
+
+```bash
+cd hosthub_console
+flutter run -d chrome \
+  --dart-define-from-file=../../hosthub_secrets/hosthub-prd.env \
+  --dart-define=APP_ENVIRONMENT=prd \
+  --dart-define=ADMIN_BASE_URL=http://localhost:43002 \
+  --dart-define=DASHBOARD_BASE_URL=http://localhost:43002 \
+  --web-hostname=localhost \
+  --web-port=43002
+```
+
 In VS Code launch, `CMS_PREVIEW_DOMAIN=localhost:43001` is set for debug so preview opens your local website even when a production domain exists in `site_domains`.
 
 No production deploy is triggered by these local steps.
@@ -58,7 +71,8 @@ Generic website mode (single deploy, multiple domains/subdomains):
 - See `web/README.md` section "Generic multi-site mode" for required env vars.
 
 Local development:
-- HostHub admin: `http://localhost:43000`
+- HostHub admin (dev backend): `http://localhost:43000`
+- HostHub admin (prd backend debug): `http://localhost:43002`
 - Website + preview: `http://localhost:43001` and `http://localhost:43001/preview/<locale>`
 
 When changing the admin host/path:

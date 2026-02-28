@@ -277,7 +277,9 @@ entrypoint = "./functions/generate_sign_up_link_and_otp/index.ts"
 
 [functions.invite_site_member]
 enabled = true
-verify_jwt = true
+# JWT is validated inside the function via auth.getUser(token).
+# Disable gateway-level verification to avoid false "Invalid JWT" rejects.
+verify_jwt = false
 import_map = "./functions/invite_site_member/deno.json"
 entrypoint = "./functions/invite_site_member/index.ts"
 

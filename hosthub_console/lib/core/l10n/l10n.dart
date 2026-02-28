@@ -7151,19 +7151,224 @@ class S {
 
   /// `Yes`
   String get yes {
+    return Intl.message('Yes', name: 'yes', desc: '', args: []);
+  }
+
+  /// `No`
+  String get no {
+    return Intl.message('No', name: 'no', desc: '', args: []);
+  }
+
+  /// `Team`
+  String get teamTitle {
+    return Intl.message('Team', name: 'teamTitle', desc: '', args: []);
+  }
+
+  /// `Members`
+  String get teamMembersSection {
     return Intl.message(
-      'Yes',
-      name: 'yes',
+      'Members',
+      name: 'teamMembersSection',
       desc: '',
       args: [],
     );
   }
 
-  /// `No`
-  String get no {
+  /// `No members found.`
+  String get teamNoMembers {
     return Intl.message(
-      'No',
-      name: 'no',
+      'No members found.',
+      name: 'teamNoMembers',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Invite member`
+  String get teamInviteMemberButton {
+    return Intl.message(
+      'Invite member',
+      name: 'teamInviteMemberButton',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Invite user`
+  String get teamInviteUserTitle {
+    return Intl.message(
+      'Invite user',
+      name: 'teamInviteUserTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Invite member`
+  String get teamInviteMemberTitle {
+    return Intl.message(
+      'Invite member',
+      name: 'teamInviteMemberTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Invite a user to manage your properties together.`
+  String get teamInviteUserDescription {
+    return Intl.message(
+      'Invite a user to manage your properties together.',
+      name: 'teamInviteUserDescription',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Invite someone to collaborate on "{siteName}".`
+  String teamInviteSiteDescription(String siteName) {
+    return Intl.message(
+      'Invite someone to collaborate on "$siteName".',
+      name: 'teamInviteSiteDescription',
+      desc: '',
+      args: [siteName],
+    );
+  }
+
+  /// `Invitation failed`
+  String get teamInvitationFailed {
+    return Intl.message(
+      'Invitation failed',
+      name: 'teamInvitationFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Send invitation`
+  String get teamSendInvitation {
+    return Intl.message(
+      'Send invitation',
+      name: 'teamSendInvitation',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Invitation sent`
+  String get teamInvitationSent {
+    return Intl.message(
+      'Invitation sent',
+      name: 'teamInvitationSent',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Invitation resent`
+  String get teamInvitationResent {
+    return Intl.message(
+      'Invitation resent',
+      name: 'teamInvitationResent',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Pending invitations`
+  String get teamPendingInvitations {
+    return Intl.message(
+      'Pending invitations',
+      name: 'teamPendingInvitations',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No pending invitations.`
+  String get teamNoPendingInvitations {
+    return Intl.message(
+      'No pending invitations.',
+      name: 'teamNoPendingInvitations',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `User`
+  String get teamUserColumn {
+    return Intl.message('User', name: 'teamUserColumn', desc: '', args: []);
+  }
+
+  /// `Role`
+  String get teamRoleColumn {
+    return Intl.message('Role', name: 'teamRoleColumn', desc: '', args: []);
+  }
+
+  /// `Actions`
+  String get teamActionsColumn {
+    return Intl.message(
+      'Actions',
+      name: 'teamActionsColumn',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Email`
+  String get teamEmailColumn {
+    return Intl.message('Email', name: 'teamEmailColumn', desc: '', args: []);
+  }
+
+  /// `Email address`
+  String get teamEmailPlaceholder {
+    return Intl.message(
+      'Email address',
+      name: 'teamEmailPlaceholder',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Remove`
+  String get teamRemoveMember {
+    return Intl.message('Remove', name: 'teamRemoveMember', desc: '', args: []);
+  }
+
+  /// `Remove member`
+  String get teamRemoveMemberTitle {
+    return Intl.message(
+      'Remove member',
+      name: 'teamRemoveMemberTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Are you sure you want to remove {name}?`
+  String teamRemoveMemberConfirm(String name) {
+    return Intl.message(
+      'Are you sure you want to remove $name?',
+      name: 'teamRemoveMemberConfirm',
+      desc: '',
+      args: [name],
+    );
+  }
+
+  /// `Resend`
+  String get teamResendInvitation {
+    return Intl.message(
+      'Resend',
+      name: 'teamResendInvitation',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Cancel`
+  String get teamCancelInvitation {
+    return Intl.message(
+      'Cancel',
+      name: 'teamCancelInvitation',
       desc: '',
       args: [],
     );

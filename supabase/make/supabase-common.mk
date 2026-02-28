@@ -92,7 +92,7 @@ define resolve-mgmt-token
 	    esac; \
 	  fi; \
 	fi; \
-	: "$${MGMT_TOKEN:?Missing Management token (SUPABASE_ACCESS_TOKEN or SUPABASE_MANAGEMENT_TOKEN or SUPABASE_PAT) in $(ENV_FILE), shell env, or macOS keychain}"
+	: "$${MGMT_TOKEN:?Missing Management token (SUPABASE_ACCESS_TOKEN or SUPABASE_MANAGEMENT_TOKEN or SUPABASE_PAT) in $(ENV_FILE), shell env, or macOS keychain}";
 endef
 
 define confirm-remote

@@ -20,7 +20,8 @@ This document defines the current routing model and local debug flow.
 
 ## Local development model
 
-- HostHub admin: `http://localhost:43000`
+- HostHub admin (dev backend): `http://localhost:43000`
+- HostHub admin (prd backend debug): `http://localhost:43002`
 - Website + preview: `http://localhost:43001` and `http://localhost:43001/preview/<locale>`
 
 Reason: keep admin and website as separate local apps to avoid reverse-proxy
@@ -87,4 +88,18 @@ Admin:
 cd hosthub_console
 flutter run -d web-server --web-port=43000 \
   --dart-define=CMS_PREVIEW_DOMAIN=localhost:43001
+```
+
+Admin (debug locally against the production Supabase backend):
+
+```bash
+cd hosthub_console
+flutter run -d chrome \
+  --dart-define-from-file=../../hosthub_secrets/hosthub-prd.env \
+  --dart-define=APP_ENVIRONMENT=prd \
+  --dart-define=ADMIN_BASE_URL=http://localhost:43002 \
+  --dart-define=DASHBOARD_BASE_URL=http://localhost:43002 \
+  --dart-define=CMS_PREVIEW_DOMAIN=localhost:43001 \
+  --web-hostname=localhost \
+  --web-port=43002
 ```

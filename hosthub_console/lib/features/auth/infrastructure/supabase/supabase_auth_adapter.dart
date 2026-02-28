@@ -456,30 +456,73 @@ class SupabaseAuthAdapter extends SupabaseRepository implements AuthPort {
 
   @override
   Future<String> verifyOtp(String email, String code) async {
+    final normalizedEmail = email.trim();
+    final normalizedCode = code.trim();
+
     try {
-      final response = await supabase.auth.verifyOTP(
-        email: email,
-        token: code.trim(),
-        type: sb.OtpType.magiclink,
-      );
-      final refreshToken =
-          response.session?.refreshToken ??
-          supabase.auth.currentSession?.refreshToken;
-      if (refreshToken == null || refreshToken.isEmpty) {
-        throw DomainErrorCode.unauthorized.err(
-          reason: DomainErrorReason.invalidVerificationCode,
-          message: 'OTP verification did not return a refresh token',
-          context: _context('verifyOtp', {'email': email}),
+      await _clearMismatchedLocalSessionForOtp(normalizedEmail);
+
+      final otpTypes = _resolveOtpTypesForVerification();
+      sb.AuthException? lastAuthError;
+      StackTrace? lastAuthStack;
+
+      for (final otpType in otpTypes) {
+        try {
+          final response = await supabase.auth.verifyOTP(
+            email: normalizedEmail,
+            token: normalizedCode,
+            type: otpType,
+          );
+          final refreshToken =
+              response.session?.refreshToken ??
+              supabase.auth.currentSession?.refreshToken;
+          if (refreshToken == null || refreshToken.isEmpty) {
+            throw DomainErrorCode.unauthorized.err(
+              reason: DomainErrorReason.invalidVerificationCode,
+              message: 'OTP verification did not return a refresh token',
+              context: _context('verifyOtp', {
+                'email': normalizedEmail,
+                'otp_type': otpType.name,
+              }),
+            );
+          }
+          return refreshToken;
+        } on sb.AuthException catch (error, stack) {
+          lastAuthError = error;
+          lastAuthStack = stack;
+          if (!_shouldTryNextOtpType(error)) {
+            throw mapError(
+              error,
+              stack,
+              context: _context('verifyOtp', {
+                'email': normalizedEmail,
+                'otp_type': otpType.name,
+              }),
+            );
+          }
+        }
+      }
+
+      if (lastAuthError != null) {
+        throw mapError(
+          lastAuthError,
+          lastAuthStack ?? StackTrace.current,
+          context: _context('verifyOtp', {'email': normalizedEmail}),
         );
       }
-      return refreshToken;
+
+      throw DomainErrorCode.unauthorized.err(
+        reason: DomainErrorReason.invalidVerificationCode,
+        message: 'OTP verification failed for all known OTP types',
+        context: _context('verifyOtp', {'email': normalizedEmail}),
+      );
     } on DomainError {
       rethrow;
     } catch (error, stack) {
       throw mapError(
         error,
         stack,
-        context: _context('verifyOtp', {'email': email}),
+        context: _context('verifyOtp', {'email': normalizedEmail}),
       );
     }
   }
@@ -569,6 +612,77 @@ class SupabaseAuthAdapter extends SupabaseRepository implements AuthPort {
   @override
   Future<void> resendSignUpCode(String username) async {
     await resendSignUpEmail(username);
+  }
+
+  Future<void> _clearMismatchedLocalSessionForOtp(String email) async {
+    final normalizedEmail = email.trim().toLowerCase();
+    if (normalizedEmail.isEmpty) return;
+
+    final currentEmail = supabase.auth.currentUser?.email?.trim().toLowerCase();
+    if (currentEmail == null || currentEmail.isEmpty) return;
+    if (currentEmail == normalizedEmail) return;
+
+    try {
+      await supabase.auth.signOut();
+    } catch (_) {
+      // Best effort only; OTP verification can still succeed.
+    }
+  }
+
+  List<sb.OtpType> _resolveOtpTypesForVerification() {
+    final candidates = <sb.OtpType>[];
+
+    void add(sb.OtpType type) {
+      if (!candidates.contains(type)) {
+        candidates.add(type);
+      }
+    }
+
+    final preferred = _otpTypeFromQuery();
+    if (preferred != null) {
+      add(preferred);
+    }
+
+    add(sb.OtpType.magiclink);
+    add(sb.OtpType.recovery);
+    add(sb.OtpType.invite);
+
+    return candidates;
+  }
+
+  sb.OtpType? _otpTypeFromQuery() {
+    final params = Uri.base.queryParameters;
+    final raw = params['otp_type'] ?? params['type'];
+    if (raw == null) return null;
+
+    switch (raw.trim().toLowerCase()) {
+      case 'magiclink':
+        return sb.OtpType.magiclink;
+      case 'recovery':
+        return sb.OtpType.recovery;
+      case 'invite':
+        return sb.OtpType.invite;
+      case 'signup':
+        return sb.OtpType.signup;
+      case 'email':
+        return sb.OtpType.email;
+      default:
+        return null;
+    }
+  }
+
+  bool _shouldTryNextOtpType(sb.AuthException error) {
+    final status = int.tryParse(error.statusCode ?? '');
+    if (status == 429 || (status != null && status >= 500)) {
+      return false;
+    }
+
+    final message = error.message.toLowerCase();
+    if (message.contains('rate limit')) {
+      return false;
+    }
+
+    return true;
   }
 }
 

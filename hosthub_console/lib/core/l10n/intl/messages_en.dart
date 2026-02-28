@@ -107,13 +107,18 @@ class MessageLookup extends MessageLookupByLibrary {
   static String m38(table) =>
       "Can’t load data because Supabase couldn’t find the \"${table}\" table. Deploy the latest database migrations and refresh the schema cache.";
 
-  static String m39(error) => "Couldn\'t update admin access: ${error}";
+  static String m39(siteName) =>
+      "Invite someone to collaborate on \"${siteName}\".";
 
-  static String m40(error) => "Couldn\'t update profile: ${error}";
+  static String m40(name) => "Are you sure you want to remove ${name}?";
 
-  static String m41(error) => "Couldn\'t delete user: ${error}";
+  static String m41(error) => "Couldn\'t update admin access: ${error}";
 
-  static String m42(email) => "Verification code sent to ${email}";
+  static String m42(error) => "Couldn\'t update profile: ${error}";
+
+  static String m43(error) => "Couldn\'t delete user: ${error}";
+
+  static String m44(email) => "Verification code sent to ${email}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1073,6 +1078,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "newPassword": MessageLookupByLibrary.simpleMessage("New password"),
     "newPasswordLabel": MessageLookupByLibrary.simpleMessage("New password"),
+    "no": MessageLookupByLibrary.simpleMessage("No"),
     "noAccountYet": MessageLookupByLibrary.simpleMessage("No account yet?"),
     "noAppsFound": MessageLookupByLibrary.simpleMessage("No apps found."),
     "noDataFound": MessageLookupByLibrary.simpleMessage("No data found."),
@@ -1508,6 +1514,52 @@ class MessageLookup extends MessageLookupByLibrary {
     "tableOfContent": MessageLookupByLibrary.simpleMessage("Table of Content"),
     "tag": MessageLookupByLibrary.simpleMessage("Tag"),
     "taxi": MessageLookupByLibrary.simpleMessage("Taxi"),
+    "teamActionsColumn": MessageLookupByLibrary.simpleMessage("Actions"),
+    "teamCancelInvitation": MessageLookupByLibrary.simpleMessage("Cancel"),
+    "teamEmailColumn": MessageLookupByLibrary.simpleMessage("Email"),
+    "teamEmailPlaceholder": MessageLookupByLibrary.simpleMessage(
+      "Email address",
+    ),
+    "teamInvitationFailed": MessageLookupByLibrary.simpleMessage(
+      "Invitation failed",
+    ),
+    "teamInvitationResent": MessageLookupByLibrary.simpleMessage(
+      "Invitation resent",
+    ),
+    "teamInvitationSent": MessageLookupByLibrary.simpleMessage(
+      "Invitation sent",
+    ),
+    "teamInviteMemberButton": MessageLookupByLibrary.simpleMessage(
+      "Invite member",
+    ),
+    "teamInviteMemberTitle": MessageLookupByLibrary.simpleMessage(
+      "Invite member",
+    ),
+    "teamInviteSiteDescription": m39,
+    "teamInviteUserDescription": MessageLookupByLibrary.simpleMessage(
+      "Invite a user to manage your properties together.",
+    ),
+    "teamInviteUserTitle": MessageLookupByLibrary.simpleMessage("Invite user"),
+    "teamMembersSection": MessageLookupByLibrary.simpleMessage("Members"),
+    "teamNoMembers": MessageLookupByLibrary.simpleMessage("No members found."),
+    "teamNoPendingInvitations": MessageLookupByLibrary.simpleMessage(
+      "No pending invitations.",
+    ),
+    "teamPendingInvitations": MessageLookupByLibrary.simpleMessage(
+      "Pending invitations",
+    ),
+    "teamRemoveMember": MessageLookupByLibrary.simpleMessage("Remove"),
+    "teamRemoveMemberConfirm": m40,
+    "teamRemoveMemberTitle": MessageLookupByLibrary.simpleMessage(
+      "Remove member",
+    ),
+    "teamResendInvitation": MessageLookupByLibrary.simpleMessage("Resend"),
+    "teamRoleColumn": MessageLookupByLibrary.simpleMessage("Role"),
+    "teamSendInvitation": MessageLookupByLibrary.simpleMessage(
+      "Send invitation",
+    ),
+    "teamTitle": MessageLookupByLibrary.simpleMessage("Team"),
+    "teamUserColumn": MessageLookupByLibrary.simpleMessage("User"),
     "text": MessageLookupByLibrary.simpleMessage("Text"),
     "thai": MessageLookupByLibrary.simpleMessage("Thai"),
     "theme": MessageLookupByLibrary.simpleMessage("Theme"),
@@ -1516,7 +1568,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "timer": MessageLookupByLibrary.simpleMessage("Timer"),
     "todoList": MessageLookupByLibrary.simpleMessage("Todo List"),
     "toggle": MessageLookupByLibrary.simpleMessage("Toggle"),
-    "toggleAdminFailed": m39,
+    "toggleAdminFailed": m41,
     "tomato": MessageLookupByLibrary.simpleMessage("Tomato"),
     "tooManyAttempts": MessageLookupByLibrary.simpleMessage(
       "Too many attempts",
@@ -1534,13 +1586,13 @@ class MessageLookup extends MessageLookupByLibrary {
       "Couldn\'t update admin rights. Try again.",
     ),
     "updateButton": MessageLookupByLibrary.simpleMessage("Update"),
-    "updateProfileFailed": m40,
+    "updateProfileFailed": m42,
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "userCreated": MessageLookupByLibrary.simpleMessage("User created."),
     "userDeleteFailed": MessageLookupByLibrary.simpleMessage(
       "Couldn\'t delete user.",
     ),
-    "userDeleteFailedWithReason": m41,
+    "userDeleteFailedWithReason": m43,
     "userDeleted": MessageLookupByLibrary.simpleMessage("User deleted."),
     "userIdLabel": MessageLookupByLibrary.simpleMessage("User ID"),
     "userSettingsAction": MessageLookupByLibrary.simpleMessage("User settings"),
@@ -1563,7 +1615,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "verificationCode": MessageLookupByLibrary.simpleMessage(
       "Verification code",
     ),
-    "verificationCodeSentText": m42,
+    "verificationCodeSentText": m44,
     "verify": MessageLookupByLibrary.simpleMessage("Verify"),
     "verticalLine": MessageLookupByLibrary.simpleMessage("Vertical Line"),
     "walking": MessageLookupByLibrary.simpleMessage("Walking"),
@@ -1584,8 +1636,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "wok": MessageLookupByLibrary.simpleMessage("Wok"),
     "woman": MessageLookupByLibrary.simpleMessage("Woman"),
     "write": MessageLookupByLibrary.simpleMessage("Write"),
-    "yesLabel": MessageLookupByLibrary.simpleMessage("Yes"),
     "yes": MessageLookupByLibrary.simpleMessage("Yes"),
-    "no": MessageLookupByLibrary.simpleMessage("No"),
+    "yesLabel": MessageLookupByLibrary.simpleMessage("Yes"),
   };
 }
