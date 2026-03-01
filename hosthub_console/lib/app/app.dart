@@ -34,10 +34,10 @@ const _reservationsPath = '/reservations';
 
 AuthUiPaths get _authUiPaths => AuthUi.config.paths;
 
-AuthLoginErrorDisplayMode get _authErrorDisplayMode =>
+AuthErrorDisplayMode get _authErrorDisplayMode =>
     AppConfig.current.authErrorsInDialog
-    ? AuthLoginErrorDisplayMode.dialogOnly
-    : AuthLoginErrorDisplayMode.inlineExpectedAuthErrors;
+    ? AuthErrorDisplayMode.dialogOnly
+    : AuthErrorDisplayMode.inlineExpectedAuthErrors;
 
 const _debugDemoCredentials = <DemoCredential>[
   DemoCredential(

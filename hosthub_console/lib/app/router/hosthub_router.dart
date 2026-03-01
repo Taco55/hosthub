@@ -28,7 +28,7 @@ class HosthubRouter {
     required AuthUiPaths authUiPaths,
     required String homePath,
     required String authLoadingPath,
-    required AuthLoginErrorDisplayMode authErrorDisplayMode,
+    required AuthErrorDisplayMode authErrorDisplayMode,
     required Iterable<DemoCredential> demoCredentials,
     bool debugLogDiagnostics = false,
   }) {
@@ -162,13 +162,9 @@ class HosthubRouter {
               path: '/sites/:siteId/team',
               builder: (context, state) {
                 final siteId = state.pathParameters['siteId']!;
-                final siteName =
-                    state.uri.queryParameters['name'] ?? '';
+                final siteName = state.uri.queryParameters['name'] ?? '';
                 context.read<SiteMembersCubit>().loadTeam(siteId);
-                return SiteTeamPage(
-                  siteId: siteId,
-                  siteName: siteName,
-                );
+                return SiteTeamPage(siteId: siteId, siteName: siteName);
               },
             ),
             GoRoute(
