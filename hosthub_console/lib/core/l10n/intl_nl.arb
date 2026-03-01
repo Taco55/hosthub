@@ -11,8 +11,23 @@
   "exportLanguageDescription": "Taal voor exports",
   "exportSettingsTitle": "Exportinstellingen",
   "exportColumnsTitle": "Kolommen",
+  "exportPdfOrientationTitle": "PDF-oriëntatie",
+  "exportPdfOrientationPortrait": "Staand",
+  "exportPdfOrientationLandscape": "Liggend",
   "exportButton": "Exporteer",
   "generalSectionTitle": "Algemeen",
+  "appInfoTileTitle": "App informatie",
+  "appInfoTileValue": "Versie {version} · {environment}",
+  "@appInfoTileValue": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      },
+      "environment": {
+        "type": "String"
+      }
+    }
+  },
   "saveButton": "Opslaan",
   "restoreDefaults": "Standaardinstellingen",
   "menuTooltip": "Menu",
@@ -1216,6 +1231,20 @@
   "reservationUpdatedAt": "Bijgewerkt",
   "reservationSectionPayload": "Volledige payload",
   "reservationCloseTooltip": "Sluiten",
+  "reservationArrival": "Aankomst",
+  "reservationDeparture": "Vertrek",
+  "reservationBabyBed": "Babybed",
+  "reservationListColumnBooked": "Geboekt",
+  "reservationListColumnNew": "Nieuw",
+  "reservationExportedLabel": "Geëxporteerd",
+  "reservationNewCount": "{count} nieuw",
+  "@reservationNewCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
 
   "revenueBreakdownRent": "Huur / nachttarief",
   "revenueBreakdownCleaning": "Schoonmaakkosten",

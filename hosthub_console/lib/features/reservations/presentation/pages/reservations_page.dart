@@ -1,10 +1,15 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:js_interop';
+import 'dart:typed_data';
 
 import 'package:app_errors/app_errors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 import 'package:web/web.dart' as web;
 
@@ -14,6 +19,8 @@ import 'package:hosthub_console/features/reservations/application/reservations_c
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
 import 'package:hosthub_console/core/l10n/l10n.dart';
+import 'package:hosthub_console/core/l10n/intl/messages_all.dart'
+    as l10n_messages;
 import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:hosthub_console/features/user_settings/user_settings.dart';
 
@@ -36,30 +43,95 @@ class _ExportColumn {
   static const String notes = 'notes';
 
   static const List<String> all = [
-    isNew, arrival, departure, guestName, guests,
-    babyBed, nights, status, source, notes,
+    isNew,
+    arrival,
+    departure,
+    guestName,
+    guests,
+    babyBed,
+    nights,
+    status,
+    source,
+    notes,
   ];
 
   static const List<String> defaults = [
-    isNew, arrival, departure, guestName, guests,
-    babyBed, nights, notes,
+    isNew,
+    arrival,
+    departure,
+    guestName,
+    guests,
+    babyBed,
+    nights,
+    notes,
   ];
 
-  static String label(String key, {required bool isNl}) {
+  static String label(String key, {required S l10n}) {
     return switch (key) {
-      isNew => isNl ? 'Nieuw' : 'New',
-      arrival => isNl ? 'Aankomst' : 'Arrival',
-      departure => isNl ? 'Vertrek' : 'Departure',
-      guestName => isNl ? 'Boeker' : 'Guest name',
-      guests => isNl ? 'Gasten' : 'Guests',
-      babyBed => isNl ? 'Babybed' : 'Baby bed',
-      nights => isNl ? 'Nachten' : 'Nights',
-      status => 'Status',
-      source => isNl ? 'Bron' : 'Source',
-      notes => isNl ? 'Notities' : 'Notes',
+      isNew => l10n.reservationListColumnNew,
+      arrival => l10n.reservationArrival,
+      departure => l10n.reservationDeparture,
+      guestName => l10n.reservationSectionBooker,
+      guests => l10n.reservationSectionGuests,
+      babyBed => l10n.reservationBabyBed,
+      nights => l10n.reservationNights,
+      status => l10n.reservationStatus,
+      source => l10n.reservationSource,
+      notes => l10n.reservationNotes,
       _ => key,
     };
   }
+}
+
+class _ReservationListColumn {
+  _ReservationListColumn._();
+
+  static const String source = 'source';
+  static const String guestName = 'guestName';
+  static const String checkIn = 'checkIn';
+  static const String checkOut = 'checkOut';
+  static const String nights = 'nights';
+  static const String guests = 'guests';
+  static const String babyBed = 'babyBed';
+  static const String status = 'status';
+  static const String booked = 'booked';
+  static const String isNew = 'new';
+
+  static const List<String> all = [
+    source,
+    guestName,
+    checkIn,
+    checkOut,
+    nights,
+    guests,
+    babyBed,
+    status,
+    booked,
+    isNew,
+  ];
+
+  static String label(String key, {required S l10n}) {
+    return switch (key) {
+      source => l10n.reservationSource,
+      guestName => l10n.reservationSectionBooker,
+      checkIn => l10n.reservationCheckIn,
+      checkOut => l10n.reservationCheckOut,
+      nights => l10n.reservationNights,
+      guests => l10n.reservationSectionGuests,
+      babyBed => l10n.reservationInfants,
+      status => l10n.reservationStatus,
+      booked => l10n.reservationListColumnBooked,
+      isNew => l10n.reservationListColumnNew,
+      _ => key,
+    };
+  }
+}
+
+class _ExportPdfOrientation {
+  _ExportPdfOrientation._();
+
+  static const String portrait = 'portrait';
+  static const String landscape = 'landscape';
 }
 
 class ReservationsPage extends StatelessWidget {
@@ -90,13 +162,16 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
   final Map<String, GlobalKey> _monthKeys = {};
   final GlobalKey _scrollViewKey = GlobalKey();
   bool _isScrollingToMonth = false;
+
   /// Active month in continuous scroll mode. Updated without setState so only
   /// listeners (ValueListenableBuilder) rebuild — avoids rebuilding all month
   /// grids on every scroll tick.
-  final ValueNotifier<DateTime> _continuousActiveMonth =
-      ValueNotifier(DateTime(DateTime.now().year, DateTime.now().month));
+  final ValueNotifier<DateTime> _continuousActiveMonth = ValueNotifier(
+    DateTime(DateTime.now().year, DateTime.now().month),
+  );
   final Set<String> _hiddenStatuses = {};
   final Set<String> _markedAsNew = {};
+  final Set<String> _hiddenListColumns = {};
   bool _statusFilterInitialized = false;
 
   GlobalKey _keyForMonth(DateTime month) {
@@ -107,6 +182,12 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
   @override
   void initState() {
     super.initState();
+    unawaited(
+      Future.wait([
+        _ensureLanguageMessagesInitialized('nl'),
+        _ensureLanguageMessagesInitialized('en'),
+      ]),
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final property = context
           .read<PropertyContextCubit>()
@@ -153,7 +234,9 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
             context
                 .read<PropertyRepository>()
                 .updatePropertyCurrency(property.id, currency)
-                .catchError((_) {/* best-effort */});
+                .catchError((_) {
+                  /* best-effort */
+                });
           },
         ),
         BlocListener<ReservationsCubit, ReservationsState>(
@@ -235,6 +318,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                   showHistorical: _showHistorical,
                   allStatuses: allStatuses,
                   hiddenStatuses: _hiddenStatuses,
+                  hiddenListColumns: _hiddenListColumns,
                   timelineDensity: _viewMode == _ReservationsViewMode.timeline
                       ? _timelineDensity
                       : null,
@@ -253,6 +337,19 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                       }
                     });
                   },
+                  onListColumnToggled: (column) {
+                    setState(() {
+                      if (_hiddenListColumns.contains(column)) {
+                        _hiddenListColumns.remove(column);
+                        return;
+                      }
+                      if (_hiddenListColumns.length >=
+                          _ReservationListColumn.all.length - 1) {
+                        return;
+                      }
+                      _hiddenListColumns.add(column);
+                    });
+                  },
                   onTimelineDensityChanged: (value) {
                     setState(() => _timelineDensity = value);
                   },
@@ -269,13 +366,15 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                     }
                   },
                   outOfMonthDisplay:
-                      _viewMode == _ReservationsViewMode.timeline && !_continuousMonths
-                          ? _outOfMonthDisplay
-                          : null,
+                      _viewMode == _ReservationsViewMode.timeline &&
+                          !_continuousMonths
+                      ? _outOfMonthDisplay
+                      : null,
                   onOutOfMonthDisplayChanged: (value) {
                     setState(() => _outOfMonthDisplay = value);
                   },
-                  exportMenu: _viewMode == _ReservationsViewMode.list &&
+                  exportMenu:
+                      _viewMode == _ReservationsViewMode.list &&
                           bookings.isNotEmpty
                       ? _buildExportMenu(
                           context,
@@ -393,9 +492,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
             final baseColor = BookingSourceIcon.barColor(e.source);
             final guestInfo = _guestBreakdown(e, unknownLabel: '');
             final name = e.guestName ?? 'Onbekende boeker';
-            final label = guestInfo.isNotEmpty
-                ? '$name ($guestInfo)'
-                : name;
+            final label = guestInfo.isNotEmpty ? '$name ($guestInfo)' : name;
             final nights = _stayNights(e.startDate, e.endDate);
             final tooltipParts = <String>[
               name,
@@ -403,7 +500,8 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
               if (nights != null) '$nights nachten',
               if (guestInfo.isNotEmpty) 'Gasten: $guestInfo',
               if (e.source != null && e.source!.isNotEmpty) 'Bron: ${e.source}',
-              if (e.status != null && e.status!.isNotEmpty) 'Status: ${e.status}',
+              if (e.status != null && e.status!.isNotEmpty)
+                'Status: ${e.status}',
             ];
             return TimelineCalendarEntry(
               start: e.startDate!,
@@ -411,11 +509,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
               label: label,
               tooltip: tooltipParts.join('\n'),
               color: isPast
-                  ? Color.lerp(
-                      baseColor,
-                      const Color(0xFFE0E0E0),
-                      0.55,
-                    )!
+                  ? Color.lerp(baseColor, const Color(0xFFE0E0E0), 0.55)!
                   : baseColor,
               textColor: isPast ? const Color(0xFF9E9E9E) : null,
               outlined: isPast,
@@ -446,8 +540,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
             ValueListenableBuilder<DateTime>(
               valueListenable: _continuousActiveMonth,
               builder: (context, activeMonth, _) {
-                final summary =
-                    _monthSummary(activeMonth, timelineBookings);
+                final summary = _monthSummary(activeMonth, timelineBookings);
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -492,7 +585,9 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                       locale: locale,
                       onPrevious: () {
                         final prev = DateTime(
-                            activeMonth.year, activeMonth.month - 1);
+                          activeMonth.year,
+                          activeMonth.month - 1,
+                        );
                         _continuousActiveMonth.value = prev;
                         if (propertyId.isNotEmpty) {
                           context.read<NightlyRatesCubit>().loadRates(
@@ -506,7 +601,9 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                       },
                       onNext: () {
                         final next = DateTime(
-                            activeMonth.year, activeMonth.month + 1);
+                          activeMonth.year,
+                          activeMonth.month + 1,
+                        );
                         _continuousActiveMonth.value = next;
                         if (propertyId.isNotEmpty) {
                           context.read<NightlyRatesCubit>().loadRates(
@@ -543,16 +640,16 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                             RepaintBoundary(
                               key: _keyForMonth(months[i]),
                               child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.stretch,
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   if (i > 0) const SizedBox(height: 24),
                                   Padding(
-                                    padding:
-                                        const EdgeInsets.only(bottom: 4),
+                                    padding: const EdgeInsets.only(bottom: 4),
                                     child: Text(
-                                      DateFormat('MMMM yyyy', locale)
-                                          .format(months[i]),
+                                      DateFormat(
+                                        'MMMM yyyy',
+                                        locale,
+                                      ).format(months[i]),
                                       style: Theme.of(context)
                                           .textTheme
                                           .titleSmall
@@ -567,16 +664,12 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                                     showNavigation: false,
                                     showWeekdayHeader: i == 0,
                                     shrinkWrap: true,
-                                    outOfMonthDisplay:
-                                        OutOfMonthDisplay.hide,
+                                    outOfMonthDisplay: OutOfMonthDisplay.hide,
                                     barHeight: isCompact ? 22.0 : 30.0,
-                                    dayNumberHeight:
-                                        isCompact ? 18.0 : 24.0,
+                                    dayNumberHeight: isCompact ? 18.0 : 24.0,
                                     barTopPadding: isCompact ? 3.0 : 6.0,
-                                    rowBottomPadding:
-                                        isCompact ? 4.0 : 10.0,
-                                    dayLabels:
-                                        isCompact ? null : dayLabels,
+                                    rowBottomPadding: isCompact ? 4.0 : 10.0,
+                                    dayLabels: isCompact ? null : dayLabels,
                                     onEntryTap: (entry) {
                                       final lodgifyEntry =
                                           entry.data as Reservation;
@@ -584,8 +677,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                                         context,
                                         lodgifyEntry,
                                         dateFormatter: dateFormatter,
-                                        dateTimeFormatter:
-                                            dateTimeFormatter,
+                                        dateTimeFormatter: dateTimeFormatter,
                                       );
                                     },
                                   ),
@@ -689,6 +781,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
         dateFormatter: dateFormatter,
         dateTimeFormatter: dateTimeFormatter,
         markedAsNew: _markedAsNew,
+        hiddenColumns: _hiddenListColumns,
         onToggleNew: (id) {
           setState(() {
             if (_markedAsNew.contains(id)) {
@@ -744,9 +837,11 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
   }
 
   List<DateTime> _continuousMonthRange(ReservationsState state) {
-    final start = state.rangeStart ??
+    final start =
+        state.rangeStart ??
         DateTime(DateTime.now().year, DateTime.now().month - 12);
-    final end = state.rangeEnd ??
+    final end =
+        state.rangeEnd ??
         DateTime(DateTime.now().year, DateTime.now().month + 12);
     final months = <DateTime>[];
     var m = DateTime(start.year, start.month);
@@ -809,92 +904,115 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     required List<Reservation> entries,
     required DateFormat dateFormatter,
   }) {
-    return PopupMenuButton<String>(
-      tooltip: 'Exporteren',
-      icon: const Icon(Icons.more_vert),
-      offset: const Offset(0, 40),
-      onSelected: (value) {
+    final newCount = _markedAsNew.length;
+    final l10n = context.s;
+    final theme = Theme.of(context);
+    String labeledWithNew(String label) {
+      return switch (newCount) {
+        0 => label,
+        _ => '$label (${l10n.reservationNewCount(newCount)})',
+      };
+    }
+
+    return StyledPopupMenuButton<String>(
+      tooltip: 'Delen & exporteren',
+      verticalOffset: 8,
+      showDividers: true,
+      child: _HeaderIconChip(
+        icon: Icons.ios_share,
+        isActive: false,
+        theme: theme,
+      ),
+      entries: [
+        StyledPopupMenuEntry(
+          value: 'pdf',
+          label: labeledWithNew('PDF downloaden'),
+          leading: const Icon(Icons.picture_as_pdf_outlined),
+        ),
+        StyledPopupMenuEntry(
+          value: 'pdf_share',
+          label: labeledWithNew('PDF delen'),
+          leading: const Icon(Icons.mail_outlined),
+        ),
+        StyledPopupMenuEntry(
+          value: 'excel',
+          label: labeledWithNew('Excel'),
+          leading: const Icon(Icons.table_chart_outlined),
+        ),
+        const StyledPopupMenuEntry(
+          value: 'csv',
+          label: 'CSV',
+          leading: Icon(Icons.download_outlined),
+        ),
+        const StyledPopupMenuEntry(
+          value: 'settings',
+          label: 'Instellingen',
+          leading: Icon(Icons.settings_outlined),
+        ),
+      ],
+      onSelected: (value) async {
         final settings = context.read<SettingsCubit>().state.settings;
+        final exportLanguageCode = _normalizeLanguageCode(
+          settings?.exportLanguageCode,
+        );
+        final exportPdfOrientation = _normalizePdfOrientation(
+          settings?.exportPdfOrientation,
+        );
         switch (value) {
+          case 'pdf':
+            await _ensureLanguageMessagesInitialized(exportLanguageCode);
+            await _exportPdf(
+              entries,
+              dateFormatter,
+              exportLang: exportLanguageCode,
+              exportPdfOrientation: exportPdfOrientation,
+              columns: settings?.exportColumns ?? _ExportColumn.defaults,
+            );
+          case 'pdf_share':
+            await _ensureLanguageMessagesInitialized(exportLanguageCode);
+            await _sharePdf(
+              entries,
+              dateFormatter,
+              exportLang: exportLanguageCode,
+              exportPdfOrientation: exportPdfOrientation,
+              columns: settings?.exportColumns ?? _ExportColumn.defaults,
+            );
           case 'excel':
+            await _ensureLanguageMessagesInitialized(exportLanguageCode);
             _exportExcel(
               entries,
               dateFormatter,
-              exportLang: settings?.exportLanguageCode,
-              columns: settings?.exportColumns ?? _ExportColumn.defaults,
-            );
-          case 'pdf':
-            _exportPdf(
-              entries,
-              dateFormatter,
-              exportLang: settings?.exportLanguageCode,
+              exportLang: exportLanguageCode,
               columns: settings?.exportColumns ?? _ExportColumn.defaults,
             );
           case 'csv':
             _exportCsv(entries, dateFormatter);
           case 'settings':
             () async {
-              final settings =
-                  context.read<SettingsCubit>().state.settings;
-              final currentLang = settings?.exportLanguageCode ??
-                  Localizations.localeOf(context).languageCode;
+              final settings = context.read<SettingsCubit>().state.settings;
+              final currentLang = _normalizeLanguageCode(
+                settings?.exportLanguageCode ??
+                    Localizations.localeOf(context).languageCode,
+              );
               final currentColumns =
                   settings?.exportColumns ?? _ExportColumn.defaults;
+              final currentPdfOrientation = _normalizePdfOrientation(
+                settings?.exportPdfOrientation,
+              );
               final result = await _showExportSettingsDialog(
                 context,
                 currentLanguageCode: currentLang,
                 currentColumns: currentColumns,
+                currentPdfOrientation: currentPdfOrientation,
               );
               if (result == null || !context.mounted) return;
               context.read<UserSettingsCubit>().changeExportSettings(
-                    exportLanguageCode: result.exportLanguageCode,
-                    exportColumns: result.enabledColumns,
-                  );
+                exportLanguageCode: result.exportLanguageCode,
+                exportColumns: result.enabledColumns,
+                exportPdfOrientation: result.exportPdfOrientation,
+              );
             }();
         }
-      },
-      itemBuilder: (_) {
-        final newCount = _markedAsNew.length;
-        return [
-          PopupMenuItem(
-            value: 'excel',
-            child: ListTile(
-              leading: const Icon(Icons.table_chart_outlined),
-              title: Text(
-                  newCount > 0 ? 'Excel ($newCount nieuw)' : 'Excel'),
-              dense: true,
-              contentPadding: EdgeInsets.zero,
-            ),
-          ),
-          PopupMenuItem(
-            value: 'pdf',
-            child: ListTile(
-              leading: const Icon(Icons.picture_as_pdf_outlined),
-              title: const Text('PDF'),
-              dense: true,
-              contentPadding: EdgeInsets.zero,
-            ),
-          ),
-          PopupMenuItem(
-            value: 'csv',
-            child: ListTile(
-              leading: const Icon(Icons.download_outlined),
-              title: const Text('CSV'),
-              dense: true,
-              contentPadding: EdgeInsets.zero,
-            ),
-          ),
-          const PopupMenuDivider(),
-          PopupMenuItem(
-            value: 'settings',
-            child: ListTile(
-              leading: const Icon(Icons.settings_outlined),
-              title: const Text('Export instellingen'),
-              dense: true,
-              contentPadding: EdgeInsets.zero,
-            ),
-          ),
-        ];
       },
     );
   }
@@ -905,10 +1023,13 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     String? exportLang,
     List<String>? columns,
   }) {
-    final isNl = exportLang == 'nl';
+    final languageCode = _normalizeLanguageCode(exportLang);
     final enabledColumns = columns ?? _ExportColumn.defaults;
-    final yesLabel = isNl ? 'Ja' : 'Yes';
-    final exportedLabel = isNl ? 'Geëxporteerd' : 'Exported';
+    final yesLabel = _localizedForLanguage(languageCode, (l10n) => l10n.yes);
+    final exportedLabel = _localizedForLanguage(
+      languageCode,
+      (l10n) => l10n.reservationExportedLabel,
+    );
 
     final now = DateTime.now();
     final exportDate = DateFormat('yyyy-MM-dd').format(now);
@@ -944,7 +1065,9 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     // Header row
     buf.write('<tr>');
     for (final key in enabledColumns) {
-      buf.write('<th>${_ExportColumn.label(key, isNl: isNl)}</th>');
+      buf.write(
+        '<th>${_localizedForLanguage(languageCode, (l10n) => _ExportColumn.label(key, l10n: l10n))}</th>',
+      );
     }
     buf.writeln('</tr>');
 
@@ -961,11 +1084,11 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
             ? dateFormatter.format(e.endDate!.toLocal())
             : '',
         _ExportColumn.guestName: _escapeHtml(_guestDisplayName(e)),
-        _ExportColumn.guests:
-            _escapeHtml(_guestBreakdown(e, unknownLabel: '')),
-        _ExportColumn.babyBed: e.infantCount != null && e.infantCount! > 0
-            ? e.infantCount.toString()
-            : '',
+        _ExportColumn.guests: _escapeHtml(_guestBreakdown(e, unknownLabel: '')),
+        _ExportColumn.babyBed: _formatBabyExportValue(
+          e.infantCount,
+          languageCode: languageCode,
+        ),
         _ExportColumn.nights:
             _stayNights(e.startDate, e.endDate)?.toString() ?? '',
         _ExportColumn.status: _escapeHtml(e.status ?? ''),
@@ -999,6 +1122,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
   }
 
   void _exportCsv(List<Reservation> entries, DateFormat dateFormatter) {
+    const exportLanguageCode = 'en';
     final buf = StringBuffer();
     buf.writeln(
       'Nieuw\tArrival\tDeparture\tGuest name\tGuests\tBaby bed\tCheck-in\tCheck-out\tNotes',
@@ -1014,9 +1138,10 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
           : '';
       final guestName = _guestDisplayName(e);
       final guests = _guestBreakdown(e, unknownLabel: '');
-      final babyBed = e.infantCount != null && e.infantCount! > 0
-          ? e.infantCount.toString()
-          : '';
+      final babyBed = _formatBabyExportValue(
+        e.infantCount,
+        languageCode: exportLanguageCode,
+      );
       final notes = (e.notes ?? '').replaceAll(RegExp(r'[\t\r\n]+'), ' ');
       buf.writeln(
         '$isNew\t$arrival\t$departure\t$guestName\t$guests\t$babyBed\t$arrival\t$departure\t$notes',
@@ -1037,115 +1162,232 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     web.URL.revokeObjectURL(url);
   }
 
-  void _exportPdf(
+  Future<(Uint8List bytes, String filename)> _buildPdfBytes(
     List<Reservation> entries,
     DateFormat dateFormatter, {
     String? exportLang,
+    String? exportPdfOrientation,
     List<String>? columns,
-  }) {
-    final isNl = exportLang == 'nl';
+  }) async {
+    final languageCode = _normalizeLanguageCode(exportLang);
+    final pdfOrientation = _normalizePdfOrientation(exportPdfOrientation);
     final enabledColumns = columns ?? _ExportColumn.defaults;
-    final yesLabel = isNl ? 'Ja' : 'Yes';
-    final exportedLabel = isNl ? 'Geëxporteerd' : 'Exported';
-    final titleLabel = isNl ? 'Reserveringen' : 'Reservations';
+    final yesLabel = _localizedForLanguage(languageCode, (l10n) => l10n.yes);
+    final exportedLabel = _localizedForLanguage(
+      languageCode,
+      (l10n) => l10n.reservationExportedLabel,
+    );
+    final titleLabel = _localizedForLanguage(
+      languageCode,
+      (l10n) => l10n.reservations,
+    );
 
     final now = DateTime.now();
+    final exportDate = DateFormat('yyyy-MM-dd').format(now);
     final exportDateDisplay = DateFormat('d MMM yyyy, HH:mm').format(now);
-    final buf = StringBuffer();
-    buf.writeln('<!DOCTYPE html><html><head><meta charset="utf-8">');
-    buf.writeln('<title>$titleLabel</title>');
-    buf.writeln('<style>');
-    buf.writeln(
-      '@page { size: landscape; margin: 12mm; }',
-    );
-    buf.writeln(
-      'body { font-family: Calibri, Arial, sans-serif; font-size: 10pt; '
-      'margin: 0; padding: 0; }',
-    );
-    buf.writeln(
-      'table { border-collapse: collapse; width: 100%; font-size: 10pt; }',
-    );
-    buf.writeln(
-      'th { background-color: #4472C4; color: #FFFFFF; font-weight: bold; '
-      'padding: 5px 8px; border: 1px solid #2F5496; text-align: left; '
-      '-webkit-print-color-adjust: exact; print-color-adjust: exact; }',
-    );
-    buf.writeln(
-      'td { padding: 3px 8px; border: 1px solid #D6DCE4; }',
-    );
-    buf.writeln(
-      '.new-row td { background-color: #FFFF00; '
-      '-webkit-print-color-adjust: exact; print-color-adjust: exact; }',
-    );
-    buf.writeln(
-      '.export-date { font-size: 9pt; color: #666666; margin-bottom: 6px; }',
-    );
-    buf.writeln(
-      '.title { font-size: 14pt; font-weight: bold; margin-bottom: 2px; }',
-    );
-    buf.writeln('</style>');
-    buf.writeln('</head><body>');
-    buf.writeln('<p class="title">$titleLabel</p>');
-    buf.writeln(
-      '<p class="export-date">$exportedLabel: $exportDateDisplay</p>',
-    );
-    buf.writeln('<table>');
-
-    // Header row
-    buf.write('<tr>');
-    for (final key in enabledColumns) {
-      buf.write('<th>${_ExportColumn.label(key, isNl: isNl)}</th>');
-    }
-    buf.writeln('</tr>');
-
-    // Data rows
-    for (final e in entries) {
-      final id = _reservationKey(e);
-      final isNew = _markedAsNew.contains(id);
+    final headers = enabledColumns
+        .map(
+          (key) => _localizedForLanguage(
+            languageCode,
+            (l10n) => _ExportColumn.label(key, l10n: l10n),
+          ),
+        )
+        .toList();
+    final rowData = entries.map((entry) {
+      final reservationId = _reservationKey(entry);
+      final isNew = _markedAsNew.contains(reservationId);
       final cellValues = <String, String>{
         _ExportColumn.isNew: isNew ? yesLabel : '',
-        _ExportColumn.arrival: e.startDate != null
-            ? dateFormatter.format(e.startDate!.toLocal())
+        _ExportColumn.arrival: entry.startDate != null
+            ? dateFormatter.format(entry.startDate!.toLocal())
             : '',
-        _ExportColumn.departure: e.endDate != null
-            ? dateFormatter.format(e.endDate!.toLocal())
+        _ExportColumn.departure: entry.endDate != null
+            ? dateFormatter.format(entry.endDate!.toLocal())
             : '',
-        _ExportColumn.guestName: _escapeHtml(_guestDisplayName(e)),
-        _ExportColumn.guests:
-            _escapeHtml(_guestBreakdown(e, unknownLabel: '')),
-        _ExportColumn.babyBed: e.infantCount != null && e.infantCount! > 0
-            ? e.infantCount.toString()
-            : '',
-        _ExportColumn.nights:
-            _stayNights(e.startDate, e.endDate)?.toString() ?? '',
-        _ExportColumn.status: _escapeHtml(e.status ?? ''),
-        _ExportColumn.source: _escapeHtml(e.source ?? ''),
-        _ExportColumn.notes: _escapeHtml(
-          (e.notes ?? '').replaceAll(RegExp(r'[\t\r\n]+'), ' '),
+        _ExportColumn.guestName: _guestDisplayName(entry),
+        _ExportColumn.guests: _guestBreakdown(entry, unknownLabel: ''),
+        _ExportColumn.babyBed: _formatBabyExportValue(
+          entry.infantCount,
+          languageCode: languageCode,
         ),
+        _ExportColumn.nights:
+            _stayNights(entry.startDate, entry.endDate)?.toString() ?? '',
+        _ExportColumn.status: entry.status ?? '',
+        _ExportColumn.source: entry.source ?? '',
+        _ExportColumn.notes: (entry.notes ?? '')
+            .replaceAll(RegExp(r'[\t\r\n]+'), ' '),
       };
-      final rowClass = isNew ? ' class="new-row"' : '';
-      buf.write('<tr$rowClass>');
-      for (final key in enabledColumns) {
-        buf.write('<td>${cellValues[key] ?? ''}</td>');
-      }
-      buf.writeln('</tr>');
-    }
-    buf.writeln('</table>');
-    buf.writeln('</body></html>');
+      return (
+        isNew: isNew,
+        values: [for (final key in enabledColumns) cellValues[key] ?? ''],
+      );
+    }).toList();
 
-    final html = buf.toString();
-    final bytes = utf8.encode(html);
+    pw.TableColumnWidth columnWidthFor(String key) {
+      return switch (key) {
+        _ExportColumn.isNew => const pw.FlexColumnWidth(0.8),
+        _ExportColumn.arrival => const pw.FlexColumnWidth(1.55),
+        _ExportColumn.departure => const pw.FlexColumnWidth(1.55),
+        _ExportColumn.guestName => const pw.FlexColumnWidth(2.1),
+        _ExportColumn.guests => const pw.FlexColumnWidth(1.1),
+        _ExportColumn.babyBed => const pw.FlexColumnWidth(0.9),
+        _ExportColumn.nights => const pw.FlexColumnWidth(1.25),
+        _ExportColumn.status => const pw.FlexColumnWidth(1.1),
+        _ExportColumn.source => const pw.FlexColumnWidth(1.1),
+        _ExportColumn.notes => const pw.FlexColumnWidth(1.7),
+        _ => const pw.FlexColumnWidth(1.0),
+      };
+    }
+
+    final regular = await PdfGoogleFonts.robotoRegular();
+    final bold = await PdfGoogleFonts.robotoBold();
+
+    final doc = pw.Document();
+    final headerColor = PdfColor.fromInt(0xFF4472C4);
+    final borderColor = PdfColor.fromInt(0xFFD6DCE4);
+    final newRowColor = PdfColor.fromInt(0xFFFFFF00);
+
+    doc.addPage(
+      pw.MultiPage(
+        pageFormat: switch (pdfOrientation) {
+          _ExportPdfOrientation.landscape => PdfPageFormat.a4.landscape,
+          _ => PdfPageFormat.a4,
+        },
+        margin: const pw.EdgeInsets.all(24),
+        build: (context) {
+          final tableRows = <pw.TableRow>[
+            pw.TableRow(
+              decoration: pw.BoxDecoration(color: headerColor),
+              children: [
+                for (final header in headers)
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 6,
+                    ),
+                    child: pw.Text(
+                      header,
+                      style: pw.TextStyle(
+                        font: bold,
+                        color: PdfColors.white,
+                        fontWeight: pw.FontWeight.bold,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ];
+
+          for (final row in rowData) {
+            tableRows.add(
+              pw.TableRow(
+                decoration: row.isNew
+                    ? pw.BoxDecoration(color: newRowColor)
+                    : null,
+                children: [
+                  for (final value in row.values)
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      child: pw.Text(
+                        value,
+                        style: pw.TextStyle(font: regular, fontSize: 9),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          }
+
+          return [
+            pw.Text(
+              titleLabel,
+              style: pw.TextStyle(
+                font: bold,
+                fontSize: 14,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 2),
+            pw.Text(
+              '$exportedLabel: $exportDateDisplay',
+              style: pw.TextStyle(
+                font: regular,
+                fontSize: 9,
+                color: PdfColors.grey700,
+              ),
+            ),
+            pw.SizedBox(height: 8),
+            pw.Table(
+              border: pw.TableBorder.all(color: borderColor, width: 0.7),
+              defaultVerticalAlignment: pw.TableCellVerticalAlignment.middle,
+              columnWidths: {
+                for (var index = 0; index < enabledColumns.length; index++)
+                  index: columnWidthFor(enabledColumns[index]),
+              },
+              children: tableRows,
+            ),
+          ];
+        },
+      ),
+    );
+
+    final bytes = await doc.save();
+    final filename = 'reservations_$exportDate.pdf';
+    return (bytes, filename);
+  }
+
+  Future<void> _exportPdf(
+    List<Reservation> entries,
+    DateFormat dateFormatter, {
+    String? exportLang,
+    String? exportPdfOrientation,
+    List<String>? columns,
+  }) async {
+    final (bytes, filename) = await _buildPdfBytes(
+      entries,
+      dateFormatter,
+      exportLang: exportLang,
+      exportPdfOrientation: exportPdfOrientation,
+      columns: columns,
+    );
     final blob = web.Blob(
       [bytes.toJS].toJS,
-      web.BlobPropertyBag(type: 'text/html;charset=utf-8'),
+      web.BlobPropertyBag(type: 'application/pdf'),
     );
     final url = web.URL.createObjectURL(blob);
-    final printWindow = web.window.open(url, '_blank');
-    if (printWindow != null) {
-      printWindow.onload = ((web.Event _) {
-        printWindow.print();
-      }).toJS;
+    final anchor = web.document.createElement('a') as web.HTMLAnchorElement;
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    web.URL.revokeObjectURL(url);
+  }
+
+  Future<void> _sharePdf(
+    List<Reservation> entries,
+    DateFormat dateFormatter, {
+    String? exportLang,
+    String? exportPdfOrientation,
+    List<String>? columns,
+  }) async {
+    final (bytes, filename) = await _buildPdfBytes(
+      entries,
+      dateFormatter,
+      exportLang: exportLang,
+      exportPdfOrientation: exportPdfOrientation,
+      columns: columns,
+    );
+    final file = web.File(
+      [bytes.toJS].toJS,
+      filename,
+      web.FilePropertyBag(type: 'application/pdf'),
+    );
+    final shareData = web.ShareData(files: [file].toJS);
+    if (web.window.navigator.canShare(shareData)) {
+      await web.window.navigator.share(shareData).toDart;
     }
   }
 }
@@ -1156,9 +1398,11 @@ class _ReservationsHeader extends StatelessWidget {
     required this.showHistorical,
     required this.allStatuses,
     required this.hiddenStatuses,
+    required this.hiddenListColumns,
     required this.onViewChanged,
     required this.onShowHistoricalChanged,
     required this.onStatusToggled,
+    required this.onListColumnToggled,
     this.timelineDensity,
     this.onTimelineDensityChanged,
     this.continuousMonths,
@@ -1172,9 +1416,11 @@ class _ReservationsHeader extends StatelessWidget {
   final bool showHistorical;
   final List<String> allStatuses;
   final Set<String> hiddenStatuses;
+  final Set<String> hiddenListColumns;
   final ValueChanged<_ReservationsViewMode> onViewChanged;
   final ValueChanged<bool> onShowHistoricalChanged;
   final ValueChanged<String> onStatusToggled;
+  final ValueChanged<String> onListColumnToggled;
   final _TimelineDensity? timelineDensity;
   final ValueChanged<_TimelineDensity>? onTimelineDensityChanged;
   final bool? continuousMonths;
@@ -1187,8 +1433,7 @@ class _ReservationsHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isTimeline = viewMode == _ReservationsViewMode.timeline;
-    final hasActiveFilter =
-        hiddenStatuses.isNotEmpty || showHistorical;
+    final hasActiveFilter = hiddenStatuses.isNotEmpty || showHistorical;
 
     return Row(
       children: [
@@ -1212,15 +1457,13 @@ class _ReservationsHeader extends StatelessWidget {
                 },
               ),
               _buildFilterButton(context, theme, hasActiveFilter),
-              if (isTimeline)
-                _buildViewButton(context, theme),
+              if (viewMode == _ReservationsViewMode.list)
+                _buildListColumnsButton(context, theme),
+              if (isTimeline) _buildViewButton(context, theme),
             ],
           ),
         ),
-        if (exportMenu != null) ...[
-          const SizedBox(width: 8),
-          exportMenu!,
-        ],
+        if (exportMenu != null) ...[const SizedBox(width: 8), exportMenu!],
       ],
     );
   }
@@ -1230,9 +1473,20 @@ class _ReservationsHeader extends StatelessWidget {
     ThemeData theme,
     bool hasActiveFilter,
   ) {
-    return PopupMenuButton<String>(
+    return StyledPopupMenuButton<String>(
       tooltip: 'Filter',
-      offset: const Offset(0, 40),
+      verticalOffset: 8,
+      showDividers: allStatuses.isNotEmpty,
+      entries: [
+        _checkEntry('_historical', 'Historische boekingen', showHistorical),
+        ...allStatuses.map(
+          (status) => _checkEntry(
+            status,
+            status,
+            !hiddenStatuses.contains(status),
+          ),
+        ),
+      ],
       onSelected: (value) {
         if (value == '_historical') {
           onShowHistoricalChanged(!showHistorical);
@@ -1240,20 +1494,38 @@ class _ReservationsHeader extends StatelessWidget {
           onStatusToggled(value);
         }
       },
-      itemBuilder: (_) => [
-        _checkItem('_historical', 'Historische boekingen', showHistorical),
-        if (allStatuses.isNotEmpty) ...[
-          const PopupMenuDivider(),
-          ...allStatuses.map((status) => _checkItem(
-                status,
-                status,
-                !hiddenStatuses.contains(status),
-              )),
-        ],
-      ],
       child: _HeaderIconChip(
         icon: Icons.filter_list_rounded,
         isActive: hasActiveFilter,
+        theme: theme,
+      ),
+    );
+  }
+
+  Widget _buildListColumnsButton(BuildContext context, ThemeData theme) {
+    final hasActiveColumnToggles = hiddenListColumns.isNotEmpty;
+    final l10n = context.s;
+
+    return StyledPopupMenuButton<String>(
+      tooltip: 'Kolommen',
+      verticalOffset: 8,
+      entries: [
+        for (final key in _ReservationListColumn.all)
+          _checkEntry(
+            key,
+            _ReservationListColumn.label(key, l10n: l10n),
+            !hiddenListColumns.contains(key),
+            enabled: !hiddenListColumns.contains(key) ||
+                hiddenListColumns.length <
+                    _ReservationListColumn.all.length - 1,
+          ),
+      ],
+      onSelected: (value) {
+        onListColumnToggled(value);
+      },
+      child: _HeaderIconChip(
+        icon: Icons.view_column_outlined,
+        isActive: hasActiveColumnToggles,
         theme: theme,
       ),
     );
@@ -1264,9 +1536,49 @@ class _ReservationsHeader extends StatelessWidget {
     final continuous = continuousMonths;
     final outOfMonth = outOfMonthDisplay;
 
-    return PopupMenuButton<String>(
+    final entries = <StyledPopupMenuEntry<String>>[];
+    if (density != null) {
+      entries.add(
+        _checkEntry(
+          'compact',
+          'Compact',
+          density == _TimelineDensity.compact,
+        ),
+      );
+      entries.add(
+        _checkEntry(
+          'comfortable',
+          'Gedetailleerd',
+          density == _TimelineDensity.comfortable,
+        ),
+      );
+    }
+    if (continuous != null) {
+      entries.add(_checkEntry('single', '1 maand', !continuous));
+      entries.add(_checkEntry('continuous', 'Doorlopend', continuous));
+    }
+    if (outOfMonth != null && continuous == false) {
+      entries.add(
+        _checkEntry(
+          'outOfMonth_hide',
+          'Buiten maand verbergen',
+          outOfMonth == OutOfMonthDisplay.hide,
+        ),
+      );
+      entries.add(
+        _checkEntry(
+          'outOfMonth_bookedOnly',
+          'Alleen geboekte dagen',
+          outOfMonth == OutOfMonthDisplay.bookedOnly,
+        ),
+      );
+    }
+
+    return StyledPopupMenuButton<String>(
       tooltip: 'Weergave',
-      offset: const Offset(0, 40),
+      verticalOffset: 8,
+      showDividers: true,
+      entries: entries,
       onSelected: (value) {
         switch (value) {
           case 'compact':
@@ -1283,69 +1595,28 @@ class _ReservationsHeader extends StatelessWidget {
             onOutOfMonthDisplayChanged?.call(OutOfMonthDisplay.bookedOnly);
         }
       },
-      itemBuilder: (_) => [
-        if (density != null) ...[
-          _checkItem(
-            'compact',
-            'Compact',
-            density == _TimelineDensity.compact,
-          ),
-          _checkItem(
-            'comfortable',
-            'Gedetailleerd',
-            density == _TimelineDensity.comfortable,
-          ),
-        ],
-        if (continuous != null) ...[
-          if (density != null) const PopupMenuDivider(),
-          _checkItem('single', '1 maand', !continuous),
-          _checkItem('continuous', 'Doorlopend', continuous),
-        ],
-        if (outOfMonth != null && continuous == false) ...[
-          const PopupMenuDivider(),
-          _checkItem(
-            'outOfMonth_hide',
-            'Buiten maand verbergen',
-            outOfMonth == OutOfMonthDisplay.hide,
-          ),
-          _checkItem(
-            'outOfMonth_bookedOnly',
-            'Alleen geboekte dagen',
-            outOfMonth == OutOfMonthDisplay.bookedOnly,
-          ),
-        ],
-      ],
-      child: _HeaderIconChip(
-        icon: Icons.tune,
-        isActive: false,
-        theme: theme,
-      ),
+      child: _HeaderIconChip(icon: Icons.tune, isActive: false, theme: theme),
     );
   }
 
-  static PopupMenuItem<String> _checkItem(
+  static StyledPopupMenuEntry<String> _checkEntry(
     String value,
     String label,
-    bool checked,
-  ) {
-    return PopupMenuItem<String>(
+    bool checked, {
+    bool enabled = true,
+  }) {
+    return StyledPopupMenuEntry<String>(
       value: value,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          Icon(
-            Icons.check_rounded,
-            size: 18,
-            color: checked ? const Color(0xFF1B5E20) : const Color(0xFFD0D0D0),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            label,
-            style: TextStyle(
-              fontWeight: checked ? FontWeight.w600 : FontWeight.normal,
-            ),
-          ),
-        ],
+      enabled: enabled,
+      label: label,
+      leading: Icon(
+        Icons.check_rounded,
+        size: 18,
+        color: enabled
+            ? checked
+                  ? const Color(0xFF1B5E20)
+                  : const Color(0xFFD0D0D0)
+            : const Color(0xFFBDBDBD),
       ),
     );
   }
@@ -1464,6 +1735,7 @@ class _ReservationListView extends StatelessWidget {
     required this.dateFormatter,
     required this.dateTimeFormatter,
     required this.markedAsNew,
+    required this.hiddenColumns,
     required this.onToggleNew,
     required this.onEntryTap,
   });
@@ -1472,6 +1744,7 @@ class _ReservationListView extends StatelessWidget {
   final DateFormat dateFormatter;
   final DateFormat dateTimeFormatter;
   final Set<String> markedAsNew;
+  final Set<String> hiddenColumns;
   final ValueChanged<String> onToggleNew;
   final ValueChanged<Reservation> onEntryTap;
 
@@ -1490,6 +1763,77 @@ class _ReservationListView extends StatelessWidget {
       final weekAhead = today.add(const Duration(days: 7));
       return !date.isBefore(today) && !date.isAfter(weekAhead);
     }).length;
+    final visibleColumns = _ReservationListColumn.all
+        .where((column) => !hiddenColumns.contains(column))
+        .toList();
+    final safeVisibleColumns = visibleColumns.isEmpty
+        ? [_ReservationListColumn.guestName]
+        : visibleColumns;
+
+    StyledDataColumn _columnFor(String key) {
+      return switch (key) {
+        _ReservationListColumn.source => const StyledDataColumn(
+            columnHeaderLabel: '',
+            flex: 0,
+            width: 28,
+          ),
+        _ReservationListColumn.guestName => const StyledDataColumn(
+            columnHeaderLabel: 'Boeker',
+            flex: 2,
+            minWidth: 128,
+          ),
+        _ReservationListColumn.checkIn => const StyledDataColumn(
+            columnHeaderLabel: 'Check-in',
+            flex: 1,
+            minWidth: 96,
+          ),
+        _ReservationListColumn.checkOut => const StyledDataColumn(
+            columnHeaderLabel: 'Check-out',
+            flex: 1,
+            minWidth: 96,
+          ),
+        _ReservationListColumn.nights => const StyledDataColumn(
+            columnHeaderLabel: 'Nachten',
+            flex: 0,
+            width: 66,
+            alignment: Alignment.centerLeft,
+          ),
+        _ReservationListColumn.guests => const StyledDataColumn(
+            columnHeaderLabel: 'Gasten',
+            flex: 0,
+            width: 66,
+            alignment: Alignment.centerLeft,
+          ),
+        _ReservationListColumn.babyBed => const StyledDataColumn(
+            columnHeaderLabel: 'Baby\'s',
+            flex: 0,
+            width: 52,
+            alignment: Alignment.centerLeft,
+          ),
+        _ReservationListColumn.status => const StyledDataColumn(
+            columnHeaderLabel: 'Status',
+            flex: 1,
+            minWidth: 78,
+          ),
+        _ReservationListColumn.booked => const StyledDataColumn(
+            columnHeaderLabel: 'Geboekt',
+            flex: 2,
+            minWidth: 132,
+          ),
+        _ReservationListColumn.isNew => const StyledDataColumn(
+            columnHeaderLabel: 'Nieuw',
+            flex: 0,
+            width: 44,
+            alignment: Alignment.center,
+          ),
+        _ => const StyledDataColumn(
+          columnHeaderLabel: '',
+          flex: 1,
+          minWidth: 64,
+        ),
+      };
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1531,127 +1875,97 @@ class _ReservationListView extends StatelessWidget {
                 variant: StyledTableVariant.card,
                 dense: true,
                 uppercaseHeaderLabels: false,
-                columns: const [
-                  StyledDataColumn(
-                    columnHeaderLabel: '',
-                    flex: 1,
-                    minWidth: 36,
-                  ),
-                  StyledDataColumn(
-                    columnHeaderLabel: 'Boeker',
-                    flex: 3,
-                    minWidth: 160,
-                  ),
-                  StyledDataColumn(
-                    columnHeaderLabel: 'Check-in',
-                    flex: 2,
-                    minWidth: 100,
-                  ),
-                  StyledDataColumn(
-                    columnHeaderLabel: 'Check-out',
-                    flex: 2,
-                    minWidth: 100,
-                  ),
-                  StyledDataColumn(
-                    columnHeaderLabel: 'Nachten',
-                    flex: 1,
-                    minWidth: 56,
-                    alignment: Alignment.centerRight,
-                  ),
-                  StyledDataColumn(
-                    columnHeaderLabel: 'Gasten',
-                    flex: 2,
-                    minWidth: 100,
-                    alignment: Alignment.centerRight,
-                  ),
-                  StyledDataColumn(
-                    columnHeaderLabel: 'Baby\'s',
-                    flex: 1,
-                    minWidth: 50,
-                    alignment: Alignment.centerRight,
-                  ),
-                  StyledDataColumn(
-                    columnHeaderLabel: 'Status',
-                    flex: 2,
-                    minWidth: 90,
-                  ),
-                  StyledDataColumn(
-                    columnHeaderLabel: 'Geboekt',
-                    flex: 2,
-                    minWidth: 120,
-                  ),
-                  StyledDataColumn(
-                    columnHeaderLabel: 'Nieuw',
-                    flex: 1,
-                    minWidth: 50,
-                    alignment: Alignment.center,
-                  ),
-                ],
+                layout: const StyledTableLayout(
+                  columnGap: 8,
+                  tablePadding: EdgeInsets.fromLTRB(10, 8, 10, 16),
+                ),
                 itemCount: entries.length,
+                columns: safeVisibleColumns
+                    .map((column) => _columnFor(column))
+                    .toList(),
                 rowBuilder: (tableContext, index) {
                   final entry = entries[index];
                   final nights = _stayNights(entry.startDate, entry.endDate);
                   final key = _reservationKey(entry);
                   final isNew = markedAsNew.contains(key);
 
-                  Widget textCell(
-                    String? value, {
-                    FontWeight? fontWeight,
-                    TextAlign textAlign = TextAlign.left,
-                  }) {
-                    final safeValue = _valueOrDash(value);
-                    return Text(
-                      safeValue,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: textAlign,
-                      style: Theme.of(
-                        tableContext,
-                      ).textTheme.bodySmall?.copyWith(fontWeight: fontWeight),
-                    );
+              Widget textCell(
+                String? value, {
+                FontWeight? fontWeight,
+                TextAlign textAlign = TextAlign.left,
+              }) {
+                final safeValue = _valueOrDash(value);
+                return Text(
+                  safeValue,
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.visible,
+                  textAlign: textAlign,
+                  style: Theme.of(
+                    tableContext,
+                  ).textTheme.bodySmall?.copyWith(fontWeight: fontWeight),
+                );
                   }
 
-                  return [
-                    Center(
-                      child: BookingSourceIcon(source: entry.source, size: 18),
-                    ),
-                    textCell(
-                      _guestDisplayName(entry),
-                      fontWeight: FontWeight.w600,
-                    ),
-                    textCell(_formatDateTime(dateFormatter, entry.startDate)),
-                    textCell(_formatDateTime(dateFormatter, entry.endDate)),
-                    textCell(nights?.toString(), textAlign: TextAlign.right),
-                    textCell(
-                      _guestBreakdown(entry),
-                      textAlign: TextAlign.right,
-                    ),
-                    textCell(
-                      entry.infantCount == null
-                          ? null
-                          : entry.infantCount! > 0
-                              ? l10n.yes
-                              : l10n.no,
-                      textAlign: TextAlign.right,
-                    ),
-                    textCell(entry.status),
-                    textCell(
-                      _formatDateTime(dateTimeFormatter, entry.createdAt),
-                    ),
-                    Center(
-                      child: SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: Checkbox(
-                          value: isNew,
-                          onChanged: (_) => onToggleNew(key),
-                          materialTapTargetSize:
-                              MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: VisualDensity.compact,
+                  Widget cellFor(String columnKey) {
+                    return switch (columnKey) {
+                      _ReservationListColumn.source => Align(
+                        alignment: Alignment.centerLeft,
+                        child: BookingSourceIcon(
+                          source: entry.source,
+                          size: 18,
                         ),
                       ),
-                    ),
-                  ];
+                      _ReservationListColumn.guestName => textCell(
+                        _guestDisplayName(entry),
+                        fontWeight: FontWeight.w600,
+                      ),
+                      _ReservationListColumn.checkIn => textCell(
+                        _formatDateTime(dateFormatter, entry.startDate),
+                      ),
+                      _ReservationListColumn.checkOut => textCell(
+                        _formatDateTime(dateFormatter, entry.endDate),
+                      ),
+                      _ReservationListColumn.nights => textCell(
+                        nights?.toString(),
+                        textAlign: TextAlign.right,
+                      ),
+                      _ReservationListColumn.guests => textCell(
+                        _guestBreakdown(entry, unknownLabel: ''),
+                        textAlign: TextAlign.left,
+                      ),
+                      _ReservationListColumn.babyBed => textCell(
+                        entry.infantCount == null
+                            ? null
+                            : entry.infantCount! > 0
+                            ? l10n.yes
+                            : l10n.no,
+                        textAlign: TextAlign.left,
+                      ),
+                      _ReservationListColumn.status => textCell(entry.status),
+                      _ReservationListColumn.booked => textCell(
+                        _formatDateTime(dateTimeFormatter, entry.createdAt),
+                      ),
+                      _ReservationListColumn.isNew => Center(
+                        child: SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: Checkbox(
+                            value: isNew,
+                            onChanged: (_) => onToggleNew(key),
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        ),
+                      ),
+                      _ => const SizedBox.shrink(),
+                    };
+                  }
+
+                  return safeVisibleColumns
+                      .map((column) => cellFor(column))
+                      .toList();
                 },
                 onRowTap: (tableContext, index) => onEntryTap(entries[index]),
                 emptyLabel: 'Geen reserveringen gevonden.',
@@ -1664,6 +1978,7 @@ class _ReservationListView extends StatelessWidget {
     );
   }
 }
+
 class _ReservationDetailsDialog extends StatefulWidget {
   const _ReservationDetailsDialog({
     required this.entry,
@@ -1735,8 +2050,7 @@ class _ReservationDetailsDialogState extends State<_ReservationDetailsDialog> {
     final prettyRaw = const JsonEncoder.withIndent('  ').convert(entry.raw);
     final rawRevenue = _extractRevenue(entry);
     // Use rateCurrency from Lodgify rate settings as fallback.
-    final effectiveCurrency =
-        rawRevenue.currency ?? widget.rateCurrency;
+    final effectiveCurrency = rawRevenue.currency ?? widget.rateCurrency;
     final revenue = rawRevenue.currency == null && effectiveCurrency != null
         ? _RevenueData(
             currency: effectiveCurrency,
@@ -2736,6 +3050,41 @@ String _reservationKey(Reservation entry) {
   return '${entry.guestName ?? ''}_${entry.startDate?.toIso8601String() ?? ''}';
 }
 
+String _normalizeLanguageCode(String? languageCode) {
+  final normalized = languageCode?.trim().toLowerCase() ?? '';
+  if (normalized.startsWith('nl')) return 'nl';
+  return 'en';
+}
+
+String _normalizePdfOrientation(String? orientation) {
+  final normalized = orientation?.trim().toLowerCase() ?? '';
+  if (normalized == _ExportPdfOrientation.landscape) {
+    return _ExportPdfOrientation.landscape;
+  }
+  return _ExportPdfOrientation.portrait;
+}
+
+Future<void> _ensureLanguageMessagesInitialized(String? languageCode) async {
+  await l10n_messages.initializeMessages(_normalizeLanguageCode(languageCode));
+}
+
+String _localizedForLanguage(
+  String? languageCode,
+  String Function(S l10n) selector,
+) {
+  final normalized = _normalizeLanguageCode(languageCode);
+  return Intl.withLocale(normalized, () => selector(S.current));
+}
+
+String _formatBabyExportValue(
+  int? infantCount, {
+  required String languageCode,
+}) {
+  if (infantCount == null) return '-';
+  if (infantCount > 0) return infantCount.toString();
+  return _localizedForLanguage(languageCode, (l10n) => l10n.no);
+}
+
 // ---------------------------------------------------------------------------
 // Export Settings Dialog
 // ---------------------------------------------------------------------------
@@ -2744,25 +3093,45 @@ class _ExportSettingsResult {
   const _ExportSettingsResult({
     required this.exportLanguageCode,
     required this.enabledColumns,
+    required this.exportPdfOrientation,
   });
 
   final String exportLanguageCode;
   final List<String> enabledColumns;
+  final String exportPdfOrientation;
 }
 
 Future<_ExportSettingsResult?> _showExportSettingsDialog(
   BuildContext context, {
   required String currentLanguageCode,
   required List<String> currentColumns,
+  required String currentPdfOrientation,
 }) async {
   return showStyledModal<_ExportSettingsResult>(
     context,
-    hideDefaultHeader: true,
+    title: context.s.exportSettingsTitle,
     isDismissible: true,
-    builder: (dialogContext) {
+    showLeading: true,
+    leadingPlacement: StyledModalSlotPlacement.header,
+    dialogMinWidth: 440,
+    dialogMaxWidth: 480,
+    actionPlacement: StyledModalSlotPlacement.footer,
+    actionLabel: context.s.saveButton,
+    closeOnAction: true,
+    stateBuilder: (data) => StyledModalControlState(
+      actionEnabled: data != null && data.enabledColumns.isNotEmpty,
+    ),
+    initialValue: _ExportSettingsResult(
+      exportLanguageCode: currentLanguageCode,
+      enabledColumns: currentColumns,
+      exportPdfOrientation: currentPdfOrientation,
+    ),
+    dataBuilder: (dialogContext, onDataChanged) {
       return _ExportSettingsDialogContent(
         initialLanguageCode: currentLanguageCode,
         initialColumns: currentColumns,
+        initialPdfOrientation: currentPdfOrientation,
+        onDataChanged: onDataChanged,
       );
     },
   );
@@ -2772,10 +3141,14 @@ class _ExportSettingsDialogContent extends StatefulWidget {
   const _ExportSettingsDialogContent({
     required this.initialLanguageCode,
     required this.initialColumns,
+    required this.initialPdfOrientation,
+    required this.onDataChanged,
   });
 
   final String initialLanguageCode;
   final List<String> initialColumns;
+  final String initialPdfOrientation;
+  final void Function(_ExportSettingsResult?) onDataChanged;
 
   @override
   State<_ExportSettingsDialogContent> createState() =>
@@ -2785,22 +3158,34 @@ class _ExportSettingsDialogContent extends StatefulWidget {
 class _ExportSettingsDialogContentState
     extends State<_ExportSettingsDialogContent> {
   late String _languageCode;
+  late String _pdfOrientation;
   late List<String> _orderedColumns;
+  late Set<String> _toggledColumns;
 
   @override
   void initState() {
     super.initState();
-    _languageCode = widget.initialLanguageCode;
-    // Start with saved enabled columns in their saved order,
-    // then append any disabled columns at the end.
+    _languageCode = _normalizeLanguageCode(widget.initialLanguageCode);
+    _pdfOrientation = _normalizePdfOrientation(widget.initialPdfOrientation);
+    unawaited(_ensureLanguageMessagesInitialized(_languageCode));
     final enabled = List<String>.from(widget.initialColumns);
     final disabled = _ExportColumn.all
         .where((key) => !enabled.contains(key))
         .toList();
     _orderedColumns = [...enabled, ...disabled];
+    _toggledColumns = Set<String>.from(widget.initialColumns);
   }
 
-  late Set<String> _toggledColumns = Set<String>.from(widget.initialColumns);
+  void _notifyDataChanged() {
+    widget.onDataChanged(
+      _ExportSettingsResult(
+        exportLanguageCode: _languageCode,
+        enabledColumns:
+            _orderedColumns.where(_toggledColumns.contains).toList(),
+        exportPdfOrientation: _pdfOrientation,
+      ),
+    );
+  }
 
   void _toggle(String key) {
     setState(() {
@@ -2810,6 +3195,7 @@ class _ExportSettingsDialogContentState
         _toggledColumns.add(key);
       }
     });
+    _notifyDataChanged();
   }
 
   void _onReorder(int oldIndex, int newIndex) {
@@ -2818,130 +3204,95 @@ class _ExportSettingsDialogContentState
       final item = _orderedColumns.removeAt(oldIndex);
       _orderedColumns.insert(newIndex, item);
     });
+    _notifyDataChanged();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final styledTheme = StyledWidgetsTheme.of(context);
-    final isNl = _languageCode == 'nl';
 
-    return SizedBox(
-      width: 440,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
-            child: Text(
-              context.s.exportSettingsTitle,
-              style: theme.textTheme.titleMedium,
-              textAlign: TextAlign.center,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        StyledSection(
+          grouped: false,
+          children: [
+            StyledSelectionTile<String>.dropdown(
+              title: context.s.exportLanguageTitle,
+              modalTitle: context.s.exportLanguageTitle,
+              currentValue: _languageCode,
+              options: const ['en', 'nl'],
+              optionLabelBuilder: (value) => switch (value) {
+                'nl' => 'Nederlands',
+                _ => 'English',
+              },
+              dropdownFieldAutoSize: true,
+              onChanged: (value) {
+                if (value == null) return;
+                setState(() => _languageCode = value);
+                unawaited(_ensureLanguageMessagesInitialized(value));
+                _notifyDataChanged();
+              },
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              children: [
-                Text(
-                  context.s.exportLanguageTitle,
-                  style: theme.textTheme.bodyMedium,
-                ),
-                const Spacer(),
-                SegmentedButton<String>(
-                  segments: const [
-                    ButtonSegment(value: 'en', label: Text('English')),
-                    ButtonSegment(value: 'nl', label: Text('Nederlands')),
-                  ],
-                  selected: {_languageCode},
-                  onSelectionChanged: (values) {
-                    setState(() => _languageCode = values.first);
-                  },
-                  showSelectedIcon: false,
-                  style: ButtonStyle(
-                    visualDensity: VisualDensity.compact,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    textStyle: WidgetStatePropertyAll(
-                      theme.textTheme.bodySmall,
-                    ),
-                  ),
-                ),
+            StyledSelectionTile<String>.dropdown(
+              title: context.s.exportPdfOrientationTitle,
+              modalTitle: context.s.exportPdfOrientationTitle,
+              currentValue: _pdfOrientation,
+              options: const [
+                _ExportPdfOrientation.portrait,
+                _ExportPdfOrientation.landscape,
               ],
+              optionLabelBuilder: (value) => switch (value) {
+                _ExportPdfOrientation.landscape =>
+                  context.s.exportPdfOrientationLandscape,
+                _ => context.s.exportPdfOrientationPortrait,
+              },
+              dropdownFieldAutoSize: true,
+              onChanged: (value) {
+                if (value == null) return;
+                setState(() => _pdfOrientation = value);
+                _notifyDataChanged();
+              },
             ),
-          ),
-          const SizedBox(height: 8),
-          StyledReorderableSection(
-            header: context.s.exportColumnsTitle,
-            grouped: false,
-            itemCount: _orderedColumns.length,
-            onReorder: _onReorder,
-            itemBuilder: (context, index, isReorderMode) {
-              final key = _orderedColumns[index];
-              final enabled = _toggledColumns.contains(key);
-              return StyledReorderableTile(
-                key: ValueKey(key),
-                index: index,
-                canDrag: true,
-                showChevron: false,
-                leading: SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: Checkbox(
-                    value: enabled,
-                    onChanged: (_) => _toggle(key),
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    visualDensity: VisualDensity.compact,
-                  ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        StyledReorderableSection(
+          header: context.s.exportColumnsTitle,
+          grouped: false,
+          itemCount: _orderedColumns.length,
+          onReorder: _onReorder,
+          itemBuilder: (context, index, isReorderMode) {
+            final key = _orderedColumns[index];
+            final enabled = _toggledColumns.contains(key);
+            return StyledReorderableTile(
+              key: ValueKey(key),
+              index: index,
+              canDrag: true,
+              showChevron: false,
+              leading: SizedBox(
+                width: 28,
+                height: 28,
+                child: Checkbox(
+                  value: enabled,
+                  onChanged: (_) => _toggle(key),
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
                 ),
-                title: Text(
-                  _ExportColumn.label(key, isNl: isNl),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: enabled
-                        ? null
-                        : theme.colorScheme.onSurfaceVariant,
-                  ),
+              ),
+              title: Text(
+                _localizedForLanguage(
+                  _languageCode,
+                  (l10n) => _ExportColumn.label(key, l10n: l10n),
                 ),
-              );
-            },
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-            child: Row(
-              children: [
-                Expanded(
-                  child: StyledButton(
-                    title: context.s.cancelButton,
-                    onPressed: () => Navigator.of(context).pop(null),
-                    minHeight: 40,
-                  ),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: enabled ? null : theme.colorScheme.onSurfaceVariant,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: StyledButton(
-                    title: context.s.saveButton,
-                    onPressed: _toggledColumns.isEmpty
-                        ? null
-                        : () => Navigator.of(context).pop(
-                              _ExportSettingsResult(
-                                exportLanguageCode: _languageCode,
-                                enabledColumns: _orderedColumns
-                                    .where(_toggledColumns.contains)
-                                    .toList(),
-                              ),
-                            ),
-                    enabled: _toggledColumns.isNotEmpty,
-                    backgroundColor: styledTheme.buttons.backgroundColor,
-                    labelColor: styledTheme.buttons.labelColor,
-                    leftIconData: Icons.save_outlined,
-                    showLeftIcon: true,
-                    minHeight: 40,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 }
@@ -2964,4 +3315,3 @@ String _valueOrDash(String? value) {
 DateTime _dateOnly(DateTime date) {
   return DateTime(date.year, date.month, date.day);
 }
-

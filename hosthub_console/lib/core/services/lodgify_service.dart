@@ -1,63 +1,76 @@
 import 'package:dio/dio.dart';
-import 'package:hosthub_console/core/services/api_services/api_client.dart';
 import 'package:hosthub_console/core/services/api_services/api_parsing.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LodgifyService {
-  LodgifyService({
-    required ApiClient apiClient,
-    required Future<String?> Function() apiKeyProvider,
-  }) : _apiClient = apiClient,
-       _apiHeaders = (() async {
-         final apiKey = (await apiKeyProvider())?.trim();
-         if (apiKey == null || apiKey.isEmpty) {
-           throw const LodgifyApiException('Missing Lodgify API key.');
-         }
-         return {'X-APIKEY': apiKey};
-       });
-
-  final ApiClient _apiClient;
-  final Future<Map<String, String>> Function() _apiHeaders;
+  LodgifyService();
 
   Future<List<LodgifyPropertySummary>> fetchProperties({
     Map<String, String> queryParameters = const {},
   }) async {
-    return _apiClient.getRequest<List<LodgifyPropertySummary>>(
-      endPoint: 'properties',
-      useAccesstoken: false,
+    final response = await Supabase.instance.client.functions.invoke(
+      'lodgify-properties',
+      method: HttpMethod.get,
       queryParameters: queryParameters,
-      extraHeaders: await _apiHeaders(),
-      dataConstructor: (data) {
-        final decoded = (data as Object?).asDecodedJsonOrSelf();
-        final list = decoded.extractList(
-          fallbackKeys: const ['properties', 'items', 'data', 'results'],
-        );
-
-        return list
-            .whereType<Map<String, dynamic>>()
-            .map(LodgifyPropertySummary.fromMap)
-            .toList();
-      },
     );
+
+    final status = response.status;
+    if (status != 200 && status != 201 && status != 202) {
+      final requestOptions = RequestOptions(path: 'lodgify-properties');
+      throw DioException(
+        requestOptions: requestOptions,
+        response: Response(
+          requestOptions: requestOptions,
+          statusCode: status,
+          data: response.data,
+        ),
+        type: DioExceptionType.badResponse,
+      );
+    }
+
+    final decoded = (response.data as Object?).asDecodedJsonOrSelf();
+    final list = decoded.extractList(
+      fallbackKeys: const ['properties', 'items', 'data', 'results'],
+    );
+
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map(LodgifyPropertySummary.fromMap)
+        .toList();
   }
 
   Future<LodgifyPropertyDetails> fetchPropertyDetails(
     String propertyId, {
     Map<String, String> queryParameters = const {},
   }) async {
-    return _apiClient.getRequest<LodgifyPropertyDetails>(
-      endPoint: 'properties/$propertyId',
-      useAccesstoken: false,
-      queryParameters: queryParameters,
-      extraHeaders: await _apiHeaders(),
-      dataConstructor: (data) {
-        final decoded = (data as Object?).asDecodedJsonOrSelf();
-        final map = decoded.extractMap(
-          fallbackKeys: const ['property', 'data'],
-        );
-        return LodgifyPropertyDetails.fromMap(map);
-      },
+    final params = <String, String>{
+      ...queryParameters,
+      'property_id': propertyId.trim(),
+    };
+
+    final response = await Supabase.instance.client.functions.invoke(
+      'lodgify-properties',
+      method: HttpMethod.get,
+      queryParameters: params,
     );
+
+    final status = response.status;
+    if (status != 200 && status != 201 && status != 202) {
+      final requestOptions = RequestOptions(path: 'lodgify-properties');
+      throw DioException(
+        requestOptions: requestOptions,
+        response: Response(
+          requestOptions: requestOptions,
+          statusCode: status,
+          data: response.data,
+        ),
+        type: DioExceptionType.badResponse,
+      );
+    }
+
+    final decoded = (response.data as Object?).asDecodedJsonOrSelf();
+    final map = decoded.extractMap(fallbackKeys: const ['property', 'data']);
+    return LodgifyPropertyDetails.fromMap(map);
   }
 
   Future<List<LodgifyCalendarEntry>> fetchCalendar(
@@ -66,15 +79,9 @@ class LodgifyService {
     DateTime? end,
     Map<String, String> queryParameters = const {},
   }) async {
-    final headers = await _apiHeaders();
-
     // V2 does not support date-range filtering; it uses stayFilter instead.
     // Date narrowing happens in the repository layer.
-    return _fetchBookingsV2(
-      propertyId,
-      headers: headers,
-      queryParameters: queryParameters,
-    );
+    return _fetchBookingsV2(propertyId, queryParameters: queryParameters);
   }
 
   /// Updates the internal notes for a reservation via the Lodgify V2 API.
@@ -86,7 +93,6 @@ class LodgifyService {
       'lodgify-reservations',
       method: HttpMethod.patch,
       queryParameters: {'reservationId': reservationId},
-      headers: await _apiHeaders(),
       body: {'internalNotes': notes},
     );
 
@@ -114,9 +120,7 @@ class LodgifyService {
     DateTime? start,
     DateTime? end,
   }) async {
-    final params = <String, String>{
-      'property_id': propertyId.trim(),
-    };
+    final params = <String, String>{'property_id': propertyId.trim()};
     if (start != null) {
       params['start'] = start.toIso8601String().split('T').first;
     }
@@ -128,7 +132,6 @@ class LodgifyService {
       'lodgify-rates',
       method: HttpMethod.get,
       queryParameters: params,
-      headers: await _apiHeaders(),
     );
 
     final status = response.status;
@@ -234,7 +237,7 @@ class LodgifyService {
   }
 
   void dispose() {
-    _apiClient.cancelActiveRequests('lodgify_service_dispose');
+    // No-op: requests are delegated to Supabase Edge Functions.
   }
 
   /// Fetches bookings from the Lodgify V2 reservations endpoint.
@@ -254,7 +257,6 @@ class LodgifyService {
   /// concatenated before returning.
   Future<List<LodgifyCalendarEntry>> _fetchBookingsV2(
     String propertyId, {
-    required Map<String, String> headers,
     Map<String, String> queryParameters = const {},
   }) async {
     final params = <String, String>{...queryParameters};
@@ -277,7 +279,6 @@ class LodgifyService {
         'lodgify-reservations',
         method: HttpMethod.get,
         queryParameters: params,
-        headers: headers,
       );
 
       final status = response.status;
@@ -318,15 +319,6 @@ class LodgifyService {
 
     return allEntries;
   }
-}
-
-class LodgifyApiException implements Exception {
-  const LodgifyApiException(this.message);
-
-  final String message;
-
-  @override
-  String toString() => 'LodgifyApiException($message)';
 }
 
 class LodgifyPropertySummary {

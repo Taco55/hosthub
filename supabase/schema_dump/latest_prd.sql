@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict RuIVkFAWfnZimIOVZ6HmwhDByEeiXZzSbHz30syKOyLHUxsC5vTMDDYgz8Ngsb8
+\restrict FHPiZHU5Q0eNpLwRNbSqUcUlSPtq2vWE4Gir44BE77bkRAtffwM3Cpz74YyiYYk
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -240,6 +240,51 @@ $$;
 ALTER FUNCTION public.create_local_admin_user(admin_email text, admin_password text, admin_username text) OWNER TO postgres;
 
 --
+-- Name: get_effective_lodgify_api_key(uuid); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.get_effective_lodgify_api_key(p_user_id uuid) RETURNS text
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+declare
+  v_api_key text;
+begin
+  if p_user_id is null then
+    return null;
+  end if;
+
+  select lak.api_key
+    into v_api_key
+    from public.lodgify_api_keys lak
+   where lak.profile_id = p_user_id
+     and btrim(lak.api_key) <> ''
+   limit 1;
+
+  if v_api_key is not null then
+    return v_api_key;
+  end if;
+
+  select owner_lak.api_key
+    into v_api_key
+    from public.site_members sm
+    join public.sites s
+      on s.id = sm.site_id
+    join public.lodgify_api_keys owner_lak
+      on owner_lak.profile_id = s.owner_profile_id
+   where sm.profile_id = p_user_id
+     and btrim(owner_lak.api_key) <> ''
+   order by sm.created_at asc
+   limit 1;
+
+  return v_api_key;
+end;
+$$;
+
+
+ALTER FUNCTION public.get_effective_lodgify_api_key(p_user_id uuid) OWNER TO postgres;
+
+--
 -- Name: handle_new_user(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -325,6 +370,48 @@ $$;
 
 
 ALTER FUNCTION public.set_updated_at() OWNER TO postgres;
+
+--
+-- Name: sync_lodgify_api_key_secret(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.sync_lodgify_api_key_secret() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+declare
+  v_new_key text;
+begin
+  v_new_key := nullif(btrim(new.lodgify_api_key), '');
+
+  -- Remove key on explicit clear.
+  if v_new_key is null then
+    delete from public.lodgify_api_keys
+     where profile_id = new.profile_id;
+    new.lodgify_api_key := null;
+    return new;
+  end if;
+
+  -- Marker means "already stored server-side", keep secret unchanged.
+  if v_new_key in ('__server_stored__', '__lodgify_server_stored__') then
+    new.lodgify_api_key := '__lodgify_server_stored__';
+    return new;
+  end if;
+
+  -- New raw key: store in secure table and replace visible value with marker.
+  insert into public.lodgify_api_keys (profile_id, api_key)
+  values (new.profile_id, v_new_key)
+  on conflict (profile_id) do update
+  set api_key = excluded.api_key,
+      updated_at = now();
+
+  new.lodgify_api_key := '__lodgify_server_stored__';
+  return new;
+end;
+$$;
+
+
+ALTER FUNCTION public.sync_lodgify_api_key_secret() OWNER TO postgres;
 
 SET default_tablespace = '';
 
@@ -437,6 +524,20 @@ CREATE TABLE public.cms_media_collections (
 
 
 ALTER TABLE public.cms_media_collections OWNER TO postgres;
+
+--
+-- Name: lodgify_api_keys; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.lodgify_api_keys (
+    profile_id uuid NOT NULL,
+    api_key text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.lodgify_api_keys OWNER TO postgres;
 
 --
 -- Name: profiles; Type: TABLE; Schema: public; Owner: postgres
@@ -616,7 +717,9 @@ CREATE TABLE public.user_settings (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     export_language_code text,
-    export_columns jsonb
+    export_columns jsonb,
+    export_pdf_orientation text DEFAULT 'portrait'::text NOT NULL,
+    CONSTRAINT user_settings_export_pdf_orientation_check CHECK ((export_pdf_orientation = ANY (ARRAY['portrait'::text, 'landscape'::text])))
 );
 
 
@@ -700,6 +803,14 @@ ALTER TABLE ONLY public.cms_media_collections
 
 ALTER TABLE ONLY public.cms_media
     ADD CONSTRAINT cms_media_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: lodgify_api_keys lodgify_api_keys_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.lodgify_api_keys
+    ADD CONSTRAINT lodgify_api_keys_pkey PRIMARY KEY (profile_id);
 
 
 --
@@ -867,6 +978,13 @@ CREATE TRIGGER set_cms_media_updated_at BEFORE UPDATE ON public.cms_media FOR EA
 
 
 --
+-- Name: lodgify_api_keys set_lodgify_api_keys_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER set_lodgify_api_keys_updated_at BEFORE UPDATE ON public.lodgify_api_keys FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
 -- Name: profiles set_profiles_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -885,6 +1003,13 @@ CREATE TRIGGER set_settings_updated_at BEFORE UPDATE ON public.settings FOR EACH
 --
 
 CREATE TRIGGER set_user_settings_updated_at BEFORE UPDATE ON public.user_settings FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- Name: user_settings sync_lodgify_api_key_secret_trigger; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER sync_lodgify_api_key_secret_trigger BEFORE INSERT OR UPDATE OF lodgify_api_key ON public.user_settings FOR EACH ROW EXECUTE FUNCTION public.sync_lodgify_api_key_secret();
 
 
 --
@@ -956,6 +1081,14 @@ ALTER TABLE ONLY public.cms_media_collections
 
 ALTER TABLE ONLY public.cms_media
     ADD CONSTRAINT cms_media_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.sites(id) ON DELETE CASCADE;
+
+
+--
+-- Name: lodgify_api_keys lodgify_api_keys_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.lodgify_api_keys
+    ADD CONSTRAINT lodgify_api_keys_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
 
 
 --
@@ -1255,6 +1388,12 @@ ALTER TABLE public.cms_media_collection_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.cms_media_collections ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: lodgify_api_keys; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.lodgify_api_keys ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: profiles; Type: ROW SECURITY; Schema: public; Owner: postgres
 --
 
@@ -1333,6 +1472,14 @@ GRANT ALL ON FUNCTION public.create_local_admin_user(admin_email text, admin_pas
 
 
 --
+-- Name: FUNCTION get_effective_lodgify_api_key(p_user_id uuid); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION public.get_effective_lodgify_api_key(p_user_id uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.get_effective_lodgify_api_key(p_user_id uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION handle_new_user(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -1366,6 +1513,15 @@ GRANT ALL ON FUNCTION public.is_admin(user_id uuid) TO service_role;
 GRANT ALL ON FUNCTION public.set_updated_at() TO anon;
 GRANT ALL ON FUNCTION public.set_updated_at() TO authenticated;
 GRANT ALL ON FUNCTION public.set_updated_at() TO service_role;
+
+
+--
+-- Name: FUNCTION sync_lodgify_api_key_secret(); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.sync_lodgify_api_key_secret() TO anon;
+GRANT ALL ON FUNCTION public.sync_lodgify_api_key_secret() TO authenticated;
+GRANT ALL ON FUNCTION public.sync_lodgify_api_key_secret() TO service_role;
 
 
 --
@@ -1420,6 +1576,13 @@ GRANT ALL ON TABLE public.cms_media_collection_items TO service_role;
 GRANT ALL ON TABLE public.cms_media_collections TO anon;
 GRANT ALL ON TABLE public.cms_media_collections TO authenticated;
 GRANT ALL ON TABLE public.cms_media_collections TO service_role;
+
+
+--
+-- Name: TABLE lodgify_api_keys; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.lodgify_api_keys TO service_role;
 
 
 --
@@ -1567,5 +1730,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON T
 -- PostgreSQL database dump complete
 --
 
-\unrestrict RuIVkFAWfnZimIOVZ6HmwhDByEeiXZzSbHz30syKOyLHUxsC5vTMDDYgz8Ngsb8
+\unrestrict FHPiZHU5Q0eNpLwRNbSqUcUlSPtq2vWE4Gir44BE77bkRAtffwM3Cpz74YyiYYk
 

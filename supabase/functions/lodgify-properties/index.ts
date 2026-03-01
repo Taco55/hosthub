@@ -10,7 +10,7 @@ const SERVICE_ROLE_KEY = env(
 
 if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
   throw new Error(
-    "Missing Supabase configuration for lodgify-reservations function.",
+    "Missing Supabase configuration for lodgify-properties function.",
   );
 }
 
@@ -29,11 +29,16 @@ type CorsOptions = {
   headers: string[];
 };
 
+const lodgifyHeaders = (apiKey: string) => ({
+  Accept: "application/json",
+  "X-APIKEY": apiKey,
+});
+
 Deno.serve(async (req: Request) => {
   const origin = req.headers.get("Origin") ?? "*";
   const corsOptions: CorsOptions = {
     origin,
-    methods: ["GET", "PATCH", "OPTIONS"],
+    methods: ["GET", "OPTIONS"],
     headers: allowHeaders,
   };
   const corsHeaders = buildCorsHeaders(corsOptions);
@@ -42,18 +47,44 @@ Deno.serve(async (req: Request) => {
     return new Response(null, { status: 204, headers: corsHeaders });
   }
 
-  if (req.method !== "GET" && req.method !== "PATCH") {
+  if (req.method !== "GET") {
     return jsonError(405, "Method not allowed", corsOptions);
   }
 
   const resolved = await resolveLodgifyApiKey(req, corsOptions);
   if (resolved.error) return resolved.error;
+  const apiKey = resolved.apiKey;
 
-  if (req.method === "GET") {
-    return await handleGet(req, resolved.apiKey, corsOptions);
+  const incomingUrl = new URL(req.url);
+  const propertyId = incomingUrl.searchParams.get("property_id") ??
+    incomingUrl.searchParams.get("propertyId");
+
+  const targetUrl = propertyId
+    ? new URL(
+      `https://api.lodgify.com/v1/properties/${encodeURIComponent(propertyId)}`,
+    )
+    : new URL("https://api.lodgify.com/v1/properties");
+
+  incomingUrl.searchParams.forEach((value, key) => {
+    if (key === "property_id" || key === "propertyId") return;
+    targetUrl.searchParams.set(key, value);
+  });
+
+  try {
+    const lodgifyResponse = await fetch(targetUrl, {
+      method: "GET",
+      headers: lodgifyHeaders(apiKey),
+    });
+
+    return await proxyResponse(lodgifyResponse, corsOptions);
+  } catch (error) {
+    console.error("[lodgify-properties] request failed", error);
+    return jsonError(
+      502,
+      "Failed to fetch properties from Lodgify.",
+      corsOptions,
+    );
   }
-
-  return await handlePatch(req, resolved.apiKey, corsOptions);
 });
 
 async function resolveLodgifyApiKey(
@@ -94,7 +125,7 @@ async function resolveLodgifyApiKey(
   );
 
   if (error) {
-    console.error("[lodgify-reservations] key lookup failed", error);
+    console.error("[lodgify-properties] key lookup failed", error);
     return {
       error: jsonError(
         500,
@@ -116,69 +147,6 @@ async function resolveLodgifyApiKey(
   }
 
   return { apiKey };
-}
-
-async function handleGet(
-  req: Request,
-  apiKey: string,
-  corsOptions: CorsOptions,
-) {
-  const incomingUrl = new URL(req.url);
-  const targetUrl = new URL(
-    "https://api.lodgify.com/v2/reservations/bookings",
-  );
-  incomingUrl.searchParams.forEach((value, key) => {
-    targetUrl.searchParams.set(key, value);
-  });
-
-  const lodgifyResponse = await fetch(targetUrl, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      "X-APIKEY": apiKey,
-    },
-  });
-
-  return proxyResponse(lodgifyResponse, corsOptions);
-}
-
-async function handlePatch(
-  req: Request,
-  apiKey: string,
-  corsOptions: CorsOptions,
-) {
-  const incomingUrl = new URL(req.url);
-  const reservationId = incomingUrl.searchParams.get("reservationId");
-  if (!reservationId) {
-    return jsonError(
-      400,
-      "Missing reservationId query parameter.",
-      corsOptions,
-    );
-  }
-
-  const targetUrl = new URL(
-    `https://api.lodgify.com/v2/reservations/${reservationId}`,
-  );
-
-  let body: string;
-  try {
-    body = await req.text();
-  } catch (_) {
-    return jsonError(400, "Invalid request body.", corsOptions);
-  }
-
-  const lodgifyResponse = await fetch(targetUrl, {
-    method: "PATCH",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      "X-APIKEY": apiKey,
-    },
-    body,
-  });
-
-  return proxyResponse(lodgifyResponse, corsOptions);
 }
 
 async function proxyResponse(

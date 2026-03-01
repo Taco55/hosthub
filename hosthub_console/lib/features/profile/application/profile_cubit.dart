@@ -161,6 +161,90 @@ class ProfileCubit extends Cubit<ProfileState> {
     }
   }
 
+  Future<bool> updateOwnProfile({
+    required String email,
+    String? username,
+  }) async {
+    final profile = state.profile;
+    if (profile == null) return false;
+
+    emit(state.copyWith(status: ProfileStatus.updating, error: null));
+    try {
+      await _sessionManager.ensureFreshSession();
+      final updatedProfile = await _profileRepository.updateOwnProfile(
+        profile,
+        email: email,
+        username: username,
+      );
+      emit(
+        state.copyWith(
+          status: ProfileStatus.loaded,
+          profile: updatedProfile,
+          error: null,
+        ),
+      );
+      return true;
+    } on DomainError catch (error) {
+      if (await _handleAuthConstraint(error)) {
+        emit(
+          state.copyWith(status: ProfileStatus.requiresSignOut, error: error),
+        );
+        return false;
+      }
+      emit(state.copyWith(status: ProfileStatus.error, error: error));
+      return false;
+    } catch (error, stack) {
+      final domainError = DomainError.from(error, stack: stack);
+      if (await _handleAuthConstraint(domainError)) {
+        emit(
+          state.copyWith(
+            status: ProfileStatus.requiresSignOut,
+            error: domainError,
+          ),
+        );
+        return false;
+      }
+      emit(state.copyWith(status: ProfileStatus.error, error: domainError));
+      return false;
+    }
+  }
+
+  Future<bool> updateOwnPassword(String newPassword) async {
+    if (state.profile == null) return false;
+
+    emit(state.copyWith(status: ProfileStatus.updating, error: null));
+    try {
+      await _sessionManager.ensureFreshSession();
+      await _profileRepository.updateOwnPassword(newPassword);
+      emit(
+        state.copyWith(status: ProfileStatus.loaded, error: null),
+      );
+      return true;
+    } on DomainError catch (error) {
+      if (await _handleAuthConstraint(error)) {
+        emit(
+          state.copyWith(status: ProfileStatus.requiresSignOut, error: error),
+        );
+        return false;
+      }
+      emit(state.copyWith(status: ProfileStatus.error, error: error));
+      return false;
+    } catch (error, stack) {
+      final domainError = DomainError.from(error, stack: stack);
+      if (await _handleAuthConstraint(domainError)) {
+        emit(
+          state.copyWith(
+            status: ProfileStatus.requiresSignOut,
+            error: domainError,
+          ),
+        );
+        return false;
+      }
+      emit(state.copyWith(status: ProfileStatus.error, error: domainError));
+      return false;
+    }
+  }
+
   void reset() {
     emit(const ProfileState());
   }

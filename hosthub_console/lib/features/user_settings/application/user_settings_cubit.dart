@@ -95,6 +95,7 @@ class UserSettingsCubit extends Cubit<UserSettingsState> {
   Future<void> changeExportSettings({
     required String exportLanguageCode,
     required List<String> exportColumns,
+    required String exportPdfOrientation,
   }) async {
     final settings = state.settings;
     if (settings == null) return;
@@ -102,11 +103,14 @@ class UserSettingsCubit extends Cubit<UserSettingsState> {
 
     final langSame = settings.exportLanguageCode == exportLanguageCode;
     final colsSame = _listEquals(settings.exportColumns, exportColumns);
-    if (langSame && colsSame) return;
+    final orientationSame =
+        settings.exportPdfOrientation == exportPdfOrientation;
+    if (langSame && colsSame && orientationSame) return;
 
     final updated = settings.copyWith(
       exportLanguageCode: exportLanguageCode,
       exportColumns: exportColumns,
+      exportPdfOrientation: exportPdfOrientation,
     );
     await _saveSettings(
       updated,

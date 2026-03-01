@@ -164,6 +164,36 @@ class S {
     );
   }
 
+  /// `PDF orientation`
+  String get exportPdfOrientationTitle {
+    return Intl.message(
+      'PDF orientation',
+      name: 'exportPdfOrientationTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Portrait`
+  String get exportPdfOrientationPortrait {
+    return Intl.message(
+      'Portrait',
+      name: 'exportPdfOrientationPortrait',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Landscape`
+  String get exportPdfOrientationLandscape {
+    return Intl.message(
+      'Landscape',
+      name: 'exportPdfOrientationLandscape',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Export`
   String get exportButton {
     return Intl.message('Export', name: 'exportButton', desc: '', args: []);
@@ -176,6 +206,26 @@ class S {
       name: 'generalSectionTitle',
       desc: '',
       args: [],
+    );
+  }
+
+  /// `App information`
+  String get appInfoTileTitle {
+    return Intl.message(
+      'App information',
+      name: 'appInfoTileTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Version {version} · {environment}`
+  String appInfoTileValue(String version, String environment) {
+    return Intl.message(
+      'Version $version · $environment',
+      name: 'appInfoTileValue',
+      desc: '',
+      args: [version, environment],
     );
   }
 
@@ -7076,6 +7126,76 @@ class S {
       name: 'reservationCloseTooltip',
       desc: '',
       args: [],
+    );
+  }
+
+  /// `Arrival`
+  String get reservationArrival {
+    return Intl.message(
+      'Arrival',
+      name: 'reservationArrival',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Departure`
+  String get reservationDeparture {
+    return Intl.message(
+      'Departure',
+      name: 'reservationDeparture',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Baby bed`
+  String get reservationBabyBed {
+    return Intl.message(
+      'Baby bed',
+      name: 'reservationBabyBed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Booked`
+  String get reservationListColumnBooked {
+    return Intl.message(
+      'Booked',
+      name: 'reservationListColumnBooked',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `New`
+  String get reservationListColumnNew {
+    return Intl.message(
+      'New',
+      name: 'reservationListColumnNew',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Exported`
+  String get reservationExportedLabel {
+    return Intl.message(
+      'Exported',
+      name: 'reservationExportedLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count} new`
+  String reservationNewCount(int count) {
+    return Intl.message(
+      '$count new',
+      name: 'reservationNewCount',
+      desc: '',
+      args: [count],
     );
   }
 

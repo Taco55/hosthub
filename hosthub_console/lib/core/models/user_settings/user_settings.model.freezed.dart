@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$UserSettings {
 
- String get profileId; String? get languageCode; String? get exportLanguageCode; List<String>? get exportColumns; String? get lodgifyApiKey; bool get lodgifyConnected; DateTime? get lodgifyConnectedAt; DateTime? get lodgifyLastSyncedAt;
+ String get profileId; String? get languageCode; String? get exportLanguageCode; List<String>? get exportColumns; String get exportPdfOrientation; String? get lodgifyApiKey; bool get lodgifyConnected; DateTime? get lodgifyConnectedAt; DateTime? get lodgifyLastSyncedAt;
 /// Create a copy of UserSettings
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $UserSettingsCopyWith<UserSettings> get copyWith => _$UserSettingsCopyWithImpl<U
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserSettings&&(identical(other.profileId, profileId) || other.profileId == profileId)&&(identical(other.languageCode, languageCode) || other.languageCode == languageCode)&&(identical(other.exportLanguageCode, exportLanguageCode) || other.exportLanguageCode == exportLanguageCode)&&const DeepCollectionEquality().equals(other.exportColumns, exportColumns)&&(identical(other.lodgifyApiKey, lodgifyApiKey) || other.lodgifyApiKey == lodgifyApiKey)&&(identical(other.lodgifyConnected, lodgifyConnected) || other.lodgifyConnected == lodgifyConnected)&&(identical(other.lodgifyConnectedAt, lodgifyConnectedAt) || other.lodgifyConnectedAt == lodgifyConnectedAt)&&(identical(other.lodgifyLastSyncedAt, lodgifyLastSyncedAt) || other.lodgifyLastSyncedAt == lodgifyLastSyncedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserSettings&&(identical(other.profileId, profileId) || other.profileId == profileId)&&(identical(other.languageCode, languageCode) || other.languageCode == languageCode)&&(identical(other.exportLanguageCode, exportLanguageCode) || other.exportLanguageCode == exportLanguageCode)&&const DeepCollectionEquality().equals(other.exportColumns, exportColumns)&&(identical(other.exportPdfOrientation, exportPdfOrientation) || other.exportPdfOrientation == exportPdfOrientation)&&(identical(other.lodgifyApiKey, lodgifyApiKey) || other.lodgifyApiKey == lodgifyApiKey)&&(identical(other.lodgifyConnected, lodgifyConnected) || other.lodgifyConnected == lodgifyConnected)&&(identical(other.lodgifyConnectedAt, lodgifyConnectedAt) || other.lodgifyConnectedAt == lodgifyConnectedAt)&&(identical(other.lodgifyLastSyncedAt, lodgifyLastSyncedAt) || other.lodgifyLastSyncedAt == lodgifyLastSyncedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,profileId,languageCode,exportLanguageCode,const DeepCollectionEquality().hash(exportColumns),lodgifyApiKey,lodgifyConnected,lodgifyConnectedAt,lodgifyLastSyncedAt);
+int get hashCode => Object.hash(runtimeType,profileId,languageCode,exportLanguageCode,const DeepCollectionEquality().hash(exportColumns),exportPdfOrientation,lodgifyApiKey,lodgifyConnected,lodgifyConnectedAt,lodgifyLastSyncedAt);
 
 @override
 String toString() {
-  return 'UserSettings(profileId: $profileId, languageCode: $languageCode, exportLanguageCode: $exportLanguageCode, exportColumns: $exportColumns, lodgifyApiKey: $lodgifyApiKey, lodgifyConnected: $lodgifyConnected, lodgifyConnectedAt: $lodgifyConnectedAt, lodgifyLastSyncedAt: $lodgifyLastSyncedAt)';
+  return 'UserSettings(profileId: $profileId, languageCode: $languageCode, exportLanguageCode: $exportLanguageCode, exportColumns: $exportColumns, exportPdfOrientation: $exportPdfOrientation, lodgifyApiKey: $lodgifyApiKey, lodgifyConnected: $lodgifyConnected, lodgifyConnectedAt: $lodgifyConnectedAt, lodgifyLastSyncedAt: $lodgifyLastSyncedAt)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $UserSettingsCopyWith<$Res>  {
   factory $UserSettingsCopyWith(UserSettings value, $Res Function(UserSettings) _then) = _$UserSettingsCopyWithImpl;
 @useResult
 $Res call({
- String profileId, String? languageCode, String? exportLanguageCode, List<String>? exportColumns, String? lodgifyApiKey, bool lodgifyConnected, DateTime? lodgifyConnectedAt, DateTime? lodgifyLastSyncedAt
+ String profileId, String? languageCode, String? exportLanguageCode, List<String>? exportColumns, String exportPdfOrientation, String? lodgifyApiKey, bool lodgifyConnected, DateTime? lodgifyConnectedAt, DateTime? lodgifyLastSyncedAt
 });
 
 
@@ -65,13 +65,14 @@ class _$UserSettingsCopyWithImpl<$Res>
 
 /// Create a copy of UserSettings
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? profileId = null,Object? languageCode = freezed,Object? exportLanguageCode = freezed,Object? exportColumns = freezed,Object? lodgifyApiKey = freezed,Object? lodgifyConnected = null,Object? lodgifyConnectedAt = freezed,Object? lodgifyLastSyncedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? profileId = null,Object? languageCode = freezed,Object? exportLanguageCode = freezed,Object? exportColumns = freezed,Object? exportPdfOrientation = null,Object? lodgifyApiKey = freezed,Object? lodgifyConnected = null,Object? lodgifyConnectedAt = freezed,Object? lodgifyLastSyncedAt = freezed,}) {
   return _then(_self.copyWith(
 profileId: null == profileId ? _self.profileId : profileId // ignore: cast_nullable_to_non_nullable
 as String,languageCode: freezed == languageCode ? _self.languageCode : languageCode // ignore: cast_nullable_to_non_nullable
 as String?,exportLanguageCode: freezed == exportLanguageCode ? _self.exportLanguageCode : exportLanguageCode // ignore: cast_nullable_to_non_nullable
 as String?,exportColumns: freezed == exportColumns ? _self.exportColumns : exportColumns // ignore: cast_nullable_to_non_nullable
-as List<String>?,lodgifyApiKey: freezed == lodgifyApiKey ? _self.lodgifyApiKey : lodgifyApiKey // ignore: cast_nullable_to_non_nullable
+as List<String>?,exportPdfOrientation: null == exportPdfOrientation ? _self.exportPdfOrientation : exportPdfOrientation // ignore: cast_nullable_to_non_nullable
+as String,lodgifyApiKey: freezed == lodgifyApiKey ? _self.lodgifyApiKey : lodgifyApiKey // ignore: cast_nullable_to_non_nullable
 as String?,lodgifyConnected: null == lodgifyConnected ? _self.lodgifyConnected : lodgifyConnected // ignore: cast_nullable_to_non_nullable
 as bool,lodgifyConnectedAt: freezed == lodgifyConnectedAt ? _self.lodgifyConnectedAt : lodgifyConnectedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,lodgifyLastSyncedAt: freezed == lodgifyLastSyncedAt ? _self.lodgifyLastSyncedAt : lodgifyLastSyncedAt // ignore: cast_nullable_to_non_nullable
@@ -157,10 +158,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String profileId,  String? languageCode,  String? exportLanguageCode,  List<String>? exportColumns,  String? lodgifyApiKey,  bool lodgifyConnected,  DateTime? lodgifyConnectedAt,  DateTime? lodgifyLastSyncedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String profileId,  String? languageCode,  String? exportLanguageCode,  List<String>? exportColumns,  String exportPdfOrientation,  String? lodgifyApiKey,  bool lodgifyConnected,  DateTime? lodgifyConnectedAt,  DateTime? lodgifyLastSyncedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _UserSettings() when $default != null:
-return $default(_that.profileId,_that.languageCode,_that.exportLanguageCode,_that.exportColumns,_that.lodgifyApiKey,_that.lodgifyConnected,_that.lodgifyConnectedAt,_that.lodgifyLastSyncedAt);case _:
+return $default(_that.profileId,_that.languageCode,_that.exportLanguageCode,_that.exportColumns,_that.exportPdfOrientation,_that.lodgifyApiKey,_that.lodgifyConnected,_that.lodgifyConnectedAt,_that.lodgifyLastSyncedAt);case _:
   return orElse();
 
 }
@@ -178,10 +179,10 @@ return $default(_that.profileId,_that.languageCode,_that.exportLanguageCode,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String profileId,  String? languageCode,  String? exportLanguageCode,  List<String>? exportColumns,  String? lodgifyApiKey,  bool lodgifyConnected,  DateTime? lodgifyConnectedAt,  DateTime? lodgifyLastSyncedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String profileId,  String? languageCode,  String? exportLanguageCode,  List<String>? exportColumns,  String exportPdfOrientation,  String? lodgifyApiKey,  bool lodgifyConnected,  DateTime? lodgifyConnectedAt,  DateTime? lodgifyLastSyncedAt)  $default,) {final _that = this;
 switch (_that) {
 case _UserSettings():
-return $default(_that.profileId,_that.languageCode,_that.exportLanguageCode,_that.exportColumns,_that.lodgifyApiKey,_that.lodgifyConnected,_that.lodgifyConnectedAt,_that.lodgifyLastSyncedAt);}
+return $default(_that.profileId,_that.languageCode,_that.exportLanguageCode,_that.exportColumns,_that.exportPdfOrientation,_that.lodgifyApiKey,_that.lodgifyConnected,_that.lodgifyConnectedAt,_that.lodgifyLastSyncedAt);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -195,10 +196,10 @@ return $default(_that.profileId,_that.languageCode,_that.exportLanguageCode,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String profileId,  String? languageCode,  String? exportLanguageCode,  List<String>? exportColumns,  String? lodgifyApiKey,  bool lodgifyConnected,  DateTime? lodgifyConnectedAt,  DateTime? lodgifyLastSyncedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String profileId,  String? languageCode,  String? exportLanguageCode,  List<String>? exportColumns,  String exportPdfOrientation,  String? lodgifyApiKey,  bool lodgifyConnected,  DateTime? lodgifyConnectedAt,  DateTime? lodgifyLastSyncedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _UserSettings() when $default != null:
-return $default(_that.profileId,_that.languageCode,_that.exportLanguageCode,_that.exportColumns,_that.lodgifyApiKey,_that.lodgifyConnected,_that.lodgifyConnectedAt,_that.lodgifyLastSyncedAt);case _:
+return $default(_that.profileId,_that.languageCode,_that.exportLanguageCode,_that.exportColumns,_that.exportPdfOrientation,_that.lodgifyApiKey,_that.lodgifyConnected,_that.lodgifyConnectedAt,_that.lodgifyLastSyncedAt);case _:
   return null;
 
 }
@@ -210,7 +211,7 @@ return $default(_that.profileId,_that.languageCode,_that.exportLanguageCode,_tha
 
 @JsonSerializable(fieldRename: FieldRename.snake)
 class _UserSettings extends UserSettings {
-  const _UserSettings({required this.profileId, this.languageCode, this.exportLanguageCode, final  List<String>? exportColumns, this.lodgifyApiKey, this.lodgifyConnected = false, this.lodgifyConnectedAt, this.lodgifyLastSyncedAt}): _exportColumns = exportColumns,super._();
+  const _UserSettings({required this.profileId, this.languageCode, this.exportLanguageCode, final  List<String>? exportColumns, this.exportPdfOrientation = 'portrait', this.lodgifyApiKey, this.lodgifyConnected = false, this.lodgifyConnectedAt, this.lodgifyLastSyncedAt}): _exportColumns = exportColumns,super._();
   factory _UserSettings.fromJson(Map<String, dynamic> json) => _$UserSettingsFromJson(json);
 
 @override final  String profileId;
@@ -225,6 +226,7 @@ class _UserSettings extends UserSettings {
   return EqualUnmodifiableListView(value);
 }
 
+@override@JsonKey() final  String exportPdfOrientation;
 @override final  String? lodgifyApiKey;
 @override@JsonKey() final  bool lodgifyConnected;
 @override final  DateTime? lodgifyConnectedAt;
@@ -243,16 +245,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserSettings&&(identical(other.profileId, profileId) || other.profileId == profileId)&&(identical(other.languageCode, languageCode) || other.languageCode == languageCode)&&(identical(other.exportLanguageCode, exportLanguageCode) || other.exportLanguageCode == exportLanguageCode)&&const DeepCollectionEquality().equals(other._exportColumns, _exportColumns)&&(identical(other.lodgifyApiKey, lodgifyApiKey) || other.lodgifyApiKey == lodgifyApiKey)&&(identical(other.lodgifyConnected, lodgifyConnected) || other.lodgifyConnected == lodgifyConnected)&&(identical(other.lodgifyConnectedAt, lodgifyConnectedAt) || other.lodgifyConnectedAt == lodgifyConnectedAt)&&(identical(other.lodgifyLastSyncedAt, lodgifyLastSyncedAt) || other.lodgifyLastSyncedAt == lodgifyLastSyncedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserSettings&&(identical(other.profileId, profileId) || other.profileId == profileId)&&(identical(other.languageCode, languageCode) || other.languageCode == languageCode)&&(identical(other.exportLanguageCode, exportLanguageCode) || other.exportLanguageCode == exportLanguageCode)&&const DeepCollectionEquality().equals(other._exportColumns, _exportColumns)&&(identical(other.exportPdfOrientation, exportPdfOrientation) || other.exportPdfOrientation == exportPdfOrientation)&&(identical(other.lodgifyApiKey, lodgifyApiKey) || other.lodgifyApiKey == lodgifyApiKey)&&(identical(other.lodgifyConnected, lodgifyConnected) || other.lodgifyConnected == lodgifyConnected)&&(identical(other.lodgifyConnectedAt, lodgifyConnectedAt) || other.lodgifyConnectedAt == lodgifyConnectedAt)&&(identical(other.lodgifyLastSyncedAt, lodgifyLastSyncedAt) || other.lodgifyLastSyncedAt == lodgifyLastSyncedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,profileId,languageCode,exportLanguageCode,const DeepCollectionEquality().hash(_exportColumns),lodgifyApiKey,lodgifyConnected,lodgifyConnectedAt,lodgifyLastSyncedAt);
+int get hashCode => Object.hash(runtimeType,profileId,languageCode,exportLanguageCode,const DeepCollectionEquality().hash(_exportColumns),exportPdfOrientation,lodgifyApiKey,lodgifyConnected,lodgifyConnectedAt,lodgifyLastSyncedAt);
 
 @override
 String toString() {
-  return 'UserSettings(profileId: $profileId, languageCode: $languageCode, exportLanguageCode: $exportLanguageCode, exportColumns: $exportColumns, lodgifyApiKey: $lodgifyApiKey, lodgifyConnected: $lodgifyConnected, lodgifyConnectedAt: $lodgifyConnectedAt, lodgifyLastSyncedAt: $lodgifyLastSyncedAt)';
+  return 'UserSettings(profileId: $profileId, languageCode: $languageCode, exportLanguageCode: $exportLanguageCode, exportColumns: $exportColumns, exportPdfOrientation: $exportPdfOrientation, lodgifyApiKey: $lodgifyApiKey, lodgifyConnected: $lodgifyConnected, lodgifyConnectedAt: $lodgifyConnectedAt, lodgifyLastSyncedAt: $lodgifyLastSyncedAt)';
 }
 
 
@@ -263,7 +265,7 @@ abstract mixin class _$UserSettingsCopyWith<$Res> implements $UserSettingsCopyWi
   factory _$UserSettingsCopyWith(_UserSettings value, $Res Function(_UserSettings) _then) = __$UserSettingsCopyWithImpl;
 @override @useResult
 $Res call({
- String profileId, String? languageCode, String? exportLanguageCode, List<String>? exportColumns, String? lodgifyApiKey, bool lodgifyConnected, DateTime? lodgifyConnectedAt, DateTime? lodgifyLastSyncedAt
+ String profileId, String? languageCode, String? exportLanguageCode, List<String>? exportColumns, String exportPdfOrientation, String? lodgifyApiKey, bool lodgifyConnected, DateTime? lodgifyConnectedAt, DateTime? lodgifyLastSyncedAt
 });
 
 
@@ -280,13 +282,14 @@ class __$UserSettingsCopyWithImpl<$Res>
 
 /// Create a copy of UserSettings
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? profileId = null,Object? languageCode = freezed,Object? exportLanguageCode = freezed,Object? exportColumns = freezed,Object? lodgifyApiKey = freezed,Object? lodgifyConnected = null,Object? lodgifyConnectedAt = freezed,Object? lodgifyLastSyncedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? profileId = null,Object? languageCode = freezed,Object? exportLanguageCode = freezed,Object? exportColumns = freezed,Object? exportPdfOrientation = null,Object? lodgifyApiKey = freezed,Object? lodgifyConnected = null,Object? lodgifyConnectedAt = freezed,Object? lodgifyLastSyncedAt = freezed,}) {
   return _then(_UserSettings(
 profileId: null == profileId ? _self.profileId : profileId // ignore: cast_nullable_to_non_nullable
 as String,languageCode: freezed == languageCode ? _self.languageCode : languageCode // ignore: cast_nullable_to_non_nullable
 as String?,exportLanguageCode: freezed == exportLanguageCode ? _self.exportLanguageCode : exportLanguageCode // ignore: cast_nullable_to_non_nullable
 as String?,exportColumns: freezed == exportColumns ? _self._exportColumns : exportColumns // ignore: cast_nullable_to_non_nullable
-as List<String>?,lodgifyApiKey: freezed == lodgifyApiKey ? _self.lodgifyApiKey : lodgifyApiKey // ignore: cast_nullable_to_non_nullable
+as List<String>?,exportPdfOrientation: null == exportPdfOrientation ? _self.exportPdfOrientation : exportPdfOrientation // ignore: cast_nullable_to_non_nullable
+as String,lodgifyApiKey: freezed == lodgifyApiKey ? _self.lodgifyApiKey : lodgifyApiKey // ignore: cast_nullable_to_non_nullable
 as String?,lodgifyConnected: null == lodgifyConnected ? _self.lodgifyConnected : lodgifyConnected // ignore: cast_nullable_to_non_nullable
 as bool,lodgifyConnectedAt: freezed == lodgifyConnectedAt ? _self.lodgifyConnectedAt : lodgifyConnectedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,lodgifyLastSyncedAt: freezed == lodgifyLastSyncedAt ? _self.lodgifyLastSyncedAt : lodgifyLastSyncedAt // ignore: cast_nullable_to_non_nullable

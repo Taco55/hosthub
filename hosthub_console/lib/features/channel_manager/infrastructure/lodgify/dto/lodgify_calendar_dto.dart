@@ -208,35 +208,56 @@ class LodgifyCalendarDto {
           // room_types[].rooms[].people).
           final peopleSources = <Map<String, dynamic>>[];
 
-          final directPeople = _asMap(
-            _readByPath(itemMap, const ['people']) ??
-                _readByPath(itemMap, const ['occupancy']),
+          // Check guest_breakdown / guestBreakdown first (Lodgify V2
+          // bookings nest the breakdown per room).
+          final guestBreakdown = _asMap(
+            _readByPath(itemMap, const ['guest_breakdown']) ??
+                _readByPath(itemMap, const ['guestBreakdown']),
           );
-          if (directPeople != null) {
-            peopleSources.add(directPeople);
-          } else {
-            // Check nested rooms[] within this room_type.
-            final nestedRooms = _readByPath(itemMap, const ['rooms']);
-            if (nestedRooms is List) {
-              for (final nested in nestedRooms) {
-                final nestedMap = _asMap(nested);
-                if (nestedMap == null) continue;
-                final nestedPeople = _asMap(
-                  _readByPath(nestedMap, const ['people']) ??
-                      _readByPath(nestedMap, const ['occupancy']),
-                );
-                if (nestedPeople != null) peopleSources.add(nestedPeople);
-              }
-            }
+          if (guestBreakdown != null) {
+            peopleSources.add(guestBreakdown);
+          }
 
-            // Handle people as a plain number (total guest count).
-            if (peopleSources.isEmpty) {
-              final rawPeople = _readByPath(itemMap, const ['people']);
-              final asInt = _coerceInt(rawPeople);
-              if (asInt != null) {
-                found = true;
-                sumAdults += asInt;
-                continue;
+          if (peopleSources.isEmpty) {
+            final directPeople = _asMap(
+              _readByPath(itemMap, const ['people']) ??
+                  _readByPath(itemMap, const ['occupancy']),
+            );
+            if (directPeople != null) {
+              peopleSources.add(directPeople);
+            } else {
+              // Check nested rooms[] within this room_type.
+              final nestedRooms = _readByPath(itemMap, const ['rooms']);
+              if (nestedRooms is List) {
+                for (final nested in nestedRooms) {
+                  final nestedMap = _asMap(nested);
+                  if (nestedMap == null) continue;
+                  final nestedBreakdown = _asMap(
+                    _readByPath(nestedMap, const ['guest_breakdown']) ??
+                        _readByPath(nestedMap, const ['guestBreakdown']),
+                  );
+                  if (nestedBreakdown != null) {
+                    peopleSources.add(nestedBreakdown);
+                  } else {
+                    final nestedPeople = _asMap(
+                      _readByPath(nestedMap, const ['people']) ??
+                          _readByPath(nestedMap, const ['occupancy']),
+                    );
+                    if (nestedPeople != null) peopleSources.add(nestedPeople);
+                  }
+                }
+              }
+
+              // Handle people as a plain number (total guest count).
+              // Only use as fallback when no breakdown is available.
+              if (peopleSources.isEmpty) {
+                final rawPeople = _readByPath(itemMap, const ['people']);
+                final asInt = _coerceInt(rawPeople);
+                if (asInt != null) {
+                  found = true;
+                  sumAdults += asInt;
+                  continue;
+                }
               }
             }
           }

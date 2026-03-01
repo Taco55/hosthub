@@ -15,6 +15,7 @@ sealed class UserSettings with _$UserSettings {
     String? languageCode,
     String? exportLanguageCode,
     List<String>? exportColumns,
+    @Default('portrait') String exportPdfOrientation,
     String? lodgifyApiKey,
     @Default(false) bool lodgifyConnected,
     DateTime? lodgifyConnectedAt,

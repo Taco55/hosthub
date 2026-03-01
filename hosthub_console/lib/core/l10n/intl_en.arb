@@ -11,8 +11,23 @@
   "exportLanguageDescription": "Language used for exports",
   "exportSettingsTitle": "Export settings",
   "exportColumnsTitle": "Columns",
+  "exportPdfOrientationTitle": "PDF orientation",
+  "exportPdfOrientationPortrait": "Portrait",
+  "exportPdfOrientationLandscape": "Landscape",
   "exportButton": "Export",
   "generalSectionTitle": "General",
+  "appInfoTileTitle": "App information",
+  "appInfoTileValue": "Version {version} · {environment}",
+  "@appInfoTileValue": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      },
+      "environment": {
+        "type": "String"
+      }
+    }
+  },
   "saveButton": "Save",
   "restoreDefaults": "Restore defaults",
   "menuTooltip": "Menu",
@@ -1212,6 +1227,20 @@
   "reservationUpdatedAt": "Updated",
   "reservationSectionPayload": "Full payload",
   "reservationCloseTooltip": "Close",
+  "reservationArrival": "Arrival",
+  "reservationDeparture": "Departure",
+  "reservationBabyBed": "Baby bed",
+  "reservationListColumnBooked": "Booked",
+  "reservationListColumnNew": "New",
+  "reservationExportedLabel": "Exported",
+  "reservationNewCount": "{count} new",
+  "@reservationNewCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
 
   "revenueBreakdownRent": "Rent / nightly rate",
   "revenueBreakdownCleaning": "Cleaning costs",

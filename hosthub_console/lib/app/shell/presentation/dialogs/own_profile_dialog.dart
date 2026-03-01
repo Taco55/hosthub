@@ -7,7 +7,6 @@ import 'package:styled_widgets/styled_widgets.dart';
 import 'package:hosthub_console/core/models/models.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:hosthub_console/features/profile/profile.dart';
-import 'package:hosthub_console/features/users/users.dart';
 
 Future<void> showOwnProfileDialog(
   BuildContext context, {
@@ -39,7 +38,7 @@ Future<void> showOwnProfileDialog(
         bodyWidth: 480,
         bodyMinHeight: 400,
         enableBodyScroll: true,
-        bodyPadding: EdgeInsets.zero,
+        contentPadding: EdgeInsets.zero,
       ),
       steps: [
         // ----- Root: Profile overview + menu -----
@@ -125,37 +124,34 @@ Future<void> showOwnProfileDialog(
                 }
                 if (!context.mounted) throw StateError('unmounted');
 
-                final repository = context.read<AdminUserRepository>();
-                try {
-                  final updated = await repository.updateProfileDetails(
-                    profile.id,
-                    email: emailCtrl.text.trim(),
-                    username: usernameCtrl.text.trim().isEmpty
-                        ? null
-                        : usernameCtrl.text.trim(),
-                  );
-                  if (!context.mounted) throw StateError('unmounted');
-                  context.read<ProfileCubit>().updateProfile(updated);
-                  showStyledToast(
-                    context,
-                    type: ToastificationType.success,
-                    description: s.userUpdated,
-                    backgroundColor: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest,
-                  );
-                } catch (error, stack) {
-                  if (error is StateError) rethrow;
-                  if (!context.mounted) throw StateError('unmounted');
-                  final domainError = error is DomainError
-                      ? error
-                      : DomainError.from(error, stack: stack);
+                final success = await context.read<ProfileCubit>().updateOwnProfile(
+                  email: emailCtrl.text.trim(),
+                  username: usernameCtrl.text.trim().isEmpty
+                      ? null
+                      : usernameCtrl.text.trim(),
+                );
+                if (!context.mounted) throw StateError('unmounted');
+
+                if (!success) {
+                  final domainError = context.read<ProfileCubit>().state.error;
+                  if (domainError == null) {
+                    throw StateError('save failed');
+                  }
                   await showAppError(
                     context,
                     AppError.fromDomain(context, domainError),
                   );
                   throw StateError('save failed');
                 }
+
+                showStyledToast(
+                  context,
+                  type: ToastificationType.success,
+                  description: s.userUpdated,
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest,
+                );
               },
               builder: (ctx, flow) {
                 return StyledSection(
@@ -213,33 +209,31 @@ Future<void> showOwnProfileDialog(
                 }
                 if (!context.mounted) throw StateError('unmounted');
 
-                final repository = context.read<AdminUserRepository>();
-                try {
-                  await repository.updatePassword(
-                    profile.id,
-                    passwordCtrl.text,
-                  );
-                  if (!context.mounted) throw StateError('unmounted');
-                  showStyledToast(
-                    context,
-                    type: ToastificationType.success,
-                    description: s.passwordChanged,
-                    backgroundColor: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest,
-                  );
-                } catch (error, stack) {
-                  if (error is StateError) rethrow;
-                  if (!context.mounted) throw StateError('unmounted');
-                  final domainError = error is DomainError
-                      ? error
-                      : DomainError.from(error, stack: stack);
+                final success = await context.read<ProfileCubit>().updateOwnPassword(
+                  passwordCtrl.text,
+                );
+                if (!context.mounted) throw StateError('unmounted');
+
+                if (!success) {
+                  final domainError = context.read<ProfileCubit>().state.error;
+                  if (domainError == null) {
+                    throw StateError('password change failed');
+                  }
                   await showAppError(
                     context,
                     AppError.fromDomain(context, domainError),
                   );
                   throw StateError('password change failed');
                 }
+
+                showStyledToast(
+                  context,
+                  type: ToastificationType.success,
+                  description: s.passwordChanged,
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest,
+                );
               },
               builder: (ctx, flow) {
                 return StyledSection(

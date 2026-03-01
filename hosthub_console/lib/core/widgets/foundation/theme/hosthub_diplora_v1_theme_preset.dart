@@ -53,7 +53,7 @@ abstract final class HosthubThemePreset {
           : HosthubDiploraV1Palette.surfaceDark,
       onSurface: isLight
           ? HosthubDiploraV1Palette.secondary
-          : HosthubDiploraV1Palette.onSurfaceDark,
+          : Colors.white,
       surfaceContainerHighest: isLight
           ? HosthubDiploraV1Palette.backgroundWhite
           : HosthubDiploraV1Palette.surfaceContainerDark,

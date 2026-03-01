@@ -26,6 +26,9 @@ import 'package:hosthub_console/features/team/domain/site_member_role.dart';
 import 'package:hosthub_console/features/team/presentation/dialogs/invite_member_dialog.dart';
 import 'package:hosthub_console/features/user_settings/user_settings.dart';
 
+const _lodgifyServerStoredMarker = '__lodgify_server_stored__';
+const _legacyLodgifyServerStoredMarker = '__server_stored__';
+
 class UserSettingsPage extends StatelessWidget {
   const UserSettingsPage({super.key});
 
@@ -186,7 +189,11 @@ class _UserSettingsSection extends StatelessWidget {
     final status = context.select(
       (UserSettingsCubit cubit) => cubit.state.status,
     );
-    final hasApiKey = settings?.lodgifyApiKey?.trim().isNotEmpty ?? false;
+    final lodgifyApiKey = settings?.lodgifyApiKey?.trim();
+    final hasApiKey = lodgifyApiKey?.isNotEmpty ?? false;
+    final isServerStoredApiKey =
+        lodgifyApiKey == _lodgifyServerStoredMarker ||
+        lodgifyApiKey == _legacyLodgifyServerStoredMarker;
     final isConnected = settings?.lodgifyConnected ?? false;
     final isBusy =
         status == UserSettingsStatus.saving ||
@@ -230,9 +237,9 @@ class _UserSettingsSection extends StatelessWidget {
                 context.read<UserSettingsCubit>().changeLanguage(value);
               },
             ),
+            const _AppInfoTile(),
           ],
         ),
-        const _AppBuildInfoSection(),
         StyledSection(
           header: context.s.connectionsSectionTitle,
           grouped: false,
@@ -243,7 +250,10 @@ class _UserSettingsSection extends StatelessWidget {
               subtitle: context.s.lodgifyApiKeyDescription,
               value: hasApiKey
                   ? Text(
-                      _maskApiKey(settings?.lodgifyApiKey ?? ''),
+                      _maskApiKey(
+                        settings?.lodgifyApiKey ?? '',
+                        isServerStored: isServerStoredApiKey,
+                      ),
                       style: theme.textTheme.bodyMedium?.copyWith(
                         letterSpacing: 1.1,
                       ),
@@ -255,7 +265,9 @@ class _UserSettingsSection extends StatelessWidget {
                 onEdit: () async {
                   final result = await _showLodgifyApiKeyDialog(
                     context,
-                    currentApiKey: settings?.lodgifyApiKey,
+                    currentApiKey: isServerStoredApiKey
+                        ? null
+                        : settings?.lodgifyApiKey,
                   );
                   if (result == null || !context.mounted) return;
                   context.read<UserSettingsCubit>().updateLodgifyApiKey(
@@ -380,8 +392,7 @@ class _TeamSectionState extends State<_TeamSection> {
                 child: Center(child: CircularProgressIndicator()),
               )
             else ...[
-              if (members.isNotEmpty)
-                _TeamMembersList(members: members),
+              if (members.isNotEmpty) _TeamMembersList(members: members),
               if (invitations.isNotEmpty) ...[
                 if (members.isNotEmpty) const SizedBox(height: 16),
                 Text(
@@ -525,14 +536,14 @@ class _TeamInvitationsList extends StatelessWidget {
   }
 }
 
-class _AppBuildInfoSection extends StatefulWidget {
-  const _AppBuildInfoSection();
+class _AppInfoTile extends StatefulWidget {
+  const _AppInfoTile();
 
   @override
-  State<_AppBuildInfoSection> createState() => _AppBuildInfoSectionState();
+  State<_AppInfoTile> createState() => _AppInfoTileState();
 }
 
-class _AppBuildInfoSectionState extends State<_AppBuildInfoSection> {
+class _AppInfoTileState extends State<_AppInfoTile> {
   late final Future<PackageInfo> _packageInfoFuture;
 
   @override
@@ -543,10 +554,6 @@ class _AppBuildInfoSectionState extends State<_AppBuildInfoSection> {
 
   @override
   Widget build(BuildContext context) {
-    final isDutch = Localizations.localeOf(context).languageCode == 'nl';
-    final sectionTitle = isDutch ? 'App informatie' : 'Application info';
-    final versionTitle = isDutch ? 'Versie' : 'Version';
-    final environmentTitle = isDutch ? 'Omgeving' : 'Environment';
     final environment = AppConfig.current.environment.name.toUpperCase();
 
     return FutureBuilder<PackageInfo>(
@@ -559,13 +566,13 @@ class _AppBuildInfoSectionState extends State<_AppBuildInfoSection> {
             ? version
             : '$version+$buildNumber';
 
-        return StyledSection(
-          header: sectionTitle,
-          grouped: false,
-          children: [
-            StyledTile(title: versionTitle, value: Text(fullVersion)),
-            StyledTile(title: environmentTitle, value: Text(environment)),
-          ],
+        return StyledTile(
+          title: context.s.appInfoTileTitle,
+          value: Text(
+            context.s.appInfoTileValue(fullVersion, environment),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         );
       },
     );
@@ -1216,9 +1223,10 @@ String _toastMessage(BuildContext context, UserSettingsToastMessage message) {
   };
 }
 
-String _maskApiKey(String value) {
+String _maskApiKey(String value, {bool isServerStored = false}) {
   final trimmed = value.trim();
   if (trimmed.isEmpty) return '';
+  if (isServerStored) return '********';
   if (trimmed.length <= 4) {
     return List.filled(trimmed.length, '*').join();
   }

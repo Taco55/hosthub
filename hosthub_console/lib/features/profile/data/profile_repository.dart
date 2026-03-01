@@ -40,6 +40,51 @@ class ProfileRepository extends SupabaseRepository {
     }
   }
 
+  Future<Profile> updateOwnProfile(
+    Profile profile, {
+    required String email,
+    String? username,
+  }) async {
+    final updatedProfile = profile.copyWith(
+      email: email,
+      username: username,
+    );
+
+    try {
+      if (email != profile.email) {
+        await supabase.auth.updateUser(UserAttributes(email: email));
+      }
+
+      await upsert(Profile.tableName, updatedProfile.toJson(), ensureCreatedBy: false);
+      return updatedProfile;
+    } catch (error, stack) {
+      throw mapError(
+        error,
+        stack,
+        reason: DomainErrorReason.cannotSaveData,
+        context: {
+          'op': 'updateOwnProfile',
+          'profile_id': profile.id,
+          'update_email': email != profile.email,
+          'update_username': username != profile.username,
+        },
+      );
+    }
+  }
+
+  Future<void> updateOwnPassword(String newPassword) async {
+    try {
+      await supabase.auth.updateUser(UserAttributes(password: newPassword));
+    } catch (error, stack) {
+      throw mapError(
+        error,
+        stack,
+        reason: DomainErrorReason.cannotSaveData,
+        context: const {'op': 'updateOwnPassword'},
+      );
+    }
+  }
+
   Future<List<Profile>> getAllProfiles() async {
     try {
       final rows = await selectList(

@@ -129,10 +129,14 @@ class AdminUserRepository {
     String? username,
   }) async {
     try {
-      await _client.auth.admin.updateUserById(
-        userId,
-        attributes: AdminUserAttributes(email: email),
-      );
+      if (_client.auth.currentUser?.id == userId) {
+        await _client.auth.updateUser(UserAttributes(email: email));
+      } else {
+        await _client.auth.admin.updateUserById(
+          userId,
+          attributes: AdminUserAttributes(email: email),
+        );
+      }
 
       final response = await _client
           .from(Profile.tableName)
@@ -166,10 +170,14 @@ class AdminUserRepository {
 
   Future<void> updatePassword(String userId, String newPassword) async {
     try {
-      await _client.auth.admin.updateUserById(
-        userId,
-        attributes: AdminUserAttributes(password: newPassword),
-      );
+      if (_client.auth.currentUser?.id == userId) {
+        await _client.auth.updateUser(UserAttributes(password: newPassword));
+      } else {
+        await _client.auth.admin.updateUserById(
+          userId,
+          attributes: AdminUserAttributes(password: newPassword),
+        );
+      }
     } catch (error, stack) {
       throw _mapError(
         error,
