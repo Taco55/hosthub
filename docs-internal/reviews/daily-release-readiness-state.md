@@ -52,15 +52,15 @@ gemotiveerd uitstellen mag alleen met reden in de evidence-kolom.
 
 | # | slice | scope | status | evidence |
 |---|-------|-------|--------|----------|
-| C1 | Sidebar/rail: items+iconen, compact 96px + pin, hover-expand, switchers (Property/Source language), footer | console (+lib) | in_progress | Bevindingen gefixt: (1) compact/pin ontbrak → SidebarModeCubit + desktop-shell met Stack/hover-flyout (diplora _DesktopShell-patroon), toggle uit de lib via onModeChanged; (2) nav-iconen conform design (language/calendar_today/show_chart/sell_outlined); (3) Source-language switcher ontbrak → SiteContextCubit (property→site-resolutie) + sites.default_locale-update + ice switcher-velden via StyledMenuOverlay (diplora-recept); (4) versie-footer toegevoegd; (5) editor brontaal/locales nu uit site-row i.p.v. hardcoded seed + live herladen bij switch. +2 tests; SDK-cache web-mismatch gerepareerd (flutter precache --web) |
-| C2 | Editor bronmodus: topbar, tabs, banners, cards (incl. highlights-reorder/drag grip, Add highlight), save bar | console | todo | |
-| C3 | Editor vertaalmodus: chips, source-ref, Reset to AI, coverage, stale/fresh toolbar, shared-photos note | console | todo | |
-| C4 | Preview: pill, device toggle, locale switcher (AI badge/stale dot), binding, ribbons (incl. acties) | console | todo | |
-| C5 | Publish-modal: badge-rijen, Ready/Re-translate, footer, confirm/cancel-gedrag | console | todo | |
-| C6 | StyledWidgets-adherence + gedragsmodel (greps, state machine, geen hardcoded values) | beide | todo | |
+| C1 | Sidebar/rail: items+iconen, compact 96px + pin, hover-expand, switchers (Property/Source language), footer | console (+lib) | done | f47a9a8. Bevindingen gefixt: (1) compact/pin ontbrak → SidebarModeCubit + desktop-shell met Stack/hover-flyout (diplora _DesktopShell-patroon), toggle uit de lib via onModeChanged; (2) nav-iconen conform design (language/calendar_today/show_chart/sell_outlined); (3) Source-language switcher ontbrak → SiteContextCubit (property→site-resolutie) + sites.default_locale-update + ice switcher-velden via StyledMenuOverlay (diplora-recept); (4) versie-footer toegevoegd; (5) editor brontaal/locales nu uit site-row i.p.v. hardcoded seed + live herladen bij switch. +2 tests; SDK-cache web-mismatch gerepareerd (flutter precache --web) |
+| C2 | Editor bronmodus | console | done | c64ffaf. Bevindingen gefixt: highlights niet-repeatable zonder grip (design: StyledReorderableList) → drag-reorder via lib-widget, verplaatst per rij in álle talen incl. locked-status; dode 'Add highlight'-knop → voegt echt een rij toe (repo laadt dynamisch aantal rijen); fieldLabel generiek voor highlights.N. Rest (topbar/tabs/banners/save bar) al conform per bestaande tests |
+| C3 | Editor vertaalmodus | console | done | Review: geen P0–P2-afwijkingen. Editing-chip (groen), editable velden, Locked/Auto-chips, source-ref+NL-tag, Reset to AI, coverage-meter (StyledMeter), stale/fresh-toolbar en shared-photos-note allemaal aanwezig én door widget-tests gedekt |
+| C4 | Preview | console | done | Review: geen P0–P2-afwijkingen. Status-pill, web/mobiel-toggle, locale-switcher met AI-badges + stale-dots (StyledSegment.statusDotColor), taalbinding, warning-ribbon mét 'Preview latest'-actie (spinner) en groene draft-ribbon — conform en getest |
+| C5 | Publish-modal | console | done | Review: geen P0–P2-afwijkingen. Taalbadge-rijen (NL/EN/NO), bron=Ready / targets=Re-translate, Cancel + 'Publish N languages', async publish in de dialog; confirm cleart dirty+stale, cancel laat staat intact — alles getest |
+| C6 | Adherence + gedragsmodel | beide | done | Adherence-tests groen (geen hex buiten statustokens, geen chrome buiten StyledWidgets, strings via ARB); state machine volledig door cubit-tests gedekt; nieuwe C1/C2-code lib-first (StyledSideMenu/StyledMenuOverlay/StyledReorderableList) en zonder hardcoded values |
 
 ## next_lens
-C1 — sidebar/rail conformance.
+RUN 3 KLAAR (C1–C6 done, 2026-07-24). Openstaand buiten P0–P2: visuele diff met referentie-screenshots via draaiende app (handmatig/vervolgsessie); grip-uitlijning fine-tuning.
 
 ## Content / state-machine reference (from the prototype)
 - Property: **Trysil Panorama**, source lang `nl`, locales `[nl, en, no]`.
