@@ -1289,5 +1289,17 @@
     }
   },
   "teamResendInvitation": "Resend",
-  "teamCancelInvitation": "Cancel"
+  "teamCancelInvitation": "Cancel",
+  "siteSettingsTitle": "Website settings",
+  "siteSettingsSubtitle": "Per-site contact and booking configuration.",
+  "siteSettingsContactSection": "Contact",
+  "siteSettingsEmailFromNameLabel": "Email sender name",
+  "siteSettingsEmailFromNameHint": "Shown as the sender of website emails (defaults to the site name).",
+  "siteSettingsContactEmailLabel": "Contact form recipient",
+  "siteSettingsContactEmailHint": "Where contact form messages are sent.",
+  "siteSettingsBookingSection": "Booking (Lodgify)",
+  "siteSettingsLodgifyPropertyIdLabel": "Lodgify property ID",
+  "siteSettingsLodgifyRoomTypeIdLabel": "Lodgify room type ID",
+  "siteSettingsSaved": "Website settings saved",
+  "siteSettingsSaveFailed": "Could not save website settings"
 }

@@ -1556,6 +1556,42 @@ class MessageLookup extends MessageLookupByLibrary {
     "signUpFailed": MessageLookupByLibrary.simpleMessage(
       "Aanmelden niet gelukt",
     ),
+    "siteSettingsBookingSection": MessageLookupByLibrary.simpleMessage(
+      "Boeken (Lodgify)",
+    ),
+    "siteSettingsContactEmailHint": MessageLookupByLibrary.simpleMessage(
+      "Waar berichten van het contactformulier heen gaan.",
+    ),
+    "siteSettingsContactEmailLabel": MessageLookupByLibrary.simpleMessage(
+      "Ontvanger contactformulier",
+    ),
+    "siteSettingsContactSection": MessageLookupByLibrary.simpleMessage(
+      "Contact",
+    ),
+    "siteSettingsEmailFromNameHint": MessageLookupByLibrary.simpleMessage(
+      "Getoond als afzender van website-e-mails (standaard de sitenaam).",
+    ),
+    "siteSettingsEmailFromNameLabel": MessageLookupByLibrary.simpleMessage(
+      "Afzendernaam e-mail",
+    ),
+    "siteSettingsLodgifyPropertyIdLabel": MessageLookupByLibrary.simpleMessage(
+      "Lodgify property-ID",
+    ),
+    "siteSettingsLodgifyRoomTypeIdLabel": MessageLookupByLibrary.simpleMessage(
+      "Lodgify room type-ID",
+    ),
+    "siteSettingsSaveFailed": MessageLookupByLibrary.simpleMessage(
+      "Kon website-instellingen niet opslaan",
+    ),
+    "siteSettingsSaved": MessageLookupByLibrary.simpleMessage(
+      "Website-instellingen opgeslagen",
+    ),
+    "siteSettingsSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Contact- en boekingsconfiguratie per site.",
+    ),
+    "siteSettingsTitle": MessageLookupByLibrary.simpleMessage(
+      "Website-instellingen",
+    ),
     "sitesCreateButton": MessageLookupByLibrary.simpleMessage("Site aanmaken"),
     "sitesDefaultLocaleHint": MessageLookupByLibrary.simpleMessage("en"),
     "sitesDefaultLocaleLabel": MessageLookupByLibrary.simpleMessage(

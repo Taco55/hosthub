@@ -7493,6 +7493,126 @@ class S {
       args: [],
     );
   }
+
+  /// `Website settings`
+  String get siteSettingsTitle {
+    return Intl.message(
+      'Website settings',
+      name: 'siteSettingsTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Per-site contact and booking configuration.`
+  String get siteSettingsSubtitle {
+    return Intl.message(
+      'Per-site contact and booking configuration.',
+      name: 'siteSettingsSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Contact`
+  String get siteSettingsContactSection {
+    return Intl.message(
+      'Contact',
+      name: 'siteSettingsContactSection',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Email sender name`
+  String get siteSettingsEmailFromNameLabel {
+    return Intl.message(
+      'Email sender name',
+      name: 'siteSettingsEmailFromNameLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Shown as the sender of website emails (defaults to the site name).`
+  String get siteSettingsEmailFromNameHint {
+    return Intl.message(
+      'Shown as the sender of website emails (defaults to the site name).',
+      name: 'siteSettingsEmailFromNameHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Contact form recipient`
+  String get siteSettingsContactEmailLabel {
+    return Intl.message(
+      'Contact form recipient',
+      name: 'siteSettingsContactEmailLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Where contact form messages are sent.`
+  String get siteSettingsContactEmailHint {
+    return Intl.message(
+      'Where contact form messages are sent.',
+      name: 'siteSettingsContactEmailHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Booking (Lodgify)`
+  String get siteSettingsBookingSection {
+    return Intl.message(
+      'Booking (Lodgify)',
+      name: 'siteSettingsBookingSection',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Lodgify property ID`
+  String get siteSettingsLodgifyPropertyIdLabel {
+    return Intl.message(
+      'Lodgify property ID',
+      name: 'siteSettingsLodgifyPropertyIdLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Lodgify room type ID`
+  String get siteSettingsLodgifyRoomTypeIdLabel {
+    return Intl.message(
+      'Lodgify room type ID',
+      name: 'siteSettingsLodgifyRoomTypeIdLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Website settings saved`
+  String get siteSettingsSaved {
+    return Intl.message(
+      'Website settings saved',
+      name: 'siteSettingsSaved',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not save website settings`
+  String get siteSettingsSaveFailed {
+    return Intl.message(
+      'Could not save website settings',
+      name: 'siteSettingsSaveFailed',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

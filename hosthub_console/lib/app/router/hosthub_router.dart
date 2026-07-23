@@ -168,6 +168,13 @@ class HosthubRouter {
               },
             ),
             GoRoute(
+              path: '/sites/:siteId/settings',
+              builder: (context, state) {
+                final siteId = state.pathParameters['siteId']!;
+                return SiteSettingsPage(siteId: siteId);
+              },
+            ),
+            GoRoute(
               path: '/properties/details',
               builder: (context, state) => const PropertyDetailsPage(),
             ),

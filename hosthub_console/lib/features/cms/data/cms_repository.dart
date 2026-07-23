@@ -11,6 +11,10 @@ class SiteSummary {
     required this.locales,
     required this.timezone,
     required this.createdAt,
+    this.contactEmail,
+    this.emailFromName,
+    this.lodgifyPropertyId,
+    this.lodgifyRoomTypeId,
   });
 
   final String id;
@@ -19,6 +23,13 @@ class SiteSummary {
   final List<String> locales;
   final String timezone;
   final DateTime createdAt;
+
+  // Per-site website config (see migration 20260723120000). Nullable: the public
+  // site falls back to worker env when unset.
+  final String? contactEmail;
+  final String? emailFromName;
+  final String? lodgifyPropertyId;
+  final String? lodgifyRoomTypeId;
 
   factory SiteSummary.fromMap(Map<String, dynamic> map) {
     return SiteSummary(
@@ -32,6 +43,10 @@ class SiteSummary {
           [],
       timezone: map['timezone'] as String,
       createdAt: DateTime.parse(map['created_at'] as String),
+      contactEmail: map['contact_email'] as String?,
+      emailFromName: map['email_from_name'] as String?,
+      lodgifyPropertyId: map['lodgify_property_id'] as String?,
+      lodgifyRoomTypeId: map['lodgify_room_type_id'] as String?,
     );
   }
 
@@ -151,7 +166,10 @@ class CmsRepository extends SupabaseRepository {
     try {
       final response = await supabase
           .from('sites')
-          .select('id, name, default_locale, locales, timezone, created_at')
+          .select(
+            'id, name, default_locale, locales, timezone, created_at, '
+            'contact_email, email_from_name, lodgify_property_id, lodgify_room_type_id',
+          )
           .order('created_at', ascending: false);
       return (response as List<dynamic>)
           .map((row) => SiteSummary.fromMap(row as Map<String, dynamic>))
@@ -170,7 +188,10 @@ class CmsRepository extends SupabaseRepository {
     try {
       final response = await supabase
           .from('sites')
-          .select('id, name, default_locale, locales, timezone, created_at')
+          .select(
+            'id, name, default_locale, locales, timezone, created_at, '
+            'contact_email, email_from_name, lodgify_property_id, lodgify_room_type_id',
+          )
           .eq('id', siteId)
           .maybeSingle();
       if (response == null) return null;
@@ -181,6 +202,35 @@ class CmsRepository extends SupabaseRepository {
         stack,
         reason: DomainErrorReason.cannotLoadData,
         context: {'op': 'fetchSite', 'siteId': siteId},
+      );
+    }
+  }
+
+  /// Update this site's per-site website config. Pass null to clear a value
+  /// (the public site then falls back to the worker env default).
+  Future<void> updateSiteSettings(
+    String siteId, {
+    String? contactEmail,
+    String? emailFromName,
+    String? lodgifyPropertyId,
+    String? lodgifyRoomTypeId,
+  }) async {
+    try {
+      await supabase
+          .from('sites')
+          .update({
+            'contact_email': contactEmail,
+            'email_from_name': emailFromName,
+            'lodgify_property_id': lodgifyPropertyId,
+            'lodgify_room_type_id': lodgifyRoomTypeId,
+          })
+          .eq('id', siteId);
+    } catch (error, stack) {
+      throw mapError(
+        error,
+        stack,
+        reason: DomainErrorReason.cannotSaveData,
+        context: {'op': 'updateSiteSettings', 'siteId': siteId},
       );
     }
   }

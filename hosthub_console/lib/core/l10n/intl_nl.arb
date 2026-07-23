@@ -1293,5 +1293,17 @@
     }
   },
   "teamResendInvitation": "Opnieuw versturen",
-  "teamCancelInvitation": "Annuleren"
+  "teamCancelInvitation": "Annuleren",
+  "siteSettingsTitle": "Website-instellingen",
+  "siteSettingsSubtitle": "Contact- en boekingsconfiguratie per site.",
+  "siteSettingsContactSection": "Contact",
+  "siteSettingsEmailFromNameLabel": "Afzendernaam e-mail",
+  "siteSettingsEmailFromNameHint": "Getoond als afzender van website-e-mails (standaard de sitenaam).",
+  "siteSettingsContactEmailLabel": "Ontvanger contactformulier",
+  "siteSettingsContactEmailHint": "Waar berichten van het contactformulier heen gaan.",
+  "siteSettingsBookingSection": "Boeken (Lodgify)",
+  "siteSettingsLodgifyPropertyIdLabel": "Lodgify property-ID",
+  "siteSettingsLodgifyRoomTypeIdLabel": "Lodgify room type-ID",
+  "siteSettingsSaved": "Website-instellingen opgeslagen",
+  "siteSettingsSaveFailed": "Kon website-instellingen niet opslaan"
 }

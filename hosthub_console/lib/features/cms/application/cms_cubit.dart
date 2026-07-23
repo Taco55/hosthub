@@ -235,6 +235,35 @@ class CmsCubit extends Cubit<CmsState> {
   }
 
   // ---------------------------------------------------------------------------
+  // Site settings
+  // ---------------------------------------------------------------------------
+
+  /// Persist per-site website config (contact recipient, sender name, Lodgify
+  /// property/room) and refresh the loaded site. Throws on failure.
+  Future<void> saveSiteSettings({
+    String? contactEmail,
+    String? emailFromName,
+    String? lodgifyPropertyId,
+    String? lodgifyRoomTypeId,
+  }) async {
+    final siteId = state.site?.id;
+    if (siteId == null) return;
+    await _cmsRepository.updateSiteSettings(
+      siteId,
+      contactEmail: contactEmail,
+      emailFromName: emailFromName,
+      lodgifyPropertyId: lodgifyPropertyId,
+      lodgifyRoomTypeId: lodgifyRoomTypeId,
+    );
+    if (isClosed) return;
+    final site = await _cmsRepository.fetchSite(siteId);
+    if (isClosed) return;
+    if (site != null) {
+      emit(state.copyWith(site: site));
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // Locale
   // ---------------------------------------------------------------------------
 

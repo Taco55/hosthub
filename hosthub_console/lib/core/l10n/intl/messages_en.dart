@@ -1488,6 +1488,42 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "signUp": MessageLookupByLibrary.simpleMessage("Sign up"),
     "signUpFailed": MessageLookupByLibrary.simpleMessage("Sign up failed"),
+    "siteSettingsBookingSection": MessageLookupByLibrary.simpleMessage(
+      "Booking (Lodgify)",
+    ),
+    "siteSettingsContactEmailHint": MessageLookupByLibrary.simpleMessage(
+      "Where contact form messages are sent.",
+    ),
+    "siteSettingsContactEmailLabel": MessageLookupByLibrary.simpleMessage(
+      "Contact form recipient",
+    ),
+    "siteSettingsContactSection": MessageLookupByLibrary.simpleMessage(
+      "Contact",
+    ),
+    "siteSettingsEmailFromNameHint": MessageLookupByLibrary.simpleMessage(
+      "Shown as the sender of website emails (defaults to the site name).",
+    ),
+    "siteSettingsEmailFromNameLabel": MessageLookupByLibrary.simpleMessage(
+      "Email sender name",
+    ),
+    "siteSettingsLodgifyPropertyIdLabel": MessageLookupByLibrary.simpleMessage(
+      "Lodgify property ID",
+    ),
+    "siteSettingsLodgifyRoomTypeIdLabel": MessageLookupByLibrary.simpleMessage(
+      "Lodgify room type ID",
+    ),
+    "siteSettingsSaveFailed": MessageLookupByLibrary.simpleMessage(
+      "Could not save website settings",
+    ),
+    "siteSettingsSaved": MessageLookupByLibrary.simpleMessage(
+      "Website settings saved",
+    ),
+    "siteSettingsSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Per-site contact and booking configuration.",
+    ),
+    "siteSettingsTitle": MessageLookupByLibrary.simpleMessage(
+      "Website settings",
+    ),
     "sitesCreateButton": MessageLookupByLibrary.simpleMessage("Create site"),
     "sitesDefaultLocaleHint": MessageLookupByLibrary.simpleMessage("en"),
     "sitesDefaultLocaleLabel": MessageLookupByLibrary.simpleMessage(

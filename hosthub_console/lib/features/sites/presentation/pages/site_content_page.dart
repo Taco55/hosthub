@@ -179,6 +179,16 @@ class _SiteContentBody extends StatelessWidget {
                 : null,
             actions: [
               IconButton(
+                icon: const Icon(Icons.settings_outlined),
+                tooltip: context.s.siteSettingsTitle,
+                onPressed: () {
+                  final siteId = context.read<CmsCubit>().state.site?.id;
+                  if (siteId != null) {
+                    context.push('/sites/$siteId/settings');
+                  }
+                },
+              ),
+              IconButton(
                 icon: const Icon(Icons.group_outlined),
                 tooltip: 'Team',
                 onPressed: () {
