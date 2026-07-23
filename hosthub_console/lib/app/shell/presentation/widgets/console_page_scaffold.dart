@@ -271,20 +271,20 @@ class _ConsolePageScaffoldState extends State<ConsolePageScaffold> {
                                   SizedBox(
                                     width: rightWidth,
                                     child: widget.wrapRightPane
-                                        ? ClipRRect(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            child: DecoratedBox(
-                                              decoration: BoxDecoration(
-                                                color: theme
-                                                    .appColors
-                                                    .contrastBackgroundHard,
-                                                border: Border.all(
-                                                  color: theme.dividerColor,
-                                                ),
+                                        ? Material(
+                                            type: MaterialType.canvas,
+                                            color: theme
+                                                .appColors
+                                                .contrastBackgroundHard,
+                                            clipBehavior: Clip.antiAlias,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              side: BorderSide(
+                                                color: theme.dividerColor,
                                               ),
-                                              child: widget.rightChild,
                                             ),
+                                            child: widget.rightChild,
                                           )
                                         : widget.rightChild ??
                                               const SizedBox.shrink(),
@@ -345,11 +345,14 @@ class _ConsolePageScaffoldState extends State<ConsolePageScaffold> {
 
   Widget _wrapPane(Widget child, EdgeInsets panePadding) {
     final theme = Theme.of(context);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.appColors.contrastBackgroundHard,
-        borderRadius: BorderRadius.circular(12),
-      ),
+    // Use a Material (not a plain DecoratedBox) as the colored surface so that
+    // ListTile-based children (e.g. ExpansionTile headers) can paint their
+    // background and ink splashes on it instead of having them hidden.
+    return Material(
+      type: MaterialType.canvas,
+      color: theme.appColors.contrastBackgroundHard,
+      borderRadius: BorderRadius.circular(12),
+      clipBehavior: Clip.antiAlias,
       child: Padding(padding: panePadding, child: child),
     );
   }
