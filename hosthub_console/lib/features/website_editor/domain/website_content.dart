@@ -53,7 +53,7 @@ class TranslatedField extends Equatable {
 }
 
 /// Which card a field belongs to on a page.
-enum EditorCard { hero, highlights }
+enum EditorCard { hero, highlights, content }
 
 /// Static definition of an editable field on a page.
 class EditorFieldDef extends Equatable {
@@ -89,6 +89,45 @@ const List<EditorFieldDef> kHomeFields = [
   EditorFieldDef(key: 'highlights.1', card: EditorCard.highlights),
 ];
 
+/// Editable fields per page. Keys are globally unique; non-home keys carry
+/// their page as prefix. The mapping to the site's document JSON lives in
+/// WebsiteContentRepository.
+const Map<String, List<EditorFieldDef>> kPageFields = {
+  'home': kHomeFields,
+  'chalet': [
+    EditorFieldDef(
+      key: 'chalet.description.0',
+      card: EditorCard.content,
+      multiline: true,
+    ),
+    EditorFieldDef(key: 'chalet.experience.0', card: EditorCard.content),
+    EditorFieldDef(key: 'chalet.experience.1', card: EditorCard.content),
+  ],
+  'practical': [
+    EditorFieldDef(key: 'practical.header.title', card: EditorCard.content),
+    EditorFieldDef(
+      key: 'practical.header.subtitle',
+      card: EditorCard.content,
+      multiline: true,
+    ),
+  ],
+  'area': [
+    EditorFieldDef(key: 'area.intro', card: EditorCard.content, multiline: true),
+  ],
+  'contact': [
+    EditorFieldDef(key: 'contact.title', card: EditorCard.content),
+    EditorFieldDef(
+      key: 'contact.subtitle',
+      card: EditorCard.content,
+      multiline: true,
+    ),
+  ],
+};
+
+/// Every editable field across all pages (translate/publish scope).
+List<EditorFieldDef> get kAllFields =>
+    kPageFields.values.expand((fields) => fields).toList(growable: false);
+
 /// Computes the source-text hash used to detect stale auto translations.
 /// sha256 hex — identical to the hash the translate-content Edge Function
 /// stores in `site_translations.source_hash`, so staleness survives reloads.
@@ -121,6 +160,17 @@ class WebsiteSeed {
           'Ski-in, ski-out luxe voor acht personen, op een steenworp van piste en bos.',
       'highlights.0': 'Direct de Trysilfjellet-pistes op.',
       'highlights.1': 'Ontspan na een dag op de berg.',
+      'chalet.description.0':
+          'Vrijstaand chalet in Fageråsen met privésauna en panoramisch uitzicht op de bergen.',
+      'chalet.experience.0': 'Ski-in/ski-out via de transportpiste.',
+      'chalet.experience.1': 'Sauna met uitzicht na een dag op de piste.',
+      'practical.header.title': 'Praktische informatie',
+      'practical.header.subtitle':
+          'Alles voor aankomst, verblijf en vertrek op een rij.',
+      'area.intro':
+          'Trysil is het grootste skigebied van Noorwegen, met pistes voor elk niveau.',
+      'contact.title': 'Neem contact op',
+      'contact.subtitle': 'Vragen of boeken? We reageren snel.',
     },
     'en': {
       'hero.headline': 'Your mountain home in Trysil',
@@ -128,6 +178,17 @@ class WebsiteSeed {
           "Ski-in, ski-out luxury for eight, a stone's throw from the slopes and the forest.",
       'highlights.0': 'Straight onto the Trysilfjellet trails.',
       'highlights.1': 'Unwind after a day on the mountain.',
+      'chalet.description.0':
+          'Detached chalet in Fageråsen with a private sauna and panoramic mountain views.',
+      'chalet.experience.0': 'Ski-in/ski-out via the transport track.',
+      'chalet.experience.1': 'A sauna with a view after a day on the slopes.',
+      'practical.header.title': 'Practical information',
+      'practical.header.subtitle':
+          'Everything for arrival, stay and departure at a glance.',
+      'area.intro':
+          "Trysil is Norway's largest ski resort, with slopes for every level.",
+      'contact.title': 'Get in touch',
+      'contact.subtitle': 'Questions or booking? We reply quickly.',
     },
     'no': {
       'hero.headline': 'Ditt fjellhjem i Trysil',
@@ -135,6 +196,17 @@ class WebsiteSeed {
           'Ski-in, ski-out-luksus for åtte, et steinkast fra bakkene og skogen.',
       'highlights.0': 'Rett ut i Trysilfjellet-løypene.',
       'highlights.1': 'Slapp av etter en dag på fjellet.',
+      'chalet.description.0':
+          'Frittliggende hytte i Fageråsen med privat badstue og panoramautsikt over fjellene.',
+      'chalet.experience.0': 'Ski-in/ski-out via transportløypa.',
+      'chalet.experience.1': 'Badstue med utsikt etter en dag i bakken.',
+      'practical.header.title': 'Praktisk informasjon',
+      'practical.header.subtitle':
+          'Alt om ankomst, opphold og avreise på ett sted.',
+      'area.intro':
+          'Trysil er Norges største skianlegg, med løyper for alle nivåer.',
+      'contact.title': 'Ta kontakt',
+      'contact.subtitle': 'Spørsmål eller booking? Vi svarer raskt.',
     },
   };
 }

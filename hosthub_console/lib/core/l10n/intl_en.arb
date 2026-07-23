@@ -1364,5 +1364,10 @@
   "@wePublishConfirm": { "placeholders": { "count": {} } },
   "weLangDutch": "Dutch",
   "weLangEnglish": "English",
-  "weLangNorwegian": "Norwegian"
+  "weLangNorwegian": "Norwegian",
+  "weCardContent": "Page content",
+  "weFieldIntro": "Intro",
+  "weFieldTitle": "Title",
+  "weFieldExperience": "Experience {number}",
+  "@weFieldExperience": { "placeholders": { "number": {} } }
 }

@@ -150,8 +150,9 @@ void main() {
     final byLocale = repo.publishes.single;
     expect(byLocale.keys, containsAll(<String>['nl', 'en', 'no']));
     expect(byLocale['nl']!['hero.headline'], 'Nieuwe titel');
-    // Targets publish their current (translated) values for every field.
-    expect(byLocale['en']!.keys, hasLength(kHomeFields.length));
+    // Targets publish their current (translated) values for every field of
+    // every page (the publish scope spans the whole site).
+    expect(byLocale['en']!.keys, hasLength(kAllFields.length));
     expect(cubit.state.dirty, isFalse);
     await cubit.close();
   });
@@ -191,6 +192,60 @@ void main() {
       // Sibling keys survive the merge.
       expect((content['hero'] as Map)['subtitle'], 'Oude ondertitel');
       expect((content['meta'] as Map)['name'], 'x');
+    });
+
+    test('chalet fields map to cabin description[N]/experience[N]', () {
+      final content = <String, dynamic>{
+        'description': <dynamic>['Eerste alinea', 'Tweede alinea'],
+        'experience': <dynamic>['Ski-in', 'Sauna'],
+      };
+
+      expect(
+        WebsiteContentRepository.readField(
+            'chalet.description.0', 'cabin', content),
+        'Eerste alinea',
+      );
+      expect(
+        WebsiteContentRepository.readField(
+            'chalet.experience.1', 'cabin', content),
+        'Sauna',
+      );
+
+      WebsiteContentRepository.writeField(
+          'chalet.experience.0', 'cabin', content, 'Nieuw');
+      expect((content['experience'] as List)[0], 'Nieuw');
+      expect((content['experience'] as List)[1], 'Sauna');
+      expect((content['description'] as List)[0], 'Eerste alinea');
+    });
+
+    test('practical/area/contact fields map to their documents', () {
+      final practical = <String, dynamic>{
+        'header': <String, dynamic>{'title': 'Praktisch', 'subtitle': 'Sub'},
+      };
+      expect(
+        WebsiteContentRepository.readField(
+            'practical.header.title', 'page', practical),
+        'Praktisch',
+      );
+      WebsiteContentRepository.writeField(
+          'practical.header.subtitle', 'page', practical, 'Nieuwe sub');
+      expect((practical['header'] as Map)['subtitle'], 'Nieuwe sub');
+      expect((practical['header'] as Map)['title'], 'Praktisch');
+
+      final area = <String, dynamic>{'intro': 'Oud', 'sections': <dynamic>[]};
+      WebsiteContentRepository.writeField('area.intro', 'page', area, 'Nieuw');
+      expect(area['intro'], 'Nieuw');
+      expect(area['sections'], isEmpty);
+
+      final contact = <String, dynamic>{'title': 'T', 'subtitle': 'S'};
+      expect(
+        WebsiteContentRepository.readField(
+            'contact.subtitle', 'contact_form', contact),
+        'S',
+      );
+      WebsiteContentRepository.writeField(
+          'contact.title', 'contact_form', contact, 'Nieuw');
+      expect(contact['title'], 'Nieuw');
     });
 
     test('highlight fields map to page highlights[N].description', () {

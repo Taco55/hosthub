@@ -137,18 +137,20 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m51(lang) => "Bewerken · ${lang}";
 
-  static String m52(number) => "Hoogtepunt ${number}";
+  static String m52(number) => "Ervaring ${number}";
 
-  static String m53(language) => "${language} voorbeeld";
+  static String m53(number) => "Hoogtepunt ${number}";
 
-  static String m54(count) => "${count} talen publiceren";
+  static String m54(language) => "${language} voorbeeld";
 
-  static String m55(language) => "${language} · bron";
+  static String m55(count) => "${count} talen publiceren";
 
-  static String m56(source) =>
+  static String m56(language) => "${language} · bron";
+
+  static String m57(source) =>
       "Je ${source} content publiceert zoals die is. De andere talen worden opnieuw vertaald door AI, met behoud van wat je hebt vergrendeld.";
 
-  static String m57(lang) => "Bron · ${lang}";
+  static String m58(lang) => "Bron · ${lang}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1803,6 +1805,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "weBannerWritingTitle": m50,
     "weBreadcrumbWebsite": MessageLookupByLibrary.simpleMessage("Website"),
+    "weCardContent": MessageLookupByLibrary.simpleMessage("Pagina-inhoud"),
     "weCardHero": MessageLookupByLibrary.simpleMessage("Hero"),
     "weCardHighlights": MessageLookupByLibrary.simpleMessage("Hoogtepunten"),
     "weChipAuto": MessageLookupByLibrary.simpleMessage("Auto"),
@@ -1810,10 +1813,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "weDeviceMobile": MessageLookupByLibrary.simpleMessage("Mobiel"),
     "weDeviceWeb": MessageLookupByLibrary.simpleMessage("Web"),
     "weEditingChip": m51,
+    "weFieldExperience": m52,
     "weFieldHeadline": MessageLookupByLibrary.simpleMessage("Titel"),
     "weFieldHeroPhotos": MessageLookupByLibrary.simpleMessage("Hero-foto\'s"),
-    "weFieldHighlight": m52,
+    "weFieldHighlight": m53,
+    "weFieldIntro": MessageLookupByLibrary.simpleMessage("Intro"),
     "weFieldSubtitle": MessageLookupByLibrary.simpleMessage("Ondertitel"),
+    "weFieldTitle": MessageLookupByLibrary.simpleMessage("Titel"),
     "weFreshNotice": MessageLookupByLibrary.simpleMessage(
       "Nieuw concept, komt overeen met je laatste bron.",
     ),
@@ -1826,7 +1832,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePageContact": MessageLookupByLibrary.simpleMessage("Contact"),
     "wePageHome": MessageLookupByLibrary.simpleMessage("Home"),
     "wePagePractical": MessageLookupByLibrary.simpleMessage("Praktisch"),
-    "wePreviewLabel": m53,
+    "wePreviewLabel": m54,
     "wePreviewLatest": MessageLookupByLibrary.simpleMessage(
       "Nieuwste bekijken",
     ),
@@ -1837,7 +1843,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Alle talen publiceren",
     ),
     "wePublishCancel": MessageLookupByLibrary.simpleMessage("Annuleren"),
-    "wePublishConfirm": m54,
+    "wePublishConfirm": m55,
     "wePublishReady": MessageLookupByLibrary.simpleMessage("Klaar"),
     "wePublishReadyNote": MessageLookupByLibrary.simpleMessage(
       "Gepubliceerd zoals geschreven",
@@ -1848,8 +1854,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePublishRetranslateNote": MessageLookupByLibrary.simpleMessage(
       "Verouderd — wordt vernieuwd",
     ),
-    "wePublishSourceRole": m55,
-    "wePublishSubtitle": m56,
+    "wePublishSourceRole": m56,
+    "wePublishSubtitle": m57,
     "wePublishTitle": MessageLookupByLibrary.simpleMessage(
       "Alle talen publiceren",
     ),
@@ -1869,7 +1875,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "weSharedPhotosNote": MessageLookupByLibrary.simpleMessage(
       "Foto\'s worden gedeeld over alle talen — bewerk ze in de bron.",
     ),
-    "weSourceChip": m57,
+    "weSourceChip": m58,
     "weStaleNotice": MessageLookupByLibrary.simpleMessage(
       "Voorbeeld toont een eerdere bronwijziging.",
     ),

@@ -60,9 +60,11 @@ class SiteContentState extends Equatable {
   List<String> get targetLanguages =>
       locales.where((l) => l != sourceLanguage).toList();
 
-  /// The editable fields for the current page (only Home is fully specified).
-  List<EditorFieldDef> get fields =>
-      pageKey == 'home' ? kHomeFields : const [];
+  /// The editable fields for the current page.
+  List<EditorFieldDef> get fields => kPageFields[pageKey] ?? const [];
+
+  /// Every editable field across all pages (translate/publish scope).
+  List<EditorFieldDef> get allFields => kAllFields;
 
   String currentSourceHash(String key) => sourceHashOf(source[key] ?? '');
 
@@ -83,7 +85,7 @@ class SiteContentState extends Equatable {
   }
 
   bool isLanguageStale(String language) =>
-      fields.any((f) => isFieldStale(language, f.key));
+      allFields.any((f) => isFieldStale(language, f.key));
 
   /// Target languages that have at least one stale field.
   Set<String> get staleLanguages =>
@@ -252,7 +254,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
     for (final lang in WebsiteSeed.locales.where((l) => l != 'nl')) {
       final seed = WebsiteSeed.home[lang]!;
       translations[lang] = {
-        for (final field in kHomeFields)
+        for (final field in kAllFields)
           field.key: TranslatedField(
             value: seed[field.key] ?? '',
             status: FieldTranslationStatus.auto,
@@ -350,7 +352,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
       for (final language in targets) {
         final langMap = updated.putIfAbsent(language, () => {});
         final autoSources = <String, String>{
-          for (final field in state.fields)
+          for (final field in state.allFields)
             if ((langMap[field.key]?.status ??
                     FieldTranslationStatus.auto) ==
                 FieldTranslationStatus.auto)
@@ -409,7 +411,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
             state.sourceLanguage: Map<String, String>.from(state.source),
             for (final language in state.targetLanguages)
               language: {
-                for (final field in state.fields)
+                for (final field in state.allFields)
                   field.key: state.valueFor(language, field.key),
               },
           },

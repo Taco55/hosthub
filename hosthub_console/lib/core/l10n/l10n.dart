@@ -8058,6 +8058,36 @@ class S {
       args: [],
     );
   }
+
+  /// `Page content`
+  String get weCardContent {
+    return Intl.message(
+      'Page content',
+      name: 'weCardContent',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Intro`
+  String get weFieldIntro {
+    return Intl.message('Intro', name: 'weFieldIntro', desc: '', args: []);
+  }
+
+  /// `Title`
+  String get weFieldTitle {
+    return Intl.message('Title', name: 'weFieldTitle', desc: '', args: []);
+  }
+
+  /// `Experience {number}`
+  String weFieldExperience(Object number) {
+    return Intl.message(
+      'Experience $number',
+      name: 'weFieldExperience',
+      desc: '',
+      args: [number],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

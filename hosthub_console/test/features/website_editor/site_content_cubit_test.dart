@@ -112,6 +112,32 @@ void main() {
       expect(cubit.state.isSourceMode, isTrue);
     });
 
+    test('selecting a page exposes that page\'s fields', () {
+      final cubit = build();
+      expect(cubit.state.fields, kHomeFields);
+
+      cubit.selectPage('chalet');
+      expect(
+        cubit.state.fields.map((f) => f.key),
+        containsAll(<String>['chalet.description.0', 'chalet.experience.0']),
+      );
+      expect(cubit.state.valueFor('nl', 'chalet.experience.0'),
+          'Ski-in/ski-out via de transportpiste.');
+      expect(cubit.state.valueFor('en', 'chalet.experience.0'),
+          'Ski-in/ski-out via the transport track.');
+    });
+
+    test('publish scope covers fields of every page', () async {
+      final cubit = build();
+      // Editing a chalet source field marks EN stale even while Home is open.
+      cubit.editSourceField('chalet.experience.0', 'Nieuwe ervaring');
+      expect(cubit.state.pageKey, 'home');
+      expect(cubit.state.isLanguageStale('en'), isTrue);
+
+      await cubit.publishAll();
+      expect(cubit.state.staleLanguages, isEmpty);
+    });
+
     test('coverage drops when a field goes stale', () {
       final cubit = build();
       expect(cubit.state.coverage('en'), 1.0);

@@ -137,18 +137,20 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m51(lang) => "Editing · ${lang}";
 
-  static String m52(number) => "Highlight ${number}";
+  static String m52(number) => "Experience ${number}";
 
-  static String m53(language) => "${language} preview";
+  static String m53(number) => "Highlight ${number}";
 
-  static String m54(count) => "Publish ${count} languages";
+  static String m54(language) => "${language} preview";
 
-  static String m55(language) => "${language} · source";
+  static String m55(count) => "Publish ${count} languages";
 
-  static String m56(source) =>
+  static String m56(language) => "${language} · source";
+
+  static String m57(source) =>
       "Your ${source} content publishes as-is. The other languages are re-translated by AI, keeping anything you\'ve locked.";
 
-  static String m57(lang) => "Source · ${lang}";
+  static String m58(lang) => "Source · ${lang}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1725,6 +1727,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "weBannerWritingTitle": m50,
     "weBreadcrumbWebsite": MessageLookupByLibrary.simpleMessage("Website"),
+    "weCardContent": MessageLookupByLibrary.simpleMessage("Page content"),
     "weCardHero": MessageLookupByLibrary.simpleMessage("Hero"),
     "weCardHighlights": MessageLookupByLibrary.simpleMessage("Highlights"),
     "weChipAuto": MessageLookupByLibrary.simpleMessage("Auto"),
@@ -1732,10 +1735,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "weDeviceMobile": MessageLookupByLibrary.simpleMessage("Mobile"),
     "weDeviceWeb": MessageLookupByLibrary.simpleMessage("Web"),
     "weEditingChip": m51,
+    "weFieldExperience": m52,
     "weFieldHeadline": MessageLookupByLibrary.simpleMessage("Headline"),
     "weFieldHeroPhotos": MessageLookupByLibrary.simpleMessage("Hero photos"),
-    "weFieldHighlight": m52,
+    "weFieldHighlight": m53,
+    "weFieldIntro": MessageLookupByLibrary.simpleMessage("Intro"),
     "weFieldSubtitle": MessageLookupByLibrary.simpleMessage("Subtitle"),
+    "weFieldTitle": MessageLookupByLibrary.simpleMessage("Title"),
     "weFreshNotice": MessageLookupByLibrary.simpleMessage(
       "Fresh draft, matches your latest source.",
     ),
@@ -1748,7 +1754,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePageContact": MessageLookupByLibrary.simpleMessage("Contact"),
     "wePageHome": MessageLookupByLibrary.simpleMessage("Home"),
     "wePagePractical": MessageLookupByLibrary.simpleMessage("Practical"),
-    "wePreviewLabel": m53,
+    "wePreviewLabel": m54,
     "wePreviewLatest": MessageLookupByLibrary.simpleMessage("Preview latest"),
     "wePreviewTranslation": MessageLookupByLibrary.simpleMessage(
       "Preview translation",
@@ -1757,7 +1763,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Publish all languages",
     ),
     "wePublishCancel": MessageLookupByLibrary.simpleMessage("Cancel"),
-    "wePublishConfirm": m54,
+    "wePublishConfirm": m55,
     "wePublishReady": MessageLookupByLibrary.simpleMessage("Ready"),
     "wePublishReadyNote": MessageLookupByLibrary.simpleMessage(
       "Published as written",
@@ -1768,8 +1774,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePublishRetranslateNote": MessageLookupByLibrary.simpleMessage(
       "Out of date — will refresh",
     ),
-    "wePublishSourceRole": m55,
-    "wePublishSubtitle": m56,
+    "wePublishSourceRole": m56,
+    "wePublishSubtitle": m57,
     "wePublishTitle": MessageLookupByLibrary.simpleMessage(
       "Publish all languages",
     ),
@@ -1789,7 +1795,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "weSharedPhotosNote": MessageLookupByLibrary.simpleMessage(
       "Photos are shared across all languages — edit them in the source.",
     ),
-    "weSourceChip": m57,
+    "weSourceChip": m58,
     "weStaleNotice": MessageLookupByLibrary.simpleMessage(
       "Preview reflects an earlier source edit.",
     ),

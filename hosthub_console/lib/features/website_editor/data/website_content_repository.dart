@@ -20,11 +20,18 @@ class WebsitePageContent {
 /// Persistence for the website editor. The editor's flat field keys map onto
 /// the site's real CMS documents (the same JSON the public site renders):
 ///
-/// | field key       | document (content_type/slug) | JSON path                   |
-/// |-----------------|------------------------------|-----------------------------|
-/// | hero.headline   | cabin / main                 | hero.title                  |
-/// | hero.subtitle   | cabin / main                 | hero.subtitle               |
-/// | highlights.N    | page / home                  | highlights[N].description   |
+/// | field key                 | document (type/slug) | JSON path                 |
+/// |---------------------------|----------------------|---------------------------|
+/// | hero.headline             | cabin / main         | hero.title                |
+/// | hero.subtitle             | cabin / main         | hero.subtitle             |
+/// | highlights.N              | page / home          | highlights[N].description |
+/// | chalet.description.N      | cabin / main         | description[N]            |
+/// | chalet.experience.N       | cabin / main         | experience[N]             |
+/// | practical.header.title    | page / practical     | header.title              |
+/// | practical.header.subtitle | page / practical     | header.subtitle           |
+/// | area.intro                | page / area          | intro                     |
+/// | contact.title             | contact_form / main  | title                     |
+/// | contact.subtitle          | contact_form / main  | subtitle                  |
 ///
 /// Working values for target languages live in `site_translations`
 /// (value/status/source_hash per field); publish folds them back into each
@@ -39,12 +46,26 @@ class WebsiteContentRepository extends SupabaseRepository {
   static const List<({String contentType, String slug})> _documents = [
     (contentType: 'cabin', slug: 'main'),
     (contentType: 'page', slug: 'home'),
+    (contentType: 'page', slug: 'practical'),
+    (contentType: 'page', slug: 'area'),
+    (contentType: 'contact_form', slug: 'main'),
   ];
 
   // -- field <-> document JSON mapping ------------------------------------
 
-  static ({String contentType, String slug}) _documentFor(String fieldKey) =>
-      fieldKey.startsWith('hero.') ? _documents[0] : _documents[1];
+  static ({String contentType, String slug}) _documentFor(String fieldKey) {
+    if (fieldKey.startsWith('hero.') || fieldKey.startsWith('chalet.')) {
+      return _documents[0];
+    }
+    if (fieldKey.startsWith('highlights.')) return _documents[1];
+    if (fieldKey.startsWith('practical.')) return _documents[2];
+    if (fieldKey.startsWith('area.')) return _documents[3];
+    if (fieldKey.startsWith('contact.')) return _documents[4];
+    return _documents[1];
+  }
+
+  static String _documentKeyOf(({String contentType, String slug}) doc) =>
+      '${doc.contentType}:${doc.slug}';
 
   static String? readField(
     String fieldKey,
@@ -66,6 +87,23 @@ class WebsiteContentRepository extends SupabaseRepository {
       }
       return (highlights[index] as Map<String, dynamic>?)?['description']
           as String?;
+    }
+    if (fieldKey.startsWith('chalet.') && contentType == 'cabin') {
+      final parts = fieldKey.split('.'); // chalet.<list>.<index>
+      final list = content[parts[1]] as List<dynamic>?;
+      final index = int.tryParse(parts[2]);
+      if (list == null || index == null || index >= list.length) return null;
+      return list[index] as String?;
+    }
+    if (fieldKey.startsWith('practical.header.') && contentType == 'page') {
+      final header = content['header'] as Map<String, dynamic>?;
+      return header?[fieldKey.split('.').last] as String?;
+    }
+    if (fieldKey == 'area.intro' && contentType == 'page') {
+      return content['intro'] as String?;
+    }
+    if (fieldKey.startsWith('contact.') && contentType == 'contact_form') {
+      return content[fieldKey.split('.').last] as String?;
     }
     return null;
   }
@@ -101,6 +139,34 @@ class WebsiteContentRepository extends SupabaseRepository {
       content['highlights'] = highlights;
       return;
     }
+    if (contentType == 'cabin' && fieldKey.startsWith('chalet.')) {
+      final parts = fieldKey.split('.'); // chalet.<list>.<index>
+      final index = int.tryParse(parts[2]);
+      if (index == null) return;
+      final list = List<dynamic>.from(content[parts[1]] as List<dynamic>? ?? []);
+      while (list.length <= index) {
+        list.add('');
+      }
+      list[index] = value;
+      content[parts[1]] = list;
+      return;
+    }
+    if (contentType == 'page' && fieldKey.startsWith('practical.header.')) {
+      final header = Map<String, dynamic>.from(
+        content['header'] as Map<String, dynamic>? ?? {},
+      );
+      header[fieldKey.split('.').last] = value;
+      content['header'] = header;
+      return;
+    }
+    if (contentType == 'page' && fieldKey == 'area.intro') {
+      content['intro'] = value;
+      return;
+    }
+    if (contentType == 'contact_form' && fieldKey.startsWith('contact.')) {
+      content[fieldKey.split('.').last] = value;
+      return;
+    }
   }
 
   // -- loading -------------------------------------------------------------
@@ -120,21 +186,21 @@ class WebsiteContentRepository extends SupabaseRepository {
           .select('content_type, slug, locale, content')
           .eq('site_id', siteId)
           .inFilter('locale', locales);
-      final contentByTypeLocale = <String, Map<String, dynamic>>{
+      final contentByDocLocale = <String, Map<String, dynamic>>{
         for (final row in documentRows as List<dynamic>)
-          '${row['content_type']}:${row['locale']}':
+          '${row['content_type']}:${row['slug']}:${row['locale']}':
               Map<String, dynamic>.from(row['content'] as Map),
       };
 
       String? documentValue(String fieldKey, String locale) {
         final doc = _documentFor(fieldKey);
-        final content = contentByTypeLocale['${doc.contentType}:$locale'];
+        final content = contentByDocLocale['${_documentKeyOf(doc)}:$locale'];
         if (content == null) return null;
         return readField(fieldKey, doc.contentType, content);
       }
 
       final source = <String, String>{
-        for (final field in kHomeFields)
+        for (final field in kAllFields)
           field.key: documentValue(field.key, sourceLanguage) ?? '',
       };
 
@@ -152,7 +218,7 @@ class WebsiteContentRepository extends SupabaseRepository {
       final translations = <String, Map<String, TranslatedField>>{};
       for (final language in locales.where((l) => l != sourceLanguage)) {
         final fields = <String, TranslatedField>{};
-        for (final field in kHomeFields) {
+        for (final field in kAllFields) {
           final row = rowsByLangKey['$language:${field.key}'];
           if (row != null) {
             fields[field.key] = TranslatedField(
@@ -283,8 +349,7 @@ class WebsiteContentRepository extends SupabaseRepository {
     for (final doc in _documents) {
       final docFields = {
         for (final entry in fields.entries)
-          if (_documentFor(entry.key).contentType == doc.contentType)
-            entry.key: entry.value,
+          if (_documentFor(entry.key) == doc) entry.key: entry.value,
       };
       if (docFields.isEmpty) continue;
 

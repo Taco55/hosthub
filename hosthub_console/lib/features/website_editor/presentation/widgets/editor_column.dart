@@ -37,9 +37,12 @@ class EditorColumn extends StatelessWidget {
                 _TranslationStatusToolbar(state: state),
               ],
               const SizedBox(height: 16),
-              _HeroCard(state: state),
-              const SizedBox(height: 16),
-              _HighlightsCard(state: state),
+              if (state.pageKey == 'home') ...[
+                _HeroCard(state: state),
+                const SizedBox(height: 16),
+                _HighlightsCard(state: state),
+              ] else
+                _ContentCard(state: state),
             ],
           ),
         ),
@@ -316,9 +319,7 @@ class _HeroCard extends StatelessWidget {
           WebsiteFieldRow(
             state: state,
             field: field,
-            label: field.key == 'hero.headline'
-                ? s.weFieldHeadline
-                : s.weFieldSubtitle,
+            label: fieldLabel(context, field.key),
             autofocus: field.key == 'hero.headline' && state.isSourceMode,
           ),
           const SizedBox(height: 14),
@@ -427,11 +428,11 @@ class _HighlightsCard extends StatelessWidget {
       icon: Icons.star_outline,
       title: s.weCardHighlights,
       children: [
-        for (var i = 0; i < highlightFields.length; i++) ...[
+        for (final field in highlightFields) ...[
           WebsiteFieldRow(
             state: state,
-            field: highlightFields[i],
-            label: s.weFieldHighlight(i + 1),
+            field: field,
+            label: fieldLabel(context, field.key),
           ),
           const SizedBox(height: 14),
         ],
@@ -444,6 +445,31 @@ class _HighlightsCard extends StatelessWidget {
             onPressed: () {},
           ),
         ),
+      ],
+    );
+  }
+}
+
+/// Generic card for pages without a bespoke design (chalet, practical, area,
+/// contact): all of the page's fields in one StyledSection.
+class _ContentCard extends StatelessWidget {
+  const _ContentCard({required this.state});
+  final SiteContentState state;
+
+  @override
+  Widget build(BuildContext context) {
+    return _CardShell(
+      icon: Icons.notes_outlined,
+      title: context.s.weCardContent,
+      children: [
+        for (final field in state.fields) ...[
+          WebsiteFieldRow(
+            state: state,
+            field: field,
+            label: fieldLabel(context, field.key),
+          ),
+          const SizedBox(height: 14),
+        ],
       ],
     );
   }

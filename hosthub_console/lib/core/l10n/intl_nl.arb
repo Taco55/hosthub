@@ -1368,5 +1368,10 @@
   "@wePublishConfirm": { "placeholders": { "count": {} } },
   "weLangDutch": "Nederlands",
   "weLangEnglish": "Engels",
-  "weLangNorwegian": "Noors"
+  "weLangNorwegian": "Noors",
+  "weCardContent": "Pagina-inhoud",
+  "weFieldIntro": "Intro",
+  "weFieldTitle": "Titel",
+  "weFieldExperience": "Ervaring {number}",
+  "@weFieldExperience": { "placeholders": { "number": {} } }
 }
