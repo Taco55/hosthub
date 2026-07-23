@@ -297,3 +297,10 @@ entrypoint = "./functions/lodgify-rates/index.ts"
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/lodgify-properties/index.ts"
+
+[functions.translate-content]
+enabled = true
+# JWT is validated inside the function via auth.getUser(token).
+verify_jwt = false
+entrypoint = "./functions/translate-content/index.ts"
+import_map = "./functions/translate-content/deno.json"
