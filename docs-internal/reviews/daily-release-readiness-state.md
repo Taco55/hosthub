@@ -38,10 +38,12 @@ console CMS feature, then tests + backend wiring.
 
 | # | slice | scope | status | evidence |
 |---|-------|-------|--------|----------|
-| S17 | `EdgeFunctionTranslationService` (invoke `translate-content`, app_errors-mapping) | console | todo | |
-| S18 | Persistentie: repository voor `site_translations`-hydratie + draft/publish naar `cms_documents` | console | todo | |
-| S19 | Velddefinities + seed voor chalet/practical/area/contact | console | todo | |
-| S20 | Deploy/verify: lokaal function-serve smoke; prd-migratie via psql; prd-function-deploy (verwacht token-blocker) | supabase | todo | |
+| S17 | `EdgeFunctionTranslationService` (invoke `translate-content`, app_errors-mapping) | console | done | 00aeb0f; +4 tests; analyze clean. Aanvulling 5f98d10: gratis provider-keten in de function — MyMemory keyless default (live geverifieerd nl→en/no), LibreTranslate self-hosted optie, DeepL alleen nog als opt-in |
+| S18 | Persistentie: repository voor `site_translations`-hydratie + draft/publish naar `cms_documents` | console | done | 3c7b01e; veldmapping op echte site-JSON (cabin/main + page/home), autosave debounced, publish met versie-snapshots, sha256-hashes client=server; +7 tests (38 totaal groen) |
+| S19 | Velddefinities + seed voor chalet/practical/area/contact | console | done | 8900523; kPageFields→echte document-JSON, content-card UI, +4 ARB-keys, publish/stale-scope site-breed; 42 tests groen |
+| S20 | Deploy/verify | supabase | deels done / BLOCKED | Lokaal: function serve → OPTIONS 200 + nette 401 zonder auth ✓. Prd: `site_translations`-migratie via psql toegepast ✓ (tabel + RLS-policy geverifieerd). Prd function-deploy + `DEEPL_API_KEY` secret: **geblokkeerd** — geen `SUPABASE_ACCESS_TOKEN` (env/keychain/CLI leeg; `supabase functions deploy` → 401). Fix: `supabase login` of token in hosthub_secrets, daarna `supabase functions deploy translate-content --project-ref dygmamjqvajmpvhwtpye` + `supabase secrets set DEEPL_API_KEY=…` |
+| S21 | Console-shell migreren naar `StyledSideMenu` (B1-adoptie) | console | todo | parallel: aparte sessie migreert diplora_dashboard; lib-widget wordt daar al uitgebreid — niet zelf aan `styled_side_menu.dart` werken |
+| S22 | `StyledBrowserFrame` → app-lokaal (`SitePreviewFrame`) + `StyledSplitView` → `StyledWebPageScaffold`-consolidatie | beide | done | sw@3bf18be+ca6a638, console@4934032; scaffold kreeg showHeader/paneGap/fixed-left/right-fills (4 lib-tests); goldens geregenereerd |
 
 ## next_lens
 S17 — EdgeFunctionTranslationService met injecteerbare invoke voor tests.
