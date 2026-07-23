@@ -1,5 +1,11 @@
 export 'package:auth_ui_flutter/auth_ui_flutter.dart'
-    hide AuthUser, SignInResult, SignUpResult, AuthSignInStep, AuthSignUpStep;
+    hide
+        AuthUser,
+        SignInResult,
+        SignUpResult,
+        AuthSignInStep,
+        AuthSignUpStep,
+        AccountDeletionResult;
 
 export 'domain/models/email_template_config.dart';
 export 'domain/ports/auth_port.dart';

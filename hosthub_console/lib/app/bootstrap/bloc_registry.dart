@@ -1,31 +1,16 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:hosthub_console/app/bootstrap/app_bloc_observer.dart';
 import 'package:hosthub_console/features/auth/auth.dart';
 import 'package:hosthub_console/core/core.dart';
 import 'package:hosthub_console/core/l10n/application/language_cubit.dart';
 
-import 'package:talker_bloc_logger/talker_bloc_logger.dart';
-
 void registerBlocLayer() {
-  Bloc.observer = TalkerBlocObserver(
-    settings: TalkerBlocLoggerSettings(
-      enabled: true,
-      printEventFullData: false,
-      printStateFullData: true,
-      printChanges: true,
-      printClosings: true,
-      printCreations: true,
-      printEvents: true,
-      printTransitions: true,
-      // If you want log only AuthBloc transitions
-      transitionFilter: (bloc, transition) =>
-          bloc.runtimeType.toString() == 'AuthBloc',
-      // If you want log only AuthBloc events
-      eventFilter: (bloc, event) => bloc.runtimeType.toString() == 'AuthBloc',
-    ),
-  );
-
-  // Bloc.observer = AppConfig.current.enableLogging ? AppBlocObserver() : const _SilentBlocObserver();
+  // Compact, colored, one-line-per-transition logging (see AppBlocObserver).
+  // Replaces Talker's boxed full-state output.
+  if (AppConfig.current.enableLogging) {
+    Bloc.observer = AppBlocObserver();
+  }
 
   final languageCubit = LanguageCubit();
   final themeCubit = ThemeCubit();

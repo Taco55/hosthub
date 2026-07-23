@@ -7,6 +7,7 @@ typedef SignUpResult = auth_ui.SignUpResult;
 typedef SignInResult = auth_ui.SignInResult;
 typedef AuthSignInStep = auth_ui.AuthSignInStep;
 typedef AuthSignUpStep = auth_ui.AuthSignUpStep;
+typedef AccountDeletionResult = auth_ui.AccountDeletionResult;
 
 class AuthSessionChange {
   const AuthSessionChange({this.user});
@@ -50,6 +51,11 @@ abstract class AuthPort implements auth_ui.AuthServiceInterface {
   bool get isGuestUser;
   @override
   Future<void> signInWithOAuth(String provider);
+
+  /// Emits the current [AuthUser] (or `null` when signed out) on every session
+  /// change. Consumed by `AuthBloc` to observe async OAuth callbacks.
+  @override
+  Stream<AuthUser?> get authStateChanges;
   Stream<AuthSessionChange> get onAuthStateChange;
 
   /// This will not check whether or not those tokens are valid. To check
@@ -70,7 +76,7 @@ abstract class AuthPort implements auth_ui.AuthServiceInterface {
   /// Consumer-facing alias from [AuthServiceInterface].
   /// Implementations can delegate to [deleteCurrentUser].
   @override
-  Future<void> deleteAccount();
+  Future<AccountDeletionResult> deleteAccount();
 
   Future<void> deleteCurrentUser();
 

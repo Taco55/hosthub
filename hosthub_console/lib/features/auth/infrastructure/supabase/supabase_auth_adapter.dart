@@ -95,6 +95,10 @@ class SupabaseAuthAdapter extends SupabaseRepository implements AuthPort {
       });
 
   @override
+  Stream<AuthUser?> get authStateChanges =>
+      onAuthStateChange.map((change) => change.user);
+
+  @override
   Future<SignUpResult> signUp(String email, String password) async {
     try {
       final trimmedEmail = email.trim();
@@ -316,8 +320,9 @@ class SupabaseAuthAdapter extends SupabaseRepository implements AuthPort {
   }
 
   @override
-  Future<void> deleteAccount() async {
+  Future<AccountDeletionResult> deleteAccount() async {
     await deleteCurrentUser();
+    return const AccountDeletionResult.accountDeleted();
   }
 
   @override
