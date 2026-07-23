@@ -25,12 +25,12 @@ console CMS feature, then tests + backend wiring.
 | S6 | B2 `StyledSplitView` | styled_widgets | done | sw@f5ebc38; new `styled_split_view.dart` + barrel; +5 tests; analyze clean |
 | S7 | B1 `StyledSideMenu` | styled_widgets | done | sw@40198c4; new `styled_side_menu.dart` + `StyledNavItem` + barrel; +6 tests; full suite 664 pass (no regressions) |
 | S8 | `SiteContentCubit` + models + repository + DI (state machine) | console | done | eb5db11; `features/website_editor/` (domain+service+cubit+DI); +8 cubit tests; scoped analyze clean |
-| S9 | Editor mode A (source editor: bar, tabs, banner, Hero, Highlights, save bar) | console | in_progress | |
-| S10 | Editor mode B (translation: chips, source-ref, Reset to AI, coverage, stale/fresh) | console | todo | |
-| S11 | Preview pane (browser/mobile frame, toolbar, locale switch, rendered site, ribbons) | console | todo | |
-| S12 | Publish modal | console | todo | |
-| S13 | Sidebar wiring + route + scaffold assembly (split view) | console | todo | |
-| S14 | i18n ARB strings (nl/en) | console | todo | |
+| S9 | Editor mode A (source editor: bar, tabs, banner, Hero, Highlights, save bar) | console | done | 6616de7 (`editor_column.dart`); lib fix sw@9885132 (plain tabs scroll); widget tests |
+| S10 | Editor mode B (translation: chips, source-ref, Reset to AI, coverage, stale/fresh) | console | done | 6616de7 (`website_field_row.dart` labelTrailing/footer, `WebsiteStatusColors`); tests: lock-on-type, Reset to AI |
+| S11 | Preview pane (browser/mobile frame, toolbar, locale switch, rendered site, ribbons) | console | done | 6616de7 (`preview_pane.dart`: StyledBrowserFrame web/mobiel, AI-badges + stale dots, ribbons); tests: binding + device toggle |
+| S12 | Publish modal | console | done | 6616de7 (`publish_modal.dart` via showStyledAlertDialog, async onConfirm — guide: onAction vereist); test: rows + chips |
+| S13 | Sidebar wiring + route + scaffold assembly (split view) | console | done | 6616de7: `/website-editor` route onder bestaande SectionScaffold/SideMenu (rail hergebruikt per README), StyledSplitView-assemblage, DI in bootstrap |
+| S14 | i18n ARB strings (nl/en) | console | done | 30a5f7c; ~40 `we*` keys in en+nl ARB; S class regenerated; done early since UI depends on it |
 | S15 | Widget + golden tests (CONFORMANCE recipe) | console | todo | |
 | S16 | Supabase `translate-content` Edge Function + translation storage migration | supabase | todo | |
 
