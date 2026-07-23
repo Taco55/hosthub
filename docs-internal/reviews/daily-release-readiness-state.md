@@ -31,7 +31,7 @@ console CMS feature, then tests + backend wiring.
 | S12 | Publish modal | console | done | 6616de7 (`publish_modal.dart` via showStyledAlertDialog, async onConfirm — guide: onAction vereist); test: rows + chips |
 | S13 | Sidebar wiring + route + scaffold assembly (split view) | console | done | 6616de7: `/website-editor` route onder bestaande SectionScaffold/SideMenu (rail hergebruikt per README), StyledSplitView-assemblage, DI in bootstrap |
 | S14 | i18n ARB strings (nl/en) | console | done | 30a5f7c; ~40 `we*` keys in en+nl ARB; S class regenerated; done early since UI depends on it |
-| S15 | Widget + golden tests (CONFORMANCE recipe) | console | todo | |
+| S15 | Widget + golden tests (CONFORMANCE recipe) | console | in_progress | widget+cubit tests af (16); nog: goldens 4 states + token/lint adherence checks |
 | S16 | Supabase `translate-content` Edge Function + translation storage migration | supabase | todo | |
 
 ## next_lens
