@@ -34,13 +34,17 @@ console CMS feature, then tests + backend wiring.
 | S15 | Widget + golden tests (CONFORMANCE recipe) | console | done | 9db182f; 4 goldens (1360×880) + 3 adherence-tests (hex/chrome/i18n); totaal 23 tests groen |
 | S16 | Supabase `translate-content` Edge Function + translation storage migration | supabase | done | f99b0f5; `site_translations` (RLS via has_site_access, lokaal toegepast+gesmoked); function `translate-content` (DeepL + key-vrije fallback, cache op source_hash, locked skip); deno check clean |
 
+## Run 2 queue (gestart 2026-07-23, na "go")
+
+| # | slice | scope | status | evidence |
+|---|-------|-------|--------|----------|
+| S17 | `EdgeFunctionTranslationService` (invoke `translate-content`, app_errors-mapping) | console | todo | |
+| S18 | Persistentie: repository voor `site_translations`-hydratie + draft/publish naar `cms_documents` | console | todo | |
+| S19 | Velddefinities + seed voor chalet/practical/area/contact | console | todo | |
+| S20 | Deploy/verify: lokaal function-serve smoke; prd-migratie via psql; prd-function-deploy (verwacht token-blocker) | supabase | todo | |
+
 ## next_lens
-QUEUE EMPTY (S1–S16 done, 2026-07-23). Vervolgkandidaten voor een nieuwe run:
-- Cubit koppelen aan `translate-content` + `site_translations` (nu SeedTranslationService;
-  echte `EdgeFunctionTranslationService` met handleFunctionException-patroon).
-- Persistentie van drafts/publish naar `cms_documents` (nu in-memory seed).
-- Overige pagina's (chalet/practical/area/contact) velden definiëren.
-- Deploy van de function + `DEEPL_API_KEY` secret (dev → prd).
+S17 — EdgeFunctionTranslationService met injecteerbare invoke voor tests.
 
 ## Content / state-machine reference (from the prototype)
 - Property: **Trysil Panorama**, source lang `nl`, locales `[nl, en, no]`.
