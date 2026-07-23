@@ -7,13 +7,35 @@ import { buildCorsHeaders, jsonError, jsonResponse } from "../_shared/http.ts";
 // (TRANSLATION.md). Locked fields are never sent here by the client; on top of
 // that this function skips rows whose stored source_hash still matches the
 // incoming source text (cache hit) and rows stored as locked (safety net).
-// The provider key stays server-side: DeepL when DEEPL_API_KEY is set,
-// otherwise a passthrough fallback so local development works without a key.
+//
+// Provider selection (any key stays server-side), first match wins:
+//   1. TRANSLATE_PROVIDER env override (deepl | libretranslate | mymemory)
+//   2. DEEPL_API_KEY set          -> DeepL (free tier, needs an account key)
+//   3. LIBRETRANSLATE_URL set     -> self-hosted LibreTranslate (no key)
+//   4. default                    -> MyMemory (keyless, free; ~short-text
+//      marketing copy volumes fit its anonymous daily quota. Set
+//      MYMEMORY_EMAIL to raise the quota.)
 
 const SUPABASE_URL = env("SUPABASE_URL");
 const SERVICE_ROLE_KEY = env("SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SECRET_KEY");
 const DEEPL_API_KEY = env("DEEPL_API_KEY");
 const DEEPL_API_URL = env("DEEPL_API_URL") ?? "https://api-free.deepl.com/v2/translate";
+const LIBRETRANSLATE_URL = env("LIBRETRANSLATE_URL");
+const LIBRETRANSLATE_API_KEY = env("LIBRETRANSLATE_API_KEY");
+const MYMEMORY_URL = env("MYMEMORY_URL") ?? "https://api.mymemory.translated.net/get";
+const MYMEMORY_EMAIL = env("MYMEMORY_EMAIL");
+
+type Provider = "deepl" | "libretranslate" | "mymemory";
+
+function resolveProvider(): Provider {
+  const override = env("TRANSLATE_PROVIDER")?.toLowerCase();
+  if (override === "deepl" || override === "libretranslate" || override === "mymemory") {
+    return override;
+  }
+  if (DEEPL_API_KEY) return "deepl";
+  if (LIBRETRANSLATE_URL) return "libretranslate";
+  return "mymemory";
+}
 
 if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
   throw new Error("Missing Supabase configuration for translate-content function.");
@@ -50,16 +72,11 @@ async function sha256Hex(text: string): Promise<string> {
     .join("");
 }
 
-async function translateBatch(
+async function translateWithDeepl(
   texts: string[],
   sourceLanguage: string,
   targetLanguage: string,
 ): Promise<string[]> {
-  if (!DEEPL_API_KEY) {
-    // Key-free fallback: return the source text unchanged. Publishing still
-    // works; owners see untranslated copy until a provider key is configured.
-    return texts;
-  }
   const params = new URLSearchParams();
   for (const text of texts) params.append("text", text);
   params.set("source_lang", sourceLanguage.toUpperCase());
@@ -79,6 +96,80 @@ async function translateBatch(
   }
   const data = await response.json() as { translations: { text: string }[] };
   return data.translations.map((t) => t.text);
+}
+
+async function translateWithLibreTranslate(
+  texts: string[],
+  sourceLanguage: string,
+  targetLanguage: string,
+): Promise<string[]> {
+  // Norwegian Bokmål is "nb" in LibreTranslate's model list.
+  const target = targetLanguage === "no" ? "nb" : targetLanguage;
+  const response = await fetch(`${LIBRETRANSLATE_URL!.replace(/\/+$/, "")}/translate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      q: texts,
+      source: sourceLanguage,
+      target,
+      format: "text",
+      ...(LIBRETRANSLATE_API_KEY ? { api_key: LIBRETRANSLATE_API_KEY } : {}),
+    }),
+  });
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`translation_provider_error: ${response.status} ${detail}`);
+  }
+  const data = await response.json() as { translatedText: string | string[] };
+  const translated = data.translatedText;
+  return Array.isArray(translated) ? translated : [translated];
+}
+
+async function translateWithMyMemory(
+  texts: string[],
+  sourceLanguage: string,
+  targetLanguage: string,
+): Promise<string[]> {
+  // MyMemory translates one segment per request; page fields are short and
+  // few, and cache hits never reach this point, so the volume stays tiny.
+  const results: string[] = [];
+  for (const text of texts) {
+    const url = new URL(MYMEMORY_URL);
+    url.searchParams.set("q", text);
+    url.searchParams.set("langpair", `${sourceLanguage}|${targetLanguage}`);
+    if (MYMEMORY_EMAIL) url.searchParams.set("de", MYMEMORY_EMAIL);
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error(`translation_provider_error: ${response.status} ${detail}`);
+    }
+    const data = await response.json() as {
+      responseStatus: number;
+      responseData?: { translatedText?: string };
+    };
+    const value = data.responseData?.translatedText;
+    if (data.responseStatus !== 200 || typeof value !== "string") {
+      throw new Error(`translation_provider_error: mymemory ${data.responseStatus}`);
+    }
+    results.push(value);
+  }
+  return results;
+}
+
+function translateBatch(
+  texts: string[],
+  sourceLanguage: string,
+  targetLanguage: string,
+): Promise<string[]> {
+  switch (resolveProvider()) {
+    case "deepl":
+      return translateWithDeepl(texts, sourceLanguage, targetLanguage);
+    case "libretranslate":
+      return translateWithLibreTranslate(texts, sourceLanguage, targetLanguage);
+    case "mymemory":
+      return translateWithMyMemory(texts, sourceLanguage, targetLanguage);
+  }
 }
 
 const cors = () => buildCorsHeaders();
