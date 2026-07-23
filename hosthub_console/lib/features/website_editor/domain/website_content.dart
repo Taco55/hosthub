@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:equatable/equatable.dart';
 
 /// Per-(field, language) translation status.
@@ -22,20 +25,21 @@ class TranslatedField extends Equatable {
   final String value;
   final FieldTranslationStatus status;
 
-  /// Hash of the source text this [auto] value was generated from. Null for
+  /// Hash of the source text this [auto] value was generated from (sha256
+  /// hex, matching the translate-content Edge Function's cache key). Null for
   /// [locked] fields (their value is owner-authored, not source-derived).
-  final int? sourceHash;
+  final String? sourceHash;
 
   bool get isLocked => status == FieldTranslationStatus.locked;
   bool get isAuto => status == FieldTranslationStatus.auto;
 
-  bool isStaleFor(int currentSourceHash) =>
+  bool isStaleFor(String currentSourceHash) =>
       isAuto && sourceHash != currentSourceHash;
 
   TranslatedField copyWith({
     String? value,
     FieldTranslationStatus? status,
-    int? sourceHash,
+    String? sourceHash,
   }) {
     return TranslatedField(
       value: value ?? this.value,
@@ -86,7 +90,9 @@ const List<EditorFieldDef> kHomeFields = [
 ];
 
 /// Computes the source-text hash used to detect stale auto translations.
-int sourceHashOf(String text) => text.hashCode;
+/// sha256 hex — identical to the hash the translate-content Edge Function
+/// stores in `site_translations.source_hash`, so staleness survives reloads.
+String sourceHashOf(String text) => sha256.convert(utf8.encode(text)).toString();
 
 /// Seed content for the Trysil Panorama Home page (from the design prototype).
 /// Source = `nl`; `en`/`no` are the reference AI translations.

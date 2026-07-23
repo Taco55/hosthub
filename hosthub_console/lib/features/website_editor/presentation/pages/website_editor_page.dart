@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:styled_widgets/styled_widgets.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:hosthub_console/core/core.dart';
 import 'package:hosthub_console/core/widgets/foundation/foundation.dart';
 
 import '../../application/site_content_cubit.dart';
+import '../../data/edge_function_translation_service.dart';
 import '../../data/translation_service.dart';
+import '../../data/website_content_repository.dart';
 import '../widgets/editor_column.dart';
 import '../widgets/preview_pane.dart';
 import '../widgets/publish_modal.dart';
@@ -17,14 +20,30 @@ import '../widgets/publish_modal.dart';
 /// source) shows the plain form; any other language shows the translation
 /// editor. Publish opens the all-languages confirmation modal.
 class WebsiteEditorPage extends StatelessWidget {
-  const WebsiteEditorPage({super.key});
+  const WebsiteEditorPage({super.key, this.siteId});
+
+  /// When set, the editor is persistent: content hydrates from the site's
+  /// documents + `site_translations`, edits autosave, and translation runs
+  /// through the translate-content Edge Function. Without it the editor runs
+  /// on the in-memory demo seed.
+  final String? siteId;
 
   @override
   Widget build(BuildContext context) {
+    final id = siteId;
     return BlocProvider(
-      create: (_) => SiteContentCubit(
-        translationService: I.get<TranslationService>(),
-      ),
+      create: (_) => id == null
+          ? SiteContentCubit(translationService: I.get<TranslationService>())
+          : (SiteContentCubit(
+              translationService: EdgeFunctionTranslationService(
+                supabase: Supabase.instance.client,
+                siteId: id,
+                page: WebsiteContentRepository.page,
+              ),
+              repository:
+                  WebsiteContentRepository(supabase: Supabase.instance.client),
+              siteId: id,
+            )..loadContent()),
       child: const _WebsiteEditorView(),
     );
   }

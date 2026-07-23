@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../data/translation_service.dart';
+import '../data/website_content_repository.dart';
 import '../domain/website_content.dart';
 
 /// Preview device frame.
@@ -61,7 +64,7 @@ class SiteContentState extends Equatable {
   List<EditorFieldDef> get fields =>
       pageKey == 'home' ? kHomeFields : const [];
 
-  int currentSourceHash(String key) => sourceHashOf(source[key] ?? '');
+  String currentSourceHash(String key) => sourceHashOf(source[key] ?? '');
 
   TranslatedField? translatedField(String language, String key) =>
       translations[language]?[key];
@@ -145,13 +148,103 @@ class SiteContentState extends Equatable {
 /// target field locks it; publish re-translates every auto field and clears
 /// stale for all languages. Translation runs through an injected
 /// [TranslationService].
+///
+/// With a [repository] + [siteId] the cubit is persistent: [loadContent]
+/// hydrates from the site's documents + `site_translations`, edits autosave as
+/// drafts (debounced), and publish folds everything back into the documents.
+/// Without them it runs on the in-memory seed (demo/tests).
 class SiteContentCubit extends Cubit<SiteContentState> {
   SiteContentCubit({
     required TranslationService translationService,
+    WebsiteContentRepository? repository,
+    String? siteId,
+    Duration autosaveDebounce = const Duration(milliseconds: 800),
   })  : _translationService = translationService,
+        _repository = repository,
+        _siteId = siteId,
+        _autosaveDebounce = autosaveDebounce,
         super(_seedState());
 
   final TranslationService _translationService;
+  final WebsiteContentRepository? _repository;
+  final String? _siteId;
+  final Duration _autosaveDebounce;
+
+  Timer? _autosaveTimer;
+  bool _sourceDirty = false;
+  final Set<(String, String)> _dirtyTranslationFields = {};
+
+  bool get _persistent => _repository != null && _siteId != null;
+
+  /// Hydrates the state from the repository. No-op without persistence; on
+  /// failure the seed state stays and an error message is surfaced.
+  Future<void> loadContent() async {
+    if (!_persistent) return;
+    try {
+      final content = await _repository!.loadPageContent(
+        siteId: _siteId!,
+        sourceLanguage: state.sourceLanguage,
+        locales: state.locales,
+      );
+      emit(
+        state.copyWith(
+          source: content.source,
+          translations: content.translations,
+          dirty: false,
+          clearError: true,
+        ),
+      );
+    } catch (_) {
+      emit(state.copyWith(errorMessage: 'load_failed'));
+    }
+  }
+
+  void _scheduleAutosave() {
+    if (!_persistent) return;
+    _autosaveTimer?.cancel();
+    _autosaveTimer = Timer(_autosaveDebounce, () {
+      // ignore: discarded_futures — fire-and-forget autosave tick.
+      _flushPendingSaves();
+    });
+  }
+
+  /// Persists pending edits: the source draft and/or changed translation
+  /// fields. Errors surface as a non-blocking message; edits stay in memory.
+  Future<void> _flushPendingSaves() async {
+    if (!_persistent) return;
+    final saveSource = _sourceDirty;
+    final fields = List.of(_dirtyTranslationFields);
+    _sourceDirty = false;
+    _dirtyTranslationFields.clear();
+    try {
+      if (saveSource) {
+        await _repository!.saveSourceDraft(
+          siteId: _siteId!,
+          sourceLanguage: state.sourceLanguage,
+          fields: state.source,
+        );
+      }
+      for (final (language, key) in fields) {
+        final field = state.translatedField(language, key);
+        if (field == null) continue;
+        await _repository!.saveTranslationField(
+          siteId: _siteId!,
+          language: language,
+          fieldKey: key,
+          field: field,
+        );
+      }
+    } catch (_) {
+      if (!isClosed) emit(state.copyWith(errorMessage: 'save_failed'));
+    }
+  }
+
+  @override
+  Future<void> close() async {
+    _autosaveTimer?.cancel();
+    await _flushPendingSaves();
+    return super.close();
+  }
 
   static SiteContentState _seedState() {
     final source = Map<String, String>.from(WebsiteSeed.home['nl']!);
@@ -196,6 +289,8 @@ class SiteContentCubit extends Cubit<SiteContentState> {
   void editSourceField(String key, String value) {
     final source = Map<String, String>.from(state.source)..[key] = value;
     emit(state.copyWith(source: source, dirty: true));
+    _sourceDirty = true;
+    _scheduleAutosave();
   }
 
   /// Edits a target-language field, locking it so translation never overwrites
@@ -209,6 +304,8 @@ class SiteContentCubit extends Cubit<SiteContentState> {
       status: FieldTranslationStatus.locked,
     );
     emit(state.copyWith(translations: updated, dirty: true));
+    _dirtyTranslationFields.add((language, key));
+    _scheduleAutosave();
   }
 
   /// Reverts a locked field back to auto and regenerates it from the source.
@@ -228,6 +325,8 @@ class SiteContentCubit extends Cubit<SiteContentState> {
         sourceHash: state.currentSourceHash(key),
       );
       emit(state.copyWith(translations: updated, dirty: true, clearError: true));
+      _dirtyTranslationFields.add((language, key));
+      _scheduleAutosave();
     } catch (_) {
       emit(state.copyWith(errorMessage: 'reset_failed'));
     }
@@ -268,6 +367,9 @@ class SiteContentCubit extends Cubit<SiteContentState> {
             status: FieldTranslationStatus.auto,
             sourceHash: state.currentSourceHash(key),
           );
+          // Idempotent with the Edge Function's own upsert; keeps
+          // site_translations correct for any TranslationService.
+          _dirtyTranslationFields.add((language, key));
         });
       }
       emit(
@@ -277,6 +379,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
           clearError: true,
         ),
       );
+      _scheduleAutosave();
     } catch (_) {
       // Degrade gracefully: keep the last good translations, surface an error.
       emit(
@@ -292,9 +395,30 @@ class SiteContentCubit extends Cubit<SiteContentState> {
   void closePublish() => emit(state.copyWith(publishOpen: false));
 
   /// Publishes all enabled languages at once: re-translates every auto field of
-  /// every target language (clearing stale), then clears the dirty flag.
+  /// every target language (clearing stale), persists everything into the
+  /// site's documents, then clears the dirty flag. Persistence failures keep
+  /// the dirty state so publish can be retried.
   Future<void> publishAll() async {
     await translateNow(state.targetLanguages);
+    if (_persistent) {
+      try {
+        await _flushPendingSaves();
+        await _repository!.publishAll(
+          siteId: _siteId!,
+          valuesByLocale: {
+            state.sourceLanguage: Map<String, String>.from(state.source),
+            for (final language in state.targetLanguages)
+              language: {
+                for (final field in state.fields)
+                  field.key: state.valueFor(language, field.key),
+              },
+          },
+        );
+      } catch (_) {
+        emit(state.copyWith(errorMessage: 'publish_failed'));
+        return;
+      }
+    }
     emit(state.copyWith(dirty: false, publishOpen: false, clearError: true));
   }
 

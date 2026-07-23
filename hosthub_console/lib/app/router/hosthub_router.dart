@@ -147,7 +147,9 @@ class HosthubRouter {
             ),
             GoRoute(
               path: '/website-editor',
-              builder: (context, state) => const WebsiteEditorPage(),
+              builder: (context, state) => WebsiteEditorPage(
+                siteId: state.uri.queryParameters['siteId'],
+              ),
             ),
             GoRoute(
               path: '/sites/:siteName/:siteId',
