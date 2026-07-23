@@ -5,6 +5,16 @@ import 'package:flutter/material.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
+/// Console page scaffold.
+///
+/// Thin adapter over the shared [StyledWebPageScaffold]: it delegates the
+/// header + dual-pane layout to the shared widget and layers on the
+/// console-specific chrome (primary/save action button, loading indicator,
+/// floating action button, page background and per-pane surface decoration).
+///
+/// Keeping this as an adapter — rather than a fork of the layout logic — means
+/// the pane sizing, responsive behaviour and pane surface all stay in sync with
+/// the rest of the styled apps, while the console keeps its richer editor API.
 class ConsolePageScaffold extends StatefulWidget {
   const ConsolePageScaffold({
     super.key,
@@ -103,30 +113,20 @@ class ConsolePageScaffold extends StatefulWidget {
 }
 
 class _ConsolePageScaffoldState extends State<ConsolePageScaffold> {
-  Future<void> _handleBack() async {
-    if (!mounted) return;
+  /// Runs the caller's back guard (if any). Returns `true` when navigation
+  /// should proceed. Does not pop itself — the caller decides.
+  Future<bool> _guardBack() async {
+    if (!mounted) return false;
     if (widget.onBack != null) {
       final allow = await widget.onBack!.call();
-      if (!allow || !mounted) return;
+      if (!allow || !mounted) return false;
     }
-    await Navigator.of(context).maybePop();
+    return true;
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    final primaryAction = widget.onAction ?? widget.onSave;
-    final isActionBusy = widget.actionInProgress ?? widget.isSaving;
-    final actionLabel =
-        widget.actionText ?? (widget.isDirty ? 'Save' : 'Saved');
-    final actionIconData = widget.showActionIcon
-        ? (widget.actionIcon ?? Icons.save_outlined)
-        : null;
-    final actionIsEnabled =
-        (widget.actionEnabled ?? widget.isDirty) &&
-        !isActionBusy &&
-        primaryAction != null;
 
     final screenWidth = MediaQuery.sizeOf(context).width;
     final isCompact = screenWidth < 700;
@@ -142,254 +142,148 @@ class _ConsolePageScaffoldState extends State<ConsolePageScaffold> {
         ? EdgeInsets.all(math.min(widget.panePadding.left, 12))
         : widget.panePadding;
 
+    final scaffold = StyledWebPageScaffold(
+      title: widget.title,
+      description: widget.description,
+      onBack: widget.onBack != null ? _guardBack : null,
+      bottom: widget.bottom,
+      padding: effectivePadding,
+      contentPadding: widget.contentPadding,
+      actions: _buildActions(),
+      showRightPane: widget.showRightPane && widget.rightChild != null,
+      leftPaneSize: _toStyledPaneSize(widget.leftPaneSize),
+      rightPaneSize: _resolveRightPaneSize(),
+      leftChild: _decorateLeftPane(widget.leftChild, effectivePanePadding),
+      rightChild: widget.rightChild == null
+          ? null
+          : _decorateRightPane(widget.rightChild!),
+    );
+
+    Widget body = scaffold;
+    if (widget.showLoadingIndicator) {
+      body = Stack(
+        children: [
+          body,
+          Positioned(
+            top: effectivePadding.top,
+            left: effectivePadding.left,
+            right: effectivePadding.right,
+            child: const LinearProgressIndicator(minHeight: 2),
+          ),
+        ],
+      );
+    }
+
     return PopScope(
       canPop: true,
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop || widget.onBack == null) return;
-        await _handleBack();
+        if (await _guardBack() && mounted) {
+          await Navigator.of(context).maybePop();
+        }
       },
       child: Scaffold(
         backgroundColor: theme.appColors.settingsBackgroundColor,
         floatingActionButton: widget.floatingActionButton,
-        body: SafeArea(
-          child: Stack(
-            children: [
-              Padding(
-                padding: effectivePadding,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Builder(
-                      builder: (context) {
-                        final hasBack = widget.onBack != null;
-                        return Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            if (hasBack) ...[
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.arrow_back_ios_new_rounded,
-                                ),
-                                onPressed: _handleBack,
-                                padding: const EdgeInsets.only(right: 12),
-                                splashRadius: 20,
-                              ),
-                              const SizedBox(width: 4),
-                            ],
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    widget.title,
-                                    style: theme.textTheme.headlineSmall
-                                        ?.copyWith(fontWeight: FontWeight.w700),
-                                  ),
-                                  if (widget.description != null) ...[
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      widget.description!,
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(
-                                            color: colors.onSurfaceVariant,
-                                          ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (widget.actions != null) ...widget.actions!,
-                                if (primaryAction != null &&
-                                    widget.actions != null)
-                                  const SizedBox(width: 8),
-                                if (primaryAction != null)
-                                  StyledButton(
-                                    title: actionLabel,
-                                    onPressed: primaryAction,
-                                    enabled: actionIsEnabled,
-                                    leftIconData: actionIconData,
-                                    showLeftIcon: actionIconData != null,
-                                    showProgressIndicatorWhenDisabled:
-                                        isActionBusy,
-                                    minHeight: 40,
-                                  ),
-                              ],
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    if (widget.bottom != null) ...[
-                      const SizedBox(height: 8),
-                      widget.bottom!,
-                    ],
-                    const SizedBox(height: 16),
-                    Expanded(
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final hasRightPane =
-                              widget.showRightPane && widget.rightChild != null;
-                          const gap = 12.0;
-                          final availableWidth = constraints.maxWidth;
-                          final usableWidth = hasRightPane
-                              ? availableWidth - gap
-                              : availableWidth;
+        body: body,
+      ),
+    );
+  }
 
-                          final rightWidth = hasRightPane
-                              ? _resolveRightPaneWidth(
-                                  context,
-                                  usableWidth,
-                                ).clamp(0, usableWidth).toDouble()
-                              : 0.0;
-                          final leftWidth = _resolveLeftPaneWidth(
-                            usableWidth,
-                            rightWidth,
-                          )?.clamp(0, usableWidth - rightWidth).toDouble();
-                          final fallbackLeftWidth = math
-                              .max(usableWidth - rightWidth, 0)
-                              .toDouble();
-                          final resolvedLeftWidth =
-                              leftWidth ?? fallbackLeftWidth;
+  /// Builds the header action row: the caller-provided actions followed by the
+  /// primary/save button (when an action or save handler is configured).
+  List<Widget>? _buildActions() {
+    final primaryAction = widget.onAction ?? widget.onSave;
+    final isActionBusy = widget.actionInProgress ?? widget.isSaving;
+    final actionLabel =
+        widget.actionText ?? (widget.isDirty ? 'Save' : 'Saved');
+    final actionIconData = widget.showActionIcon
+        ? (widget.actionIcon ?? Icons.save_outlined)
+        : null;
+    final actionIsEnabled =
+        (widget.actionEnabled ?? widget.isDirty) &&
+        !isActionBusy &&
+        primaryAction != null;
 
-                          return Padding(
-                            padding: widget.contentPadding,
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildLeftPane(
-                                  resolvedLeftWidth,
-                                  effectivePanePadding,
-                                ),
-                                if (hasRightPane) ...[
-                                  const SizedBox(width: gap),
-                                  SizedBox(
-                                    width: rightWidth,
-                                    child: widget.wrapRightPane
-                                        ? ClipRRect(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            child: DecoratedBox(
-                                              decoration: BoxDecoration(
-                                                color: theme
-                                                    .appColors
-                                                    .contrastBackgroundHard,
-                                                border: Border.all(
-                                                  color: theme.dividerColor,
-                                                ),
-                                              ),
-                                              child: widget.rightChild,
-                                            ),
-                                          )
-                                        : widget.rightChild ??
-                                              const SizedBox.shrink(),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (widget.showLoadingIndicator)
-                Positioned(
-                  top: widget.padding.top,
-                  left: widget.padding.left,
-                  right: widget.padding.right,
-                  child: const LinearProgressIndicator(minHeight: 2),
-                ),
-            ],
-          ),
+    final actions = <Widget>[
+      if (widget.actions != null) ...widget.actions!,
+      if (primaryAction != null) ...[
+        if (widget.actions != null) const SizedBox(width: 8),
+        StyledButton(
+          title: actionLabel,
+          onPressed: primaryAction,
+          enabled: actionIsEnabled,
+          leftIconData: actionIconData,
+          showLeftIcon: actionIconData != null,
+          showProgressIndicatorWhenDisabled: isActionBusy,
+          minHeight: 40,
         ),
-      ),
-    );
+      ],
+    ];
+
+    return actions.isEmpty ? null : actions;
   }
 
-  Widget _buildLeftPane(double? targetWidth, EdgeInsets panePadding) {
-    final paneSize = widget.leftPaneSize;
-    final child = widget.leftChild;
-
-    if (targetWidth == null) {
-      final wrapped = widget.wrapLeftPane
-          ? _wrapPane(child, panePadding)
-          : _padPane(child, panePadding);
-      return Expanded(child: wrapped);
+  /// Left pane surface: a rounded [Material] so ListTile-based children (e.g.
+  /// ExpansionTile headers) can paint their background and ink splashes.
+  Widget _decorateLeftPane(Widget child, EdgeInsets panePadding) {
+    if (!widget.wrapLeftPane) {
+      return panePadding == EdgeInsets.zero
+          ? child
+          : Padding(padding: panePadding, child: child);
     }
-
-    final minWidth = paneSize?.minWidth ?? 0;
-    final safeMinWidth = minWidth > targetWidth ? targetWidth : minWidth;
-    final maxWidth = paneSize?.maxWidth ?? double.infinity;
-
-    final constraints = BoxConstraints(
-      minWidth: safeMinWidth,
-      maxWidth: maxWidth,
-    );
-
-    final wrapped = widget.wrapLeftPane
-        ? _wrapPane(child, panePadding)
-        : _padPane(child, panePadding);
-
-    return ConstrainedBox(
-      constraints: constraints,
-      child: SizedBox(width: targetWidth, child: wrapped),
-    );
-  }
-
-  Widget _wrapPane(Widget child, EdgeInsets panePadding) {
     final theme = Theme.of(context);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.appColors.contrastBackgroundHard,
-        borderRadius: BorderRadius.circular(12),
-      ),
+    return Material(
+      type: MaterialType.canvas,
+      color: theme.appColors.contrastBackgroundHard,
+      borderRadius: BorderRadius.circular(12),
+      clipBehavior: Clip.antiAlias,
       child: Padding(padding: panePadding, child: child),
     );
   }
 
-  Widget _padPane(Widget child, EdgeInsets panePadding) {
-    if (panePadding == EdgeInsets.zero) return child;
-    return Padding(padding: panePadding, child: child);
+  /// Right pane surface: like the left pane but with a divider-coloured border.
+  Widget _decorateRightPane(Widget child) {
+    if (!widget.wrapRightPane) return child;
+    final theme = Theme.of(context);
+    return Material(
+      type: MaterialType.canvas,
+      color: theme.appColors.contrastBackgroundHard,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: theme.dividerColor),
+      ),
+      child: child,
+    );
   }
 
-  double _resolveRightPaneWidth(BuildContext context, double availableWidth) {
-    final customSize = widget.rightPaneSize;
-    if (customSize != null) {
-      return customSize.resolve(availableWidth);
+  /// Resolves the right pane sizing, honouring both the declarative
+  /// [ConsolePageScaffold.rightPaneSize] and the legacy width/flex flags.
+  StyledPaneSize? _resolveRightPaneSize() {
+    if (!(widget.showRightPane && widget.rightChild != null)) return null;
+    final custom = widget.rightPaneSize;
+    if (custom != null) return _toStyledPaneSize(custom);
+
+    if (widget.rightPaneFlexible) {
+      return StyledPaneSize.flexible(
+        widthFactor: widget.rightPaneWidthFactor ?? 0.45,
+        minWidth: widget.rightPaneMinWidth ?? widget.rightPaneWidth,
+        maxWidth: widget.rightPaneMaxWidth ?? widget.rightPaneWidth,
+      );
     }
-
-    if (!widget.rightPaneFlexible) return widget.rightPaneWidth;
-
-    const defaultFactor = 0.45;
-    final factor = widget.rightPaneWidthFactor ?? defaultFactor;
-    final minWidth = widget.rightPaneMinWidth ?? widget.rightPaneWidth;
-    final maxWidth = widget.rightPaneMaxWidth ?? widget.rightPaneWidth;
-    final targetWidth = availableWidth * factor;
-
-    return targetWidth.clamp(minWidth, maxWidth).toDouble();
+    return StyledPaneSize.fixed(widget.rightPaneWidth);
   }
 
-  double? _resolveLeftPaneWidth(
-    double availableWidth,
-    double resolvedRightWidth,
-  ) {
-    final customSize = widget.leftPaneSize;
-    if (customSize == null) return null;
-
-    final remaining = availableWidth - resolvedRightWidth;
-    if (remaining <= 0) return 0;
-
-    return customSize
-        .resolve(availableWidth, fallbackWidth: remaining)
-        .clamp(0, remaining)
-        .toDouble();
+  StyledPaneSize? _toStyledPaneSize(AdminPaneSize? size) {
+    if (size == null) return null;
+    if (size.isFixed) return StyledPaneSize.fixed(size.fixedWidth!);
+    return StyledPaneSize.flexible(
+      baseWidth: size.baseWidth,
+      widthFactor: size.widthFactor ?? 0.45,
+      minWidth: size.minWidth,
+      maxWidth: size.maxWidth,
+    );
   }
 }
 
@@ -428,21 +322,4 @@ class AdminPaneSize {
   final double? widthFactor;
 
   bool get isFixed => fixedWidth != null;
-
-  double resolve(double availableWidth, {double? fallbackWidth}) {
-    if (isFixed) return fixedWidth!;
-
-    final factor = widthFactor ?? 0.45;
-    final targetWidth = availableWidth * factor;
-    final baseline = baseWidth ?? fallbackWidth ?? targetWidth;
-    final minResolved = minWidth ?? baseline;
-    var maxResolved = maxWidth ?? baseline;
-
-    // Guard against invalid clamp ranges when min is larger than max.
-    if (maxResolved < minResolved) {
-      maxResolved = minResolved;
-    }
-
-    return targetWidth.clamp(minResolved, maxResolved).toDouble();
-  }
 }
