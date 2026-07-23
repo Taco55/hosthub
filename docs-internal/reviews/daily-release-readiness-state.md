@@ -52,7 +52,7 @@ gemotiveerd uitstellen mag alleen met reden in de evidence-kolom.
 
 | # | slice | scope | status | evidence |
 |---|-------|-------|--------|----------|
-| C1 | Sidebar/rail: items+iconen, compact 96px + pin, hover-expand, switchers (Property/Source language), footer | console (+lib) | todo | |
+| C1 | Sidebar/rail: items+iconen, compact 96px + pin, hover-expand, switchers (Property/Source language), footer | console (+lib) | in_progress | Bevindingen gefixt: (1) compact/pin ontbrak → SidebarModeCubit + desktop-shell met Stack/hover-flyout (diplora _DesktopShell-patroon), toggle uit de lib via onModeChanged; (2) nav-iconen conform design (language/calendar_today/show_chart/sell_outlined); (3) Source-language switcher ontbrak → SiteContextCubit (property→site-resolutie) + sites.default_locale-update + ice switcher-velden via StyledMenuOverlay (diplora-recept); (4) versie-footer toegevoegd; (5) editor brontaal/locales nu uit site-row i.p.v. hardcoded seed + live herladen bij switch. +2 tests; SDK-cache web-mismatch gerepareerd (flutter precache --web) |
 | C2 | Editor bronmodus: topbar, tabs, banners, cards (incl. highlights-reorder/drag grip, Add highlight), save bar | console | todo | |
 | C3 | Editor vertaalmodus: chips, source-ref, Reset to AI, coverage, stale/fresh toolbar, shared-photos note | console | todo | |
 | C4 | Preview: pill, device toggle, locale switcher (AI badge/stale dot), binding, ribbons (incl. acties) | console | todo | |

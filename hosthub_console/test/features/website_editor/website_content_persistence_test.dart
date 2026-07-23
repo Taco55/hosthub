@@ -157,6 +157,31 @@ void main() {
     await cubit.close();
   });
 
+  test('loadContent adopts the site source language and resets the preview',
+      () async {
+    final base = _remoteContent();
+    final repo = FakeWebsiteContentRepository(
+      content: WebsitePageContent(
+        source: base.source,
+        translations: base.translations,
+        sourceLanguage: 'en',
+        locales: const ['en', 'no'],
+      ),
+    );
+    final cubit = _build(repo);
+    // Seed preview is 'nl', which the site no longer offers.
+    expect(cubit.state.previewLanguage, 'nl');
+
+    await cubit.loadContent();
+
+    expect(cubit.state.sourceLanguage, 'en');
+    expect(cubit.state.locales, ['en', 'no']);
+    // Preview snapped to the new source because 'nl' is not enabled.
+    expect(cubit.state.previewLanguage, 'en');
+    expect(cubit.state.targetLanguages, ['no']);
+    await cubit.close();
+  });
+
   test('hydrated auto fields go stale when their source changes', () async {
     final repo = FakeWebsiteContentRepository(content: _remoteContent());
     final cubit = _build(repo);

@@ -125,32 +125,34 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m46(email) => "Verification code sent to ${email}";
 
-  static String m47(source) =>
+  static String m47(version) => "v${version}";
+
+  static String m48(source) =>
       "Type over any field to lock it; untouched fields stay auto and follow the ${source} source.";
 
-  static String m48(language) => "Editing the ${language} translation";
+  static String m49(language) => "Editing the ${language} translation";
 
-  static String m49(languages) =>
+  static String m50(languages) =>
       "${languages} update automatically on publish. Locked fields keep your wording.";
 
-  static String m50(language) => "You\'re writing in ${language}";
+  static String m51(language) => "You\'re writing in ${language}";
 
-  static String m51(lang) => "Editing · ${lang}";
+  static String m52(lang) => "Editing · ${lang}";
 
-  static String m52(number) => "Experience ${number}";
+  static String m53(number) => "Experience ${number}";
 
-  static String m53(number) => "Highlight ${number}";
+  static String m54(number) => "Highlight ${number}";
 
-  static String m54(language) => "${language} preview";
+  static String m55(language) => "${language} preview";
 
-  static String m55(count) => "Publish ${count} languages";
+  static String m56(count) => "Publish ${count} languages";
 
-  static String m56(language) => "${language} · source";
+  static String m57(language) => "${language} · source";
 
-  static String m57(source) =>
+  static String m58(source) =>
       "Your ${source} content publishes as-is. The other languages are re-translated by AI, keeping anything you\'ve locked.";
 
-  static String m58(lang) => "Source · ${lang}";
+  static String m59(lang) => "Source · ${lang}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1523,6 +1525,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "showErrorDetails": MessageLookupByLibrary.simpleMessage("Show details"),
     "showStartTabLabel": MessageLookupByLibrary.simpleMessage("Show start tab"),
+    "sidebarCollapseTooltip": MessageLookupByLibrary.simpleMessage(
+      "Collapse menu",
+    ),
+    "sidebarPinTooltip": MessageLookupByLibrary.simpleMessage("Pin menu"),
     "signInWithMagicLink": MessageLookupByLibrary.simpleMessage(
       "Sign in with magic link",
     ),
@@ -1591,6 +1597,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "soundLabel": MessageLookupByLibrary.simpleMessage("Sound"),
     "soup": MessageLookupByLibrary.simpleMessage("Soup"),
     "source": MessageLookupByLibrary.simpleMessage("Source"),
+    "sourceLanguageLabel": MessageLookupByLibrary.simpleMessage(
+      "Source language",
+    ),
+    "sourceLanguageUnavailable": MessageLookupByLibrary.simpleMessage(
+      "No website linked",
+    ),
     "spaghetti": MessageLookupByLibrary.simpleMessage("Spaghetti"),
     "sport": MessageLookupByLibrary.simpleMessage("Sport"),
     "sportCar": MessageLookupByLibrary.simpleMessage("Sport Car"),
@@ -1720,6 +1732,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "verificationCodeSentText": m46,
     "verify": MessageLookupByLibrary.simpleMessage("Verify"),
+    "versionFooter": m47,
     "verticalLine": MessageLookupByLibrary.simpleMessage("Vertical Line"),
     "walking": MessageLookupByLibrary.simpleMessage("Walking"),
     "wallet": MessageLookupByLibrary.simpleMessage("Wallet"),
@@ -1729,16 +1742,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "weAddHighlight": MessageLookupByLibrary.simpleMessage("Add highlight"),
     "weAddPhoto": MessageLookupByLibrary.simpleMessage("Add"),
     "weAiTranslation": MessageLookupByLibrary.simpleMessage("AI translation"),
-    "weBannerEditingBody": m47,
-    "weBannerEditingTitle": m48,
-    "weBannerUnpublishedBody": m49,
+    "weBannerEditingBody": m48,
+    "weBannerEditingTitle": m49,
+    "weBannerUnpublishedBody": m50,
     "weBannerUnpublishedTitle": MessageLookupByLibrary.simpleMessage(
       "Unpublished changes",
     ),
     "weBannerWritingBody": MessageLookupByLibrary.simpleMessage(
       "Other languages translate automatically on publish — except fields you lock.",
     ),
-    "weBannerWritingTitle": m50,
+    "weBannerWritingTitle": m51,
     "weBreadcrumbWebsite": MessageLookupByLibrary.simpleMessage("Website"),
     "weCardContent": MessageLookupByLibrary.simpleMessage("Page content"),
     "weCardHero": MessageLookupByLibrary.simpleMessage("Hero"),
@@ -1747,11 +1760,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "weChipLocked": MessageLookupByLibrary.simpleMessage("Locked"),
     "weDeviceMobile": MessageLookupByLibrary.simpleMessage("Mobile"),
     "weDeviceWeb": MessageLookupByLibrary.simpleMessage("Web"),
-    "weEditingChip": m51,
-    "weFieldExperience": m52,
+    "weEditingChip": m52,
+    "weFieldExperience": m53,
     "weFieldHeadline": MessageLookupByLibrary.simpleMessage("Headline"),
     "weFieldHeroPhotos": MessageLookupByLibrary.simpleMessage("Hero photos"),
-    "weFieldHighlight": m53,
+    "weFieldHighlight": m54,
     "weFieldIntro": MessageLookupByLibrary.simpleMessage("Intro"),
     "weFieldSubtitle": MessageLookupByLibrary.simpleMessage("Subtitle"),
     "weFieldTitle": MessageLookupByLibrary.simpleMessage("Title"),
@@ -1767,7 +1780,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePageContact": MessageLookupByLibrary.simpleMessage("Contact"),
     "wePageHome": MessageLookupByLibrary.simpleMessage("Home"),
     "wePagePractical": MessageLookupByLibrary.simpleMessage("Practical"),
-    "wePreviewLabel": m54,
+    "wePreviewLabel": m55,
     "wePreviewLatest": MessageLookupByLibrary.simpleMessage("Preview latest"),
     "wePreviewTranslation": MessageLookupByLibrary.simpleMessage(
       "Preview translation",
@@ -1776,7 +1789,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Publish all languages",
     ),
     "wePublishCancel": MessageLookupByLibrary.simpleMessage("Cancel"),
-    "wePublishConfirm": m55,
+    "wePublishConfirm": m56,
     "wePublishReady": MessageLookupByLibrary.simpleMessage("Ready"),
     "wePublishReadyNote": MessageLookupByLibrary.simpleMessage(
       "Published as written",
@@ -1787,8 +1800,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePublishRetranslateNote": MessageLookupByLibrary.simpleMessage(
       "Out of date — will refresh",
     ),
-    "wePublishSourceRole": m56,
-    "wePublishSubtitle": m57,
+    "wePublishSourceRole": m57,
+    "wePublishSubtitle": m58,
     "wePublishTitle": MessageLookupByLibrary.simpleMessage(
       "Publish all languages",
     ),
@@ -1808,7 +1821,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "weSharedPhotosNote": MessageLookupByLibrary.simpleMessage(
       "Photos are shared across all languages — edit them in the source.",
     ),
-    "weSourceChip": m58,
+    "weSourceChip": m59,
     "weStaleNotice": MessageLookupByLibrary.simpleMessage(
       "Preview reflects an earlier source edit.",
     ),

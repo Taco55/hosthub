@@ -235,6 +235,25 @@ class CmsRepository extends SupabaseRepository {
     }
   }
 
+  /// Changes the site's source language. The locale must be one of the site's
+  /// enabled locales; the website editor treats it as the language the owner
+  /// authors in (all other locales derive from it).
+  Future<void> updateSiteDefaultLocale(String siteId, String locale) async {
+    try {
+      await supabase
+          .from('sites')
+          .update({'default_locale': locale})
+          .eq('id', siteId);
+    } catch (error, stack) {
+      throw mapError(
+        error,
+        stack,
+        reason: DomainErrorReason.cannotSaveData,
+        context: {'op': 'updateSiteDefaultLocale', 'siteId': siteId},
+      );
+    }
+  }
+
   Future<void> createSite({
     required String name,
     required String defaultLocale,

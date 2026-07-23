@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:hosthub_console/app/shell/application/site_context_cubit.dart';
 import 'package:hosthub_console/core/core.dart';
 import 'package:hosthub_console/core/widgets/foundation/foundation.dart';
 
@@ -56,7 +57,7 @@ class _WebsiteEditorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<SiteContentCubit, SiteContentState>(
+    final view = BlocConsumer<SiteContentCubit, SiteContentState>(
       listenWhen: (prev, next) => !prev.publishOpen && next.publishOpen,
       listener: (context, state) async {
         final cubit = context.read<SiteContentCubit>();
@@ -81,6 +82,19 @@ class _WebsiteEditorView extends StatelessWidget {
           showRightPane: true,
         );
       },
+    );
+
+    if (siteId == null) return view;
+
+    // The rail's source-language switcher changes sites.default_locale; reload
+    // the editor content so the authoring language follows it.
+    return BlocListener<SiteContextCubit, SiteContextState>(
+      listenWhen: (prev, next) =>
+          prev.site?.defaultLocale != next.site?.defaultLocale &&
+          next.site?.id == siteId,
+      listener: (context, _) =>
+          context.read<SiteContentCubit>().loadContent(),
+      child: view,
     );
   }
 }

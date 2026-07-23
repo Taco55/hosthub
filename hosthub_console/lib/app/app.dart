@@ -18,6 +18,8 @@ import 'package:hosthub_console/core/l10n/application/language_cubit.dart';
 
 import 'package:hosthub_console/app/router/hosthub_router.dart';
 import 'package:hosthub_console/app/router/go_router_refresh_stream.dart';
+import 'package:hosthub_console/app/shell/application/sidebar_mode_cubit.dart';
+import 'package:hosthub_console/app/shell/application/site_context_cubit.dart';
 import 'package:hosthub_console/app/shell/navigation/navigation_guard_controller.dart';
 import 'package:hosthub_console/app/session/session_bloc_listeners.dart';
 import 'package:hosthub_console/features/auth/auth.dart';
@@ -99,6 +101,13 @@ class ConsoleApp extends StatelessWidget {
         BlocProvider<PropertyContextCubit>(
           create: (_) =>
               PropertyContextCubit(repository: I.get<PropertyRepository>()),
+        ),
+        BlocProvider<SidebarModeCubit>(create: (_) => SidebarModeCubit()),
+        BlocProvider<SiteContextCubit>(
+          create: (context) => SiteContextCubit(
+            cmsRepository: I.get<CmsRepository>(),
+            propertyContext: context.read<PropertyContextCubit>(),
+          ),
         ),
         BlocProvider<LanguageCubit>.value(value: I.get<LanguageCubit>()),
         BlocProvider<ThemeCubit>.value(value: I.get<ThemeCubit>()),

@@ -8,13 +8,25 @@ import '../domain/website_content.dart';
 /// Loaded editor content for one page: the source-language field values plus
 /// the per-language translated fields.
 class WebsitePageContent {
-  const WebsitePageContent({required this.source, required this.translations});
+  const WebsitePageContent({
+    required this.source,
+    required this.translations,
+    this.sourceLanguage,
+    this.locales,
+  });
 
   /// `fieldKey -> text` in the source language.
   final Map<String, String> source;
 
   /// `language -> (fieldKey -> TranslatedField)` for the target languages.
   final Map<String, Map<String, TranslatedField>> translations;
+
+  /// The site's source language (`sites.default_locale`); null when the
+  /// caller should keep its current value.
+  final String? sourceLanguage;
+
+  /// The site's enabled locales; null when unknown.
+  final List<String>? locales;
 }
 
 /// Persistence for the website editor. The editor's flat field keys map onto
@@ -181,6 +193,22 @@ class WebsiteContentRepository extends SupabaseRepository {
     required List<String> locales,
   }) async {
     try {
+      // The site row is authoritative for the source language + locales; the
+      // caller's values are only the fallback (seed) configuration.
+      final siteRow = await supabase
+          .from('sites')
+          .select('default_locale, locales')
+          .eq('id', siteId)
+          .maybeSingle();
+      final siteSourceLanguage =
+          (siteRow?['default_locale'] as String?) ?? sourceLanguage;
+      final siteLocales = (siteRow?['locales'] as List<dynamic>?)
+              ?.map((l) => l as String)
+              .toList() ??
+          locales;
+      sourceLanguage = siteSourceLanguage;
+      locales = siteLocales;
+
       final documentRows = await supabase
           .from('cms_documents')
           .select('content_type, slug, locale, content')
@@ -240,7 +268,12 @@ class WebsiteContentRepository extends SupabaseRepository {
         translations[language] = fields;
       }
 
-      return WebsitePageContent(source: source, translations: translations);
+      return WebsitePageContent(
+        source: source,
+        translations: translations,
+        sourceLanguage: sourceLanguage,
+        locales: locales,
+      );
     } catch (error, stack) {
       throw mapError(
         error,

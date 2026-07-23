@@ -125,32 +125,34 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m46(email) => "Verificatiecode verstuurd naar ${email}";
 
-  static String m47(source) =>
+  static String m47(version) => "v${version}";
+
+  static String m48(source) =>
       "Typ over een veld om het te vergrendelen; ongewijzigde velden blijven automatisch en volgen de ${source} bron.";
 
-  static String m48(language) => "De ${language} vertaling bewerken";
+  static String m49(language) => "De ${language} vertaling bewerken";
 
-  static String m49(languages) =>
+  static String m50(languages) =>
       "${languages} worden automatisch bijgewerkt bij publiceren. Vergrendelde velden behouden je tekst.";
 
-  static String m50(language) => "Je schrijft in het ${language}";
+  static String m51(language) => "Je schrijft in het ${language}";
 
-  static String m51(lang) => "Bewerken · ${lang}";
+  static String m52(lang) => "Bewerken · ${lang}";
 
-  static String m52(number) => "Ervaring ${number}";
+  static String m53(number) => "Ervaring ${number}";
 
-  static String m53(number) => "Hoogtepunt ${number}";
+  static String m54(number) => "Hoogtepunt ${number}";
 
-  static String m54(language) => "${language} voorbeeld";
+  static String m55(language) => "${language} voorbeeld";
 
-  static String m55(count) => "${count} talen publiceren";
+  static String m56(count) => "${count} talen publiceren";
 
-  static String m56(language) => "${language} · bron";
+  static String m57(language) => "${language} · bron";
 
-  static String m57(source) =>
+  static String m58(source) =>
       "Je ${source} content publiceert zoals die is. De andere talen worden opnieuw vertaald door AI, met behoud van wat je hebt vergrendeld.";
 
-  static String m58(lang) => "Bron · ${lang}";
+  static String m59(lang) => "Bron · ${lang}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1589,6 +1591,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "showStartTabLabel": MessageLookupByLibrary.simpleMessage(
       "Start tab zichtbaar",
     ),
+    "sidebarCollapseTooltip": MessageLookupByLibrary.simpleMessage(
+      "Menu inklappen",
+    ),
+    "sidebarPinTooltip": MessageLookupByLibrary.simpleMessage(
+      "Menu vastzetten",
+    ),
     "signInWithMagicLink": MessageLookupByLibrary.simpleMessage(
       "Inloggen met magic link",
     ),
@@ -1657,6 +1665,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "soundLabel": MessageLookupByLibrary.simpleMessage("Geluid"),
     "soup": MessageLookupByLibrary.simpleMessage("Soep"),
     "source": MessageLookupByLibrary.simpleMessage("Bron"),
+    "sourceLanguageLabel": MessageLookupByLibrary.simpleMessage("Brontaal"),
+    "sourceLanguageUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Geen website gekoppeld",
+    ),
     "spaghetti": MessageLookupByLibrary.simpleMessage("Spaghetti"),
     "sport": MessageLookupByLibrary.simpleMessage("Sport"),
     "sportCar": MessageLookupByLibrary.simpleMessage("Sportauto"),
@@ -1796,6 +1808,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "verificationCode": MessageLookupByLibrary.simpleMessage("Verificatiecode"),
     "verificationCodeSentText": m46,
     "verify": MessageLookupByLibrary.simpleMessage("Verifiëren"),
+    "versionFooter": m47,
     "verticalLine": MessageLookupByLibrary.simpleMessage("Verticale lijn"),
     "walking": MessageLookupByLibrary.simpleMessage("Lopen"),
     "wallet": MessageLookupByLibrary.simpleMessage("Portemonnee"),
@@ -1807,16 +1820,16 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "weAddPhoto": MessageLookupByLibrary.simpleMessage("Toevoegen"),
     "weAiTranslation": MessageLookupByLibrary.simpleMessage("AI-vertaling"),
-    "weBannerEditingBody": m47,
-    "weBannerEditingTitle": m48,
-    "weBannerUnpublishedBody": m49,
+    "weBannerEditingBody": m48,
+    "weBannerEditingTitle": m49,
+    "weBannerUnpublishedBody": m50,
     "weBannerUnpublishedTitle": MessageLookupByLibrary.simpleMessage(
       "Niet-gepubliceerde wijzigingen",
     ),
     "weBannerWritingBody": MessageLookupByLibrary.simpleMessage(
       "Andere talen vertalen automatisch bij publiceren — behalve velden die je vergrendelt.",
     ),
-    "weBannerWritingTitle": m50,
+    "weBannerWritingTitle": m51,
     "weBreadcrumbWebsite": MessageLookupByLibrary.simpleMessage("Website"),
     "weCardContent": MessageLookupByLibrary.simpleMessage("Pagina-inhoud"),
     "weCardHero": MessageLookupByLibrary.simpleMessage("Hero"),
@@ -1825,11 +1838,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "weChipLocked": MessageLookupByLibrary.simpleMessage("Vergrendeld"),
     "weDeviceMobile": MessageLookupByLibrary.simpleMessage("Mobiel"),
     "weDeviceWeb": MessageLookupByLibrary.simpleMessage("Web"),
-    "weEditingChip": m51,
-    "weFieldExperience": m52,
+    "weEditingChip": m52,
+    "weFieldExperience": m53,
     "weFieldHeadline": MessageLookupByLibrary.simpleMessage("Titel"),
     "weFieldHeroPhotos": MessageLookupByLibrary.simpleMessage("Hero-foto\'s"),
-    "weFieldHighlight": m53,
+    "weFieldHighlight": m54,
     "weFieldIntro": MessageLookupByLibrary.simpleMessage("Intro"),
     "weFieldSubtitle": MessageLookupByLibrary.simpleMessage("Ondertitel"),
     "weFieldTitle": MessageLookupByLibrary.simpleMessage("Titel"),
@@ -1845,7 +1858,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePageContact": MessageLookupByLibrary.simpleMessage("Contact"),
     "wePageHome": MessageLookupByLibrary.simpleMessage("Home"),
     "wePagePractical": MessageLookupByLibrary.simpleMessage("Praktisch"),
-    "wePreviewLabel": m54,
+    "wePreviewLabel": m55,
     "wePreviewLatest": MessageLookupByLibrary.simpleMessage(
       "Nieuwste bekijken",
     ),
@@ -1856,7 +1869,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Alle talen publiceren",
     ),
     "wePublishCancel": MessageLookupByLibrary.simpleMessage("Annuleren"),
-    "wePublishConfirm": m55,
+    "wePublishConfirm": m56,
     "wePublishReady": MessageLookupByLibrary.simpleMessage("Klaar"),
     "wePublishReadyNote": MessageLookupByLibrary.simpleMessage(
       "Gepubliceerd zoals geschreven",
@@ -1867,8 +1880,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePublishRetranslateNote": MessageLookupByLibrary.simpleMessage(
       "Verouderd — wordt vernieuwd",
     ),
-    "wePublishSourceRole": m56,
-    "wePublishSubtitle": m57,
+    "wePublishSourceRole": m57,
+    "wePublishSubtitle": m58,
     "wePublishTitle": MessageLookupByLibrary.simpleMessage(
       "Alle talen publiceren",
     ),
@@ -1888,7 +1901,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "weSharedPhotosNote": MessageLookupByLibrary.simpleMessage(
       "Foto\'s worden gedeeld over alle talen — bewerk ze in de bron.",
     ),
-    "weSourceChip": m58,
+    "weSourceChip": m59,
     "weStaleNotice": MessageLookupByLibrary.simpleMessage(
       "Voorbeeld toont een eerdere bronwijziging.",
     ),

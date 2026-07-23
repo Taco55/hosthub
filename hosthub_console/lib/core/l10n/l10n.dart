@@ -8133,6 +8133,56 @@ class S {
       args: [],
     );
   }
+
+  /// `Pin menu`
+  String get sidebarPinTooltip {
+    return Intl.message(
+      'Pin menu',
+      name: 'sidebarPinTooltip',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Collapse menu`
+  String get sidebarCollapseTooltip {
+    return Intl.message(
+      'Collapse menu',
+      name: 'sidebarCollapseTooltip',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Source language`
+  String get sourceLanguageLabel {
+    return Intl.message(
+      'Source language',
+      name: 'sourceLanguageLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No website linked`
+  String get sourceLanguageUnavailable {
+    return Intl.message(
+      'No website linked',
+      name: 'sourceLanguageUnavailable',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `v{version}`
+  String versionFooter(Object version) {
+    return Intl.message(
+      'v$version',
+      name: 'versionFooter',
+      desc: '',
+      args: [version],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

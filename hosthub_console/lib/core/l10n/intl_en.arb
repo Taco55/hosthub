@@ -1374,5 +1374,11 @@
   "propertySelectorLoading": "Loading properties…",
   "propertySelectorUnavailable": "Properties unavailable",
   "propertySelectorEmpty": "No properties",
-  "propertySelectorSelect": "Select property"
+  "propertySelectorSelect": "Select property",
+  "sidebarPinTooltip": "Pin menu",
+  "sidebarCollapseTooltip": "Collapse menu",
+  "sourceLanguageLabel": "Source language",
+  "sourceLanguageUnavailable": "No website linked",
+  "versionFooter": "v{version}",
+  "@versionFooter": { "placeholders": { "version": {} } }
 }

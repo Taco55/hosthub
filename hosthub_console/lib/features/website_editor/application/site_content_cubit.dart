@@ -101,6 +101,8 @@ class SiteContentState extends Equatable {
   }
 
   SiteContentState copyWith({
+    String? sourceLanguage,
+    List<String>? locales,
     String? pageKey,
     String? previewLanguage,
     PreviewDevice? previewDevice,
@@ -114,8 +116,8 @@ class SiteContentState extends Equatable {
   }) {
     return SiteContentState(
       propertyName: propertyName,
-      sourceLanguage: sourceLanguage,
-      locales: locales,
+      sourceLanguage: sourceLanguage ?? this.sourceLanguage,
+      locales: locales ?? this.locales,
       pageKey: pageKey ?? this.pageKey,
       previewLanguage: previewLanguage ?? this.previewLanguage,
       previewDevice: previewDevice ?? this.previewDevice,
@@ -188,8 +190,16 @@ class SiteContentCubit extends Cubit<SiteContentState> {
         sourceLanguage: state.sourceLanguage,
         locales: state.locales,
       );
+      final sourceLanguage = content.sourceLanguage ?? state.sourceLanguage;
       emit(
         state.copyWith(
+          sourceLanguage: sourceLanguage,
+          locales: content.locales,
+          // Keep the preview on a valid locale when the source changed.
+          previewLanguage:
+              (content.locales ?? state.locales).contains(state.previewLanguage)
+                  ? state.previewLanguage
+                  : sourceLanguage,
           source: content.source,
           translations: content.translations,
           dirty: false,

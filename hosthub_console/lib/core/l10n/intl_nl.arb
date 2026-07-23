@@ -1378,5 +1378,11 @@
   "propertySelectorLoading": "Accommodaties laden…",
   "propertySelectorUnavailable": "Accommodaties niet beschikbaar",
   "propertySelectorEmpty": "Geen accommodaties",
-  "propertySelectorSelect": "Kies accommodatie"
+  "propertySelectorSelect": "Kies accommodatie",
+  "sidebarPinTooltip": "Menu vastzetten",
+  "sidebarCollapseTooltip": "Menu inklappen",
+  "sourceLanguageLabel": "Brontaal",
+  "sourceLanguageUnavailable": "Geen website gekoppeld",
+  "versionFooter": "v{version}",
+  "@versionFooter": { "placeholders": { "version": {} } }
 }
