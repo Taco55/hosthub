@@ -160,9 +160,13 @@ Web (`hosthub-sites`):
   and set each site's values in the console. Until then everything falls back to env.
 - **Verify the platform sending domain** in Resend and set `EMAIL_FROM_ADDRESS`
   (e.g. `no-reply@mail.hosthub.com`); today it defaults to `no-reply@trysilpanorama.com`.
-- **Console UI (Flutter) — Phase 3.** Screens for the owner to set contact email,
-  sender name, Lodgify property/room id per site (the Lodgify *key* console flow
-  already exists via `lodgify_api_keys`).
+- **Console UI (Flutter) — Phase 3: DONE.** `SiteSettingsPage` at
+  `/sites/:siteId/settings` (settings icon on the site content page) lets the owner
+  set contact recipient, email sender name, and Lodgify property/room per site.
+  dart analyze clean; not yet visually tested in a running app.
+- **Redeploy `web/`** (`npm run deploy`) to activate per-site resolution on the live
+  `hosthub-sites` worker — its current deploy predates the per-site code, so it still
+  uses env fallback until redeployed.
 - **Per-site fallback snapshot.** `web/lib/content.ts` / `content.generated.ts` is
   the CMS-downtime fallback (intentional). Today it holds Trysil-specific content,
   so if the CMS is down *every* site would show Trysil. Make the fallback per-site
