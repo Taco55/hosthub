@@ -85,20 +85,26 @@ async function findSiteIdByDomain(domain: string): Promise<string | null> {
     return null;
   }
 
-  const { data, error } = await lookupClient
-    .from("site_domains")
-    .select("site_id, is_primary")
-    .eq("domain", domain)
-    .order("is_primary", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  try {
+    const { data, error } = await lookupClient
+      .from("site_domains")
+      .select("site_id, is_primary")
+      .eq("domain", domain)
+      .order("is_primary", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-  if (error || !data) {
+    if (error || !data) {
+      return null;
+    }
+
+    const siteId = data["site_id"];
+    return typeof siteId === "string" && siteId.trim() ? siteId : null;
+  } catch {
+    // Supabase unreachable or the query threw — fall back to env/default site
+    // so the website keeps rendering when the CMS backend is down.
     return null;
   }
-
-  const siteId = data["site_id"];
-  return typeof siteId === "string" && siteId.trim() ? siteId : null;
 }
 
 export async function resolveRuntimeSiteContext(): Promise<RuntimeSiteContext> {

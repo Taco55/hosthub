@@ -11,6 +11,17 @@
     // see https://developers.cloudflare.com/workers/configuration/compatibility-flags/#global-fetch-strictly-public
     "global_fetch_strictly_public"
   ],
+  "vars": {
+    // Server-side runtime config for the CMS content provider.
+    // Non-secret only. Secrets (RESEND_API_KEY, CONTACT_EMAIL_TO, LODGIFY_*)
+    // are set out-of-band via `wrangler secret put`, never committed here.
+    // Single-site: the site is resolved from the build-time-inlined
+    // NEXT_PUBLIC_CMS_SITE_ID, so domain lookup stays off and no service
+    // role key is ever needed in the worker.
+    "CMS_ENABLED": "true",
+    "CMS_QUERY_TIMEOUT_MS": "1200",
+    "CMS_DOMAIN_LOOKUP_ENABLED": "false"
+  },
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"

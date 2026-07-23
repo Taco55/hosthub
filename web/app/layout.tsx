@@ -100,6 +100,14 @@ export default function RootLayout({
     <html lang={defaultLocale} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: localeRedirectScript }} />
+        {/* BookHotely site-ownership verification snippet (third-party). */}
+        <script
+          async
+          src="https://cdn.bookhotelyverify.com/verify.js"
+          data-site-id="86527"
+          data-client="bookhotely"
+          data-hash="ce82c0cdee45462328d5dbf3537449c9"
+        />
       </head>
       <body
         className={`${manrope.variable} ${cormorant.variable} min-h-screen font-sans antialiased`}
