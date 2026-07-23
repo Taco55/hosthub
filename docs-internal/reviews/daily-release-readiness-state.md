@@ -3,7 +3,7 @@
 Source of truth for the `/build-loop` implementing the design handoff at
 `hosthub-design/design_handoff_hosthub_cms/`. Rubric: `../review-prompts/release-readiness-review.md`.
 
-- **branch:** `fix/lodgify-connection-and-preview-routes` (current)
+- **branch:** `main` (regel: nooit feature branches)
 - **severities in scope:** P0–P2
 - **Started:** 2026-07-23
 
@@ -45,8 +45,22 @@ console CMS feature, then tests + backend wiring.
 | S21 | Console-shell migreren naar `StyledSideMenu` (B1-adoptie) + editor live in navigatie | console | done | 63bda6d; /sites/:siteId → WebsiteEditorPage (legacy JSON-editor → /sites/:siteId/documents), settings/team-shortcuts in topbar; rail = StyledSideMenu-compositie (hardcoded strings → ARB); 47 tests groen |
 | S22 | `StyledBrowserFrame` → app-lokaal (`SitePreviewFrame`) + `StyledSplitView` → `StyledWebPageScaffold`-consolidatie | beide | done | sw@3bf18be+ca6a638, console@4934032; scaffold kreeg showHeader/paneGap/fixed-left/right-fills (4 lib-tests); goldens geregenereerd |
 
+## Run 3 queue — conformance-review vs hosthub-design (gestart 2026-07-23)
+
+Review + fix per slice tegen CONFORMANCE.md/README.md/screenshots; P0–P2 fixen,
+gemotiveerd uitstellen mag alleen met reden in de evidence-kolom.
+
+| # | slice | scope | status | evidence |
+|---|-------|-------|--------|----------|
+| C1 | Sidebar/rail: items+iconen, compact 96px + pin, hover-expand, switchers (Property/Source language), footer | console (+lib) | todo | |
+| C2 | Editor bronmodus: topbar, tabs, banners, cards (incl. highlights-reorder/drag grip, Add highlight), save bar | console | todo | |
+| C3 | Editor vertaalmodus: chips, source-ref, Reset to AI, coverage, stale/fresh toolbar, shared-photos note | console | todo | |
+| C4 | Preview: pill, device toggle, locale switcher (AI badge/stale dot), binding, ribbons (incl. acties) | console | todo | |
+| C5 | Publish-modal: badge-rijen, Ready/Re-translate, footer, confirm/cancel-gedrag | console | todo | |
+| C6 | StyledWidgets-adherence + gedragsmodel (greps, state machine, geen hardcoded values) | beide | todo | |
+
 ## next_lens
-S17 — EdgeFunctionTranslationService met injecteerbare invoke voor tests.
+C1 — sidebar/rail conformance.
 
 ## Content / state-machine reference (from the prototype)
 - Property: **Trysil Panorama**, source lang `nl`, locales `[nl, en, no]`.
