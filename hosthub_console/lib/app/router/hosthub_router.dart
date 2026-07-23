@@ -155,11 +155,19 @@ class HosthubRouter {
               path: '/sites/:siteName/:siteId',
               builder: (context, state) {
                 final siteId = state.pathParameters['siteId']!;
-                return SiteContentPage(siteId: siteId);
+                return WebsiteEditorPage(siteId: siteId);
               },
             ),
             GoRoute(
               path: '/sites/:siteId',
+              builder: (context, state) {
+                final siteId = state.pathParameters['siteId']!;
+                return WebsiteEditorPage(siteId: siteId);
+              },
+            ),
+            // Legacy raw-JSON document editor, kept reachable for admin use.
+            GoRoute(
+              path: '/sites/:siteId/documents',
               builder: (context, state) {
                 final siteId = state.pathParameters['siteId']!;
                 return SiteContentPage(siteId: siteId);

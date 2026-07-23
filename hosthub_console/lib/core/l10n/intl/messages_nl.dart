@@ -187,6 +187,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "appInfoTileTitle": MessageLookupByLibrary.simpleMessage("App informatie"),
     "appInfoTileValue": m0,
     "appName": MessageLookupByLibrary.simpleMessage("HostHub"),
+    "appTitle": MessageLookupByLibrary.simpleMessage("HostHub"),
     "appsTitle": MessageLookupByLibrary.simpleMessage("Apps"),
     "arrow": MessageLookupByLibrary.simpleMessage("Pijl"),
     "arrowsUpDown": MessageLookupByLibrary.simpleMessage(
@@ -1322,6 +1323,18 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "propertyNameLodgifyHint": MessageLookupByLibrary.simpleMessage(
       "Om de naam te wijzigen, pas deze aan in Lodgify en synchroniseer.",
+    ),
+    "propertySelectorEmpty": MessageLookupByLibrary.simpleMessage(
+      "Geen accommodaties",
+    ),
+    "propertySelectorLoading": MessageLookupByLibrary.simpleMessage(
+      "Accommodaties laden…",
+    ),
+    "propertySelectorSelect": MessageLookupByLibrary.simpleMessage(
+      "Kies accommodatie",
+    ),
+    "propertySelectorUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Accommodaties niet beschikbaar",
     ),
     "propertySetupConnectBody": MessageLookupByLibrary.simpleMessage(
       "Ga naar Instellingen om je Lodgify API-sleutel toe te voegen en te verbinden.",

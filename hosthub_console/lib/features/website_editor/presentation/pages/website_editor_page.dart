@@ -44,13 +44,15 @@ class WebsiteEditorPage extends StatelessWidget {
                   WebsiteContentRepository(supabase: Supabase.instance.client),
               siteId: id,
             )..loadContent()),
-      child: const _WebsiteEditorView(),
+      child: _WebsiteEditorView(siteId: id),
     );
   }
 }
 
 class _WebsiteEditorView extends StatelessWidget {
-  const _WebsiteEditorView();
+  const _WebsiteEditorView({this.siteId});
+
+  final String? siteId;
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +76,7 @@ class _WebsiteEditorView extends StatelessWidget {
           padding: EdgeInsets.zero,
           paneGap: 0,
           leftPaneSize: const StyledPaneSize.fixed(512),
-          leftChild: EditorColumn(state: state),
+          leftChild: EditorColumn(state: state, siteId: siteId),
           rightChild: PreviewPane(state: state),
           showRightPane: true,
         );

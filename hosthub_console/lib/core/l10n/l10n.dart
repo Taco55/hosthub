@@ -8088,6 +8088,51 @@ class S {
       args: [number],
     );
   }
+
+  /// `HostHub`
+  String get appTitle {
+    return Intl.message('HostHub', name: 'appTitle', desc: '', args: []);
+  }
+
+  /// `Loading properties…`
+  String get propertySelectorLoading {
+    return Intl.message(
+      'Loading properties…',
+      name: 'propertySelectorLoading',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Properties unavailable`
+  String get propertySelectorUnavailable {
+    return Intl.message(
+      'Properties unavailable',
+      name: 'propertySelectorUnavailable',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No properties`
+  String get propertySelectorEmpty {
+    return Intl.message(
+      'No properties',
+      name: 'propertySelectorEmpty',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Select property`
+  String get propertySelectorSelect {
+    return Intl.message(
+      'Select property',
+      name: 'propertySelectorSelect',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

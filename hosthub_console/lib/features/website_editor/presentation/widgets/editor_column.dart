@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
 import 'package:hosthub_console/core/widgets/foundation/foundation.dart';
@@ -14,9 +15,12 @@ import 'website_field_row.dart';
 /// content cards (Hero, Highlights) and the save bar. Renders source mode
 /// (mode A) and translation mode (mode B) from the same form.
 class EditorColumn extends StatelessWidget {
-  const EditorColumn({super.key, required this.state});
+  const EditorColumn({super.key, required this.state, this.siteId});
 
   final SiteContentState state;
+
+  /// When editing a real site, enables the settings/team shortcuts.
+  final String? siteId;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +28,7 @@ class EditorColumn extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _TopBar(state: state),
+        _TopBar(state: state, siteId: siteId),
         _PageTabs(state: state),
         Divider(height: 1, thickness: 1, color: scheme.outlineVariant),
         Expanded(
@@ -53,8 +57,9 @@ class EditorColumn extends StatelessWidget {
 }
 
 class _TopBar extends StatelessWidget {
-  const _TopBar({required this.state});
+  const _TopBar({required this.state, this.siteId});
   final SiteContentState state;
+  final String? siteId;
 
   @override
   Widget build(BuildContext context) {
@@ -85,6 +90,19 @@ class _TopBar extends StatelessWidget {
               ],
             ),
           ),
+          if (siteId != null) ...[
+            StyledIconButton(
+              iconData: Icons.settings_outlined,
+              tooltip: context.s.siteSettingsTitle,
+              onPressed: () => context.go('/sites/$siteId/settings'),
+            ),
+            StyledIconButton(
+              iconData: Icons.group_outlined,
+              tooltip: context.s.teamTitle,
+              onPressed: () => context.go('/sites/$siteId/team'),
+            ),
+            const SizedBox(width: 8),
+          ],
           _ModeChip(state: state),
         ],
       ),

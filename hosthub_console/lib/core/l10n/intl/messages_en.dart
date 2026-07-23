@@ -189,6 +189,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "appInfoTileTitle": MessageLookupByLibrary.simpleMessage("App information"),
     "appInfoTileValue": m0,
     "appName": MessageLookupByLibrary.simpleMessage("HostHub"),
+    "appTitle": MessageLookupByLibrary.simpleMessage("HostHub"),
     "appsTitle": MessageLookupByLibrary.simpleMessage("Apps"),
     "arrow": MessageLookupByLibrary.simpleMessage("Arrow"),
     "arrowsUpDown": MessageLookupByLibrary.simpleMessage("Arrows Up Down"),
@@ -1272,6 +1273,18 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "propertyNameLodgifyHint": MessageLookupByLibrary.simpleMessage(
       "To change the property name, update it in Lodgify and sync.",
+    ),
+    "propertySelectorEmpty": MessageLookupByLibrary.simpleMessage(
+      "No properties",
+    ),
+    "propertySelectorLoading": MessageLookupByLibrary.simpleMessage(
+      "Loading properties…",
+    ),
+    "propertySelectorSelect": MessageLookupByLibrary.simpleMessage(
+      "Select property",
+    ),
+    "propertySelectorUnavailable": MessageLookupByLibrary.simpleMessage(
+      "Properties unavailable",
     ),
     "propertySetupConnectBody": MessageLookupByLibrary.simpleMessage(
       "Go to Settings to add your Lodgify API key and connect your account.",

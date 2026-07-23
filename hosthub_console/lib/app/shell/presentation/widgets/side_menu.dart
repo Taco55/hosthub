@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:styled_widgets/styled_widgets.dart';
+
 import 'package:hosthub_console/core/models/models.dart';
+import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 
 import 'menu_item.dart';
-import 'package:hosthub_console/core/widgets/widgets.dart';
 
+/// The console navigation rail, composed from the shared [StyledSideMenu]:
+/// logo header, primary nav items, the property switcher, and a bottom block
+/// (profile, settings, admin, logout) built from [StyledSideMenuTile]s so all
+/// rows share the same geometry. The shell renders it pinned (wide screens)
+/// or inside a drawer; it always shows the expanded state.
 class SideMenu extends StatelessWidget {
   const SideMenu({
     super.key,
@@ -28,238 +35,136 @@ class SideMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
     final isAdmin = profile?.isAdmin ?? false;
+    final s = context.s;
 
-    return Drawer(
-      width: width,
-      backgroundColor: colors.primaryContainer,
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return BlocBuilder<PropertyContextCubit, PropertyContextState>(
+      builder: (context, propertyState) {
+        final hasProperties =
+            propertyState.status == PropertyContextStatus.loaded &&
+                propertyState.properties.isNotEmpty;
+
+        return StyledSideMenu(
+          mode: StyledSideMenuMode.expanded,
+          expandedMinWidth: width ?? 320,
+          expandOnHoverWhenCompact: false,
+          header: const _MenuLogo(),
+          items: [
+            if (hasProperties) ...[
+              StyledNavItem(
+                icon: Icons.home_work_outlined,
+                label: s.detailsLabel,
+                selected: selectedItem == MenuItem.propertyDetails,
+                onTap: onPropertyDetailsTap,
+              ),
+              StyledNavItem(
+                icon: Icons.web,
+                label: s.sitesTitle,
+                selected: selectedItem == MenuItem.sites,
+                onTap: () => onItemSelected(MenuItem.sites),
+              ),
+              StyledNavItem(
+                icon: Icons.calendar_month_outlined,
+                label: s.reservations,
+                selected: selectedItem == MenuItem.reservations,
+                onTap: () => onItemSelected(MenuItem.reservations),
+              ),
+              StyledNavItem(
+                icon: Icons.payments_outlined,
+                label: s.menuRevenue,
+                selected: selectedItem == MenuItem.revenue,
+                onTap: () => onItemSelected(MenuItem.revenue),
+              ),
+              StyledNavItem(
+                icon: Icons.tune_outlined,
+                label: s.menuPricing,
+                selected: selectedItem == MenuItem.pricing,
+                onTap: () => onItemSelected(MenuItem.pricing),
+              ),
+            ],
+          ],
+          switchers: const [_PropertySelector()],
+          profile: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const _MenuLogo(),
-              _MenuHeader(profile: profile, onAccountTap: onAccountTap),
-              const SizedBox(height: 32),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: BlocBuilder<PropertyContextCubit,
-                            PropertyContextState>(
-                          builder: (context, propertyState) {
-                            final hasProperties = propertyState.status ==
-                                    PropertyContextStatus.loaded &&
-                                propertyState.properties.isNotEmpty;
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                const _PropertySelector(),
-                                if (hasProperties) ...[
-                                  const SizedBox(height: 4),
-                                  _DrawerListTile(
-                                    label: context.s.detailsLabel,
-                                    icon: Icons.home_work_outlined,
-                                    selected: selectedItem ==
-                                        MenuItem.propertyDetails,
-                                    onTap: onPropertyDetailsTap,
-                                  ),
-                                  _DrawerListTile(
-                                    label: context.s.sitesTitle,
-                                    icon: Icons.web,
-                                    selected: selectedItem == MenuItem.sites,
-                                    onTap: () =>
-                                        onItemSelected(MenuItem.sites),
-                                  ),
-                                  _DrawerListTile(
-                                    label: context.s.reservations,
-                                    icon: Icons.calendar_month_outlined,
-                                    selected:
-                                        selectedItem == MenuItem.reservations,
-                                    onTap: () =>
-                                        onItemSelected(MenuItem.reservations),
-                                  ),
-                                  _DrawerListTile(
-                                    label: context.s.menuRevenue,
-                                    icon: Icons.payments_outlined,
-                                    selected:
-                                        selectedItem == MenuItem.revenue,
-                                    onTap: () =>
-                                        onItemSelected(MenuItem.revenue),
-                                  ),
-                                  _DrawerListTile(
-                                    label: context.s.menuPricing,
-                                    icon: Icons.tune_outlined,
-                                    selected:
-                                        selectedItem == MenuItem.pricing,
-                                    onTap: () =>
-                                        onItemSelected(MenuItem.pricing),
-                                  ),
-                                ],
-                              ],
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                    const Divider(),
-                    const SizedBox(height: 4),
-                    _DrawerListTile(
-                      label: context.s.adminSettingsTitle,
-                      icon: Icons.settings_outlined,
-                      selected: selectedItem == MenuItem.settings,
-                      onTap: () => onItemSelected(MenuItem.settings),
-                    ),
-                    if (isAdmin)
-                      _DrawerListTile(
-                        label: context.s.serverSettingsTitle,
-                        icon: Icons.admin_panel_settings_outlined,
-                        selected: selectedItem == MenuItem.adminOptions,
-                        onTap: () => onItemSelected(MenuItem.adminOptions),
-                      ),
-                    _DrawerListTile(
-                      label: context.s.logoutLabel,
-                      icon: Icons.logout,
-                      selected: false,
-                      onTap: onLogout,
-                    ),
-                  ],
+              _ProfileTile(profile: profile, onTap: onAccountTap),
+              StyledSideMenuTile(
+                icon: Icons.settings_outlined,
+                label: s.adminSettingsTitle,
+                selected: selectedItem == MenuItem.settings,
+                onTap: () => onItemSelected(MenuItem.settings),
+              ),
+              if (isAdmin)
+                StyledSideMenuTile(
+                  icon: Icons.admin_panel_settings_outlined,
+                  label: s.serverSettingsTitle,
+                  selected: selectedItem == MenuItem.adminOptions,
+                  onTap: () => onItemSelected(MenuItem.adminOptions),
                 ),
+              StyledSideMenuTile(
+                icon: Icons.logout,
+                label: s.logoutLabel,
+                onTap: onLogout,
               ),
             ],
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
 
-class _MenuHeader extends StatelessWidget {
-  const _MenuHeader({required this.profile, this.onAccountTap});
+/// Profile row with the same geometry as the nav tiles: avatar in the icon
+/// box, display name as the label.
+class _ProfileTile extends StatelessWidget {
+  const _ProfileTile({required this.profile, this.onTap});
 
   final Profile? profile;
-  final VoidCallback? onAccountTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
+    final scope = StyledSideMenuScope.maybeOf(context);
+    final fg = scope?.foregroundColor ??
+        Theme.of(context).colorScheme.onPrimaryContainer;
     final profile = this.profile;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 8),
-        if (profile != null)
-          _ProfileSummary(profile: profile, onTap: onAccountTap)
-        else
-          Text(
-            context.s.profileLoadingLabel,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colors.onPrimaryContainer.withValues(alpha: 0.7),
-            ),
-          ),
-      ],
-    );
-  }
-}
+    if (profile == null) {
+      return StyledSideMenuTile(
+        icon: Icons.person_outline,
+        label: context.s.profileLoadingLabel,
+        onTap: null,
+      );
+    }
 
-class _DrawerListTile extends StatelessWidget {
-  const _DrawerListTile({
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    final isDisabled = onTap == null;
-    final baseColor = colors.onPrimaryContainer;
-    final backgroundColor = selected && !isDisabled
-        ? baseColor.withValues(alpha: 0.12)
-        : Colors.transparent;
-    final foregroundColor = isDisabled
-        ? baseColor.withValues(alpha: 0.5)
-        : selected
-        ? baseColor
-        : baseColor.withValues(alpha: 0.7);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: ListTile(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        tileColor: backgroundColor,
-        dense: true,
-        leading: Icon(icon, color: foregroundColor),
-        title: Text(
-          label,
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: foregroundColor,
-            fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-          ),
-        ),
-        onTap: onTap,
-      ),
-    );
-  }
-}
-
-class _ProfileSummary extends StatelessWidget {
-  const _ProfileSummary({required this.profile, this.onTap});
-
-  final Profile profile;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
     final displayName = (profile.username?.isNotEmpty ?? false)
         ? profile.username!
         : profile.email;
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: colors.onPrimaryContainer.withValues(alpha: 0.2),
-            foregroundColor: colors.onPrimaryContainer,
-            child: Text(
-              _resolveInitial(profile),
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            displayName,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: colors.onPrimaryContainer,
-              fontWeight: FontWeight.w600,
-            ),
-            textAlign: TextAlign.left,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+
+    return StyledSideMenuTile(
+      leading: CircleAvatar(
+        radius: (scope?.iconSize ?? 22) * 0.75,
+        backgroundColor: fg.withValues(alpha: 0.2),
+        foregroundColor: fg,
+        child: Text(
+          _resolveInitial(profile),
+          style: Theme.of(context)
+              .textTheme
+              .labelLarge
+              ?.copyWith(color: fg, fontWeight: FontWeight.w700),
+        ),
       ),
+      label: displayName,
+      onTap: onTap,
     );
   }
+}
+
+String _resolveInitial(Profile profile) {
+  final source = (profile.username?.isNotEmpty ?? false)
+      ? profile.username!
+      : profile.email;
+  return source.isEmpty ? '?' : source.characters.first.toUpperCase();
 }
 
 class _MenuLogo extends StatelessWidget {
@@ -268,99 +173,62 @@ class _MenuLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 32, bottom: 16),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          'Hosthub',
-          style: theme.textTheme.titleLarge?.copyWith(
-            color: colors.onPrimaryContainer,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.5,
-          ),
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        context.s.appTitle,
+        style: theme.textTheme.titleLarge?.copyWith(
+          color: theme.colorScheme.onPrimaryContainer,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
   }
 }
 
+/// Property context switcher, rendered as a styled dropdown field in the
+/// switcher slot.
 class _PropertySelector extends StatelessWidget {
   const _PropertySelector();
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-
     return BlocBuilder<PropertyContextCubit, PropertyContextState>(
       builder: (context, state) {
         final isReady = state.status == PropertyContextStatus.loaded;
         final isDisabled = !isReady || state.properties.isEmpty;
         final label = () {
           if (state.status == PropertyContextStatus.loading) {
-            return 'Loading properties...';
+            return context.s.propertySelectorLoading;
           }
           if (state.status == PropertyContextStatus.error) {
-            return 'Properties unavailable';
+            return context.s.propertySelectorUnavailable;
           }
-          return state.currentProperty?.name ?? 'Select property';
+          if (state.properties.isEmpty) {
+            return context.s.propertySelectorEmpty;
+          }
+          return state.currentProperty?.name ??
+              context.s.propertySelectorSelect;
         }();
-        final baseColor = colors.onPrimaryContainer;
-        final foregroundColor = isDisabled
-            ? baseColor.withValues(alpha: 0.5)
-            : baseColor.withValues(alpha: 0.85);
 
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: ListTile(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            dense: true,
-            hoverColor: colors.onPrimaryContainer.withValues(alpha: 0.12),
-            title: Text(
-              label,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: foregroundColor,
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.left,
-              overflow: TextOverflow.ellipsis,
-            ),
-            trailing: Icon(
-              Icons.swap_horiz_rounded,
-              size: 20,
-              color: foregroundColor,
-            ),
-            onTap: isDisabled
-                ? null
-                : () async {
-                    final selected = await showSwitchPropertyDialog(
-                      context,
-                      properties: state.properties,
-                      current: state.currentProperty,
-                    );
-                    if (selected == null || !context.mounted) return;
-                    context.read<PropertyContextCubit>().selectProperty(
-                      selected,
-                    );
-                  },
-          ),
+        return StyledSideMenuTile(
+          icon: Icons.apartment_outlined,
+          label: label,
+          onTap: isDisabled
+              ? null
+              : () async {
+                  final selected = await showSwitchPropertyDialog(
+                    context,
+                    properties: state.properties,
+                    current: state.currentProperty,
+                  );
+                  if (selected == null || !context.mounted) return;
+                  context
+                      .read<PropertyContextCubit>()
+                      .selectProperty(selected);
+                },
         );
       },
     );
   }
-}
-
-String _resolveInitial(Profile profile) {
-  if (profile.email.isNotEmpty) {
-    return profile.email.characters.first.toUpperCase();
-  }
-  if (profile.username?.isNotEmpty ?? false) {
-    return profile.username!.characters.first.toUpperCase();
-  }
-  return '?';
 }

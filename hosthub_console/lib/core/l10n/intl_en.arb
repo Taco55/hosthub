@@ -1369,5 +1369,10 @@
   "weFieldIntro": "Intro",
   "weFieldTitle": "Title",
   "weFieldExperience": "Experience {number}",
-  "@weFieldExperience": { "placeholders": { "number": {} } }
+  "@weFieldExperience": { "placeholders": { "number": {} } },
+  "appTitle": "HostHub",
+  "propertySelectorLoading": "Loading properties…",
+  "propertySelectorUnavailable": "Properties unavailable",
+  "propertySelectorEmpty": "No properties",
+  "propertySelectorSelect": "Select property"
 }
