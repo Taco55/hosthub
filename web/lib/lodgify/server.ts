@@ -11,19 +11,37 @@ export type LodgifyContext = {
   roomTypeId: string | null;
 };
 
-// A site's effective Lodgify key is its owner's key (see the
-// get_site_lodgify_api_key RPC / lodgify_api_keys table). Read via the service
-// client because the key is RLS-protected.
+// A site's effective Lodgify key is its owner's key (lodgify_api_keys, keyed by
+// the site's owner_profile_id). Read via the service client because the key is
+// RLS-protected.
+//
+// We read the tables directly rather than via the get_site_lodgify_api_key RPC:
+// that function's PostgREST schema-cache exposure has proven unreliable on this
+// project (intermittent PGRST202 "function not found in schema cache"), whereas
+// the table endpoints are stable. The service role bypasses RLS, so this is
+// equivalent to what the SECURITY DEFINER function did.
 async function getSiteLodgifyApiKey(siteId: string | null): Promise<string | null> {
   if (!siteId) return null;
   const supabase = getServiceClient();
   if (!supabase) return null;
   try {
-    const { data, error } = await supabase.rpc("get_site_lodgify_api_key", {
-      p_site_id: siteId,
-    });
-    if (error) return null;
-    return typeof data === "string" && data.trim() ? data.trim() : null;
+    const { data: site, error: siteError } = await supabase
+      .from("sites")
+      .select("owner_profile_id")
+      .eq("id", siteId)
+      .maybeSingle();
+    if (siteError || !site?.owner_profile_id) return null;
+
+    const { data: keyRow, error: keyError } = await supabase
+      .from("lodgify_api_keys")
+      .select("api_key")
+      .eq("profile_id", site.owner_profile_id)
+      .maybeSingle();
+    if (keyError || !keyRow) return null;
+
+    const key =
+      typeof keyRow.api_key === "string" ? keyRow.api_key.trim() : "";
+    return key ? key : null;
   } catch {
     return null;
   }
