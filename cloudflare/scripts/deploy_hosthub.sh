@@ -59,6 +59,18 @@ load_env_file() {
   # shellcheck disable=SC1090
   set -a
   source "${env_path}"
+  # Secrets are split out of the client env file (diplora-style): also load the
+  # shared-server + per-env server + personal siblings from the same directory
+  # when present (CLOUDFLARE_API_TOKEN, SUPABASE_SECRET_KEY, domains, token…).
+  local __dir __f
+  __dir="$(dirname "${env_path}")"
+  for __f in hosthub-shared-server.env hosthub-prd-server.env hosthub-personal.env; do
+    if [[ -f "${__dir}/${__f}" ]]; then
+      echo "Loading env from ${__dir}/${__f}"
+      # shellcheck disable=SC1090
+      source "${__dir}/${__f}"
+    fi
+  done
   set +a
 }
 

@@ -33,8 +33,13 @@ include $(SUPABASE_DIR)/make/supabase-common.mk
 # ----------------------------
 WEB_DIR         := $(WORKSPACE_ROOT)/web
 WEB_WORKER      ?= hosthub-sites
-WEB_SECRET_ENV  := $(WORKSPACE_ROOT)/../hosthub_secrets/hosthub-prd.env
-WEB_LOCAL_ENV   := $(WEB_DIR)/.env.local
+SECRETS_DIR_ABS := $(WORKSPACE_ROOT)/../hosthub_secrets
+# Split secret files sourced for the sites worker: client + shared-server
+# (CLOUDFLARE_API_TOKEN, RESEND_API_KEY) + prd-server (SUPABASE_SECRET_KEY).
+WEB_SECRET_ENV    := $(SECRETS_DIR_ABS)/hosthub-prd.env
+WEB_SHARED_ENV    := $(SECRETS_DIR_ABS)/hosthub-shared-server.env
+WEB_SERVER_ENV    := $(SECRETS_DIR_ABS)/hosthub-prd-server.env
+WEB_LOCAL_ENV     := $(WEB_DIR)/.env.local
 # Server-only PLATFORM-WIDE secrets synced to the shared sites worker.
 # Intentionally NOT here — these are per consumer, resolved per site from the DB:
 #   - LODGIFY_API_KEY   (console → lodgify_api_keys, per owner)
@@ -68,10 +73,9 @@ deploy: apply-migrations functions-deploy functions-secrets-set
 web-secrets:
 	@command -v npx >/dev/null 2>&1 || { echo "npx not found (need Node)"; exit 1; }
 	@bash -c 'set -a; \
-	  [ -f "$(WEB_SECRET_ENV)" ] && . "$(WEB_SECRET_ENV)"; \
-	  [ -f "$(WEB_LOCAL_ENV)" ] && . "$(WEB_LOCAL_ENV)"; \
+	  for __f in "$(WEB_SECRET_ENV)" "$(WEB_SHARED_ENV)" "$(WEB_SERVER_ENV)" "$(WEB_LOCAL_ENV)"; do [ -f "$$__f" ] && . "$$__f"; done; \
 	  set +a; \
-	  [ -n "$$CLOUDFLARE_API_TOKEN" ] || { echo "Missing CLOUDFLARE_API_TOKEN in $(WEB_SECRET_ENV)"; exit 1; }; \
+	  [ -n "$$CLOUDFLARE_API_TOKEN" ] || { echo "Missing CLOUDFLARE_API_TOKEN in $(WEB_SHARED_ENV)"; exit 1; }; \
 	  cd "$(WEB_DIR)"; \
 	  echo "Syncing secrets to worker: $(WEB_WORKER)"; \
 	  for k in $(WEB_SECRET_KEYS); do \

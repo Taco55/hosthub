@@ -5,7 +5,8 @@ CF_API_BASE="https://api.cloudflare.com/client/v4"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-SOURCE_ENV_FILE="${REPO_ROOT}/../hosthub_secrets/hosthub-prd.env"
+# Cloudflare creds live in the shared-server secret file after the env split.
+SOURCE_ENV_FILE="${REPO_ROOT}/../hosthub_secrets/hosthub-shared-server.env"
 TARGET_ENV_FILE=""
 DOMAINS_CSV="trysilpanorama.com,ev-reward.com"
 OUTPUT_DIR=""

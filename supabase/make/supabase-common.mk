@@ -52,6 +52,20 @@ SECRETS_DIR ?= $(shell \
 ENV_FILE      ?= $(SECRETS_DIR)/$(PROJECT_NAME)-$(ENV).env
 LOCAL_ENV_FILE ?= $(SECRETS_DIR)/$(PROJECT_NAME)-dev.env
 
+# Split secret layout (client stays in ENV_FILE / LOCAL_ENV_FILE, safe to embed):
+#   <name>-<env>-server.env    per-env SERVER secrets (service key, DB, infra)
+#   <name>-shared-server.env   SERVER/infra secrets shared across envs (CF, provider keys)
+#   <name>-personal.env        personal per-developer secrets (e.g. SUPABASE_ACCESS_TOKEN)
+SERVER_ENV_FILE        ?= $(SECRETS_DIR)/$(PROJECT_NAME)-$(ENV)-server.env
+SHARED_SERVER_ENV_FILE ?= $(SECRETS_DIR)/$(PROJECT_NAME)-shared-server.env
+PERSONAL_ENV_FILE      ?= $(SECRETS_DIR)/$(PROJECT_NAME)-personal.env
+LOCAL_SERVER_ENV_FILE  ?= $(SECRETS_DIR)/$(PROJECT_NAME)-dev-server.env
+
+# Source order (later wins): client -> shared-server -> per-env server -> personal.
+# Each file is optional so a missing server/personal file is not fatal.
+SRC_REMOTE = set -a; for __f in "$(ENV_FILE)" "$(SHARED_SERVER_ENV_FILE)" "$(SERVER_ENV_FILE)" "$(PERSONAL_ENV_FILE)"; do [ -f "$$__f" ] && . "$$__f"; done; set +a
+SRC_LOCAL  = set -a; for __f in "$(LOCAL_ENV_FILE)" "$(SHARED_SERVER_ENV_FILE)" "$(LOCAL_SERVER_ENV_FILE)" "$(PERSONAL_ENV_FILE)"; do [ -f "$$__f" ] && . "$$__f"; done; set +a
+
 # ----------------------------
 # Local ports (from config.toml)
 # ----------------------------
@@ -186,7 +200,7 @@ seed-local: preflight-local-db
 ## Destructive: drops the local public schema before importing.
 .PHONY: sync-env-to-local
 sync-env-to-local: preflight check-pg-version
-	@. "$(ENV_FILE)"; \
+	@$(SRC_REMOTE); \
 	DB_URL="$${DB_URL:-$$SUPABASE_DB_URL}"; \
 	read -p "This will DROP local schema public. Continue? [y/N] " a; [ "$$a" = "y" ] || exit 1; \
 	$(PSQL) "$(LOCAL_DB_URL)" -v ON_ERROR_STOP=1 -c "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;"; \
@@ -227,7 +241,7 @@ functions-logs-local:
 apply-migrations: preflight check-pg-version
 	$(call confirm-remote,apply-migrations)
 	@mkdir -p $(SCHEMA_DIR)
-	@. "$(ENV_FILE)" 2>/dev/null || true; \
+	@$(SRC_REMOTE); \
 	DB_URL="$${DB_URL:-$$SUPABASE_DB_URL}"; \
 	if [ -z "$$DB_URL" ]; then echo "Missing DB_URL; set SUPABASE_DB_URL in $(ENV_FILE) or pass DB_URL=..."; exit 1; fi; \
 	set -- $(MIGRATIONS_DIR)/*.sql; \
@@ -244,7 +258,7 @@ apply-migrations: preflight check-pg-version
 .PHONY: dump-schema
 dump-schema: preflight check-pg-version
 	@mkdir -p $(SCHEMA_DIR)
-	@. "$(ENV_FILE)"; \
+	@$(SRC_REMOTE); \
 	DB_URL="$${DB_URL:-$$SUPABASE_DB_URL}"; \
 	if [ -z "$$DB_URL" ]; then echo "Missing DB_URL; set SUPABASE_DB_URL in $(ENV_FILE) or pass DB_URL=..."; exit 1; fi; \
 	$(PG_DUMP) --schema=public --schema-only --format=plain \
@@ -261,7 +275,7 @@ rebuild-schema: preflight check-pg-version
 .PHONY: seed-remote
 seed-remote: preflight check-pg-version
 	$(call confirm-remote,seed-remote)
-	@. "$(ENV_FILE)" 2>/dev/null || true; \
+	@$(SRC_REMOTE); \
 	DB_URL="$${DB_URL:-$$SUPABASE_DB_URL}"; \
 	if [ -z "$$DB_URL" ]; then echo "Missing DB_URL; set SUPABASE_DB_URL in $(ENV_FILE) or pass DB_URL=..."; exit 1; fi; \
 	set -- $(SEED_DIR)/*.sql; \
@@ -277,7 +291,7 @@ seed-remote: preflight check-pg-version
 .PHONY: functions-deploy
 functions-deploy: preflight
 	$(call confirm-remote,functions-deploy)
-	@set -a; . "$(ENV_FILE)"; set +a; \
+	@$(SRC_REMOTE); \
 	: "$${SUPABASE_URL:?Missing SUPABASE_URL in $(ENV_FILE)}"; \
 	REF=$$(echo "$$SUPABASE_URL" | sed -E 's#https?://([^./]+)\.supabase\.co.*#\1#'); \
 	echo "Deploying functions to $(ENV) (ref=$$REF)…"; \
@@ -296,7 +310,7 @@ functions-deploy: preflight
 ## Usage: make auth-config-show ENV=stg
 .PHONY: auth-config-show
 auth-config-show: preflight
-	@set -a; . "$(ENV_FILE)"; set +a; \
+	@$(SRC_REMOTE); \
 	: "$${SUPABASE_URL:?Missing SUPABASE_URL in $(ENV_FILE)}"; \
 	$(resolve-mgmt-token) \
 	REF=$$(echo "$$SUPABASE_URL" | sed -E 's#https?://([^./]+)\.supabase\.co.*#\1#'); \
@@ -315,7 +329,7 @@ auth-config-show: preflight
 .PHONY: auth-config-set
 auth-config-set: preflight
 	$(call confirm-remote,auth-config-set)
-	@set -a; . "$(ENV_FILE)"; set +a; \
+	@$(SRC_REMOTE); \
 	: "$${SUPABASE_URL:?Missing SUPABASE_URL in $(ENV_FILE)}"; \
 	$(resolve-mgmt-token) \
 	REF=$$(echo "$$SUPABASE_URL" | sed -E 's#https?://([^./]+)\.supabase\.co.*#\1#'); \
@@ -343,7 +357,7 @@ auth-config-set: preflight
 .PHONY: functions-secrets-set
 functions-secrets-set: preflight
 	$(call confirm-remote,functions-secrets-set)
-	@set -a; . "$(ENV_FILE)"; set +a; \
+	@$(SRC_REMOTE); \
 	: "$${SUPABASE_URL:?Missing SUPABASE_URL in $(ENV_FILE)}"; \
 	REF=$$(echo "$$SUPABASE_URL" | sed -E 's#https?://([^./]+)\.supabase\.co.*#\1#'); \
 	echo "Setting function secrets for $(ENV) (ref=$$REF)…"; \
