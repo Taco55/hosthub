@@ -2,6 +2,22 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "HostHub Console DEV Web (standalone, no website)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "deviceId": "chrome",
+      "program": "${workspaceFolder}/hosthub_console/lib/main.dart",
+      "cwd": "${workspaceFolder}/hosthub_console",
+      "args": [
+        "--dart-define-from-file=../../hosthub_secrets/hosthub-prd.env",
+        "--dart-define-from-file=../../hosthub_secrets/hosthub-dev.env",
+        "--web-hostname=localhost",
+        "--web-port=43000",
+        "--no-start-paused"
+      ]
+    },
+    {
       "name": "HostHub Console DEV Web",
       "preLaunchTask": "Ensure Local Website Preview Running (DEV only)",
       "request": "launch",

@@ -35,6 +35,88 @@
         "panel": "dedicated",
         "showReuseMessage": false
       }
+    },
+    {
+      "label": "Build Console Web (DEV backend)",
+      "detail": "flutter build web against the dev Supabase backend — standalone, no website preview.",
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "build",
+        "web",
+        "--dart-define-from-file=../../hosthub_secrets/hosthub-prd.env",
+        "--dart-define-from-file=../../hosthub_secrets/hosthub-dev.env"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/hosthub_console"
+      },
+      "group": "build",
+      "problemMatcher": [
+        "$dart-build_runner"
+      ],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "showReuseMessage": false
+      }
+    },
+    {
+      "label": "Build Console Web (PRD backend)",
+      "detail": "flutter build web against the production Supabase backend — standalone, no website preview.",
+      "type": "shell",
+      "command": "flutter",
+      "args": [
+        "build",
+        "web",
+        "--dart-define-from-file=../../hosthub_secrets/hosthub-prd.env",
+        "--dart-define=APP_ENVIRONMENT=prd"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/hosthub_console"
+      },
+      "group": "build",
+      "problemMatcher": [
+        "$dart-build_runner"
+      ],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "showReuseMessage": false
+      }
+    },
+    {
+      "label": "Build Website",
+      "detail": "next build for the public website (web/).",
+      "type": "shell",
+      "command": "npm",
+      "args": [
+        "run",
+        "build"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/web"
+      },
+      "group": "build",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "showReuseMessage": false
+      }
+    },
+    {
+      "label": "Build All (Console PRD + Website)",
+      "detail": "Builds the console (PRD backend) and the website together.",
+      "dependsOn": [
+        "Build Console Web (PRD backend)",
+        "Build Website"
+      ],
+      "dependsOrder": "parallel",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
     }
   ]
 }
