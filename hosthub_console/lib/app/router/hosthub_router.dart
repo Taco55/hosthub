@@ -20,6 +20,7 @@ import 'package:hosthub_console/features/server_settings/server_settings.dart';
 import 'package:hosthub_console/features/sites/sites.dart';
 import 'package:hosthub_console/features/team/team.dart';
 import 'package:hosthub_console/features/user_settings/user_settings.dart';
+import 'package:hosthub_console/features/website_editor/website_editor.dart';
 
 class HosthubRouter {
   static GoRouter create({
@@ -145,6 +146,10 @@ class HosthubRouter {
               builder: (context, state) => const SitesPage(),
             ),
             GoRoute(
+              path: '/website-editor',
+              builder: (context, state) => const WebsiteEditorPage(),
+            ),
+            GoRoute(
               path: '/sites/:siteName/:siteId',
               builder: (context, state) {
                 final siteId = state.pathParameters['siteId']!;
@@ -207,7 +212,7 @@ class HosthubRouter {
 }
 
 MenuItem _selectedMenuItem(String path) {
-  if (path.startsWith('/sites')) {
+  if (path.startsWith('/sites') || path.startsWith('/website-editor')) {
     return MenuItem.sites;
   }
   if (path.startsWith('/settings')) {

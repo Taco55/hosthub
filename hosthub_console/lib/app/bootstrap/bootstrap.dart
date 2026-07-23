@@ -11,6 +11,7 @@ import 'package:hosthub_console/features/server_settings/server_settings_di.dart
 import 'package:hosthub_console/features/users/users_di.dart';
 import 'package:hosthub_console/features/channel_manager/infrastructure/lodgify/lodgify_di.dart';
 import 'package:hosthub_console/features/team/team_di.dart';
+import 'package:hosthub_console/features/website_editor/website_editor_di.dart';
 import 'package:hosthub_console/core/services/services.dart';
 
 void initializeAppConfig({
@@ -53,6 +54,7 @@ Future<void> registerFeatureServices({required SupabaseClient client}) async {
   registerPropertiesDependencies(client);
   registerLodgifyDependencies();
   registerTeamDependencies(client);
+  registerWebsiteEditorDependencies();
 }
 
 void registerBlocs() {
