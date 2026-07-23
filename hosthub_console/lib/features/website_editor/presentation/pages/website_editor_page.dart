@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
 import 'package:hosthub_console/core/core.dart';
+import 'package:hosthub_console/core/widgets/foundation/foundation.dart';
 
 import '../../application/site_content_cubit.dart';
 import '../../data/translation_service.dart';
@@ -11,9 +12,10 @@ import '../widgets/preview_pane.dart';
 import '../widgets/publish_modal.dart';
 
 /// The CMS website editor: a fixed-width editor column beside the live
-/// preview, in a [StyledSplitView]. Source mode (preview language == source)
-/// shows the plain form; any other language shows the translation editor.
-/// Publish opens the all-languages confirmation modal.
+/// preview, in a full-bleed [StyledWebPageScaffold] (header hidden — the
+/// editor column carries its own top bar). Source mode (preview language ==
+/// source) shows the plain form; any other language shows the translation
+/// editor. Publish opens the all-languages confirmation modal.
 class WebsiteEditorPage extends StatelessWidget {
   const WebsiteEditorPage({super.key});
 
@@ -47,13 +49,15 @@ class _WebsiteEditorView extends StatelessWidget {
         if (confirmed != true) cubit.closePublish();
       },
       builder: (context, state) {
-        return StyledSplitView(
-          primaryWidth: 512,
-          minPrimary: 420,
-          minSecondary: 360,
-          collapseBelow: 900,
-          primary: EditorColumn(state: state),
-          secondary: PreviewPane(state: state),
+        return StyledWebPageScaffold(
+          title: context.s.weBreadcrumbWebsite,
+          showHeader: false,
+          padding: EdgeInsets.zero,
+          paneGap: 0,
+          leftPaneSize: const StyledPaneSize.fixed(512),
+          leftChild: EditorColumn(state: state),
+          rightChild: PreviewPane(state: state),
+          showRightPane: true,
         );
       },
     );

@@ -1,0 +1,231 @@
+import 'package:flutter/material.dart';
+
+import 'package:styled_widgets/styled_widgets.dart';
+
+/// Device chrome rendered around a [SitePreviewFrame]'s content.
+enum SitePreviewFrameDevice {
+  /// A desktop browser window: traffic-light dots + an address bar.
+  desktop,
+
+  /// A phone: a dark bezel + rounded screen with a status bar.
+  mobile,
+}
+
+/// App-local "web page preview" chrome for the website editor's live preview
+/// (deliberately not a styled_widgets component: browser/phone chrome is
+/// specific to this screen — see the build-loop ledger).
+///
+/// In [SitePreviewFrameDevice.desktop] it renders a browser window (optional
+/// traffic-light dots, an address bar showing [url], an optional [toolbar]
+/// beside the address bar) around [child]. In [SitePreviewFrameDevice.mobile]
+/// it renders a phone bezel with a status bar (time + host derived from [url]).
+///
+/// Built on [StyledContainer] so radius/surfaces follow the theme; the default
+/// soft drop shadow matches the design-system card-hover elevation. All colours
+/// come from the [ColorScheme].
+class SitePreviewFrame extends StatelessWidget {
+  const SitePreviewFrame({
+    super.key,
+    required this.child,
+    this.url,
+    this.showTrafficLights = true,
+    this.toolbar,
+    this.device = SitePreviewFrameDevice.desktop,
+    this.maxWidth = 660,
+    this.boxShadow,
+  });
+
+  /// The rendered page / content slot.
+  final Widget child;
+
+  /// URL shown in the address bar (desktop) / host in the status bar (mobile).
+  final String? url;
+
+  /// Whether to render the three traffic-light dots (desktop only).
+  final bool showTrafficLights;
+
+  /// Optional controls rendered beside the address bar (desktop) / above the
+  /// bezel (mobile).
+  final Widget? toolbar;
+
+  /// Desktop window vs phone bezel.
+  final SitePreviewFrameDevice device;
+
+  /// Maximum content width for the desktop frame. Mobile clamps to a phone
+  /// width regardless.
+  final double maxWidth;
+
+  /// Overrides the default card-hover drop shadow.
+  final List<BoxShadow>? boxShadow;
+
+  static const double _mobileScreenWidth = 306;
+  static const double _mobileBezelPadding = 10;
+
+  List<BoxShadow> _resolveShadow(BuildContext context) =>
+      boxShadow ??
+      [
+        BoxShadow(
+          color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.08),
+          blurRadius: 28,
+          offset: const Offset(0, 12),
+        ),
+      ];
+
+  @override
+  Widget build(BuildContext context) {
+    return device == SitePreviewFrameDevice.mobile
+        ? _buildMobile(context)
+        : _buildDesktop(context);
+  }
+
+  Widget _buildDesktop(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    final chrome = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      child: Row(
+        children: [
+          if (showTrafficLights) ...[
+            _trafficDot(scheme.error),
+            const SizedBox(width: 6),
+            _trafficDot(scheme.tertiary),
+            const SizedBox(width: 6),
+            _trafficDot(scheme.primary),
+            const SizedBox(width: 14),
+          ],
+          Expanded(
+            child: Container(
+              height: 28,
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                url ?? '',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ),
+          if (toolbar != null) ...[
+            const SizedBox(width: 12),
+            toolbar!,
+          ],
+        ],
+      ),
+    );
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        child: StyledContainer(
+          backgroundColor: scheme.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: scheme.outlineVariant),
+          boxShadow: _resolveShadow(context),
+          padding: EdgeInsets.zero,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              chrome,
+              Divider(height: 1, thickness: 1, color: scheme.outlineVariant),
+              Flexible(child: child),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobile(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final host = _host(url);
+
+    final bezelColor = Theme.of(context).brightness == Brightness.dark
+        ? scheme.surfaceContainerHighest
+        : scheme.onSurface;
+
+    final phone = Container(
+      width: _mobileScreenWidth + _mobileBezelPadding * 2,
+      padding: const EdgeInsets.all(_mobileBezelPadding),
+      decoration: BoxDecoration(
+        color: bezelColor,
+        borderRadius: BorderRadius.circular(38),
+        boxShadow: _resolveShadow(context),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(27),
+        child: ColoredBox(
+          color: scheme.surface,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '9:41',
+                      style: textTheme.labelSmall?.copyWith(
+                        color: scheme.onSurface,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      host,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.labelSmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Flexible(child: child),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (toolbar != null) ...[
+            toolbar!,
+            const SizedBox(height: 16),
+          ],
+          phone,
+        ],
+      ),
+    );
+  }
+
+  Widget _trafficDot(Color color) => Container(
+        width: 10,
+        height: 10,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.55),
+          shape: BoxShape.circle,
+        ),
+      );
+
+  static String _host(String? url) {
+    if (url == null || url.isEmpty) return '';
+    final withoutScheme = url.replaceFirst(RegExp(r'^[a-zA-Z]+://'), '');
+    final slash = withoutScheme.indexOf('/');
+    return slash == -1 ? withoutScheme : withoutScheme.substring(0, slash);
+  }
+}

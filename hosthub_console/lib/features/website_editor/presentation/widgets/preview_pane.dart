@@ -7,9 +7,10 @@ import 'package:hosthub_console/core/widgets/foundation/foundation.dart';
 import '../../application/site_content_cubit.dart';
 import '../website_editor_status_colors.dart';
 import '../website_editor_strings.dart';
+import 'site_preview_frame.dart';
 
 /// The right-hand live preview: a status pill + device toggle + locale
-/// switcher above a [StyledBrowserFrame] (web or phone) rendering the chalet
+/// switcher above a [SitePreviewFrame] (web or phone) rendering the chalet
 /// site in the selected language, with a stale/draft ribbon underneath.
 class PreviewPane extends StatelessWidget {
   const PreviewPane({super.key, required this.state});
@@ -35,11 +36,11 @@ class PreviewPane extends StatelessWidget {
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    StyledBrowserFrame(
+                    SitePreviewFrame(
                       url: url,
                       device: state.previewDevice == PreviewDevice.mobile
-                          ? StyledBrowserFrameDevice.mobile
-                          : StyledBrowserFrameDevice.desktop,
+                          ? SitePreviewFrameDevice.mobile
+                          : SitePreviewFrameDevice.desktop,
                       child: _SitePreview(state: state),
                     ),
                     const SizedBox(height: 12),

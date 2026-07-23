@@ -44,10 +44,15 @@ void main() {
           body: BlocProvider.value(
             value: cubit,
             child: BlocBuilder<SiteContentCubit, SiteContentState>(
-              builder: (context, state) => StyledSplitView(
-                primaryWidth: 512,
-                primary: EditorColumn(state: state),
-                secondary: PreviewPane(state: state),
+              builder: (context, state) => StyledWebPageScaffold(
+                title: 'Website',
+                showHeader: false,
+                padding: EdgeInsets.zero,
+                paneGap: 0,
+                leftPaneSize: const StyledPaneSize.fixed(512),
+                leftChild: EditorColumn(state: state),
+                rightChild: PreviewPane(state: state),
+                showRightPane: true,
               ),
             ),
           ),
@@ -61,7 +66,7 @@ void main() {
   testWidgets('golden: source editor (mode A)', (tester) async {
     await pump(tester);
     await expectLater(
-      find.byType(StyledSplitView),
+      find.byType(StyledWebPageScaffold),
       matchesGoldenFile('goldens/01_source_editor.png'),
     );
   });
@@ -72,7 +77,7 @@ void main() {
     cubit.editTranslationField('en', 'hero.headline', 'Your mountain home in Trysil');
     await tester.pumpAndSettle();
     await expectLater(
-      find.byType(StyledSplitView),
+      find.byType(StyledWebPageScaffold),
       matchesGoldenFile('goldens/02_edit_translation.png'),
     );
   });
@@ -82,14 +87,14 @@ void main() {
     cubit.setPreviewDevice(PreviewDevice.mobile);
     await tester.pumpAndSettle();
     await expectLater(
-      find.byType(StyledSplitView),
+      find.byType(StyledWebPageScaffold),
       matchesGoldenFile('goldens/03_mobile_preview.png'),
     );
   });
 
   testWidgets('golden: publish modal', (tester) async {
     final cubit = await pump(tester);
-    final context = tester.element(find.byType(StyledSplitView));
+    final context = tester.element(find.byType(StyledWebPageScaffold));
     showPublishModal(context, state: cubit.state);
     await tester.pumpAndSettle();
     await expectLater(

@@ -37,11 +37,15 @@ void main() {
     // The design mandate: chrome comes from StyledWidgets. Small geometric
     // primitives (status dots, the source-language tag, preview-site mock
     // content) are allowed; bordered/shadowed card imitations are not.
+    // The preview chrome (SitePreviewFrame + the mocked site inside the
+    // preview pane) legitimately draws browser/phone shadows; everything else
+    // must get elevation from StyledWidgets.
+    const shadowAllowlist = ['preview_pane.dart', 'site_preview_frame.dart'];
     final offenders = <String>[];
     for (final file in dartFiles(featureDir)) {
       final source = File(file.path).readAsStringSync();
       if (source.contains('boxShadow:') &&
-          !file.path.endsWith('preview_pane.dart')) {
+          !shadowAllowlist.any(file.path.endsWith)) {
         offenders.add(file.path);
       }
     }

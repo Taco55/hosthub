@@ -42,10 +42,15 @@ Future<SiteContentCubit> pumpEditor(WidgetTester tester) async {
         body: BlocProvider.value(
           value: cubit,
           child: BlocBuilder<SiteContentCubit, SiteContentState>(
-            builder: (context, state) => StyledSplitView(
-              primaryWidth: 512,
-              primary: EditorColumn(state: state),
-              secondary: PreviewPane(state: state),
+            builder: (context, state) => StyledWebPageScaffold(
+              title: 'Website',
+              showHeader: false,
+              padding: EdgeInsets.zero,
+              paneGap: 0,
+              leftPaneSize: const StyledPaneSize.fixed(512),
+              leftChild: EditorColumn(state: state),
+              rightChild: PreviewPane(state: state),
+              showRightPane: true,
             ),
           ),
         ),
