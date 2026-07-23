@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { env } from "../_shared/env.ts";
 import { buildCorsHeaders, jsonError, jsonResponse } from "../_shared/http.ts";
+import { resolveEffectiveLodgifyApiKey } from "../_shared/lodgify.ts";
 
 const SUPABASE_URL = env("SUPABASE_URL");
 const SERVICE_ROLE_KEY = env(
@@ -187,9 +188,12 @@ async function resolveLodgifyApiKey(
     return { error: jsonError(401, "Invalid or expired token", corsOptions) };
   }
 
-  const { data, error } = await adminClient.rpc(
-    "get_effective_lodgify_api_key",
-    { p_user_id: user.id },
+  // Read the key from the tables directly instead of the get_effective_lodgify
+  // _api_key RPC, whose PostgREST schema-cache exposure has proven unreliable
+  // (intermittent PGRST202). See _shared/lodgify.ts.
+  const { data, error } = await resolveEffectiveLodgifyApiKey(
+    adminClient,
+    user.id,
   );
 
   if (error) {

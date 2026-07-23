@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { env } from "../_shared/env.ts";
 import { buildCorsHeaders, jsonError, jsonResponse } from "../_shared/http.ts";
+import { resolveEffectiveLodgifyApiKey } from "../_shared/lodgify.ts";
 
 const SUPABASE_URL = env("SUPABASE_URL");
 const SERVICE_ROLE_KEY = env(
@@ -119,9 +120,14 @@ async function resolveLodgifyApiKey(
     return { error: jsonError(401, "Invalid or expired token", corsOptions) };
   }
 
-  const { data, error } = await adminClient.rpc(
-    "get_effective_lodgify_api_key",
-    { p_user_id: user.id },
+  // Resolve the effective Lodgify key by reading the tables directly (service
+  // role bypasses RLS) rather than via the get_effective_lodgify_api_key RPC,
+  // whose PostgREST schema-cache exposure has proven unreliable (intermittent
+  // PGRST202 "function not found in schema cache"). Mirrors the RPC's logic:
+  // the user's own key first, then the key of any site they belong to.
+  const { data, error } = await resolveEffectiveLodgifyApiKey(
+    adminClient,
+    user.id,
   );
 
   if (error) {
