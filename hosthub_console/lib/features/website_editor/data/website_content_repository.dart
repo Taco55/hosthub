@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:app_errors/app_errors.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -227,9 +229,23 @@ class WebsiteContentRepository extends SupabaseRepository {
         return readField(fieldKey, doc.contentType, content);
       }
 
-      final source = <String, String>{
+      // Highlight rows are repeatable: derive the actual count from the
+      // source document so extra rows survive a reload.
+      final homeDoc =
+          contentByDocLocale['page:home:$sourceLanguage'];
+      final highlightCount = math.max(
+        2,
+        (homeDoc?['highlights'] as List<dynamic>?)?.length ?? 0,
+      );
+      final fieldKeys = <String>[
         for (final field in kAllFields)
-          field.key: documentValue(field.key, sourceLanguage) ?? '',
+          if (!field.key.startsWith('highlights.')) field.key,
+        for (var i = 0; i < highlightCount; i++) 'highlights.$i',
+      ];
+
+      final source = <String, String>{
+        for (final key in fieldKeys)
+          key: documentValue(key, sourceLanguage) ?? '',
       };
 
       final translationRows = await supabase
@@ -246,10 +262,10 @@ class WebsiteContentRepository extends SupabaseRepository {
       final translations = <String, Map<String, TranslatedField>>{};
       for (final language in locales.where((l) => l != sourceLanguage)) {
         final fields = <String, TranslatedField>{};
-        for (final field in kAllFields) {
-          final row = rowsByLangKey['$language:${field.key}'];
+        for (final key in fieldKeys) {
+          final row = rowsByLangKey['$language:$key'];
           if (row != null) {
-            fields[field.key] = TranslatedField(
+            fields[key] = TranslatedField(
               value: row['value'] as String? ?? '',
               status: row['status'] == 'locked'
                   ? FieldTranslationStatus.locked
@@ -257,11 +273,11 @@ class WebsiteContentRepository extends SupabaseRepository {
               sourceHash: row['source_hash'] as String?,
             );
           } else {
-            final published = documentValue(field.key, language);
-            fields[field.key] = TranslatedField(
-              value: published ?? source[field.key] ?? '',
+            final published = documentValue(key, language);
+            fields[key] = TranslatedField(
+              value: published ?? source[key] ?? '',
               status: FieldTranslationStatus.auto,
-              sourceHash: sourceHashOf(source[field.key] ?? ''),
+              sourceHash: sourceHashOf(source[key] ?? ''),
             );
           }
         }

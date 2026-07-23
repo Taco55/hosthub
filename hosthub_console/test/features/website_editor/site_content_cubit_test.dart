@@ -138,6 +138,48 @@ void main() {
       expect(cubit.state.staleLanguages, isEmpty);
     });
 
+    test('addHighlight appends an empty repeatable row in every language', () {
+      final cubit = build();
+      expect(
+        cubit.state.fields.where((f) => f.card == EditorCard.highlights),
+        hasLength(2),
+      );
+
+      cubit.addHighlight();
+
+      final highlights = cubit.state.fields
+          .where((f) => f.card == EditorCard.highlights)
+          .toList();
+      expect(highlights, hasLength(3));
+      expect(cubit.state.valueFor('nl', 'highlights.2'), '');
+      expect(
+        cubit.state.translatedField('en', 'highlights.2')!.status,
+        FieldTranslationStatus.auto,
+      );
+      expect(cubit.state.dirty, isTrue);
+      // The new empty row is fresh, not stale.
+      expect(cubit.state.isFieldStale('en', 'highlights.2'), isFalse);
+    });
+
+    test('reorderHighlights moves rows in every language incl. status', () {
+      final cubit = build();
+      cubit.editTranslationField('en', 'highlights.0', 'Locked first');
+
+      // Drag row 0 below row 1 (ReorderableListView semantics: newIndex is
+      // the insertion point before removal).
+      cubit.reorderHighlights(0, 2);
+
+      expect(cubit.state.valueFor('nl', 'highlights.0'),
+          'Ontspan na een dag op de berg.');
+      expect(cubit.state.valueFor('nl', 'highlights.1'),
+          'Direct de Trysilfjellet-pistes op.');
+      // The locked EN translation moved along with its row.
+      final moved = cubit.state.translatedField('en', 'highlights.1')!;
+      expect(moved.value, 'Locked first');
+      expect(moved.status, FieldTranslationStatus.locked);
+      expect(cubit.state.dirty, isTrue);
+    });
+
     test('coverage drops when a field goes stale', () {
       final cubit = build();
       expect(cubit.state.coverage('en'), 1.0);

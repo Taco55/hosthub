@@ -26,6 +26,11 @@ String languageShort(String code) =>
 /// Localized field label for an editor field key.
 String fieldLabel(BuildContext context, String fieldKey) {
   final s = context.s;
+  final highlightMatch =
+      RegExp(r'^highlights\.(\d+)$').firstMatch(fieldKey);
+  if (highlightMatch != null) {
+    return s.weFieldHighlight(int.parse(highlightMatch.group(1)!) + 1);
+  }
   switch (fieldKey) {
     case 'hero.headline':
       return s.weFieldHeadline;
@@ -33,10 +38,7 @@ String fieldLabel(BuildContext context, String fieldKey) {
     case 'practical.header.subtitle':
     case 'contact.subtitle':
       return s.weFieldSubtitle;
-    case 'highlights.0':
-      return s.weFieldHighlight(1);
-    case 'highlights.1':
-      return s.weFieldHighlight(2);
+    // highlights.N is repeatable — handled generically below the switch.
     case 'chalet.description.0':
     case 'area.intro':
       return s.weFieldIntro;

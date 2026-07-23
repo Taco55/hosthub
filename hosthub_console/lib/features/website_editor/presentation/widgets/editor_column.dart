@@ -439,30 +439,69 @@ class _HighlightsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cubit = context.read<SiteContentCubit>();
     final s = context.s;
     final highlightFields =
         state.fields.where((f) => f.card == EditorCard.highlights).toList();
+    // Reordering rearranges the source rows (all languages move along); in
+    // translation mode the rows are fixed and carry their status chips.
+    final canReorder = state.isSourceMode && highlightFields.length > 1;
+
     return _CardShell(
       icon: Icons.star_outline,
       title: s.weCardHighlights,
       children: [
-        for (final field in highlightFields) ...[
-          WebsiteFieldRow(
-            state: state,
-            field: field,
-            label: fieldLabel(context, field.key),
+        if (canReorder)
+          StyledReorderableList(
+            itemCount: highlightFields.length,
+            onReorder: cubit.reorderHighlights,
+            itemBuilder: (context, index) => Padding(
+              key: ValueKey(highlightFields[index].key),
+              padding: const EdgeInsets.only(bottom: 14),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ReorderableDragStartListener(
+                    index: index,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 34, right: 8),
+                      child: Icon(
+                        Icons.drag_indicator,
+                        size: 20,
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: WebsiteFieldRow(
+                      state: state,
+                      field: highlightFields[index],
+                      label: fieldLabel(context, highlightFields[index].key),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          for (final field in highlightFields) ...[
+            WebsiteFieldRow(
+              state: state,
+              field: field,
+              label: fieldLabel(context, field.key),
+            ),
+            const SizedBox(height: 14),
+          ],
+        if (state.isSourceMode)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: StyledTextButton(
+              title: s.weAddHighlight,
+              showLeftIcon: true,
+              leftIconData: Icons.add,
+              onPressed: cubit.addHighlight,
+            ),
           ),
-          const SizedBox(height: 14),
-        ],
-        Align(
-          alignment: Alignment.centerLeft,
-          child: StyledTextButton(
-            title: s.weAddHighlight,
-            showLeftIcon: true,
-            leftIconData: Icons.add,
-            onPressed: () {},
-          ),
-        ),
       ],
     );
   }

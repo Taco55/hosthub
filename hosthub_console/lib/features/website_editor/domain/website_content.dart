@@ -128,6 +128,31 @@ const Map<String, List<EditorFieldDef>> kPageFields = {
 List<EditorFieldDef> get kAllFields =>
     kPageFields.values.expand((fields) => fields).toList(growable: false);
 
+/// Highlight rows are repeatable: the effective field list for a page grows
+/// with the `highlights.N` keys present in the source content (minimum: the
+/// static definition). Extra keys keep the highlights-card layout.
+List<EditorFieldDef> effectiveFieldsFor(
+  String pageKey,
+  Map<String, String> source,
+) {
+  final base = kPageFields[pageKey] ?? const <EditorFieldDef>[];
+  if (pageKey != 'home') return base;
+
+  var maxIndex = 1; // static definition ships highlights.0 and .1
+  for (final key in source.keys) {
+    final match = RegExp(r'^highlights\.(\d+)$').firstMatch(key);
+    if (match != null) {
+      final index = int.parse(match.group(1)!);
+      if (index > maxIndex) maxIndex = index;
+    }
+  }
+  return [
+    ...base.where((f) => !f.key.startsWith('highlights.')),
+    for (var i = 0; i <= maxIndex; i++)
+      EditorFieldDef(key: 'highlights.$i', card: EditorCard.highlights),
+  ];
+}
+
 /// Computes the source-text hash used to detect stale auto translations.
 /// sha256 hex — identical to the hash the translate-content Edge Function
 /// stores in `site_translations.source_hash`, so staleness survives reloads.

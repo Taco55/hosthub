@@ -60,11 +60,14 @@ class SiteContentState extends Equatable {
   List<String> get targetLanguages =>
       locales.where((l) => l != sourceLanguage).toList();
 
-  /// The editable fields for the current page.
-  List<EditorFieldDef> get fields => kPageFields[pageKey] ?? const [];
+  /// The editable fields for the current page (highlight rows are repeatable
+  /// and derived from the source content).
+  List<EditorFieldDef> get fields => effectiveFieldsFor(pageKey, source);
 
   /// Every editable field across all pages (translate/publish scope).
-  List<EditorFieldDef> get allFields => kAllFields;
+  List<EditorFieldDef> get allFields => [
+        for (final page in kPageFields.keys) ...effectiveFieldsFor(page, source),
+      ];
 
   String currentSourceHash(String key) => sourceHashOf(source[key] ?? '');
 
@@ -401,6 +404,77 @@ class SiteContentCubit extends Cubit<SiteContentState> {
         ),
       );
     }
+  }
+
+  /// Appends an empty highlight row (source language; targets start as fresh
+  /// empty auto fields so they translate on publish).
+  void addHighlight() {
+    final index = state.fields
+        .where((f) => f.card == EditorCard.highlights)
+        .length;
+    final key = 'highlights.$index';
+    final source = Map<String, String>.from(state.source)..[key] = '';
+    final updated = _cloneTranslations();
+    for (final language in state.targetLanguages) {
+      final langMap = updated.putIfAbsent(language, () => {});
+      langMap[key] = TranslatedField(
+        value: '',
+        status: FieldTranslationStatus.auto,
+        sourceHash: sourceHashOf(''),
+      );
+    }
+    emit(state.copyWith(source: source, translations: updated, dirty: true));
+    _sourceDirty = true;
+    _scheduleAutosave();
+  }
+
+  /// Reorders the highlight rows (drag grip). Values move in every language,
+  /// including their locked/auto status, so translations stay attached to
+  /// their row.
+  void reorderHighlights(int oldIndex, int newIndex) {
+    final keys = state.fields
+        .where((f) => f.card == EditorCard.highlights)
+        .map((f) => f.key)
+        .toList();
+    if (oldIndex < 0 || oldIndex >= keys.length) return;
+    if (newIndex > oldIndex) newIndex -= 1;
+    newIndex = newIndex.clamp(0, keys.length - 1);
+    if (newIndex == oldIndex) return;
+
+    List<T> moved<T>(List<T> values) {
+      final list = List<T>.from(values);
+      final item = list.removeAt(oldIndex);
+      list.insert(newIndex, item);
+      return list;
+    }
+
+    final source = Map<String, String>.from(state.source);
+    final sourceValues = moved([for (final k in keys) source[k] ?? '']);
+    for (var i = 0; i < keys.length; i++) {
+      source[keys[i]] = sourceValues[i];
+    }
+
+    final updated = _cloneTranslations();
+    for (final language in state.targetLanguages) {
+      final langMap = updated.putIfAbsent(language, () => {});
+      final fieldValues = moved([
+        for (final k in keys)
+          langMap[k] ??
+              TranslatedField(
+                value: '',
+                status: FieldTranslationStatus.auto,
+                sourceHash: sourceHashOf(''),
+              ),
+      ]);
+      for (var i = 0; i < keys.length; i++) {
+        langMap[keys[i]] = fieldValues[i];
+        _dirtyTranslationFields.add((language, keys[i]));
+      }
+    }
+
+    emit(state.copyWith(source: source, translations: updated, dirty: true));
+    _sourceDirty = true;
+    _scheduleAutosave();
   }
 
   void openPublish() => emit(state.copyWith(publishOpen: true));
