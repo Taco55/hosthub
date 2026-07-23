@@ -14,18 +14,6 @@ class AuthSessionChange {
   final AuthUser? user;
 }
 
-enum OAuthProvider {
-  apple,
-  azure,
-  bitbucket,
-  discord,
-  facebook,
-  github,
-  gitlab,
-  google,
-  twitter,
-}
-
 abstract class AuthPort implements auth_ui.AuthServiceInterface {
   @override
   AuthUser? get currentUser;
@@ -60,7 +48,8 @@ abstract class AuthPort implements auth_ui.AuthServiceInterface {
   Future<void> signOut();
 
   bool get isGuestUser;
-  Future<void> signInWithOAuth(OAuthProvider provider);
+  @override
+  Future<void> signInWithOAuth(String provider);
   Stream<AuthSessionChange> get onAuthStateChange;
 
   /// This will not check whether or not those tokens are valid. To check

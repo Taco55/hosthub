@@ -62,7 +62,7 @@ class SupabaseAuthAdapter extends SupabaseRepository implements AuthPort {
   }
 
   @override
-  Future<void> signInWithOAuth(OAuthProvider provider) async {
+  Future<void> signInWithOAuth(String provider) async {
     try {
       final redirectTo = AppConfig.current.authRedirectUri();
       await supabase.auth.signInWithOAuth(
@@ -80,7 +80,7 @@ class SupabaseAuthAdapter extends SupabaseRepository implements AuthPort {
       throw mapError(
         error,
         stack,
-        context: _context('signInWithOAuth', {'provider': provider.toString()}),
+        context: _context('signInWithOAuth', {'provider': provider}),
       );
     }
   }
@@ -686,25 +686,26 @@ class SupabaseAuthAdapter extends SupabaseRepository implements AuthPort {
   }
 }
 
-sb.OAuthProvider _mapOAuthProvider(OAuthProvider provider) {
-  switch (provider) {
-    case OAuthProvider.apple:
+sb.OAuthProvider _mapOAuthProvider(String provider) {
+  switch (provider.trim().toLowerCase()) {
+    case 'apple':
       return sb.OAuthProvider.apple;
-    case OAuthProvider.azure:
+    case 'azure':
       return sb.OAuthProvider.azure;
-    case OAuthProvider.bitbucket:
+    case 'bitbucket':
       return sb.OAuthProvider.bitbucket;
-    case OAuthProvider.discord:
+    case 'discord':
       return sb.OAuthProvider.discord;
-    case OAuthProvider.facebook:
+    case 'facebook':
       return sb.OAuthProvider.facebook;
-    case OAuthProvider.github:
+    case 'github':
       return sb.OAuthProvider.github;
-    case OAuthProvider.gitlab:
+    case 'gitlab':
       return sb.OAuthProvider.gitlab;
-    case OAuthProvider.google:
+    case 'google':
       return sb.OAuthProvider.google;
-    case OAuthProvider.twitter:
+    case 'twitter':
       return sb.OAuthProvider.twitter;
   }
+  throw ArgumentError.value(provider, 'provider', 'Unsupported OAuth provider');
 }

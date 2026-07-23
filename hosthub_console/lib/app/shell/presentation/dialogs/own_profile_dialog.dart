@@ -29,267 +29,277 @@ Future<void> showOwnProfileDialog(
       : profile.email;
 
   try {
-    await showStyledFlowModal<void>(
+    await showStyledModal<void>(
       context,
       title: displayName,
-      config: const ModalFlowConfig(
-        presentation: ModalFlowPresentation.dialog,
-        isDismissible: false,
-        bodyWidth: 480,
-        bodyMinHeight: 400,
-        enableBodyScroll: true,
-        contentPadding: EdgeInsets.zero,
-      ),
-      steps: [
-        // ----- Root: Profile overview + menu -----
-        ModalFlowStep(
-          builder: (ctx, flow) {
-            final liveProfile =
-                ctx.watch<ProfileCubit>().state.profile ?? profile;
-            final chips = _buildAccountChips(ctx, liveProfile);
+      presentation: StyledModalPresentation.dialog,
+      isDismissible: false,
+      dialogMinWidth: 480,
+      dialogMaxWidth: 480,
+      bodyMinHeight: 400,
+      enableBodyScroll: true,
+      contentPadding: EdgeInsets.zero,
+      steps: StyledModalSteps(
+        children: [
+          // ----- Root: Profile overview + menu -----
+          StyledModalStep(
+            builder: (ctx, flow) {
+              final liveProfile =
+                  ctx.watch<ProfileCubit>().state.profile ?? profile;
+              final chips = _buildAccountChips(ctx, liveProfile);
 
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                StyledSection(
-                  isFirstSection: true,
-                  grouped: false,
-                  horizontalPadding: 24,
-                  showDividers: false,
-                  children: [
-                    const SizedBox(height: 8),
-                    CircleAvatar(
-                      radius: 32,
-                      backgroundColor: ctx.theme.colorScheme.primary.withValues(
-                        alpha: 0.1,
-                      ),
-                      child: Text(
-                        _profileInitial(liveProfile),
-                        style: ctx.theme.textTheme.headlineSmall?.copyWith(
-                          color: ctx.theme.colorScheme.primary,
-                          fontWeight: FontWeight.w700,
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  StyledSection(
+                    isFirstSection: true,
+                    inset: false,
+                    horizontalPadding: 24,
+                    showDividers: false,
+                    children: [
+                      const SizedBox(height: 8),
+                      CircleAvatar(
+                        radius: 32,
+                        backgroundColor: ctx.theme.colorScheme.primary
+                            .withValues(alpha: 0.1),
+                        child: Text(
+                          _profileInitial(liveProfile),
+                          style: ctx.theme.textTheme.headlineSmall?.copyWith(
+                            color: ctx.theme.colorScheme.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      _preferredDisplayName(liveProfile),
-                      style: ctx.theme.textTheme.titleMedium,
-                    ),
-                    Text(
-                      liveProfile.email,
-                      style: ctx.theme.textTheme.bodyMedium?.copyWith(
-                        color: ctx.theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    if (chips.isNotEmpty) ...[
                       const SizedBox(height: 12),
-                      Wrap(spacing: 8, runSpacing: 8, children: chips),
+                      Text(
+                        _preferredDisplayName(liveProfile),
+                        style: ctx.theme.textTheme.titleMedium,
+                      ),
+                      Text(
+                        liveProfile.email,
+                        style: ctx.theme.textTheme.bodyMedium?.copyWith(
+                          color: ctx.theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      if (chips.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Wrap(spacing: 8, runSpacing: 8, children: chips),
+                      ],
+                      const SizedBox(height: 8),
                     ],
-                    const SizedBox(height: 8),
-                  ],
-                ),
-                StyledSection(
-                  grouped: false,
-                  horizontalPadding: 24,
-                  children: [
-                    StyledTile(
-                      leading: const Icon(Icons.person_outline),
-                      title: s.editDetailsAction,
-                      subtitle: s.editDetailsDescription,
-                      showChevron: true,
-                      onTap: () => flow.goToChild(0),
-                    ),
-                    StyledTile(
-                      leading: const Icon(Icons.key_outlined),
-                      title: s.changePasswordTitle,
-                      subtitle: s.changePasswordDescription,
-                      showChevron: true,
-                      onTap: () => flow.goToChild(1),
-                    ),
-                  ],
-                ),
-              ],
-            );
-          },
-          children: [
-            // ----- Child 0: Edit Details -----
-            ModalFlowStep(
-              title: s.editDetailsAction,
-              footerActionLabel: s.saveButton,
-              actionResult: ModalFlowActionResult.back,
-              onActionPressed: () async {
-                if (!(editFormKey.currentState?.validate() ?? false)) {
-                  throw StateError('validation failed');
-                }
-                if (!context.mounted) throw StateError('unmounted');
+                  ),
+                  StyledSection(
+                    inset: false,
+                    horizontalPadding: 24,
+                    children: [
+                      StyledTile(
+                        leading: const Icon(Icons.person_outline),
+                        title: s.editDetailsAction,
+                        subtitle: s.editDetailsDescription,
+                        showChevron: true,
+                        onTap: () => flow.goToChild(0),
+                      ),
+                      StyledTile(
+                        leading: const Icon(Icons.key_outlined),
+                        title: s.changePasswordTitle,
+                        subtitle: s.changePasswordDescription,
+                        showChevron: true,
+                        onTap: () => flow.goToChild(1),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            },
+            children: [
+              // ----- Child 0: Edit Details -----
+              StyledModalStep(
+                title: s.editDetailsAction,
+                footerActionLabel: s.saveButton,
+                actionResult: StyledModalStepActionResult.back,
+                onActionPressed: (steps, data) async {
+                  if (!(editFormKey.currentState?.validate() ?? false)) {
+                    throw StateError('validation failed');
+                  }
+                  if (!context.mounted) throw StateError('unmounted');
 
-                final success = await context.read<ProfileCubit>().updateOwnProfile(
-                  email: emailCtrl.text.trim(),
-                  username: usernameCtrl.text.trim().isEmpty
-                      ? null
-                      : usernameCtrl.text.trim(),
-                );
-                if (!context.mounted) throw StateError('unmounted');
+                  final success = await context
+                      .read<ProfileCubit>()
+                      .updateOwnProfile(
+                        email: emailCtrl.text.trim(),
+                        username: usernameCtrl.text.trim().isEmpty
+                            ? null
+                            : usernameCtrl.text.trim(),
+                      );
+                  if (!context.mounted) throw StateError('unmounted');
 
-                if (!success) {
-                  final domainError = context.read<ProfileCubit>().state.error;
-                  if (domainError == null) {
+                  if (!success) {
+                    final domainError = context
+                        .read<ProfileCubit>()
+                        .state
+                        .error;
+                    if (domainError == null) {
+                      throw StateError('save failed');
+                    }
+                    await showAppError(
+                      context,
+                      AppError.fromDomain(context, domainError),
+                    );
                     throw StateError('save failed');
                   }
-                  await showAppError(
+
+                  showStyledToast(
                     context,
-                    AppError.fromDomain(context, domainError),
+                    type: ToastificationType.success,
+                    description: s.userUpdated,
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
                   );
-                  throw StateError('save failed');
-                }
-
-                showStyledToast(
-                  context,
-                  type: ToastificationType.success,
-                  description: s.userUpdated,
-                  backgroundColor: Theme.of(
-                    context,
-                  ).colorScheme.surfaceContainerHighest,
-                );
-              },
-              builder: (ctx, flow) {
-                return StyledSection(
-                  isFirstSection: true,
-                  grouped: false,
-                  horizontalPadding: 24,
-                  showDividers: false,
-                  children: [
-                    Form(
-                      key: editFormKey,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          StyledFormField(
-                            name: 'email',
-                            controller: emailCtrl,
-                            label: s.emailLabel,
-                            autofillHints: const [AutofillHints.email],
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return s.emailRequired;
-                              }
-                              if (!value.contains('@')) {
-                                return s.emailInvalid;
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 12),
-                          StyledFormField(
-                            name: 'username',
-                            controller: usernameCtrl,
-                            label: s.usernameLabel,
-                          ),
-                        ],
+                },
+                builder: (ctx, flow) {
+                  return StyledSection(
+                    isFirstSection: true,
+                    inset: false,
+                    horizontalPadding: 24,
+                    showDividers: false,
+                    children: [
+                      Form(
+                        key: editFormKey,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            StyledTextFormField(
+                              name: 'email',
+                              controller: emailCtrl,
+                              label: s.emailLabel,
+                              autofillHints: const [AutofillHints.email],
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return s.emailRequired;
+                                }
+                                if (!value.contains('@')) {
+                                  return s.emailInvalid;
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            StyledTextFormField(
+                              name: 'username',
+                              controller: usernameCtrl,
+                              label: s.usernameLabel,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                );
-              },
-            ),
+                    ],
+                  );
+                },
+              ),
 
-            // ----- Child 1: Change Password -----
-            ModalFlowStep(
-              title: s.changePasswordTitle,
-              onEnter: () {
-                passwordCtrl.clear();
-                confirmPasswordCtrl.clear();
-              },
-              footerActionLabel: s.updateButton,
-              actionResult: ModalFlowActionResult.back,
-              onActionPressed: () async {
-                if (!(passwordFormKey.currentState?.validate() ?? false)) {
-                  throw StateError('validation failed');
-                }
-                if (!context.mounted) throw StateError('unmounted');
+              // ----- Child 1: Change Password -----
+              StyledModalStep(
+                title: s.changePasswordTitle,
+                onEnter: () {
+                  passwordCtrl.clear();
+                  confirmPasswordCtrl.clear();
+                },
+                footerActionLabel: s.updateButton,
+                actionResult: StyledModalStepActionResult.back,
+                onActionPressed: (steps, data) async {
+                  if (!(passwordFormKey.currentState?.validate() ?? false)) {
+                    throw StateError('validation failed');
+                  }
+                  if (!context.mounted) throw StateError('unmounted');
 
-                final success = await context.read<ProfileCubit>().updateOwnPassword(
-                  passwordCtrl.text,
-                );
-                if (!context.mounted) throw StateError('unmounted');
+                  final success = await context
+                      .read<ProfileCubit>()
+                      .updateOwnPassword(passwordCtrl.text);
+                  if (!context.mounted) throw StateError('unmounted');
 
-                if (!success) {
-                  final domainError = context.read<ProfileCubit>().state.error;
-                  if (domainError == null) {
+                  if (!success) {
+                    final domainError = context
+                        .read<ProfileCubit>()
+                        .state
+                        .error;
+                    if (domainError == null) {
+                      throw StateError('password change failed');
+                    }
+                    await showAppError(
+                      context,
+                      AppError.fromDomain(context, domainError),
+                    );
                     throw StateError('password change failed');
                   }
-                  await showAppError(
-                    context,
-                    AppError.fromDomain(context, domainError),
-                  );
-                  throw StateError('password change failed');
-                }
 
-                showStyledToast(
-                  context,
-                  type: ToastificationType.success,
-                  description: s.passwordChanged,
-                  backgroundColor: Theme.of(
+                  showStyledToast(
                     context,
-                  ).colorScheme.surfaceContainerHighest,
-                );
-              },
-              builder: (ctx, flow) {
-                return StyledSection(
-                  isFirstSection: true,
-                  grouped: false,
-                  horizontalPadding: 24,
-                  showDividers: false,
-                  children: [
-                    Form(
-                      key: passwordFormKey,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          StyledFormField(
-                            name: 'new-password',
-                            controller: passwordCtrl,
-                            label: s.newPasswordLabel,
-                            obscureText: true,
-                            enablePasswordToggle: true,
-                            validator: (value) {
-                              if (value == null || value.length < 8) {
-                                return s.passwordMinLength;
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 12),
-                          StyledFormField(
-                            name: 'confirm-password',
-                            controller: confirmPasswordCtrl,
-                            label: s.confirmPasswordLabel,
-                            obscureText: true,
-                            enablePasswordToggle: true,
-                            validator: (value) {
-                              if (value != passwordCtrl.text) {
-                                return s.passwordsDoNotMatch;
-                              }
-                              return null;
-                            },
-                            onFieldSubmitted: (_) {
-                              if (passwordCtrl.text.trim().isNotEmpty &&
-                                  confirmPasswordCtrl.text.trim().isNotEmpty) {
-                                flow.goNext();
-                              }
-                            },
-                          ),
-                        ],
+                    type: ToastificationType.success,
+                    description: s.passwordChanged,
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                  );
+                },
+                builder: (ctx, flow) {
+                  return StyledSection(
+                    isFirstSection: true,
+                    inset: false,
+                    horizontalPadding: 24,
+                    showDividers: false,
+                    children: [
+                      Form(
+                        key: passwordFormKey,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            StyledTextFormField(
+                              name: 'new-password',
+                              controller: passwordCtrl,
+                              label: s.newPasswordLabel,
+                              obscureText: true,
+                              enablePasswordToggle: true,
+                              validator: (value) {
+                                if (value == null || value.length < 8) {
+                                  return s.passwordMinLength;
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            StyledTextFormField(
+                              name: 'confirm-password',
+                              controller: confirmPasswordCtrl,
+                              label: s.confirmPasswordLabel,
+                              obscureText: true,
+                              enablePasswordToggle: true,
+                              validator: (value) {
+                                if (value != passwordCtrl.text) {
+                                  return s.passwordsDoNotMatch;
+                                }
+                                return null;
+                              },
+                              onFieldSubmitted: (_) {
+                                if (passwordCtrl.text.trim().isNotEmpty &&
+                                    confirmPasswordCtrl.text
+                                        .trim()
+                                        .isNotEmpty) {
+                                  flow.goNext();
+                                }
+                              },
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ],
-        ),
-      ],
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   } finally {
     emailCtrl.dispose();

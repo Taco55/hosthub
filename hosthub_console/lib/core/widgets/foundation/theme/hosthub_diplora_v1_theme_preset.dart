@@ -51,9 +51,7 @@ abstract final class HosthubThemePreset {
       surface: isLight
           ? HosthubDiploraV1Palette.ice
           : HosthubDiploraV1Palette.surfaceDark,
-      onSurface: isLight
-          ? HosthubDiploraV1Palette.secondary
-          : Colors.white,
+      onSurface: isLight ? HosthubDiploraV1Palette.secondary : Colors.white,
       surfaceContainerHighest: isLight
           ? HosthubDiploraV1Palette.backgroundWhite
           : HosthubDiploraV1Palette.surfaceContainerDark,
@@ -179,8 +177,8 @@ abstract final class HosthubThemePreset {
         innerPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         topPadding: 20,
         firstTopPadding: 16,
-        backgroundColor: HosthubDiploraV1Palette.backgroundWhite,
-        backgroundColorDark: HosthubDiploraV1Palette.surfaceContainerDark,
+        insetBackgroundColor: HosthubDiploraV1Palette.backgroundWhite,
+        insetBackgroundColorDark: HosthubDiploraV1Palette.surfaceContainerDark,
         headerTextColor: HosthubDiploraV1Palette.secondary,
         headerInsideTextStyle: const TextStyle(
           fontFamily: 'Roboto',
@@ -205,14 +203,15 @@ abstract final class HosthubThemePreset {
           letterSpacing: 0.1,
         ),
       ),
-      fields: (t) => t.copyWith(
-        contentPadding: const EdgeInsets.all(16),
-        dropdownContentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 6,
-        ),
-        dropdownHeight: 40,
-        searchFieldPlaceholderColor: HosthubDiploraV1Palette.searchPlaceholder,
+      formFields: (t) => t.copyWith(
+        input: t.input.copyWith(contentPadding: const EdgeInsets.all(16)),
+      ),
+      searchFields: (t) => t.copyWith(
+        placeholderColor: HosthubDiploraV1Palette.searchPlaceholder,
+      ),
+      dropdowns: (t) => t.copyWith(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        minHeight: 40,
       ),
       buttons: (t) => t.copyWith(
         cornerRadius: 12,

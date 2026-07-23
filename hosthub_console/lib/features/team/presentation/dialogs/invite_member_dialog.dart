@@ -24,8 +24,7 @@ Future<bool?> _showInviteDialog(
   required bool accountWide,
 }) {
   final s = context.s;
-  final title =
-      accountWide ? s.teamInviteUserTitle : s.teamInviteMemberTitle;
+  final title = accountWide ? s.teamInviteUserTitle : s.teamInviteMemberTitle;
   final cubit = context.read<SiteMembersCubit>();
 
   return showStyledModal<bool>(
@@ -33,17 +32,15 @@ Future<bool?> _showInviteDialog(
     title: title,
     isDismissible: false,
     hideDefaultHeader: false,
-    showLeading: true,
+    showCloseButton: true,
+    leadingClose: true,
     leadingLabel: s.cancelButton,
     showAction: false,
     dialogMaxWidth: 560,
-    builder: (modalContext) {
+    builder: (modalContext, modal) {
       return BlocProvider.value(
         value: cubit,
-        child: _InviteMemberForm(
-          siteName: siteName,
-          accountWide: accountWide,
-        ),
+        child: _InviteMemberForm(siteName: siteName, accountWide: accountWide),
       );
     },
   );
@@ -126,7 +123,7 @@ class _InviteMemberFormState extends State<_InviteMemberForm> {
               style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
-            StyledFormField(
+            StyledTextFormField(
               controller: _emailController,
               placeholder: s.teamEmailPlaceholder,
               keyboardType: TextInputType.emailAddress,
@@ -145,7 +142,6 @@ class _InviteMemberFormState extends State<_InviteMemberForm> {
             const SizedBox(height: 12),
             StyledSelectionTile<SiteMemberRole>.dropdown(
               title: s.teamRoleColumn,
-              modalTitle: s.teamRoleColumn,
               currentValue: _selectedRole,
               options: roles,
               optionLabelBuilder: (role) => role.label,

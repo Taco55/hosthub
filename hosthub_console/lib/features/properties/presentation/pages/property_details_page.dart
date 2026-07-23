@@ -43,16 +43,14 @@ class PropertyDetailsPage extends StatelessWidget {
               return ConsolePageScaffold(
                 title: context.s.propertyDetailsTitle,
                 description: context.s.propertyDetailsDescription,
-                leftChild:
-                    const Center(child: CircularProgressIndicator()),
+                leftChild: const Center(child: CircularProgressIndicator()),
               );
             }
             if (snapshot.hasError) {
               return ConsolePageScaffold(
                 title: context.s.propertyDetailsTitle,
                 description: context.s.propertyDetailsDescription,
-                leftChild:
-                    Text('Failed to load details: ${snapshot.error}'),
+                leftChild: Text('Failed to load details: ${snapshot.error}'),
               );
             }
 
@@ -71,9 +69,7 @@ class PropertyDetailsPage extends StatelessWidget {
               leftChild: ListView(
                 padding: const EdgeInsets.only(top: 16),
                 children: [
-                  _LodgifyStatusSection(
-                    lodgifyId: details.lodgifyId,
-                  ),
+                  _LodgifyStatusSection(lodgifyId: details.lodgifyId),
                   const SizedBox(height: 16),
                   _RentalDetailsSection(details: details),
                 ],
@@ -103,7 +99,7 @@ class _LodgifyStatusSection extends StatelessWidget {
     return StyledSection(
       isFirstSection: true,
       header: 'Lodgify',
-      grouped: false,
+      inset: false,
       children: [
         StyledTile(
           title: context.s.propertyLodgifyStatus,
@@ -137,13 +133,13 @@ class _LodgifyStatusSection extends StatelessWidget {
           ),
           BlocBuilder<SettingsCubit, SettingsState>(
             builder: (context, settingsState) {
-              final lastSync =
-                  settingsState.settings?.lodgifyLastSyncedAt;
+              final lastSync = settingsState.settings?.lodgifyLastSyncedAt;
               if (lastSync == null) return const SizedBox.shrink();
-              final localeCode =
-                  Localizations.localeOf(context).languageCode;
-              final formatted =
-                  timeago.format(lastSync.toLocal(), locale: localeCode);
+              final localeCode = Localizations.localeOf(context).languageCode;
+              final formatted = timeago.format(
+                lastSync.toLocal(),
+                locale: localeCode,
+              );
               return StyledTile(
                 title: context.s.propertyLastSync,
                 value: Text(
@@ -177,14 +173,14 @@ class _RentalDetailsSection extends StatelessWidget {
 
     return StyledSection(
       header: 'Rental details',
-      grouped: false,
+      inset: false,
       children: [
         Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              StyledFormField(
+              StyledTextFormField(
                 label: 'Name',
                 initialValue: details.name,
                 readOnly: true,
@@ -202,11 +198,8 @@ class _RentalDetailsSection extends StatelessWidget {
                     Flexible(
                       child: Text(
                         context.s.propertyNameLodgifyHint,
-                        style:
-                            Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurfaceVariant,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ),
@@ -248,20 +241,12 @@ class _RentalDetailsSection extends StatelessWidget {
           'In/out max date',
           details.inOutMaxDate?.toLocal().toString(),
         ),
-        _readOnlyField(
-          'In/out rules',
-          _formatJson(details.inOut),
-          maxLines: 6,
-        ),
+        _readOnlyField('In/out rules', _formatJson(details.inOut), maxLines: 6),
         _readOnlyField(
           'Subscription plans',
           details.subscriptionPlans?.join(', '),
         ),
-        _readOnlyField(
-          'Rooms',
-          _formatJson(details.rooms),
-          maxLines: 6,
-        ),
+        _readOnlyField('Rooms', _formatJson(details.rooms), maxLines: 6),
       ],
     );
   }
@@ -274,7 +259,7 @@ class _RentalDetailsSection extends StatelessWidget {
 Widget _readOnlyField(String label, String? value, {int maxLines = 1}) {
   return Padding(
     padding: const EdgeInsets.only(bottom: 12),
-    child: StyledFormField(
+    child: StyledTextFormField(
       label: label,
       initialValue: value ?? '',
       readOnly: true,

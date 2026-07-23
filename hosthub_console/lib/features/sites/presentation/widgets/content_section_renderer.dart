@@ -97,10 +97,10 @@ Widget _label(BuildContext context, String text) {
 }
 
 // ---------------------------------------------------------------------------
-// Editable field helper — wraps StyledFormField with a controller
+// Editable field helper — wraps StyledTextFormField with a controller
 // ---------------------------------------------------------------------------
 
-/// Creates a [StyledFormField] bound to a [TextEditingController].
+/// Creates a [StyledTextFormField] bound to a [TextEditingController].
 Widget _editableField(
   String label,
   TextEditingController controller, {
@@ -109,7 +109,7 @@ Widget _editableField(
 }) {
   return Padding(
     padding: const EdgeInsets.only(bottom: 10),
-    child: StyledFormField(
+    child: StyledTextFormField(
       label: label,
       controller: controller,
       maxLines: maxLines,
@@ -573,7 +573,7 @@ class _ReorderableStringListEditorState
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: StyledFormField(
+                        child: StyledTextFormField(
                           label: '${widget.itemLabel} ${index + 1}',
                           placeholder: widget.placeholder,
                           controller: controller,
@@ -1094,7 +1094,7 @@ class _RawJsonView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: StyledFormField(
+      child: StyledTextFormField(
         label: 'Content (raw)',
         initialValue: content.toString(),
         readOnly: true,

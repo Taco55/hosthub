@@ -138,7 +138,7 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
                         StyledSection(
                           isFirstSection: true,
                           header: 'Algemeen',
-                          grouped: false,
+                          inset: false,
                           children: [
                             StyledTile(
                               title: context.s.maintenanceModeTitle,
@@ -268,7 +268,7 @@ class _UsersAdminSectionState extends State<_UsersAdminSection> {
 
     return StyledSection(
       header: context.s.usersTitle,
-      grouped: false,
+      inset: false,
       children: [
         Text(
           '${context.s.createUserDescription} ${context.s.adminRightsDisabled}',
@@ -426,7 +426,7 @@ class _ListingsAdminSectionState extends State<_ListingsAdminSection> {
 
     return StyledSection(
       header: 'Listings',
-      grouped: false,
+      inset: false,
       children: [
         Text(
           'Voeg handmatig een listing toe of verwijder listings om een nieuwe website-opzet te testen zonder Lodgify-sync.',
@@ -438,7 +438,7 @@ class _ListingsAdminSectionState extends State<_ListingsAdminSection> {
         LayoutBuilder(
           builder: (context, constraints) {
             final isCompact = constraints.maxWidth < 760;
-            final field = StyledFormField(
+            final field = StyledTextFormField(
               controller: _nameController,
               label: context.s.propertySetupManualNameLabel,
               placeholder: context.s.propertySetupManualNameLabel,

@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
 import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaffold.dart';
+import 'package:hosthub_console/features/channel_manager/infrastructure/lodgify/lodgify_error_utils.dart';
 import 'package:hosthub_console/features/reservations/application/nightly_rates_cubit.dart';
 import 'package:hosthub_console/features/reservations/application/reservations_cubit.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
@@ -92,8 +93,9 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
             final propertyId = state.propertyId;
             if (propertyId == null || propertyId.isEmpty) return;
             final range = _rangeForPeriod(_period, _periodAnchor);
-            final midpoint =
-                range.start.add(range.end.difference(range.start) ~/ 2);
+            final midpoint = range.start.add(
+              range.end.difference(range.start) ~/ 2,
+            );
             context.read<NightlyRatesCubit>().loadRates(
               propertyId: propertyId,
               focusedMonth: DateTime(midpoint.year, midpoint.month),
@@ -106,6 +108,9 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
           listener: (context, state) async {
             final error = state.error;
             if (error == null) return;
+            if (isLodgifyCredentialError(error)) {
+              return;
+            }
             final appError = AppError.fromDomain(context, error);
             await showAppError(context, appError);
             if (!context.mounted) return;
@@ -130,7 +135,8 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
               property?.name ?? context.s.revenueUnknownProperty;
           final propertyId = property?.lodgifyId?.trim() ?? '';
           final canRefresh =
-              propertyId.isNotEmpty && state.status != ReservationsStatus.loading;
+              propertyId.isNotEmpty &&
+              state.status != ReservationsStatus.loading;
           final locale = Localizations.localeOf(context).toString();
           final dateFormatter = DateFormat('d MMM yyyy', locale);
           final dateTimeFormatter = DateFormat('d MMM yyyy HH:mm', locale);
@@ -173,7 +179,7 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
                   onPressed: canRefresh
                       ? () => _loadForProperty(property, force: true)
                       : null,
-                  isDisabled: !canRefresh,
+                  enabled: canRefresh,
                 ),
               ),
             ],
@@ -2139,7 +2145,7 @@ class _ReservationDetailsDialog extends StatelessWidget {
                     ),
                     StyledSection(
                       header: s.reservationSectionPayload,
-                      grouped: false,
+                      inset: false,
                       children: [
                         Container(
                           width: double.infinity,

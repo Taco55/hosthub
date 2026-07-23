@@ -34,8 +34,7 @@ class PropertyPricingPage extends StatelessWidget {
         }
 
         final propertyRepository = context.read<PropertyRepository>();
-        final adminSettingsRepository =
-            context.read<AdminSettingsRepository>();
+        final adminSettingsRepository = context.read<AdminSettingsRepository>();
 
         return FutureBuilder<_PricingData>(
           future: _loadPricingData(
@@ -48,16 +47,14 @@ class PropertyPricingPage extends StatelessWidget {
               return ConsolePageScaffold(
                 title: context.s.menuPricing,
                 description: context.s.pricingDescription,
-                leftChild:
-                    const Center(child: CircularProgressIndicator()),
+                leftChild: const Center(child: CircularProgressIndicator()),
               );
             }
             if (snapshot.hasError) {
               return ConsolePageScaffold(
                 title: context.s.menuPricing,
                 description: context.s.pricingDescription,
-                leftChild:
-                    Text('Failed to load pricing: ${snapshot.error}'),
+                leftChild: Text('Failed to load pricing: ${snapshot.error}'),
               );
             }
 
@@ -81,9 +78,7 @@ class PropertyPricingPage extends StatelessWidget {
                     adminDefaults: data.adminSettings,
                     repository: propertyRepository,
                     onSaved: () {
-                      context
-                          .read<PropertyContextCubit>()
-                          .loadProperties();
+                      context.read<PropertyContextCubit>().loadProperties();
                     },
                   ),
                 ],
@@ -113,10 +108,7 @@ Future<_PricingData> _loadPricingData(
 }
 
 class _PricingData {
-  const _PricingData({
-    required this.details,
-    required this.adminSettings,
-  });
+  const _PricingData({required this.details, required this.adminSettings});
 
   final PropertyDetails details;
   final AdminSettings adminSettings;
@@ -244,7 +236,7 @@ class _BookingSettingsSectionState extends State<_BookingSettingsSection> {
     return StyledSection(
       isFirstSection: true,
       header: context.s.pricingChannelSettingsHeader,
-      grouped: false,
+      inset: false,
       children: [
         Padding(
           padding: const EdgeInsets.only(bottom: 12),
@@ -268,8 +260,7 @@ class _BookingSettingsSectionState extends State<_BookingSettingsSection> {
           channelName: 'Booking.com',
           leading: const BookingSourceIcon(source: 'booking', size: 20),
           draft: _booking,
-          defaultCommission:
-              widget.adminDefaults.bookingChannelFeePercentage,
+          defaultCommission: widget.adminDefaults.bookingChannelFeePercentage,
           currencyCode: currencyCode,
           enabled: !_isSaving,
         ),
@@ -420,11 +411,10 @@ class _PercentageInputTile extends StatelessWidget {
       subtitle: description,
       value: SizedBox(
         width: 120,
-        child: StyledFormField(
+        child: StyledTextFormField(
           controller: controller,
           enabled: enabled,
-          keyboardType:
-              const TextInputType.numberWithOptions(decimal: true),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
           textInputAction: TextInputAction.next,
           placeholder: placeholder,
         ),
@@ -466,18 +456,16 @@ class _CostInputRow extends StatelessWidget {
         children: [
           Expanded(
             flex: 3,
-            child: Text(
-              title,
-              style: theme.textTheme.bodyMedium,
-            ),
+            child: Text(title, style: theme.textTheme.bodyMedium),
           ),
           SizedBox(
             width: 100,
-            child: StyledFormField(
+            child: StyledTextFormField(
               controller: controller,
               enabled: enabled,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               textInputAction: TextInputAction.next,
               placeholder: '0',
             ),

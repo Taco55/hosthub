@@ -13,11 +13,7 @@ import 'package:hosthub_console/features/team/presentation/dialogs/invite_member
 import 'package:styled_widgets/styled_widgets.dart';
 
 class SiteTeamPage extends StatelessWidget {
-  const SiteTeamPage({
-    super.key,
-    required this.siteId,
-    required this.siteName,
-  });
+  const SiteTeamPage({super.key, required this.siteId, required this.siteName});
 
   final String siteId;
   final String siteName;
@@ -87,10 +83,7 @@ class SiteTeamPage extends StatelessWidget {
   }
 
   Future<void> _handleInvite(BuildContext context) async {
-    final result = await showInviteMemberDialog(
-      context,
-      siteName: siteName,
-    );
+    final result = await showInviteMemberDialog(context, siteName: siteName);
     if (result == true && context.mounted) {
       showStyledToast(
         context,
@@ -117,7 +110,7 @@ class _MembersSection extends StatelessWidget {
     return StyledSection(
       isFirstSection: true,
       header: s.teamMembersSection,
-      grouped: false,
+      inset: false,
       children: [
         if (members.isEmpty)
           Padding(
@@ -149,10 +142,7 @@ class _MembersSection extends StatelessWidget {
             rowBuilder: (tableContext, index) {
               final member = members[index];
               return [
-                Text(
-                  member.displayName,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                Text(member.displayName, overflow: TextOverflow.ellipsis),
                 _RoleDisplay(member: member),
                 _MemberActions(member: member),
               ];
@@ -195,12 +185,7 @@ class _RoleDisplay extends StatelessWidget {
       underline: const SizedBox.shrink(),
       isDense: true,
       items: SiteMemberRole.assignableRoles
-          .map(
-            (r) => DropdownMenuItem(
-              value: r,
-              child: Text(r.label),
-            ),
-          )
+          .map((r) => DropdownMenuItem(value: r, child: Text(r.label)))
           .toList(),
       onChanged: (newRole) {
         if (newRole == null || newRole == role) return;
@@ -268,7 +253,7 @@ class _InvitationsSection extends StatelessWidget {
 
     return StyledSection(
       header: s.teamPendingInvitations,
-      grouped: false,
+      inset: false,
       children: [
         StyledDataTable(
           variant: StyledTableVariant.card,
@@ -294,10 +279,7 @@ class _InvitationsSection extends StatelessWidget {
           rowBuilder: (tableContext, index) {
             final inv = invitations[index];
             return [
-              Text(
-                inv.email,
-                overflow: TextOverflow.ellipsis,
-              ),
+              Text(inv.email, overflow: TextOverflow.ellipsis),
               Text(inv.memberRole.label),
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -309,9 +291,9 @@ class _InvitationsSection extends StatelessWidget {
                       iconSize: 18,
                       onPressed: () {
                         context.read<SiteMembersCubit>().resendInvitation(
-                              invitation: inv,
-                              siteName: siteName,
-                            );
+                          invitation: inv,
+                          siteName: siteName,
+                        );
                         showStyledToast(
                           context,
                           type: ToastificationType.success,
@@ -326,9 +308,7 @@ class _InvitationsSection extends StatelessWidget {
                       iconData: Icons.cancel_outlined,
                       iconSize: 18,
                       onPressed: () {
-                        context
-                            .read<SiteMembersCubit>()
-                            .cancelInvitation(inv);
+                        context.read<SiteMembersCubit>().cancelInvitation(inv);
                       },
                     ),
                   ),

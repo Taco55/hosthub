@@ -213,7 +213,7 @@ class _UserSettingsSection extends StatelessWidget {
         StyledSection(
           isFirstSection: true,
           header: context.s.generalSectionTitle,
-          grouped: false,
+          inset: false,
           children: [
             StyledSelectionTile<String>.dropdown(
               title: context.s.languagePreferenceTitle,
@@ -222,7 +222,6 @@ class _UserSettingsSection extends StatelessWidget {
               options: supportedLocales
                   .map((locale) => locale.languageCode)
                   .toList(),
-              modalTitle: context.s.languagePreferenceTitle,
               optionLabelBuilder: (value) {
                 final locale = supportedLocales.firstWhere(
                   (locale) => locale.languageCode == value,
@@ -230,7 +229,7 @@ class _UserSettingsSection extends StatelessWidget {
                 );
                 return _localizedLocaleName(locale, localeNames);
               },
-              dropdownFieldAutoSize: true,
+              fieldAutoSize: true,
               onChanged: (value) {
                 if (value == null || value == currentLocale.languageCode)
                   return;
@@ -242,7 +241,7 @@ class _UserSettingsSection extends StatelessWidget {
         ),
         StyledSection(
           header: context.s.connectionsSectionTitle,
-          grouped: false,
+          inset: false,
           children: [
             Text(context.s.lodgifyTitle),
             StyledTile(
@@ -361,7 +360,7 @@ class _TeamSectionState extends State<_TeamSection> {
 
         return StyledSection(
           header: 'Gebruikers',
-          grouped: false,
+          inset: false,
           children: [
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
@@ -700,7 +699,7 @@ class _ChannelFeeDefaultsSectionState
         if (isLoading) {
           return StyledSection(
             header: context.s.channelFeeDefaultsHeader,
-            grouped: false,
+            inset: false,
             children: const [Center(child: CircularProgressIndicator())],
           );
         }
@@ -714,7 +713,7 @@ class _ChannelFeeDefaultsSectionState
 
         return StyledSection(
           header: context.s.channelFeeDefaultsHeader,
-          grouped: false,
+          inset: false,
           children: [
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
@@ -799,7 +798,7 @@ class _ChannelFeeInputTile extends StatelessWidget {
       leading: leading,
       value: SizedBox(
         width: 120,
-        child: StyledFormField(
+        child: StyledTextFormField(
           controller: controller,
           enabled: enabled,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -936,9 +935,10 @@ Future<_LodgifyApiKeyDialogResult?> _showLodgifyApiKeyDialog(
     actionLabel: hasApiKey ? context.s.saveButton : context.s.add,
     leadingLabel: context.s.cancelButton,
     showAction: true,
-    showLeading: true,
+    showCloseButton: true,
+    leadingClose: true,
     closeOnAction: false,
-    builder: (context) {
+    builder: (context, modal) {
       return _LodgifyApiKeyDialogContent(
         key: contentKey,
         currentApiKey: currentApiKey,
@@ -1002,7 +1002,7 @@ class _LodgifyApiKeyDialogContentState
         children: [
           Form(
             key: _formKey,
-            child: StyledFormField(
+            child: StyledTextFormField(
               controller: _controller,
               autofocus: true,
               placeholder: context.s.lodgifyApiKeyLabel,
@@ -1061,7 +1061,7 @@ Future<bool> _showMissingPropertiesDialog(
         context,
         hideDefaultHeader: true,
         isDismissible: false,
-        builder: (context) {
+        builder: (context, modal) {
           return SizedBox(
             width: 420,
             child: ConstrainedBox(
@@ -1187,11 +1187,30 @@ AppError _mapDomainError(BuildContext context, DomainError domainError) {
   if (lodgifyAction == 'connect') {
     return AppError.custom(
       title: context.s.lodgifyConnectErrorTitle,
-      alert: context.s.lodgifyConnectErrorDescription,
+      alert: _lodgifyConnectAlert(context, domainError),
       domainError: domainError,
     );
   }
   return AppError.fromDomain(context, domainError);
+}
+
+String _lodgifyConnectAlert(BuildContext context, DomainError domainError) {
+  if (domainError.isNetworkError) {
+    return context.s.networkError;
+  }
+
+  final functionStatus = int.tryParse(
+    domainError.context?['function_status']?.toString() ?? '',
+  );
+  final functionDetails =
+      domainError.context?['function_details']?.toString().toLowerCase() ?? '';
+
+  if (functionStatus == 404 ||
+      functionDetails.contains('requested function was not found')) {
+    return context.s.configurationInvalid;
+  }
+
+  return context.s.lodgifyConnectErrorDescription;
 }
 
 ToastificationType _toastType(UserSettingsToastType type) {

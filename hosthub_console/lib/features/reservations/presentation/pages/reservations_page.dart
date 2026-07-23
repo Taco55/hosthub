@@ -14,13 +14,12 @@ import 'package:styled_widgets/styled_widgets.dart';
 import 'package:web/web.dart' as web;
 
 import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaffold.dart';
+import 'package:hosthub_console/features/channel_manager/infrastructure/lodgify/lodgify_error_utils.dart';
 import 'package:hosthub_console/features/reservations/application/nightly_rates_cubit.dart';
 import 'package:hosthub_console/features/reservations/application/reservations_cubit.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
 import 'package:hosthub_console/core/l10n/l10n.dart';
-import 'package:hosthub_console/core/l10n/intl/messages_all.dart'
-    as l10n_messages;
 import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:hosthub_console/features/user_settings/user_settings.dart';
 
@@ -182,12 +181,6 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
   @override
   void initState() {
     super.initState();
-    unawaited(
-      Future.wait([
-        _ensureLanguageMessagesInitialized('nl'),
-        _ensureLanguageMessagesInitialized('en'),
-      ]),
-    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final property = context
           .read<PropertyContextCubit>()
@@ -259,6 +252,9 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
           listener: (context, state) async {
             final error = state.error;
             if (error == null) return;
+            if (isLodgifyCredentialError(error)) {
+              return;
+            }
             final appError = AppError.fromDomain(context, error);
             await showAppError(context, appError);
             if (!context.mounted) return;
@@ -914,7 +910,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
       };
     }
 
-    return StyledPopupMenuButton<String>(
+    return StyledMenuOverlay<String>(
       tooltip: 'Delen & exporteren',
       verticalOffset: 8,
       showDividers: true,
@@ -924,27 +920,27 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
         theme: theme,
       ),
       entries: [
-        StyledPopupMenuEntry(
+        StyledMenuOverlayEntry(
           value: 'pdf',
           label: labeledWithNew('PDF downloaden'),
           leading: const Icon(Icons.picture_as_pdf_outlined),
         ),
-        StyledPopupMenuEntry(
+        StyledMenuOverlayEntry(
           value: 'pdf_share',
           label: labeledWithNew('PDF delen'),
           leading: const Icon(Icons.mail_outlined),
         ),
-        StyledPopupMenuEntry(
+        StyledMenuOverlayEntry(
           value: 'excel',
           label: labeledWithNew('Excel'),
           leading: const Icon(Icons.table_chart_outlined),
         ),
-        const StyledPopupMenuEntry(
+        const StyledMenuOverlayEntry(
           value: 'csv',
           label: 'CSV',
           leading: Icon(Icons.download_outlined),
         ),
-        const StyledPopupMenuEntry(
+        const StyledMenuOverlayEntry(
           value: 'settings',
           label: 'Instellingen',
           leading: Icon(Icons.settings_outlined),
@@ -952,48 +948,38 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
       ],
       onSelected: (value) async {
         final settings = context.read<SettingsCubit>().state.settings;
-        final exportLanguageCode = _normalizeLanguageCode(
-          settings?.exportLanguageCode,
-        );
         final exportPdfOrientation = _normalizePdfOrientation(
           settings?.exportPdfOrientation,
         );
         switch (value) {
           case 'pdf':
-            await _ensureLanguageMessagesInitialized(exportLanguageCode);
             await _exportPdf(
+              context,
               entries,
               dateFormatter,
-              exportLang: exportLanguageCode,
               exportPdfOrientation: exportPdfOrientation,
               columns: settings?.exportColumns ?? _ExportColumn.defaults,
             );
           case 'pdf_share':
-            await _ensureLanguageMessagesInitialized(exportLanguageCode);
             await _sharePdf(
+              context,
               entries,
               dateFormatter,
-              exportLang: exportLanguageCode,
               exportPdfOrientation: exportPdfOrientation,
               columns: settings?.exportColumns ?? _ExportColumn.defaults,
             );
           case 'excel':
-            await _ensureLanguageMessagesInitialized(exportLanguageCode);
             _exportExcel(
+              context,
               entries,
               dateFormatter,
-              exportLang: exportLanguageCode,
               columns: settings?.exportColumns ?? _ExportColumn.defaults,
             );
           case 'csv':
-            _exportCsv(entries, dateFormatter);
+            _exportCsv(context, entries, dateFormatter);
           case 'settings':
             () async {
               final settings = context.read<SettingsCubit>().state.settings;
-              final currentLang = _normalizeLanguageCode(
-                settings?.exportLanguageCode ??
-                    Localizations.localeOf(context).languageCode,
-              );
               final currentColumns =
                   settings?.exportColumns ?? _ExportColumn.defaults;
               final currentPdfOrientation = _normalizePdfOrientation(
@@ -1001,13 +987,14 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
               );
               final result = await _showExportSettingsDialog(
                 context,
-                currentLanguageCode: currentLang,
                 currentColumns: currentColumns,
                 currentPdfOrientation: currentPdfOrientation,
               );
               if (result == null || !context.mounted) return;
               context.read<UserSettingsCubit>().changeExportSettings(
-                exportLanguageCode: result.exportLanguageCode,
+                exportLanguageCode: Localizations.localeOf(
+                  context,
+                ).languageCode,
                 exportColumns: result.enabledColumns,
                 exportPdfOrientation: result.exportPdfOrientation,
               );
@@ -1018,18 +1005,15 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
   }
 
   void _exportExcel(
+    BuildContext context,
     List<Reservation> entries,
     DateFormat dateFormatter, {
-    String? exportLang,
     List<String>? columns,
   }) {
-    final languageCode = _normalizeLanguageCode(exportLang);
+    final l10n = S.of(context);
     final enabledColumns = columns ?? _ExportColumn.defaults;
-    final yesLabel = _localizedForLanguage(languageCode, (l10n) => l10n.yes);
-    final exportedLabel = _localizedForLanguage(
-      languageCode,
-      (l10n) => l10n.reservationExportedLabel,
-    );
+    final yesLabel = l10n.yes;
+    final exportedLabel = l10n.reservationExportedLabel;
 
     final now = DateTime.now();
     final exportDate = DateFormat('yyyy-MM-dd').format(now);
@@ -1065,9 +1049,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     // Header row
     buf.write('<tr>');
     for (final key in enabledColumns) {
-      buf.write(
-        '<th>${_localizedForLanguage(languageCode, (l10n) => _ExportColumn.label(key, l10n: l10n))}</th>',
-      );
+      buf.write('<th>${_ExportColumn.label(key, l10n: l10n)}</th>');
     }
     buf.writeln('</tr>');
 
@@ -1087,7 +1069,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
         _ExportColumn.guests: _escapeHtml(_guestBreakdown(e, unknownLabel: '')),
         _ExportColumn.babyBed: _formatBabyExportValue(
           e.infantCount,
-          languageCode: languageCode,
+          l10n: l10n,
         ),
         _ExportColumn.nights:
             _stayNights(e.startDate, e.endDate)?.toString() ?? '',
@@ -1121,15 +1103,19 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     web.URL.revokeObjectURL(url);
   }
 
-  void _exportCsv(List<Reservation> entries, DateFormat dateFormatter) {
-    const exportLanguageCode = 'en';
+  void _exportCsv(
+    BuildContext context,
+    List<Reservation> entries,
+    DateFormat dateFormatter,
+  ) {
+    final l10n = S.of(context);
     final buf = StringBuffer();
     buf.writeln(
-      'Nieuw\tArrival\tDeparture\tGuest name\tGuests\tBaby bed\tCheck-in\tCheck-out\tNotes',
+      '${l10n.reservationListColumnNew}\t${l10n.reservationArrival}\t${l10n.reservationDeparture}\t${l10n.reservationSectionBooker}\t${l10n.reservationSectionGuests}\t${l10n.reservationBabyBed}\t${l10n.reservationCheckIn}\t${l10n.reservationCheckOut}\t${l10n.reservationNotes}',
     );
     for (final e in entries) {
       final id = _reservationKey(e);
-      final isNew = _markedAsNew.contains(id) ? 'Ja' : '';
+      final isNew = _markedAsNew.contains(id) ? l10n.yes : '';
       final arrival = e.startDate != null
           ? dateFormatter.format(e.startDate!.toLocal())
           : '';
@@ -1138,10 +1124,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
           : '';
       final guestName = _guestDisplayName(e);
       final guests = _guestBreakdown(e, unknownLabel: '');
-      final babyBed = _formatBabyExportValue(
-        e.infantCount,
-        languageCode: exportLanguageCode,
-      );
+      final babyBed = _formatBabyExportValue(e.infantCount, l10n: l10n);
       final notes = (e.notes ?? '').replaceAll(RegExp(r'[\t\r\n]+'), ' ');
       buf.writeln(
         '$isNew\t$arrival\t$departure\t$guestName\t$guests\t$babyBed\t$arrival\t$departure\t$notes',
@@ -1163,35 +1146,24 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
   }
 
   Future<(Uint8List bytes, String filename)> _buildPdfBytes(
+    BuildContext context,
     List<Reservation> entries,
     DateFormat dateFormatter, {
-    String? exportLang,
     String? exportPdfOrientation,
     List<String>? columns,
   }) async {
-    final languageCode = _normalizeLanguageCode(exportLang);
+    final l10n = S.of(context);
     final pdfOrientation = _normalizePdfOrientation(exportPdfOrientation);
     final enabledColumns = columns ?? _ExportColumn.defaults;
-    final yesLabel = _localizedForLanguage(languageCode, (l10n) => l10n.yes);
-    final exportedLabel = _localizedForLanguage(
-      languageCode,
-      (l10n) => l10n.reservationExportedLabel,
-    );
-    final titleLabel = _localizedForLanguage(
-      languageCode,
-      (l10n) => l10n.reservations,
-    );
+    final yesLabel = l10n.yes;
+    final exportedLabel = l10n.reservationExportedLabel;
+    final titleLabel = l10n.reservations;
 
     final now = DateTime.now();
     final exportDate = DateFormat('yyyy-MM-dd').format(now);
     final exportDateDisplay = DateFormat('d MMM yyyy, HH:mm').format(now);
     final headers = enabledColumns
-        .map(
-          (key) => _localizedForLanguage(
-            languageCode,
-            (l10n) => _ExportColumn.label(key, l10n: l10n),
-          ),
-        )
+        .map((key) => _ExportColumn.label(key, l10n: l10n))
         .toList();
     final rowData = entries.map((entry) {
       final reservationId = _reservationKey(entry);
@@ -1208,14 +1180,16 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
         _ExportColumn.guests: _guestBreakdown(entry, unknownLabel: ''),
         _ExportColumn.babyBed: _formatBabyExportValue(
           entry.infantCount,
-          languageCode: languageCode,
+          l10n: l10n,
         ),
         _ExportColumn.nights:
             _stayNights(entry.startDate, entry.endDate)?.toString() ?? '',
         _ExportColumn.status: entry.status ?? '',
         _ExportColumn.source: entry.source ?? '',
-        _ExportColumn.notes: (entry.notes ?? '')
-            .replaceAll(RegExp(r'[\t\r\n]+'), ' '),
+        _ExportColumn.notes: (entry.notes ?? '').replaceAll(
+          RegExp(r'[\t\r\n]+'),
+          ' ',
+        ),
       };
       return (
         isNew: isNew,
@@ -1341,16 +1315,16 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
   }
 
   Future<void> _exportPdf(
+    BuildContext context,
     List<Reservation> entries,
     DateFormat dateFormatter, {
-    String? exportLang,
     String? exportPdfOrientation,
     List<String>? columns,
   }) async {
     final (bytes, filename) = await _buildPdfBytes(
+      context,
       entries,
       dateFormatter,
-      exportLang: exportLang,
       exportPdfOrientation: exportPdfOrientation,
       columns: columns,
     );
@@ -1367,16 +1341,16 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
   }
 
   Future<void> _sharePdf(
+    BuildContext context,
     List<Reservation> entries,
     DateFormat dateFormatter, {
-    String? exportLang,
     String? exportPdfOrientation,
     List<String>? columns,
   }) async {
     final (bytes, filename) = await _buildPdfBytes(
+      context,
       entries,
       dateFormatter,
-      exportLang: exportLang,
       exportPdfOrientation: exportPdfOrientation,
       columns: columns,
     );
@@ -1473,18 +1447,15 @@ class _ReservationsHeader extends StatelessWidget {
     ThemeData theme,
     bool hasActiveFilter,
   ) {
-    return StyledPopupMenuButton<String>(
+    return StyledMenuOverlay<String>(
       tooltip: 'Filter',
       verticalOffset: 8,
       showDividers: allStatuses.isNotEmpty,
       entries: [
         _checkEntry('_historical', 'Historische boekingen', showHistorical),
         ...allStatuses.map(
-          (status) => _checkEntry(
-            status,
-            status,
-            !hiddenStatuses.contains(status),
-          ),
+          (status) =>
+              _checkEntry(status, status, !hiddenStatuses.contains(status)),
         ),
       ],
       onSelected: (value) {
@@ -1506,7 +1477,7 @@ class _ReservationsHeader extends StatelessWidget {
     final hasActiveColumnToggles = hiddenListColumns.isNotEmpty;
     final l10n = context.s;
 
-    return StyledPopupMenuButton<String>(
+    return StyledMenuOverlay<String>(
       tooltip: 'Kolommen',
       verticalOffset: 8,
       entries: [
@@ -1515,7 +1486,8 @@ class _ReservationsHeader extends StatelessWidget {
             key,
             _ReservationListColumn.label(key, l10n: l10n),
             !hiddenListColumns.contains(key),
-            enabled: !hiddenListColumns.contains(key) ||
+            enabled:
+                !hiddenListColumns.contains(key) ||
                 hiddenListColumns.length <
                     _ReservationListColumn.all.length - 1,
           ),
@@ -1536,14 +1508,10 @@ class _ReservationsHeader extends StatelessWidget {
     final continuous = continuousMonths;
     final outOfMonth = outOfMonthDisplay;
 
-    final entries = <StyledPopupMenuEntry<String>>[];
+    final entries = <StyledMenuOverlayEntry<String>>[];
     if (density != null) {
       entries.add(
-        _checkEntry(
-          'compact',
-          'Compact',
-          density == _TimelineDensity.compact,
-        ),
+        _checkEntry('compact', 'Compact', density == _TimelineDensity.compact),
       );
       entries.add(
         _checkEntry(
@@ -1574,7 +1542,7 @@ class _ReservationsHeader extends StatelessWidget {
       );
     }
 
-    return StyledPopupMenuButton<String>(
+    return StyledMenuOverlay<String>(
       tooltip: 'Weergave',
       verticalOffset: 8,
       showDividers: true,
@@ -1599,13 +1567,13 @@ class _ReservationsHeader extends StatelessWidget {
     );
   }
 
-  static StyledPopupMenuEntry<String> _checkEntry(
+  static StyledMenuOverlayEntry<String> _checkEntry(
     String value,
     String label,
     bool checked, {
     bool enabled = true,
   }) {
-    return StyledPopupMenuEntry<String>(
+    return StyledMenuOverlayEntry<String>(
       value: value,
       enabled: enabled,
       label: label,
@@ -1773,59 +1741,59 @@ class _ReservationListView extends StatelessWidget {
     StyledDataColumn _columnFor(String key) {
       return switch (key) {
         _ReservationListColumn.source => const StyledDataColumn(
-            columnHeaderLabel: '',
-            flex: 0,
-            width: 28,
-          ),
+          columnHeaderLabel: '',
+          flex: 0,
+          width: 28,
+        ),
         _ReservationListColumn.guestName => const StyledDataColumn(
-            columnHeaderLabel: 'Boeker',
-            flex: 2,
-            minWidth: 128,
-          ),
+          columnHeaderLabel: 'Boeker',
+          flex: 2,
+          minWidth: 128,
+        ),
         _ReservationListColumn.checkIn => const StyledDataColumn(
-            columnHeaderLabel: 'Check-in',
-            flex: 1,
-            minWidth: 96,
-          ),
+          columnHeaderLabel: 'Check-in',
+          flex: 1,
+          minWidth: 96,
+        ),
         _ReservationListColumn.checkOut => const StyledDataColumn(
-            columnHeaderLabel: 'Check-out',
-            flex: 1,
-            minWidth: 96,
-          ),
+          columnHeaderLabel: 'Check-out',
+          flex: 1,
+          minWidth: 96,
+        ),
         _ReservationListColumn.nights => const StyledDataColumn(
-            columnHeaderLabel: 'Nachten',
-            flex: 0,
-            width: 66,
-            alignment: Alignment.centerLeft,
-          ),
+          columnHeaderLabel: 'Nachten',
+          flex: 0,
+          width: 66,
+          alignment: Alignment.centerLeft,
+        ),
         _ReservationListColumn.guests => const StyledDataColumn(
-            columnHeaderLabel: 'Gasten',
-            flex: 0,
-            width: 66,
-            alignment: Alignment.centerLeft,
-          ),
+          columnHeaderLabel: 'Gasten',
+          flex: 0,
+          width: 66,
+          alignment: Alignment.centerLeft,
+        ),
         _ReservationListColumn.babyBed => const StyledDataColumn(
-            columnHeaderLabel: 'Baby\'s',
-            flex: 0,
-            width: 52,
-            alignment: Alignment.centerLeft,
-          ),
+          columnHeaderLabel: 'Baby\'s',
+          flex: 0,
+          width: 52,
+          alignment: Alignment.centerLeft,
+        ),
         _ReservationListColumn.status => const StyledDataColumn(
-            columnHeaderLabel: 'Status',
-            flex: 1,
-            minWidth: 78,
-          ),
+          columnHeaderLabel: 'Status',
+          flex: 1,
+          minWidth: 78,
+        ),
         _ReservationListColumn.booked => const StyledDataColumn(
-            columnHeaderLabel: 'Geboekt',
-            flex: 2,
-            minWidth: 132,
-          ),
+          columnHeaderLabel: 'Geboekt',
+          flex: 2,
+          minWidth: 132,
+        ),
         _ReservationListColumn.isNew => const StyledDataColumn(
-            columnHeaderLabel: 'Nieuw',
-            flex: 0,
-            width: 44,
-            alignment: Alignment.center,
-          ),
+          columnHeaderLabel: 'Nieuw',
+          flex: 0,
+          width: 44,
+          alignment: Alignment.center,
+        ),
         _ => const StyledDataColumn(
           columnHeaderLabel: '',
           flex: 1,
@@ -1889,22 +1857,22 @@ class _ReservationListView extends StatelessWidget {
                   final key = _reservationKey(entry);
                   final isNew = markedAsNew.contains(key);
 
-              Widget textCell(
-                String? value, {
-                FontWeight? fontWeight,
-                TextAlign textAlign = TextAlign.left,
-              }) {
-                final safeValue = _valueOrDash(value);
-                return Text(
-                  safeValue,
-                  maxLines: 1,
-                  softWrap: false,
-                  overflow: TextOverflow.visible,
-                  textAlign: textAlign,
-                  style: Theme.of(
-                    tableContext,
-                  ).textTheme.bodySmall?.copyWith(fontWeight: fontWeight),
-                );
+                  Widget textCell(
+                    String? value, {
+                    FontWeight? fontWeight,
+                    TextAlign textAlign = TextAlign.left,
+                  }) {
+                    final safeValue = _valueOrDash(value);
+                    return Text(
+                      safeValue,
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.visible,
+                      textAlign: textAlign,
+                      style: Theme.of(
+                        tableContext,
+                      ).textTheme.bodySmall?.copyWith(fontWeight: fontWeight),
+                    );
                   }
 
                   Widget cellFor(String columnKey) {
@@ -2219,7 +2187,7 @@ class _ReservationDetailsDialogState extends State<_ReservationDetailsDialog> {
                       ),
                     StyledSection(
                       header: 'Notities',
-                      grouped: false,
+                      inset: false,
                       children: [
                         TextField(
                           controller: _notesController,
@@ -2292,7 +2260,7 @@ class _ReservationDetailsDialogState extends State<_ReservationDetailsDialog> {
                     ),
                     StyledSection(
                       header: 'Volledige payload',
-                      grouped: false,
+                      inset: false,
                       children: [
                         Container(
                           width: double.infinity,
@@ -3050,12 +3018,6 @@ String _reservationKey(Reservation entry) {
   return '${entry.guestName ?? ''}_${entry.startDate?.toIso8601String() ?? ''}';
 }
 
-String _normalizeLanguageCode(String? languageCode) {
-  final normalized = languageCode?.trim().toLowerCase() ?? '';
-  if (normalized.startsWith('nl')) return 'nl';
-  return 'en';
-}
-
 String _normalizePdfOrientation(String? orientation) {
   final normalized = orientation?.trim().toLowerCase() ?? '';
   if (normalized == _ExportPdfOrientation.landscape) {
@@ -3064,25 +3026,10 @@ String _normalizePdfOrientation(String? orientation) {
   return _ExportPdfOrientation.portrait;
 }
 
-Future<void> _ensureLanguageMessagesInitialized(String? languageCode) async {
-  await l10n_messages.initializeMessages(_normalizeLanguageCode(languageCode));
-}
-
-String _localizedForLanguage(
-  String? languageCode,
-  String Function(S l10n) selector,
-) {
-  final normalized = _normalizeLanguageCode(languageCode);
-  return Intl.withLocale(normalized, () => selector(S.current));
-}
-
-String _formatBabyExportValue(
-  int? infantCount, {
-  required String languageCode,
-}) {
+String _formatBabyExportValue(int? infantCount, {required S l10n}) {
   if (infantCount == null) return '-';
   if (infantCount > 0) return infantCount.toString();
-  return _localizedForLanguage(languageCode, (l10n) => l10n.no);
+  return l10n.no;
 }
 
 // ---------------------------------------------------------------------------
@@ -3091,19 +3038,16 @@ String _formatBabyExportValue(
 
 class _ExportSettingsResult {
   const _ExportSettingsResult({
-    required this.exportLanguageCode,
     required this.enabledColumns,
     required this.exportPdfOrientation,
   });
 
-  final String exportLanguageCode;
   final List<String> enabledColumns;
   final String exportPdfOrientation;
 }
 
 Future<_ExportSettingsResult?> _showExportSettingsDialog(
   BuildContext context, {
-  required String currentLanguageCode,
   required List<String> currentColumns,
   required String currentPdfOrientation,
 }) async {
@@ -3111,7 +3055,8 @@ Future<_ExportSettingsResult?> _showExportSettingsDialog(
     context,
     title: context.s.exportSettingsTitle,
     isDismissible: true,
-    showLeading: true,
+    showCloseButton: true,
+    leadingClose: true,
     leadingPlacement: StyledModalSlotPlacement.header,
     dialogMinWidth: 440,
     dialogMaxWidth: 480,
@@ -3122,13 +3067,11 @@ Future<_ExportSettingsResult?> _showExportSettingsDialog(
       actionEnabled: data != null && data.enabledColumns.isNotEmpty,
     ),
     initialValue: _ExportSettingsResult(
-      exportLanguageCode: currentLanguageCode,
       enabledColumns: currentColumns,
       exportPdfOrientation: currentPdfOrientation,
     ),
     dataBuilder: (dialogContext, onDataChanged) {
       return _ExportSettingsDialogContent(
-        initialLanguageCode: currentLanguageCode,
         initialColumns: currentColumns,
         initialPdfOrientation: currentPdfOrientation,
         onDataChanged: onDataChanged,
@@ -3139,13 +3082,11 @@ Future<_ExportSettingsResult?> _showExportSettingsDialog(
 
 class _ExportSettingsDialogContent extends StatefulWidget {
   const _ExportSettingsDialogContent({
-    required this.initialLanguageCode,
     required this.initialColumns,
     required this.initialPdfOrientation,
     required this.onDataChanged,
   });
 
-  final String initialLanguageCode;
   final List<String> initialColumns;
   final String initialPdfOrientation;
   final void Function(_ExportSettingsResult?) onDataChanged;
@@ -3157,7 +3098,6 @@ class _ExportSettingsDialogContent extends StatefulWidget {
 
 class _ExportSettingsDialogContentState
     extends State<_ExportSettingsDialogContent> {
-  late String _languageCode;
   late String _pdfOrientation;
   late List<String> _orderedColumns;
   late Set<String> _toggledColumns;
@@ -3165,9 +3105,7 @@ class _ExportSettingsDialogContentState
   @override
   void initState() {
     super.initState();
-    _languageCode = _normalizeLanguageCode(widget.initialLanguageCode);
     _pdfOrientation = _normalizePdfOrientation(widget.initialPdfOrientation);
-    unawaited(_ensureLanguageMessagesInitialized(_languageCode));
     final enabled = List<String>.from(widget.initialColumns);
     final disabled = _ExportColumn.all
         .where((key) => !enabled.contains(key))
@@ -3179,9 +3117,9 @@ class _ExportSettingsDialogContentState
   void _notifyDataChanged() {
     widget.onDataChanged(
       _ExportSettingsResult(
-        exportLanguageCode: _languageCode,
-        enabledColumns:
-            _orderedColumns.where(_toggledColumns.contains).toList(),
+        enabledColumns: _orderedColumns
+            .where(_toggledColumns.contains)
+            .toList(),
         exportPdfOrientation: _pdfOrientation,
       ),
     );
@@ -3215,28 +3153,10 @@ class _ExportSettingsDialogContentState
       mainAxisSize: MainAxisSize.min,
       children: [
         StyledSection(
-          grouped: false,
+          inset: false,
           children: [
             StyledSelectionTile<String>.dropdown(
-              title: context.s.exportLanguageTitle,
-              modalTitle: context.s.exportLanguageTitle,
-              currentValue: _languageCode,
-              options: const ['en', 'nl'],
-              optionLabelBuilder: (value) => switch (value) {
-                'nl' => 'Nederlands',
-                _ => 'English',
-              },
-              dropdownFieldAutoSize: true,
-              onChanged: (value) {
-                if (value == null) return;
-                setState(() => _languageCode = value);
-                unawaited(_ensureLanguageMessagesInitialized(value));
-                _notifyDataChanged();
-              },
-            ),
-            StyledSelectionTile<String>.dropdown(
               title: context.s.exportPdfOrientationTitle,
-              modalTitle: context.s.exportPdfOrientationTitle,
               currentValue: _pdfOrientation,
               options: const [
                 _ExportPdfOrientation.portrait,
@@ -3247,7 +3167,7 @@ class _ExportSettingsDialogContentState
                   context.s.exportPdfOrientationLandscape,
                 _ => context.s.exportPdfOrientationPortrait,
               },
-              dropdownFieldAutoSize: true,
+              fieldAutoSize: true,
               onChanged: (value) {
                 if (value == null) return;
                 setState(() => _pdfOrientation = value);
@@ -3259,7 +3179,7 @@ class _ExportSettingsDialogContentState
         const SizedBox(height: 8),
         StyledReorderableSection(
           header: context.s.exportColumnsTitle,
-          grouped: false,
+          inset: false,
           itemCount: _orderedColumns.length,
           onReorder: _onReorder,
           itemBuilder: (context, index, isReorderMode) {
@@ -3281,10 +3201,7 @@ class _ExportSettingsDialogContentState
                 ),
               ),
               title: Text(
-                _localizedForLanguage(
-                  _languageCode,
-                  (l10n) => _ExportColumn.label(key, l10n: l10n),
-                ),
+                _ExportColumn.label(key, l10n: S.of(context)),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: enabled ? null : theme.colorScheme.onSurfaceVariant,
                 ),

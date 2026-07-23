@@ -14,7 +14,7 @@ Widget _buildStyledButton(BuildContext context, AuthUiButtonConfig config) {
     showProgressIndicatorWhenDisabled: config.showProgressIndicatorWhenDisabled,
     variant: config.variant == AuthUiButtonVariant.text
         ? StyledButtonVariant.text
-        : StyledButtonVariant.filled,
+        : StyledButtonVariant.primary,
     height: config.height,
     minHeight: config.minHeight,
     width: config.width,
@@ -28,12 +28,12 @@ Widget _buildStyledButton(BuildContext context, AuthUiButtonConfig config) {
   );
 }
 
-/// Maps [AuthUiFormFieldConfig] to a [StyledFormField].
+/// Maps [AuthUiFormFieldConfig] to a [StyledTextFormField].
 Widget _buildStyledFormField(
   BuildContext context,
   AuthUiFormFieldConfig config,
 ) {
-  return StyledFormField(
+  return StyledTextFormField(
     controller: config.controller,
     placeholder: config.placeholder,
     keyboardType: config.keyboardType,

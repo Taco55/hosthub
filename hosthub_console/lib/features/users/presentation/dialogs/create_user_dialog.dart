@@ -112,7 +112,7 @@ class _CreateUserFormState extends State<_CreateUserForm> {
             ),
             const SizedBox(height: 12),
           ],
-          StyledFormField(
+          StyledTextFormField(
             controller: _emailController,
             placeholder: context.s.email,
             keyboardType: TextInputType.emailAddress,
@@ -129,7 +129,7 @@ class _CreateUserFormState extends State<_CreateUserForm> {
             ],
           ),
           const SizedBox(height: 12),
-          StyledFormField(
+          StyledTextFormField(
             controller: _passwordController,
             placeholder: context.s.password,
             enabled: !_isBusy,

@@ -328,7 +328,7 @@ class _ManualCreateContentState extends State<_ManualCreateContent> {
         const SizedBox(height: 16),
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 400),
-          child: StyledFormField(
+          child: StyledTextFormField(
             controller: _nameController,
             label: context.s.propertySetupManualNameLabel,
             placeholder: context.s.propertySetupManualNameLabel,
@@ -384,7 +384,7 @@ Future<bool> _showMissingPropertiesDialog(
         context,
         hideDefaultHeader: true,
         isDismissible: false,
-        builder: (context) {
+        builder: (context, modal) {
           return SizedBox(
             width: 420,
             child: ConstrainedBox(
