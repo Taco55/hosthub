@@ -292,3 +292,8 @@ entrypoint = "./functions/lodgify-reservations/index.ts"
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/lodgify-rates/index.ts"
+
+[functions.lodgify-properties]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/lodgify-properties/index.ts"
