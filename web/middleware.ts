@@ -69,8 +69,6 @@ function parseAcceptLanguage(header: string | null): Locale | undefined {
   return undefined;
 }
 
-export const runtime = "experimental-edge";
-
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   if (shouldSkipPath(pathname)) {
