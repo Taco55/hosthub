@@ -15,6 +15,16 @@ PROJECT_NAME   := hosthub
 WORKSPACE_ROOT := $(abspath $(dir $(realpath $(lastword $(MAKEFILE_LIST)))))
 SUPABASE_DIR   := $(WORKSPACE_ROOT)/supabase
 
+# Edge-function secrets pushed by `make functions-secrets-set ENV=<env>` — each
+# is read from the ENV_FILE (hosthub_secrets/hosthub-<env>.env) and only pushed
+# when present. Set BEFORE the include so this wins over the shared `?=` default.
+# Email (Resend) + the translate-content provider config; the free MyMemory
+# default needs no key, DEEPL_API_KEY opts into DeepL, LIBRETRANSLATE_URL into a
+# self-hosted engine (see supabase/functions/translate-content).
+FUNCTION_SECRET_VARS := RESEND_API_KEY FROM_EMAIL FROM_NAME DASHBOARD_BASE_URL \
+                        DEEPL_API_KEY TRANSLATE_PROVIDER \
+                        LIBRETRANSLATE_URL LIBRETRANSLATE_API_KEY MYMEMORY_EMAIL
+
 # Include shared Supabase targets
 include $(SUPABASE_DIR)/make/supabase-common.mk
 
