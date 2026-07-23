@@ -7613,6 +7613,451 @@ class S {
       args: [],
     );
   }
+
+  /// `Website`
+  String get weBreadcrumbWebsite {
+    return Intl.message(
+      'Website',
+      name: 'weBreadcrumbWebsite',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Home`
+  String get wePageHome {
+    return Intl.message('Home', name: 'wePageHome', desc: '', args: []);
+  }
+
+  /// `The chalet`
+  String get wePageChalet {
+    return Intl.message('The chalet', name: 'wePageChalet', desc: '', args: []);
+  }
+
+  /// `Practical`
+  String get wePagePractical {
+    return Intl.message(
+      'Practical',
+      name: 'wePagePractical',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Area`
+  String get wePageArea {
+    return Intl.message('Area', name: 'wePageArea', desc: '', args: []);
+  }
+
+  /// `Contact`
+  String get wePageContact {
+    return Intl.message('Contact', name: 'wePageContact', desc: '', args: []);
+  }
+
+  /// `Source · {lang}`
+  String weSourceChip(Object lang) {
+    return Intl.message(
+      'Source · $lang',
+      name: 'weSourceChip',
+      desc: '',
+      args: [lang],
+    );
+  }
+
+  /// `Editing · {lang}`
+  String weEditingChip(Object lang) {
+    return Intl.message(
+      'Editing · $lang',
+      name: 'weEditingChip',
+      desc: '',
+      args: [lang],
+    );
+  }
+
+  /// `You're writing in {language}`
+  String weBannerWritingTitle(Object language) {
+    return Intl.message(
+      'You\'re writing in $language',
+      name: 'weBannerWritingTitle',
+      desc: '',
+      args: [language],
+    );
+  }
+
+  /// `Other languages translate automatically on publish — except fields you lock.`
+  String get weBannerWritingBody {
+    return Intl.message(
+      'Other languages translate automatically on publish — except fields you lock.',
+      name: 'weBannerWritingBody',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Unpublished changes`
+  String get weBannerUnpublishedTitle {
+    return Intl.message(
+      'Unpublished changes',
+      name: 'weBannerUnpublishedTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{languages} update automatically on publish. Locked fields keep your wording.`
+  String weBannerUnpublishedBody(Object languages) {
+    return Intl.message(
+      '$languages update automatically on publish. Locked fields keep your wording.',
+      name: 'weBannerUnpublishedBody',
+      desc: '',
+      args: [languages],
+    );
+  }
+
+  /// `Editing the {language} translation`
+  String weBannerEditingTitle(Object language) {
+    return Intl.message(
+      'Editing the $language translation',
+      name: 'weBannerEditingTitle',
+      desc: '',
+      args: [language],
+    );
+  }
+
+  /// `Type over any field to lock it; untouched fields stay auto and follow the {source} source.`
+  String weBannerEditingBody(Object source) {
+    return Intl.message(
+      'Type over any field to lock it; untouched fields stay auto and follow the $source source.',
+      name: 'weBannerEditingBody',
+      desc: '',
+      args: [source],
+    );
+  }
+
+  /// `Preview translation`
+  String get wePreviewTranslation {
+    return Intl.message(
+      'Preview translation',
+      name: 'wePreviewTranslation',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Preview latest`
+  String get wePreviewLatest {
+    return Intl.message(
+      'Preview latest',
+      name: 'wePreviewLatest',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Preview reflects an earlier source edit.`
+  String get weStaleNotice {
+    return Intl.message(
+      'Preview reflects an earlier source edit.',
+      name: 'weStaleNotice',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Fresh draft, matches your latest source.`
+  String get weFreshNotice {
+    return Intl.message(
+      'Fresh draft, matches your latest source.',
+      name: 'weFreshNotice',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Hero`
+  String get weCardHero {
+    return Intl.message('Hero', name: 'weCardHero', desc: '', args: []);
+  }
+
+  /// `Highlights`
+  String get weCardHighlights {
+    return Intl.message(
+      'Highlights',
+      name: 'weCardHighlights',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Headline`
+  String get weFieldHeadline {
+    return Intl.message(
+      'Headline',
+      name: 'weFieldHeadline',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Subtitle`
+  String get weFieldSubtitle {
+    return Intl.message(
+      'Subtitle',
+      name: 'weFieldSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Hero photos`
+  String get weFieldHeroPhotos {
+    return Intl.message(
+      'Hero photos',
+      name: 'weFieldHeroPhotos',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Highlight {number}`
+  String weFieldHighlight(Object number) {
+    return Intl.message(
+      'Highlight $number',
+      name: 'weFieldHighlight',
+      desc: '',
+      args: [number],
+    );
+  }
+
+  /// `Add highlight`
+  String get weAddHighlight {
+    return Intl.message(
+      'Add highlight',
+      name: 'weAddHighlight',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Add`
+  String get weAddPhoto {
+    return Intl.message('Add', name: 'weAddPhoto', desc: '', args: []);
+  }
+
+  /// `Photos are shared across all languages — edit them in the source.`
+  String get weSharedPhotosNote {
+    return Intl.message(
+      'Photos are shared across all languages — edit them in the source.',
+      name: 'weSharedPhotosNote',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Locked`
+  String get weChipLocked {
+    return Intl.message('Locked', name: 'weChipLocked', desc: '', args: []);
+  }
+
+  /// `Auto`
+  String get weChipAuto {
+    return Intl.message('Auto', name: 'weChipAuto', desc: '', args: []);
+  }
+
+  /// `Reset to AI`
+  String get weResetToAi {
+    return Intl.message('Reset to AI', name: 'weResetToAi', desc: '', args: []);
+  }
+
+  /// `Unpublished changes · auto-translates on publish`
+  String get weSaveDirty {
+    return Intl.message(
+      'Unpublished changes · auto-translates on publish',
+      name: 'weSaveDirty',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Published · all languages`
+  String get weSavePublished {
+    return Intl.message(
+      'Published · all languages',
+      name: 'weSavePublished',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Publish all languages`
+  String get wePublishAll {
+    return Intl.message(
+      'Publish all languages',
+      name: 'wePublishAll',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Live preview`
+  String get weLivePreview {
+    return Intl.message(
+      'Live preview',
+      name: 'weLivePreview',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `AI translation`
+  String get weAiTranslation {
+    return Intl.message(
+      'AI translation',
+      name: 'weAiTranslation',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{language} preview`
+  String wePreviewLabel(Object language) {
+    return Intl.message(
+      '$language preview',
+      name: 'wePreviewLabel',
+      desc: '',
+      args: [language],
+    );
+  }
+
+  /// `Web`
+  String get weDeviceWeb {
+    return Intl.message('Web', name: 'weDeviceWeb', desc: '', args: []);
+  }
+
+  /// `Mobile`
+  String get weDeviceMobile {
+    return Intl.message('Mobile', name: 'weDeviceMobile', desc: '', args: []);
+  }
+
+  /// `Earlier preview — updates automatically on publish.`
+  String get weRibbonStale {
+    return Intl.message(
+      'Earlier preview — updates automatically on publish.',
+      name: 'weRibbonStale',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Draft translation — visible only to you until you publish.`
+  String get weRibbonDraft {
+    return Intl.message(
+      'Draft translation — visible only to you until you publish.',
+      name: 'weRibbonDraft',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Publish all languages`
+  String get wePublishTitle {
+    return Intl.message(
+      'Publish all languages',
+      name: 'wePublishTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Your {source} content publishes as-is. The other languages are re-translated by AI, keeping anything you've locked.`
+  String wePublishSubtitle(Object source) {
+    return Intl.message(
+      'Your $source content publishes as-is. The other languages are re-translated by AI, keeping anything you\'ve locked.',
+      name: 'wePublishSubtitle',
+      desc: '',
+      args: [source],
+    );
+  }
+
+  /// `{language} · source`
+  String wePublishSourceRole(Object language) {
+    return Intl.message(
+      '$language · source',
+      name: 'wePublishSourceRole',
+      desc: '',
+      args: [language],
+    );
+  }
+
+  /// `Ready`
+  String get wePublishReady {
+    return Intl.message('Ready', name: 'wePublishReady', desc: '', args: []);
+  }
+
+  /// `Published as written`
+  String get wePublishReadyNote {
+    return Intl.message(
+      'Published as written',
+      name: 'wePublishReadyNote',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Re-translate`
+  String get wePublishRetranslate {
+    return Intl.message(
+      'Re-translate',
+      name: 'wePublishRetranslate',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Out of date — will refresh`
+  String get wePublishRetranslateNote {
+    return Intl.message(
+      'Out of date — will refresh',
+      name: 'wePublishRetranslateNote',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Cancel`
+  String get wePublishCancel {
+    return Intl.message('Cancel', name: 'wePublishCancel', desc: '', args: []);
+  }
+
+  /// `Publish {count} languages`
+  String wePublishConfirm(Object count) {
+    return Intl.message(
+      'Publish $count languages',
+      name: 'wePublishConfirm',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Dutch`
+  String get weLangDutch {
+    return Intl.message('Dutch', name: 'weLangDutch', desc: '', args: []);
+  }
+
+  /// `English`
+  String get weLangEnglish {
+    return Intl.message('English', name: 'weLangEnglish', desc: '', args: []);
+  }
+
+  /// `Norwegian`
+  String get weLangNorwegian {
+    return Intl.message(
+      'Norwegian',
+      name: 'weLangNorwegian',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

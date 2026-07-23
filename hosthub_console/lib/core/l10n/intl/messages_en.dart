@@ -125,6 +125,31 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m46(email) => "Verification code sent to ${email}";
 
+  static String m47(source) =>
+      "Type over any field to lock it; untouched fields stay auto and follow the ${source} source.";
+
+  static String m48(language) => "Editing the ${language} translation";
+
+  static String m49(languages) =>
+      "${languages} update automatically on publish. Locked fields keep your wording.";
+
+  static String m50(language) => "You\'re writing in ${language}";
+
+  static String m51(lang) => "Editing · ${lang}";
+
+  static String m52(number) => "Highlight ${number}";
+
+  static String m53(language) => "${language} preview";
+
+  static String m54(count) => "Publish ${count} languages";
+
+  static String m55(language) => "${language} · source";
+
+  static String m56(source) =>
+      "Your ${source} content publishes as-is. The other languages are re-translated by AI, keeping anything you\'ve locked.";
+
+  static String m57(lang) => "Source · ${lang}";
+
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
     "add": MessageLookupByLibrary.simpleMessage("Add"),
@@ -1686,6 +1711,88 @@ class MessageLookup extends MessageLookupByLibrary {
     "warning": MessageLookupByLibrary.simpleMessage("Warning"),
     "waste": MessageLookupByLibrary.simpleMessage("Waste"),
     "watch": MessageLookupByLibrary.simpleMessage("Watch"),
+    "weAddHighlight": MessageLookupByLibrary.simpleMessage("Add highlight"),
+    "weAddPhoto": MessageLookupByLibrary.simpleMessage("Add"),
+    "weAiTranslation": MessageLookupByLibrary.simpleMessage("AI translation"),
+    "weBannerEditingBody": m47,
+    "weBannerEditingTitle": m48,
+    "weBannerUnpublishedBody": m49,
+    "weBannerUnpublishedTitle": MessageLookupByLibrary.simpleMessage(
+      "Unpublished changes",
+    ),
+    "weBannerWritingBody": MessageLookupByLibrary.simpleMessage(
+      "Other languages translate automatically on publish — except fields you lock.",
+    ),
+    "weBannerWritingTitle": m50,
+    "weBreadcrumbWebsite": MessageLookupByLibrary.simpleMessage("Website"),
+    "weCardHero": MessageLookupByLibrary.simpleMessage("Hero"),
+    "weCardHighlights": MessageLookupByLibrary.simpleMessage("Highlights"),
+    "weChipAuto": MessageLookupByLibrary.simpleMessage("Auto"),
+    "weChipLocked": MessageLookupByLibrary.simpleMessage("Locked"),
+    "weDeviceMobile": MessageLookupByLibrary.simpleMessage("Mobile"),
+    "weDeviceWeb": MessageLookupByLibrary.simpleMessage("Web"),
+    "weEditingChip": m51,
+    "weFieldHeadline": MessageLookupByLibrary.simpleMessage("Headline"),
+    "weFieldHeroPhotos": MessageLookupByLibrary.simpleMessage("Hero photos"),
+    "weFieldHighlight": m52,
+    "weFieldSubtitle": MessageLookupByLibrary.simpleMessage("Subtitle"),
+    "weFreshNotice": MessageLookupByLibrary.simpleMessage(
+      "Fresh draft, matches your latest source.",
+    ),
+    "weLangDutch": MessageLookupByLibrary.simpleMessage("Dutch"),
+    "weLangEnglish": MessageLookupByLibrary.simpleMessage("English"),
+    "weLangNorwegian": MessageLookupByLibrary.simpleMessage("Norwegian"),
+    "weLivePreview": MessageLookupByLibrary.simpleMessage("Live preview"),
+    "wePageArea": MessageLookupByLibrary.simpleMessage("Area"),
+    "wePageChalet": MessageLookupByLibrary.simpleMessage("The chalet"),
+    "wePageContact": MessageLookupByLibrary.simpleMessage("Contact"),
+    "wePageHome": MessageLookupByLibrary.simpleMessage("Home"),
+    "wePagePractical": MessageLookupByLibrary.simpleMessage("Practical"),
+    "wePreviewLabel": m53,
+    "wePreviewLatest": MessageLookupByLibrary.simpleMessage("Preview latest"),
+    "wePreviewTranslation": MessageLookupByLibrary.simpleMessage(
+      "Preview translation",
+    ),
+    "wePublishAll": MessageLookupByLibrary.simpleMessage(
+      "Publish all languages",
+    ),
+    "wePublishCancel": MessageLookupByLibrary.simpleMessage("Cancel"),
+    "wePublishConfirm": m54,
+    "wePublishReady": MessageLookupByLibrary.simpleMessage("Ready"),
+    "wePublishReadyNote": MessageLookupByLibrary.simpleMessage(
+      "Published as written",
+    ),
+    "wePublishRetranslate": MessageLookupByLibrary.simpleMessage(
+      "Re-translate",
+    ),
+    "wePublishRetranslateNote": MessageLookupByLibrary.simpleMessage(
+      "Out of date — will refresh",
+    ),
+    "wePublishSourceRole": m55,
+    "wePublishSubtitle": m56,
+    "wePublishTitle": MessageLookupByLibrary.simpleMessage(
+      "Publish all languages",
+    ),
+    "weResetToAi": MessageLookupByLibrary.simpleMessage("Reset to AI"),
+    "weRibbonDraft": MessageLookupByLibrary.simpleMessage(
+      "Draft translation — visible only to you until you publish.",
+    ),
+    "weRibbonStale": MessageLookupByLibrary.simpleMessage(
+      "Earlier preview — updates automatically on publish.",
+    ),
+    "weSaveDirty": MessageLookupByLibrary.simpleMessage(
+      "Unpublished changes · auto-translates on publish",
+    ),
+    "weSavePublished": MessageLookupByLibrary.simpleMessage(
+      "Published · all languages",
+    ),
+    "weSharedPhotosNote": MessageLookupByLibrary.simpleMessage(
+      "Photos are shared across all languages — edit them in the source.",
+    ),
+    "weSourceChip": m57,
+    "weStaleNotice": MessageLookupByLibrary.simpleMessage(
+      "Preview reflects an earlier source edit.",
+    ),
     "wealth": MessageLookupByLibrary.simpleMessage("Wealth"),
     "weight": MessageLookupByLibrary.simpleMessage("Weight"),
     "welcome": MessageLookupByLibrary.simpleMessage("Welcome"),
