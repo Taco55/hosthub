@@ -252,6 +252,7 @@ class _UserSettingsSection extends StatelessWidget {
                       _maskApiKey(
                         settings?.lodgifyApiKey ?? '',
                         isServerStored: isServerStoredApiKey,
+                        last4: settings?.lodgifyApiKeyLast4,
                       ),
                       style: theme.textTheme.bodyMedium?.copyWith(
                         letterSpacing: 1.1,
@@ -1242,10 +1243,15 @@ String _toastMessage(BuildContext context, UserSettingsToastMessage message) {
   };
 }
 
-String _maskApiKey(String value, {bool isServerStored = false}) {
+String _maskApiKey(String value, {bool isServerStored = false, String? last4}) {
   final trimmed = value.trim();
   if (trimmed.isEmpty) return '';
-  if (isServerStored) return '********';
+  if (isServerStored) {
+    // The raw key never reaches the client; show the non-secret last-4 hint
+    // when available, otherwise fall back to a plain mask.
+    final hint = last4?.trim() ?? '';
+    return hint.isNotEmpty ? '••••••••$hint' : '********';
+  }
   if (trimmed.length <= 4) {
     return List.filled(trimmed.length, '*').join();
   }

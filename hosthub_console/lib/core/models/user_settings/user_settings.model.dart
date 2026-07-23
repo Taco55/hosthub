@@ -17,6 +17,7 @@ sealed class UserSettings with _$UserSettings {
     List<String>? exportColumns,
     @Default('portrait') String exportPdfOrientation,
     String? lodgifyApiKey,
+    String? lodgifyApiKeyLast4,
     @Default(false) bool lodgifyConnected,
     DateTime? lodgifyConnectedAt,
     DateTime? lodgifyLastSyncedAt,

@@ -17,6 +17,7 @@ _UserSettings _$UserSettingsFromJson(Map<String, dynamic> json) =>
       exportPdfOrientation:
           json['export_pdf_orientation'] as String? ?? 'portrait',
       lodgifyApiKey: json['lodgify_api_key'] as String?,
+      lodgifyApiKeyLast4: json['lodgify_api_key_last4'] as String?,
       lodgifyConnected: json['lodgify_connected'] as bool? ?? false,
       lodgifyConnectedAt: json['lodgify_connected_at'] == null
           ? null
@@ -34,6 +35,7 @@ Map<String, dynamic> _$UserSettingsToJson(_UserSettings instance) =>
       'export_columns': instance.exportColumns,
       'export_pdf_orientation': instance.exportPdfOrientation,
       'lodgify_api_key': instance.lodgifyApiKey,
+      'lodgify_api_key_last4': instance.lodgifyApiKeyLast4,
       'lodgify_connected': instance.lodgifyConnected,
       'lodgify_connected_at': instance.lodgifyConnectedAt?.toIso8601String(),
       'lodgify_last_synced_at': instance.lodgifyLastSyncedAt?.toIso8601String(),
