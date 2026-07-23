@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 import { checkRateLimit } from "@/lib/lodgify/rate-limit";
 import { getClientIp, jsonError, jsonRateLimit } from "@/lib/lodgify/route-utils";
-import { getLodgifyClient, getLodgifyPropertyId } from "@/lib/lodgify/server";
+import { resolveLodgifyContext } from "@/lib/lodgify/server";
 import { diffDays, parseDateParam } from "@/lib/lodgify/validation";
 
 export const revalidate = 60;
@@ -60,8 +60,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const client = getLodgifyClient();
-    const propertyId = getLodgifyPropertyId();
+    const { client, propertyId } = await resolveLodgifyContext();
+    if (!propertyId) {
+      throw new Error("Lodgify property id not configured for this site.");
+    }
     const availability = await client.getAvailability(propertyId, start, end);
 
     const availabilityMap = new Map(

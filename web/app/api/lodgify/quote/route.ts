@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/lodgify/rate-limit";
 import { getClientIp, jsonError, jsonRateLimit } from "@/lib/lodgify/route-utils";
 import { LodgifyError } from "@/lib/lodgify/client";
-import { getLodgifyClient, getLodgifyPropertyId, getLodgifyRoomTypeId } from "@/lib/lodgify/server";
+import { resolveLodgifyContext } from "@/lib/lodgify/server";
 import { diffDays, parseDateParam } from "@/lib/lodgify/validation";
 
 export const revalidate = 30;
@@ -125,9 +125,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const client = getLodgifyClient();
-    const propertyId = getLodgifyPropertyId();
-    const roomTypeId = getLodgifyRoomTypeId();
+    const { client, propertyId, roomTypeId } = await resolveLodgifyContext();
+    if (!propertyId || !roomTypeId) {
+      throw new Error("Lodgify property/room not configured for this site.");
+    }
     const quote = await client.getQuote({
       propertyId,
       roomTypeId,

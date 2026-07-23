@@ -3,12 +3,11 @@ main = "src/worker.js"
 compatibility_date = "2026-02-18"
 workers_dev = true
 
-# Keep routes managed from this repo.
-# Current admin domain:
-# - https://admin.trysilpanorama.com/*
-routes = [
-  { pattern = "admin.trysilpanorama.com/*", zone_name = "trysilpanorama.com" },
-]
+# NOTE: the admin route is NOT hardcoded here anymore. It is injected at deploy
+# time by deploy_hosthub.sh via `--route`, generated from HOSTHUB_PUBLIC_DOMAIN +
+# HOSTHUB_ADMIN_PATH (single source of truth, set in the env file). To move the
+# admin console to a new domain, change those env vars — no edit here.
+# Current: admin.trysilpanorama.com/*  (zone trysilpanorama.com)
 
 [assets]
 directory = "../hosthub_console/build/web"

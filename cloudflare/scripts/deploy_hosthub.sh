@@ -217,15 +217,15 @@ echo "Flutter APP_ENVIRONMENT: ${APP_ENVIRONMENT}"
 if [[ "${#FLUTTER_DART_DEFINE_KEYS[@]}" -gt 0 ]]; then
   echo "Flutter dart-defines: ${FLUTTER_DART_DEFINE_KEYS[*]}"
 fi
-if ! grep -q "${HOSTHUB_PUBLIC_DOMAIN}" "${CF_DIR}/wrangler.toml"; then
-  echo "Warning: wrangler.toml routes do not include host ${HOSTHUB_PUBLIC_DOMAIN}."
+# Generate the admin route from the env vars — the single source of truth.
+# wrangler.toml no longer hardcodes a route; we pass it via --route below so
+# switching the admin domain is just an env-file change.
+if [[ "${HOSTHUB_ADMIN_PATH}" == "/" ]]; then
+  HOSTHUB_ROUTE_PATTERN="${HOSTHUB_PUBLIC_DOMAIN}/*"
+else
+  HOSTHUB_ROUTE_PATTERN="${HOSTHUB_PUBLIC_DOMAIN}${HOSTHUB_ADMIN_PATH}*"
 fi
-if ! grep -q "zone_name = \"${HOSTHUB_ZONE_NAME}\"" "${CF_DIR}/wrangler.toml"; then
-  echo "Warning: wrangler.toml routes do not include zone_name=${HOSTHUB_ZONE_NAME}."
-fi
-if [[ "${HOSTHUB_ADMIN_PATH}" != "/" ]] && ! grep -q "${HOSTHUB_ADMIN_PATH//\//\\/}\*" "${CF_DIR}/wrangler.toml"; then
-  echo "Warning: wrangler.toml routes do not include admin path ${HOSTHUB_ADMIN_PATH}*."
-fi
+echo "Admin route: ${HOSTHUB_ROUTE_PATTERN} (zone ${HOSTHUB_ZONE_NAME} — inferred by wrangler)"
 
 echo "Building Flutter web..."
 (
@@ -252,6 +252,8 @@ WRANGLER_CMD=(
   "${CF_DIR}"
   --config
   "${CF_DIR}/wrangler.toml"
+  --route
+  "${HOSTHUB_ROUTE_PATTERN}"
 )
 
 if [[ "${DRY_RUN}" -eq 1 ]]; then

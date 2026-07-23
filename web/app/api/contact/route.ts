@@ -1,7 +1,16 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 
+import { resolveRuntimeSiteContext } from "@/lib/runtime-site-context";
+import { getSiteSettings } from "@/lib/site-settings";
+
 const MIN_SUBMIT_DELAY_MS = 2500;
+
+// Strip characters that could break the email "Name <addr>" header.
+function sanitizeFromName(name: string): string {
+  const cleaned = name.replace(/[\r\n<>"]/g, "").trim();
+  return cleaned || "HostHub";
+}
 
 export async function POST(req: Request) {
   try {
@@ -25,8 +34,6 @@ export async function POST(req: Request) {
         : typeof startedAt === "number"
           ? startedAt
           : Number.NaN;
-    const contactEmailTo = process.env.CONTACT_EMAIL_TO;
-
     if (!normalizedName || !normalizedEmail || !normalizedMessage) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
@@ -43,6 +50,23 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true });
     }
 
+    // Resolve per-site config (contact recipient + sender name) from the request
+    // domain. Falls back to the worker env for sites with no values set yet.
+    const site = await resolveRuntimeSiteContext();
+    const settings = await getSiteSettings(site.siteId);
+
+    const contactEmailTo = settings?.contactEmail || process.env.CONTACT_EMAIL_TO;
+    const fromName = sanitizeFromName(
+      settings?.emailFromName ||
+        settings?.name ||
+        process.env.EMAIL_FROM_NAME ||
+        "HostHub",
+    );
+    // Platform sending address (verified domain). Override via EMAIL_FROM_ADDRESS
+    // once the platform domain (e.g. no-reply@mail.hosthub.com) is verified.
+    const fromAddress =
+      process.env.EMAIL_FROM_ADDRESS?.trim() || "no-reply@trysilpanorama.com";
+
     const resendApiKey = process.env.RESEND_API_KEY;
     if (!contactEmailTo) {
       return NextResponse.json({ error: "Missing contact destination" }, { status: 500 });
@@ -53,7 +77,7 @@ export async function POST(req: Request) {
 
     const resend = new Resend(resendApiKey);
     const { data, error } = await resend.emails.send({
-      from: "Trysil Panorama <no-reply@trysilpanorama.com>",
+      from: `${fromName} <${fromAddress}>`,
       to: contactEmailTo,
       replyTo: normalizedEmail,
       subject: `Nieuw bericht via website – ${normalizedName}`,

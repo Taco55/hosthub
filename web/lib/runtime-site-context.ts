@@ -16,13 +16,19 @@ export type RuntimeSiteContext = {
 
 const DEFAULT_SITE_ID = process.env.NEXT_PUBLIC_CMS_SITE_ID?.trim() ?? "";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ?? "";
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ?? "";
+// Secret key for the server-side domain lookup. Prefer the new Supabase naming
+// (sb_secret_… via SUPABASE_SECRET_KEY); fall back to the legacy service-role env
+// var name for backward compatibility.
+const SUPABASE_SECRET_KEY =
+  process.env.SUPABASE_SECRET_KEY?.trim() ||
+  process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ||
+  "";
 const CMS_DOMAIN_LOOKUP_ENABLED =
   (process.env.CMS_DOMAIN_LOOKUP_ENABLED ?? "true").toLowerCase() !== "false";
 
 const lookupClient =
-  SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
-    ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  SUPABASE_URL && SUPABASE_SECRET_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_SECRET_KEY, {
         auth: {
           autoRefreshToken: false,
           persistSession: false,

@@ -18,6 +18,21 @@ SUPABASE_DIR   := $(WORKSPACE_ROOT)/supabase
 # Include shared Supabase targets
 include $(SUPABASE_DIR)/make/supabase-common.mk
 
+# ----------------------------
+# Sites worker (public websites) configuration
+# ----------------------------
+WEB_DIR         := $(WORKSPACE_ROOT)/web
+WEB_WORKER      ?= hosthub-sites
+WEB_SECRET_ENV  := $(WORKSPACE_ROOT)/../hosthub_secrets/hosthub-prd.env
+WEB_LOCAL_ENV   := $(WEB_DIR)/.env.local
+# Server-only PLATFORM-WIDE secrets synced to the shared sites worker.
+# Intentionally NOT here — these are per consumer, resolved per site from the DB:
+#   - LODGIFY_API_KEY   (console → lodgify_api_keys, per owner)
+#   - CONTACT_EMAIL_TO  (per-site contact recipient) + per-site sender name
+# Only genuinely platform-wide secrets belong below: the shared Resend key and
+# the Supabase secret key (used to read per-site config from the DB).
+WEB_SECRET_KEYS := SUPABASE_SECRET_KEY RESEND_API_KEY
+
 # ============================
 # Combined deploy
 # ============================
@@ -29,6 +44,34 @@ deploy: apply-migrations functions-deploy functions-secrets-set
 	@echo ""
 	@echo "  ✓ Full deploy to $(ENV) complete (migrations + functions + secrets)."
 	@echo ""
+
+# ============================
+# Sites worker secrets
+# ============================
+
+## web-secrets — Upload the shared sites worker's runtime secrets to Cloudflare.
+## Reads values from hosthub-prd.env + web/.env.local and pushes each present key
+## via `wrangler secret put` (never prints values). Lodgify is intentionally
+## excluded — it is per consumer (console → lodgify_api_keys, resolved per site).
+## Usage: make web-secrets [WEB_WORKER=hosthub-sites]
+.PHONY: web-secrets
+web-secrets:
+	@command -v npx >/dev/null 2>&1 || { echo "npx not found (need Node)"; exit 1; }
+	@bash -c 'set -a; \
+	  [ -f "$(WEB_SECRET_ENV)" ] && . "$(WEB_SECRET_ENV)"; \
+	  [ -f "$(WEB_LOCAL_ENV)" ] && . "$(WEB_LOCAL_ENV)"; \
+	  set +a; \
+	  [ -n "$$CLOUDFLARE_API_TOKEN" ] || { echo "Missing CLOUDFLARE_API_TOKEN in $(WEB_SECRET_ENV)"; exit 1; }; \
+	  cd "$(WEB_DIR)"; \
+	  echo "Syncing secrets to worker: $(WEB_WORKER)"; \
+	  for k in $(WEB_SECRET_KEYS); do \
+	    v="$${!k}"; \
+	    if [ -n "$$v" ]; then \
+	      printf "%s" "$$v" | npx wrangler secret put "$$k" --name "$(WEB_WORKER)" >/dev/null \
+	        && echo "  OK   $$k" || echo "  FAIL $$k"; \
+	    else echo "  SKIP $$k (not in env files)"; fi; \
+	  done; \
+	  echo "Done."'
 
 # ============================
 # Help
@@ -76,7 +119,6 @@ create-admin: preflight check-pg-version
 	@. "$(ENV_FILE)" 2>/dev/null || true; \
 	DB_URL="$${DB_URL:-$$SUPABASE_DB_URL}"; \
 	if [ -z "$$DB_URL" ]; then echo "Missing DB_URL; set SUPABASE_DB_URL in $(ENV_FILE) or pass DB_URL=..."; exit 1; fi; \
-	DB_URL="$$(python3 '$(DB_URL_NORMALIZER)' "$$DB_URL" "$${SUPABASE_DB_PASSWORD:-}")" || exit 1; \
 	$(PSQL) "$$DB_URL" -v ON_ERROR_STOP=1 \
 	  -c "SELECT create_local_admin_user('$(EMAIL)', '$(PASSWORD)', '$(or $(USERNAME),$(EMAIL))');" \
 	&& echo "Admin user created on $(ENV)."

@@ -67,8 +67,7 @@ STUDIO_URL       ?= http://127.0.0.1:$(TOML_STUDIO_PORT)
 PG_BIN         ?= $(shell brew --prefix postgresql@17 2>/dev/null)/bin
 PG_DUMP        ?= $(PG_BIN)/pg_dump
 PSQL           ?= $(PG_BIN)/psql
-DB_URL_NORMALIZER ?= $(SUPABASE_DIR)/make/normalize_db_url.py
-REQUIRED_TOOLS := $(PG_DUMP) $(PSQL) supabase python3
+REQUIRED_TOOLS := $(PG_DUMP) $(PSQL) supabase
 PG_MAJOR       := $(shell $(PG_DUMP) --version 2>/dev/null | sed -n 's/.* \([0-9][0-9]*\)\..*/\1/p')
 
 # ----------------------------
@@ -189,7 +188,6 @@ seed-local: preflight-local-db
 sync-env-to-local: preflight check-pg-version
 	@. "$(ENV_FILE)"; \
 	DB_URL="$${DB_URL:-$$SUPABASE_DB_URL}"; \
-	DB_URL="$$(python3 '$(DB_URL_NORMALIZER)' "$$DB_URL" "$${SUPABASE_DB_PASSWORD:-}")" || exit 1; \
 	read -p "This will DROP local schema public. Continue? [y/N] " a; [ "$$a" = "y" ] || exit 1; \
 	$(PSQL) "$(LOCAL_DB_URL)" -v ON_ERROR_STOP=1 -c "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;"; \
 	$(PG_DUMP) --schema=public --schema-only "$$DB_URL" \
@@ -232,7 +230,6 @@ apply-migrations: preflight check-pg-version
 	@. "$(ENV_FILE)" 2>/dev/null || true; \
 	DB_URL="$${DB_URL:-$$SUPABASE_DB_URL}"; \
 	if [ -z "$$DB_URL" ]; then echo "Missing DB_URL; set SUPABASE_DB_URL in $(ENV_FILE) or pass DB_URL=..."; exit 1; fi; \
-	DB_URL="$$(python3 '$(DB_URL_NORMALIZER)' "$$DB_URL" "$${SUPABASE_DB_PASSWORD:-}")" || exit 1; \
 	set -- $(MIGRATIONS_DIR)/*.sql; \
 	if [ -e "$$1" ]; then \
 	  for f in "$$@"; do echo "- Applying $$f"; $(PSQL) "$$DB_URL" -v ON_ERROR_STOP=1 -f "$$f" || exit 1; done; \
@@ -250,7 +247,6 @@ dump-schema: preflight check-pg-version
 	@. "$(ENV_FILE)"; \
 	DB_URL="$${DB_URL:-$$SUPABASE_DB_URL}"; \
 	if [ -z "$$DB_URL" ]; then echo "Missing DB_URL; set SUPABASE_DB_URL in $(ENV_FILE) or pass DB_URL=..."; exit 1; fi; \
-	DB_URL="$$(python3 '$(DB_URL_NORMALIZER)' "$$DB_URL" "$${SUPABASE_DB_PASSWORD:-}")" || exit 1; \
 	$(PG_DUMP) --schema=public --schema-only --format=plain \
 	  --dbname="$$DB_URL" --file="$(SCHEMA_LATEST)"
 	@echo "Wrote $(SCHEMA_LATEST)"
@@ -268,7 +264,6 @@ seed-remote: preflight check-pg-version
 	@. "$(ENV_FILE)" 2>/dev/null || true; \
 	DB_URL="$${DB_URL:-$$SUPABASE_DB_URL}"; \
 	if [ -z "$$DB_URL" ]; then echo "Missing DB_URL; set SUPABASE_DB_URL in $(ENV_FILE) or pass DB_URL=..."; exit 1; fi; \
-	DB_URL="$$(python3 '$(DB_URL_NORMALIZER)' "$$DB_URL" "$${SUPABASE_DB_PASSWORD:-}")" || exit 1; \
 	set -- $(SEED_DIR)/*.sql; \
 	if [ -e "$$1" ]; then \
 	  for f in "$$@"; do echo "- Seeding $$f"; $(PSQL) "$$DB_URL" -v ON_ERROR_STOP=1 -f "$$f" || exit 1; done; \

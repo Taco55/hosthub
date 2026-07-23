@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 import { checkRateLimit } from "@/lib/lodgify/rate-limit";
 import { getClientIp, jsonError, jsonRateLimit } from "@/lib/lodgify/route-utils";
-import { getLodgifyClient } from "@/lib/lodgify/server";
+import { resolveLodgifyContext } from "@/lib/lodgify/server";
 
 export const revalidate = 3600;
 
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const client = getLodgifyClient();
+    const { client } = await resolveLodgifyContext();
     const properties = await client.getProperties();
     return NextResponse.json({ properties });
   } catch (error) {

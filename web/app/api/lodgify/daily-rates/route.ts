@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 import { checkRateLimit } from "@/lib/lodgify/rate-limit";
 import { getClientIp, jsonError, jsonRateLimit } from "@/lib/lodgify/route-utils";
-import { getLodgifyClient } from "@/lib/lodgify/server";
+import { resolveLodgifyContext } from "@/lib/lodgify/server";
 import { diffDays, parseDateParam } from "@/lib/lodgify/validation";
 
 export const revalidate = 300;
@@ -39,10 +39,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const { client, propertyId: sitePropertyId, roomTypeId: siteRoomTypeId } =
+      await resolveLodgifyContext();
+
     const roomTypeId =
-      url.searchParams.get("roomTypeId") ?? process.env.LODGIFY_ROOM_TYPE_ID ?? undefined;
+      url.searchParams.get("roomTypeId") ?? siteRoomTypeId ?? undefined;
     const houseId =
-      url.searchParams.get("houseId") ?? process.env.LODGIFY_PROPERTY_ID ?? undefined;
+      url.searchParams.get("houseId") ?? sitePropertyId ?? undefined;
 
     if (!roomTypeId && !houseId) {
       return NextResponse.json(
@@ -50,8 +53,6 @@ export async function GET(request: NextRequest) {
         { status: 400 },
       );
     }
-
-    const client = getLodgifyClient();
     const rates = await client.getDailyRates({
       startDate: start,
       endDate: end,

@@ -1,7 +1,9 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "main": ".open-next/worker.js",
-  "name": "trysilpanorama",
+  // Platform-neutral: this single worker renders ALL HostHub customer sites,
+  // resolved per request by domain (see CMS_DOMAIN_LOOKUP_ENABLED below).
+  "name": "hosthub-sites",
   "compatibility_date": "2024-12-30",
   "compatibility_flags": [
     // Enable Node.js API
@@ -13,14 +15,17 @@
   ],
   "vars": {
     // Server-side runtime config for the CMS content provider.
-    // Non-secret only. Secrets (RESEND_API_KEY, CONTACT_EMAIL_TO, LODGIFY_*)
-    // are set out-of-band via `wrangler secret put`, never committed here.
-    // Single-site: the site is resolved from the build-time-inlined
-    // NEXT_PUBLIC_CMS_SITE_ID, so domain lookup stays off and no service
-    // role key is ever needed in the worker.
+    // Non-secret only. Secrets (RESEND_API_KEY, CONTACT_EMAIL_TO, LODGIFY_*,
+    // and — for multi-site — SUPABASE_SECRET_KEY) are set out-of-band via
+    // `wrangler secret put`, never committed here.
+    // Multi-site (Model B): the site is resolved per request from the incoming
+    // domain via the site_domains table, so domain lookup is ON. This REQUIRES
+    // SUPABASE_SECRET_KEY — the new sb_secret_… key (legacy SUPABASE_SERVICE_ROLE_KEY
+    // still accepted) — plus NEXT_PUBLIC_SUPABASE_URL; without it, lookup degrades
+    // to the NEXT_PUBLIC_CMS_SITE_ID default.
     "CMS_ENABLED": "true",
     "CMS_QUERY_TIMEOUT_MS": "1200",
-    "CMS_DOMAIN_LOOKUP_ENABLED": "false"
+    "CMS_DOMAIN_LOOKUP_ENABLED": "true"
   },
   "assets": {
     "directory": ".open-next/assets",
@@ -30,7 +35,7 @@
     {
       "binding": "WORKER_SELF_REFERENCE",
       // The service should match the "name" of your worker
-      "service": "trysilpanorama"
+      "service": "hosthub-sites"
     }
   ],
   "r2_buckets": [
