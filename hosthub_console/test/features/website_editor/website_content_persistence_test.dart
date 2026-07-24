@@ -182,6 +182,31 @@ void main() {
     await cubit.close();
   });
 
+  test('loadContent adopts the preview domain; autosave bumps lastSavedAt',
+      () async {
+    final base = _remoteContent();
+    final repo = FakeWebsiteContentRepository(
+      content: WebsitePageContent(
+        source: base.source,
+        translations: base.translations,
+        previewDomain: 'trysilpanorama.com',
+      ),
+    );
+    final cubit = _build(repo);
+    await cubit.loadContent();
+
+    expect(cubit.state.previewDomain, 'trysilpanorama.com');
+    expect(cubit.state.lastSavedAt, isNull);
+
+    cubit.editSourceField('hero.headline', 'Nieuwe titel');
+    await _settle();
+
+    // The debounced autosave flushed and marked the save moment, which the
+    // embedded live preview uses as a cache-busting reload key.
+    expect(cubit.state.lastSavedAt, isNotNull);
+    await cubit.close();
+  });
+
   test('hydrated auto fields go stale when their source changes', () async {
     final repo = FakeWebsiteContentRepository(content: _remoteContent());
     final cubit = _build(repo);

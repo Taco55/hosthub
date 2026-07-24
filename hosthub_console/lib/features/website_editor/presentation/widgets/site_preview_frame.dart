@@ -33,6 +33,7 @@ class SitePreviewFrame extends StatelessWidget {
     this.device = SitePreviewFrameDevice.desktop,
     this.maxWidth = 660,
     this.boxShadow,
+    this.expandContent = false,
   });
 
   /// The rendered page / content slot.
@@ -57,6 +58,10 @@ class SitePreviewFrame extends StatelessWidget {
 
   /// Overrides the default card-hover drop shadow.
   final List<BoxShadow>? boxShadow;
+
+  /// When true the content slot fills the available height (for an embedded
+  /// live page); when false the frame shrink-wraps its child (the mock).
+  final bool expandContent;
 
   static const double _mobileScreenWidth = 306;
   static const double _mobileBezelPadding = 10;
@@ -131,12 +136,13 @@ class SitePreviewFrame extends StatelessWidget {
           boxShadow: _resolveShadow(context),
           padding: EdgeInsets.zero,
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize:
+                expandContent ? MainAxisSize.max : MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               chrome,
               Divider(height: 1, thickness: 1, color: scheme.outlineVariant),
-              Flexible(child: child),
+              if (expandContent) Expanded(child: child) else Flexible(child: child),
             ],
           ),
         ),
@@ -166,7 +172,8 @@ class SitePreviewFrame extends StatelessWidget {
         child: ColoredBox(
           color: scheme.surface,
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize:
+                expandContent ? MainAxisSize.max : MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
@@ -192,7 +199,7 @@ class SitePreviewFrame extends StatelessWidget {
                   ],
                 ),
               ),
-              Flexible(child: child),
+              if (expandContent) Expanded(child: child) else Flexible(child: child),
             ],
           ),
         ),
@@ -201,13 +208,13 @@ class SitePreviewFrame extends StatelessWidget {
 
     return Center(
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: expandContent ? MainAxisSize.max : MainAxisSize.min,
         children: [
           if (toolbar != null) ...[
             toolbar!,
             const SizedBox(height: 16),
           ],
-          phone,
+          if (expandContent) Expanded(child: phone) else phone,
         ],
       ),
     );

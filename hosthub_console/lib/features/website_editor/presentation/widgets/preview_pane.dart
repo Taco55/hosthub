@@ -4,9 +4,12 @@ import 'package:styled_widgets/styled_widgets.dart';
 
 import 'package:hosthub_console/core/widgets/foundation/foundation.dart';
 
+import 'package:hosthub_console/core/config/app_config.dart';
+
 import '../../application/site_content_cubit.dart';
 import '../website_editor_status_colors.dart';
 import '../website_editor_strings.dart';
+import 'live_site_frame.dart';
 import 'site_preview_frame.dart';
 
 /// The right-hand live preview: a status pill + device toggle + locale
@@ -17,11 +20,49 @@ class PreviewPane extends StatelessWidget {
 
   final SiteContentState state;
 
+  /// The real website's draft-preview URL for the selected language, with a
+  /// cache-busting save marker so autosaves reload the frame. Null in demo
+  /// mode (no linked site) — the schematic mock renders instead.
+  String? get _liveUrl {
+    final domain = kCmsPreviewDomain.trim().isNotEmpty
+        ? kCmsPreviewDomain.trim()
+        : state.previewDomain;
+    if (domain == null || domain.isEmpty) return null;
+    final normalized = domain
+        .replaceFirst(RegExp(r'^https?://'), '')
+        .replaceAll(RegExp(r'/$'), '');
+    final scheme = normalized.contains('localhost') ||
+            normalized.startsWith('127.0.0.1')
+        ? 'http'
+        : 'https';
+    final marker = state.lastSavedAt?.millisecondsSinceEpoch ?? 0;
+    return '$scheme://$normalized/preview/${state.previewLanguage}?_r=$marker';
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final lang = state.previewLanguage;
-    final url = 'trysilpanorama.com/$lang';
+    final liveUrl = _liveUrl;
+    final displayHost = (kCmsPreviewDomain.trim().isNotEmpty
+            ? kCmsPreviewDomain.trim()
+            : state.previewDomain) ??
+        'trysilpanorama.com';
+    final url = '$displayHost/$lang';
+
+    // The real site needs room: give the embedded frame the full pane height
+    // instead of the mock's intrinsic column.
+    final isLive = liveUrl != null;
+    final frame = SitePreviewFrame(
+      url: url,
+      device: state.previewDevice == PreviewDevice.mobile
+          ? SitePreviewFrameDevice.mobile
+          : SitePreviewFrameDevice.desktop,
+      expandContent: isLive,
+      child: isLive
+          ? LiveSiteFrame(url: liveUrl)
+          : _SitePreview(state: state),
+    );
 
     return ColoredBox(
       color: scheme.surfaceContainerLow,
@@ -33,21 +74,25 @@ class PreviewPane extends StatelessWidget {
             _PreviewToolbar(state: state),
             const SizedBox(height: 14),
             Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    SitePreviewFrame(
-                      url: url,
-                      device: state.previewDevice == PreviewDevice.mobile
-                          ? SitePreviewFrameDevice.mobile
-                          : SitePreviewFrameDevice.desktop,
-                      child: _SitePreview(state: state),
+              child: isLive
+                  ? Column(
+                      children: [
+                        Expanded(child: frame),
+                        if (!state.isSourceMode) ...[
+                          const SizedBox(height: 12),
+                          _PreviewRibbon(state: state),
+                        ],
+                      ],
+                    )
+                  : SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          frame,
+                          const SizedBox(height: 12),
+                          if (!state.isSourceMode) _PreviewRibbon(state: state),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 12),
-                    if (!state.isSourceMode) _PreviewRibbon(state: state),
-                  ],
-                ),
-              ),
             ),
           ],
         ),

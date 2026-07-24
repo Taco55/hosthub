@@ -26,6 +26,8 @@ class SiteContentState extends Equatable {
     required this.publishOpen,
     required this.translating,
     this.errorMessage,
+    this.previewDomain,
+    this.lastSavedAt,
   });
 
   final String propertyName;
@@ -48,6 +50,14 @@ class SiteContentState extends Equatable {
   /// Languages currently being (re)translated.
   final Set<String> translating;
   final String? errorMessage;
+
+  /// The site's primary public domain; when set, the preview pane embeds the
+  /// real website's draft-preview route instead of the schematic mock.
+  final String? previewDomain;
+
+  /// Bumped after a successful autosave/publish so the embedded live preview
+  /// reloads and shows the fresh draft.
+  final DateTime? lastSavedAt;
 
   bool get isSourceMode => previewLanguage == sourceLanguage;
 
@@ -115,6 +125,8 @@ class SiteContentState extends Equatable {
     bool? publishOpen,
     Set<String>? translating,
     String? errorMessage,
+    String? previewDomain,
+    DateTime? lastSavedAt,
     bool clearError = false,
   }) {
     return SiteContentState(
@@ -130,6 +142,8 @@ class SiteContentState extends Equatable {
       publishOpen: publishOpen ?? this.publishOpen,
       translating: translating ?? this.translating,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      previewDomain: previewDomain ?? this.previewDomain,
+      lastSavedAt: lastSavedAt ?? this.lastSavedAt,
     );
   }
 
@@ -147,6 +161,8 @@ class SiteContentState extends Equatable {
         publishOpen,
         translating,
         errorMessage,
+        previewDomain,
+        lastSavedAt,
       ];
 }
 
@@ -205,6 +221,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
                   : sourceLanguage,
           source: content.source,
           translations: content.translations,
+          previewDomain: content.previewDomain,
           dirty: false,
           clearError: true,
         ),
@@ -248,6 +265,10 @@ class SiteContentCubit extends Cubit<SiteContentState> {
           fieldKey: key,
           field: field,
         );
+      }
+      if ((saveSource || fields.isNotEmpty) && !isClosed) {
+        // Nudge the embedded live preview to reload the fresh draft.
+        emit(state.copyWith(lastSavedAt: DateTime.now()));
       }
     } catch (_) {
       if (!isClosed) emit(state.copyWith(errorMessage: 'save_failed'));
@@ -509,7 +530,14 @@ class SiteContentCubit extends Cubit<SiteContentState> {
         return;
       }
     }
-    emit(state.copyWith(dirty: false, publishOpen: false, clearError: true));
+    emit(
+      state.copyWith(
+        dirty: false,
+        publishOpen: false,
+        lastSavedAt: DateTime.now(),
+        clearError: true,
+      ),
+    );
   }
 
   Map<String, Map<String, TranslatedField>> _cloneTranslations() => {

@@ -15,6 +15,7 @@ class WebsitePageContent {
     required this.translations,
     this.sourceLanguage,
     this.locales,
+    this.previewDomain,
   });
 
   /// `fieldKey -> text` in the source language.
@@ -29,6 +30,10 @@ class WebsitePageContent {
 
   /// The site's enabled locales; null when unknown.
   final List<String>? locales;
+
+  /// The site's primary public domain (from `site_domains`); null when the
+  /// site has none — the editor then falls back to the schematic mock preview.
+  final String? previewDomain;
 }
 
 /// Persistence for the website editor. The editor's flat field keys map onto
@@ -202,6 +207,12 @@ class WebsiteContentRepository extends SupabaseRepository {
           .select('default_locale, locales')
           .eq('id', siteId)
           .maybeSingle();
+      final domainRow = await supabase
+          .from('site_domains')
+          .select('domain')
+          .eq('site_id', siteId)
+          .eq('is_primary', true)
+          .maybeSingle();
       final siteSourceLanguage =
           (siteRow?['default_locale'] as String?) ?? sourceLanguage;
       final siteLocales = (siteRow?['locales'] as List<dynamic>?)
@@ -289,6 +300,7 @@ class WebsiteContentRepository extends SupabaseRepository {
         translations: translations,
         sourceLanguage: sourceLanguage,
         locales: locales,
+        previewDomain: domainRow?['domain'] as String?,
       );
     } catch (error, stack) {
       throw mapError(
