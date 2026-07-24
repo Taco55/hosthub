@@ -20,16 +20,18 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(1360, 880));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    final cubit =
-        SiteContentCubit(translationService: const SeedTranslationService());
+    final cubit = SiteContentCubit(
+      translationService: const SeedTranslationService(),
+    );
     addTearDown(cubit.close);
 
     final lightTheme = HosthubThemePreset.applyMaterialTheme(
       baseTheme: ThemeData.light(),
       brightness: Brightness.light,
     );
-    final styledTheme =
-        HosthubThemePreset.styledTheme(lightMaterialTheme: lightTheme);
+    final styledTheme = HosthubThemePreset.styledTheme(
+      lightMaterialTheme: lightTheme,
+    );
 
     await tester.pumpWidget(
       MaterialApp(
@@ -74,7 +76,11 @@ void main() {
   testWidgets('golden: translation editor (mode B, EN)', (tester) async {
     final cubit = await pump(tester);
     cubit.setPreviewLanguage('en');
-    cubit.editTranslationField('en', 'hero.headline', 'Your mountain home in Trysil');
+    cubit.editTranslationField(
+      'en',
+      'hero.headline',
+      'Your mountain home in Trysil',
+    );
     await tester.pumpAndSettle();
     await expectLater(
       find.byType(StyledWebPageScaffold),

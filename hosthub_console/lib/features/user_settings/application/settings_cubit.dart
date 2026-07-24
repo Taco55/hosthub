@@ -52,7 +52,7 @@ class SettingsCubit extends Cubit<SettingsState> {
     required CurrentUserProvider currentUserProvider,
   }) : _repository = repository,
        _currentUserProvider = currentUserProvider,
-      super(const SettingsState.initial());
+       super(const SettingsState.initial());
 
   final UserSettingsRepository _repository;
   final CurrentUserProvider _currentUserProvider;

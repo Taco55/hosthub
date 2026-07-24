@@ -51,36 +51,35 @@ class FakeWebsiteContentRepository implements WebsiteContentRepository {
   }
 
   @override
-  dynamic noSuchMethod(Invocation invocation) =>
-      super.noSuchMethod(invocation);
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 WebsitePageContent _remoteContent() => WebsitePageContent(
-      source: {
-        'hero.headline': 'Titel uit database',
-        'hero.subtitle': 'Ondertitel uit database',
-        'highlights.0': 'Hoogtepunt A',
-        'highlights.1': 'Hoogtepunt B',
+  source: {
+    'hero.headline': 'Titel uit database',
+    'hero.subtitle': 'Ondertitel uit database',
+    'highlights.0': 'Hoogtepunt A',
+    'highlights.1': 'Hoogtepunt B',
+  },
+  translations: {
+    for (final lang in ['en', 'no'])
+      lang: {
+        for (final field in kHomeFields)
+          field.key: TranslatedField(
+            value: '[$lang] ${field.key}',
+            status: FieldTranslationStatus.auto,
+            sourceHash: sourceHashOf(
+              {
+                'hero.headline': 'Titel uit database',
+                'hero.subtitle': 'Ondertitel uit database',
+                'highlights.0': 'Hoogtepunt A',
+                'highlights.1': 'Hoogtepunt B',
+              }[field.key]!,
+            ),
+          ),
       },
-      translations: {
-        for (final lang in ['en', 'no'])
-          lang: {
-            for (final field in kHomeFields)
-              field.key: TranslatedField(
-                value: '[$lang] ${field.key}',
-                status: FieldTranslationStatus.auto,
-                sourceHash: sourceHashOf(
-                  {
-                    'hero.headline': 'Titel uit database',
-                    'hero.subtitle': 'Ondertitel uit database',
-                    'highlights.0': 'Hoogtepunt A',
-                    'highlights.1': 'Hoogtepunt B',
-                  }[field.key]!,
-                ),
-              ),
-          },
-      },
-    );
+  },
+);
 
 SiteContentCubit _build(FakeWebsiteContentRepository repository) =>
     SiteContentCubit(
@@ -93,20 +92,22 @@ SiteContentCubit _build(FakeWebsiteContentRepository repository) =>
 Future<void> _settle() => Future<void>.delayed(const Duration(milliseconds: 5));
 
 void main() {
-  test('loadContent hydrates source + translations from the repository',
-      () async {
-    final repo = FakeWebsiteContentRepository(content: _remoteContent());
-    final cubit = _build(repo);
+  test(
+    'loadContent hydrates source + translations from the repository',
+    () async {
+      final repo = FakeWebsiteContentRepository(content: _remoteContent());
+      final cubit = _build(repo);
 
-    await cubit.loadContent();
+      await cubit.loadContent();
 
-    expect(repo.loadCalls, 1);
-    expect(cubit.state.valueFor('nl', 'hero.headline'), 'Titel uit database');
-    expect(cubit.state.valueFor('en', 'hero.headline'), '[en] hero.headline');
-    expect(cubit.state.dirty, isFalse);
-    expect(cubit.state.staleLanguages, isEmpty);
-    await cubit.close();
-  });
+      expect(repo.loadCalls, 1);
+      expect(cubit.state.valueFor('nl', 'hero.headline'), 'Titel uit database');
+      expect(cubit.state.valueFor('en', 'hero.headline'), '[en] hero.headline');
+      expect(cubit.state.dirty, isFalse);
+      expect(cubit.state.staleLanguages, isEmpty);
+      await cubit.close();
+    },
+  );
 
   test('source edits autosave a draft (debounced)', () async {
     final repo = FakeWebsiteContentRepository(content: _remoteContent());
@@ -157,55 +158,59 @@ void main() {
     await cubit.close();
   });
 
-  test('loadContent adopts the site source language and resets the preview',
-      () async {
-    final base = _remoteContent();
-    final repo = FakeWebsiteContentRepository(
-      content: WebsitePageContent(
-        source: base.source,
-        translations: base.translations,
-        sourceLanguage: 'en',
-        locales: const ['en', 'no'],
-      ),
-    );
-    final cubit = _build(repo);
-    // Seed preview is 'nl', which the site no longer offers.
-    expect(cubit.state.previewLanguage, 'nl');
+  test(
+    'loadContent adopts the site source language and resets the preview',
+    () async {
+      final base = _remoteContent();
+      final repo = FakeWebsiteContentRepository(
+        content: WebsitePageContent(
+          source: base.source,
+          translations: base.translations,
+          sourceLanguage: 'en',
+          locales: const ['en', 'no'],
+        ),
+      );
+      final cubit = _build(repo);
+      // Seed preview is 'nl', which the site no longer offers.
+      expect(cubit.state.previewLanguage, 'nl');
 
-    await cubit.loadContent();
+      await cubit.loadContent();
 
-    expect(cubit.state.sourceLanguage, 'en');
-    expect(cubit.state.locales, ['en', 'no']);
-    // Preview snapped to the new source because 'nl' is not enabled.
-    expect(cubit.state.previewLanguage, 'en');
-    expect(cubit.state.targetLanguages, ['no']);
-    await cubit.close();
-  });
+      expect(cubit.state.sourceLanguage, 'en');
+      expect(cubit.state.locales, ['en', 'no']);
+      // Preview snapped to the new source because 'nl' is not enabled.
+      expect(cubit.state.previewLanguage, 'en');
+      expect(cubit.state.targetLanguages, ['no']);
+      await cubit.close();
+    },
+  );
 
-  test('loadContent adopts the preview domain; autosave bumps lastSavedAt',
-      () async {
-    final base = _remoteContent();
-    final repo = FakeWebsiteContentRepository(
-      content: WebsitePageContent(
-        source: base.source,
-        translations: base.translations,
-        previewDomain: 'trysilpanorama.com',
-      ),
-    );
-    final cubit = _build(repo);
-    await cubit.loadContent();
+  test(
+    'loadContent adopts the preview domain; autosave bumps lastSavedAt',
+    () async {
+      final base = _remoteContent();
+      final repo = FakeWebsiteContentRepository(
+        content: WebsitePageContent(
+          source: base.source,
+          translations: base.translations,
+          previewDomain: 'trysilpanorama.com',
+        ),
+      );
+      final cubit = _build(repo);
+      await cubit.loadContent();
 
-    expect(cubit.state.previewDomain, 'trysilpanorama.com');
-    expect(cubit.state.lastSavedAt, isNull);
+      expect(cubit.state.previewDomain, 'trysilpanorama.com');
+      expect(cubit.state.lastSavedAt, isNull);
 
-    cubit.editSourceField('hero.headline', 'Nieuwe titel');
-    await _settle();
+      cubit.editSourceField('hero.headline', 'Nieuwe titel');
+      await _settle();
 
-    // The debounced autosave flushed and marked the save moment, which the
-    // embedded live preview uses as a cache-busting reload key.
-    expect(cubit.state.lastSavedAt, isNotNull);
-    await cubit.close();
-  });
+      // The debounced autosave flushed and marked the save moment, which the
+      // embedded live preview uses as a cache-busting reload key.
+      expect(cubit.state.lastSavedAt, isNotNull);
+      await cubit.close();
+    },
+  );
 
   test('hydrated auto fields go stale when their source changes', () async {
     final repo = FakeWebsiteContentRepository(content: _remoteContent());
@@ -237,7 +242,11 @@ void main() {
       );
 
       WebsiteContentRepository.writeField(
-        'hero.headline', 'cabin', content, 'Nieuwe titel');
+        'hero.headline',
+        'cabin',
+        content,
+        'Nieuwe titel',
+      );
       expect((content['hero'] as Map)['title'], 'Nieuwe titel');
       // Sibling keys survive the merge.
       expect((content['hero'] as Map)['subtitle'], 'Oude ondertitel');
@@ -252,17 +261,27 @@ void main() {
 
       expect(
         WebsiteContentRepository.readField(
-            'chalet.description.0', 'cabin', content),
+          'chalet.description.0',
+          'cabin',
+          content,
+        ),
         'Eerste alinea',
       );
       expect(
         WebsiteContentRepository.readField(
-            'chalet.experience.1', 'cabin', content),
+          'chalet.experience.1',
+          'cabin',
+          content,
+        ),
         'Sauna',
       );
 
       WebsiteContentRepository.writeField(
-          'chalet.experience.0', 'cabin', content, 'Nieuw');
+        'chalet.experience.0',
+        'cabin',
+        content,
+        'Nieuw',
+      );
       expect((content['experience'] as List)[0], 'Nieuw');
       expect((content['experience'] as List)[1], 'Sauna');
       expect((content['description'] as List)[0], 'Eerste alinea');
@@ -274,11 +293,18 @@ void main() {
       };
       expect(
         WebsiteContentRepository.readField(
-            'practical.header.title', 'page', practical),
+          'practical.header.title',
+          'page',
+          practical,
+        ),
         'Praktisch',
       );
       WebsiteContentRepository.writeField(
-          'practical.header.subtitle', 'page', practical, 'Nieuwe sub');
+        'practical.header.subtitle',
+        'page',
+        practical,
+        'Nieuwe sub',
+      );
       expect((practical['header'] as Map)['subtitle'], 'Nieuwe sub');
       expect((practical['header'] as Map)['title'], 'Praktisch');
 
@@ -290,11 +316,18 @@ void main() {
       final contact = <String, dynamic>{'title': 'T', 'subtitle': 'S'};
       expect(
         WebsiteContentRepository.readField(
-            'contact.subtitle', 'contact_form', contact),
+          'contact.subtitle',
+          'contact_form',
+          contact,
+        ),
         'S',
       );
       WebsiteContentRepository.writeField(
-          'contact.title', 'contact_form', contact, 'Nieuw');
+        'contact.title',
+        'contact_form',
+        contact,
+        'Nieuw',
+      );
       expect(contact['title'], 'Nieuw');
     });
 
@@ -312,7 +345,11 @@ void main() {
       );
 
       WebsiteContentRepository.writeField(
-        'highlights.0', 'page', content, 'Direct de pistes op');
+        'highlights.0',
+        'page',
+        content,
+        'Direct de pistes op',
+      );
       final highlights = content['highlights'] as List;
       expect((highlights[0] as Map)['description'], 'Direct de pistes op');
       // Titles are not touched by the editor.

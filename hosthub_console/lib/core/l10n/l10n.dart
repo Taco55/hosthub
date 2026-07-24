@@ -8154,6 +8154,161 @@ class S {
     );
   }
 
+  /// `Site details`
+  String get siteDetailsSectionTitle {
+    return Intl.message(
+      'Site details',
+      name: 'siteDetailsSectionTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Property name`
+  String get propertyNameLabel {
+    return Intl.message(
+      'Property name',
+      name: 'propertyNameLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Public domain`
+  String get publicDomainLabel {
+    return Intl.message(
+      'Public domain',
+      name: 'publicDomainLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Booking link`
+  String get bookingLinkLabel {
+    return Intl.message(
+      'Booking link',
+      name: 'bookingLinkLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Website languages`
+  String get websiteLanguagesSectionTitle {
+    return Intl.message(
+      'Website languages',
+      name: 'websiteLanguagesSectionTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The languages your public website offers to guests. Add or remove any language.`
+  String get websiteLanguagesFooter {
+    return Intl.message(
+      'The languages your public website offers to guests. Add or remove any language.',
+      name: 'websiteLanguagesFooter',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Add language`
+  String get addLanguageAction {
+    return Intl.message(
+      'Add language',
+      name: 'addLanguageAction',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Remove language`
+  String get removeLanguageTooltip {
+    return Intl.message(
+      'Remove language',
+      name: 'removeLanguageTooltip',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Remove {language}?`
+  String removeLanguageConfirmTitle(String language) {
+    return Intl.message(
+      'Remove $language?',
+      name: 'removeLanguageConfirmTitle',
+      desc: '',
+      args: [language],
+    );
+  }
+
+  /// `Guests can no longer view your website in this language. Saved translations are kept and come back if you re-add it.`
+  String get removeLanguageConfirmMessage {
+    return Intl.message(
+      'Guests can no longer view your website in this language. Saved translations are kept and come back if you re-add it.',
+      name: 'removeLanguageConfirmMessage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Source`
+  String get sourceBadgeLabel {
+    return Intl.message('Source', name: 'sourceBadgeLabel', desc: '', args: []);
+  }
+
+  /// `Same as interface language`
+  String get sameAsInterfaceLanguageTitle {
+    return Intl.message(
+      'Same as interface language',
+      name: 'sameAsInterfaceLanguageTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Write your website in the language your console is set to ({language}).`
+  String sameAsInterfaceLanguageSubtitle(String language) {
+    return Intl.message(
+      'Write your website in the language your console is set to ($language).',
+      name: 'sameAsInterfaceLanguageSubtitle',
+      desc: '',
+      args: [language],
+    );
+  }
+
+  /// `Choose a different language`
+  String get chooseDifferentLanguageTitle {
+    return Intl.message(
+      'Choose a different language',
+      name: 'chooseDifferentLanguageTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Write in a language other than your interface language.`
+  String get chooseDifferentLanguageSubtitle {
+    return Intl.message(
+      'Write in a language other than your interface language.',
+      name: 'chooseDifferentLanguageSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Everything else is AI-translated from your source language on publish. Fields you lock keep your wording.`
+  String get sourceLanguageFooter {
+    return Intl.message(
+      'Everything else is AI-translated from your source language on publish. Fields you lock keep your wording.',
+      name: 'sourceLanguageFooter',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Preferences`
   String get preferencesSectionTitle {
     return Intl.message(

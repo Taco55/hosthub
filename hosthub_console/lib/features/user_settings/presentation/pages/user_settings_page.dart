@@ -22,6 +22,7 @@ import 'package:hosthub_console/features/team/domain/site_invitation.dart';
 import 'package:hosthub_console/features/team/domain/site_member.dart';
 import 'package:hosthub_console/features/team/domain/site_member_role.dart';
 import 'package:hosthub_console/features/team/presentation/dialogs/invite_member_dialog.dart';
+import 'package:hosthub_console/features/user_settings/presentation/widgets/site_settings_sections.dart';
 import 'package:hosthub_console/features/user_settings/user_settings.dart';
 
 const _lodgifyServerStoredMarker = '__lodgify_server_stored__';
@@ -78,6 +79,17 @@ class _UserSettingsView extends StatelessWidget {
             await showAppError(context, appError);
             if (!context.mounted) return;
             context.read<UserSettingsCubit>().clearError();
+          },
+        ),
+        BlocListener<SiteContextCubit, SiteContextState>(
+          listenWhen: (previous, current) =>
+              previous.error != current.error && current.error != null,
+          listener: (context, state) async {
+            final error = state.error;
+            if (error == null) return;
+            await showAppError(context, AppError.fromDomain(context, error));
+            if (!context.mounted) return;
+            context.read<SiteContextCubit>().clearError();
           },
         ),
         BlocListener<UserSettingsCubit, UserSettingsState>(
@@ -175,17 +187,24 @@ class _UserSettingsSection extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
+    // Property-scope website settings (design §5): site details, website
+    // languages and source language. Empty when no site is linked.
+    final siteSections = buildSiteSettingsSections(
+      context,
+      context.watch<SiteContextCubit>().state,
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        ...siteSections,
         StyledSection(
-          isFirstSection: true,
+          isFirstSection: siteSections.isEmpty,
           header: context.s.generalSectionTitle,
           inset: false,
           children: const [
             // Interface language is a personal preference and lives in the
             // profile modal (design §4b); this page is property scope.
-            _SourceLanguageTile(),
             _AppInfoTile(),
           ],
         ),
@@ -485,54 +504,6 @@ class _TeamInvitationsList extends StatelessWidget {
         );
       }).toList(),
     );
-  }
-}
-
-/// Source language of the property website (`sites.default_locale`) — the
-/// language the content is authored in. Moved here from the navigation rail;
-/// disabled when no site is linked or the site is single-language.
-class _SourceLanguageTile extends StatelessWidget {
-  const _SourceLanguageTile();
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<SiteContextCubit, SiteContextState>(
-      builder: (context, state) {
-        final site = state.site;
-        final locales = site?.locales ?? const <String>[];
-        final enabled = site != null && locales.length > 1;
-
-        return StyledSelectionTile<String>.dropdown(
-          title: context.s.sourceLanguageLabel,
-          subtitle: context.s.sourceLanguageDescription,
-          currentValue: site?.defaultLocale,
-          options: locales,
-          enabled: enabled,
-          nullPlaceholder: context.s.sourceLanguageUnavailable,
-          optionLabelBuilder: (value) => _sourceLanguageName(context, value),
-          fieldAutoSize: true,
-          onChanged: (value) {
-            if (value == null || value == site?.defaultLocale) return;
-            context.read<SiteContextCubit>().setSourceLanguage(value);
-          },
-        );
-      },
-    );
-  }
-
-  static String _sourceLanguageName(BuildContext context, String code) {
-    final s = context.s;
-    switch (code) {
-      case 'nl':
-        return s.weLangDutch;
-      case 'en':
-        return s.weLangEnglish;
-      case 'no':
-      case 'nb':
-        return s.weLangNorwegian;
-      default:
-        return code.toUpperCase();
-    }
   }
 }
 

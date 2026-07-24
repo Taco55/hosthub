@@ -60,14 +60,12 @@ class UserSettingsState {
       errorMessage: errorMessage ?? this.errorMessage,
       domainError: clearDomainError ? null : domainError ?? this.domainError,
       toast: clearToast ? null : toast ?? this.toast,
-      missingPropertiesToConfirm:
-          clearMissingProperties
-              ? null
-              : missingPropertiesToConfirm ?? this.missingPropertiesToConfirm,
-      channelPropertiesToReview:
-          clearMissingProperties
-              ? null
-              : channelPropertiesToReview ?? this.channelPropertiesToReview,
+      missingPropertiesToConfirm: clearMissingProperties
+          ? null
+          : missingPropertiesToConfirm ?? this.missingPropertiesToConfirm,
+      channelPropertiesToReview: clearMissingProperties
+          ? null
+          : channelPropertiesToReview ?? this.channelPropertiesToReview,
     );
   }
 

@@ -4,7 +4,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hosthub_console/features/user_settings/domain/current_user_provider.dart';
 
 class CurrentUserProviderSupabase implements CurrentUserProvider {
-  CurrentUserProviderSupabase({required SupabaseClient client}) : _client = client;
+  CurrentUserProviderSupabase({required SupabaseClient client})
+    : _client = client;
 
   final SupabaseClient _client;
 

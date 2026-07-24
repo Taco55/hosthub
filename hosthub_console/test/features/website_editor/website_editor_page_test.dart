@@ -17,8 +17,9 @@ Future<SiteContentCubit> pumpEditor(WidgetTester tester) async {
   await tester.binding.setSurfaceSize(const Size(1360, 880));
   addTearDown(() => tester.binding.setSurfaceSize(null));
 
-  final cubit =
-      SiteContentCubit(translationService: const SeedTranslationService());
+  final cubit = SiteContentCubit(
+    translationService: const SeedTranslationService(),
+  );
   addTearDown(cubit.close);
 
   final lightTheme = HosthubThemePreset.applyMaterialTheme(
@@ -62,8 +63,9 @@ Future<SiteContentCubit> pumpEditor(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('source mode shows the Source chip and the source content',
-      (tester) async {
+  testWidgets('source mode shows the Source chip and the source content', (
+    tester,
+  ) async {
     await pumpEditor(tester);
 
     expect(find.text('Source · NL'), findsOneWidget);
@@ -75,26 +77,28 @@ void main() {
   });
 
   testWidgets(
-      'switching preview locale to EN shows the editable translation form',
-      (tester) async {
-    final cubit = await pumpEditor(tester);
+    'switching preview locale to EN shows the editable translation form',
+    (tester) async {
+      final cubit = await pumpEditor(tester);
 
-    cubit.setPreviewLanguage('en');
-    await tester.pumpAndSettle();
+      cubit.setPreviewLanguage('en');
+      await tester.pumpAndSettle();
 
-    expect(find.text('Editing · EN'), findsOneWidget);
-    // Fields are editable and hold the English values.
-    expect(find.text('Your mountain home in Trysil'), findsWidgets);
-    // Visible fields carry an Auto chip (the editor list is lazy, so only
-    // on-screen fields are built); none is locked.
-    expect(find.text('Auto'), findsWidgets);
-    expect(find.text('Locked'), findsNothing);
-    // Source-reference line shows the NL tag.
-    expect(find.text('NL'), findsWidgets);
-  });
+      expect(find.text('Editing · EN'), findsOneWidget);
+      // Fields are editable and hold the English values.
+      expect(find.text('Your mountain home in Trysil'), findsWidgets);
+      // Visible fields carry an Auto chip (the editor list is lazy, so only
+      // on-screen fields are built); none is locked.
+      expect(find.text('Auto'), findsWidgets);
+      expect(find.text('Locked'), findsNothing);
+      // Source-reference line shows the NL tag.
+      expect(find.text('NL'), findsWidgets);
+    },
+  );
 
-  testWidgets('typing in an auto field flips it to Locked with Reset to AI',
-      (tester) async {
+  testWidgets('typing in an auto field flips it to Locked with Reset to AI', (
+    tester,
+  ) async {
     final cubit = await pumpEditor(tester);
     cubit.setPreviewLanguage('en');
     await tester.pumpAndSettle();
@@ -116,8 +120,9 @@ void main() {
     );
   });
 
-  testWidgets('Reset to AI restores the source-derived auto value',
-      (tester) async {
+  testWidgets('Reset to AI restores the source-derived auto value', (
+    tester,
+  ) async {
     final cubit = await pumpEditor(tester);
     cubit.setPreviewLanguage('en');
     await tester.pumpAndSettle();
@@ -135,8 +140,9 @@ void main() {
     expect(find.text('Locked'), findsNothing);
   });
 
-  testWidgets('preview binds to the selected language and device toggles',
-      (tester) async {
+  testWidgets('preview binds to the selected language and device toggles', (
+    tester,
+  ) async {
     final cubit = await pumpEditor(tester);
 
     // Source preview: browser frame with NL url + content.
@@ -154,8 +160,9 @@ void main() {
     expect(find.text('trysilpanorama.com'), findsOneWidget);
   });
 
-  testWidgets('stale translation shows the warning ribbon; fresh shows draft',
-      (tester) async {
+  testWidgets('stale translation shows the warning ribbon; fresh shows draft', (
+    tester,
+  ) async {
     final cubit = await pumpEditor(tester);
     cubit.setPreviewLanguage('en');
     await tester.pumpAndSettle();
@@ -177,8 +184,9 @@ void main() {
     expect(find.text('Preview latest'), findsWidgets);
   });
 
-  testWidgets('publish modal lists all languages with correct status chips',
-      (tester) async {
+  testWidgets('publish modal lists all languages with correct status chips', (
+    tester,
+  ) async {
     final cubit = await pumpEditor(tester);
     cubit.editSourceField('hero.headline', 'Nieuwe titel');
     await tester.pumpAndSettle();

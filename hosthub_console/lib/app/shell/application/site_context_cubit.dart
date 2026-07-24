@@ -9,43 +9,82 @@ import 'package:hosthub_console/features/properties/properties.dart';
 
 enum SiteContextStatus { initial, loading, loaded, error }
 
+/// Language codes a site can offer, mirroring the design handoff catalog.
+/// Adding one here makes it appear in Settings → "Add language".
+const List<String> kSiteLanguageCatalog = [
+  'nl', 'en', 'no', 'de', 'fr', 'sv', 'da', 'es', 'it', 'pl', 'fi', //
+];
+
 /// The site belonging to the currently selected property, resolved with the
-/// same name-matching the sites page uses. Exposes the site's source language
-/// (`default_locale`) for the rail's source-language switcher.
+/// same name-matching the sites page uses. Owns the property-scope site
+/// settings shown on the Settings page: source language (`default_locale` +
+/// the follows-interface switch), the enabled website languages, and the
+/// site-details values (name, primary domain, booking link).
 class SiteContextState extends Equatable {
   const SiteContextState({
     this.status = SiteContextStatus.initial,
     this.site,
+    this.primaryDomain,
+    this.bookingUrl,
     this.error,
   });
 
   final SiteContextStatus status;
   final SiteSummary? site;
+
+  /// Primary public domain (`site_domains.is_primary`), null when unset.
+  final String? primaryDomain;
+
+  /// Booking link from the site-config content, shared across languages.
+  final String? bookingUrl;
+
   final DomainError? error;
+
+  /// Catalog languages the site does not offer yet (Settings → Add language).
+  List<String> get addableLanguages {
+    final enabled = site?.locales ?? const <String>[];
+    return [
+      for (final code in kSiteLanguageCatalog)
+        if (!enabled.contains(code)) code,
+    ];
+  }
 
   SiteContextState copyWith({
     SiteContextStatus? status,
     SiteSummary? site,
+    String? primaryDomain,
+    String? bookingUrl,
     DomainError? error,
     bool clearError = false,
-  }) =>
-      SiteContextState(
-        status: status ?? this.status,
-        site: site ?? this.site,
-        error: clearError ? null : (error ?? this.error),
-      );
+  }) => SiteContextState(
+    status: status ?? this.status,
+    site: site ?? this.site,
+    primaryDomain: primaryDomain ?? this.primaryDomain,
+    bookingUrl: bookingUrl ?? this.bookingUrl,
+    error: clearError ? null : (error ?? this.error),
+  );
 
   @override
-  List<Object?> get props => [status, site?.id, site?.defaultLocale, error];
+  List<Object?> get props => [
+    status,
+    site?.id,
+    site?.name,
+    site?.defaultLocale,
+    site?.locales,
+    site?.sourceLocaleFollowsUi,
+    primaryDomain,
+    bookingUrl,
+    error,
+  ];
 }
 
 class SiteContextCubit extends Cubit<SiteContextState> {
   SiteContextCubit({
     required CmsRepository cmsRepository,
     required PropertyContextCubit propertyContext,
-  })  : _cmsRepository = cmsRepository,
-        _propertyContext = propertyContext,
-        super(const SiteContextState()) {
+  }) : _cmsRepository = cmsRepository,
+       _propertyContext = propertyContext,
+       super(const SiteContextState()) {
     _propertySub = _propertyContext.stream.listen((_) => resolve());
     resolve();
   }
@@ -66,10 +105,29 @@ class SiteContextCubit extends Cubit<SiteContextState> {
         return;
       }
       final property = _propertyContext.state.currentProperty;
+      final site = _resolvePreferredSite(sites, property?.name);
+
+      String? primaryDomain;
+      String? bookingUrl;
+      try {
+        final results = await Future.wait([
+          _cmsRepository.fetchPrimaryDomain(site.id),
+          _fetchBookingUrl(site),
+        ]);
+        primaryDomain = results[0];
+        bookingUrl = results[1];
+      } on DomainError {
+        // Site details are decorative on the Settings page; the site context
+        // itself (source language, locales) must survive their failure.
+      }
+      if (seq != _fetchSeq) return;
+
       emit(
         SiteContextState(
           status: SiteContextStatus.loaded,
-          site: _resolvePreferredSite(sites, property?.name),
+          site: site,
+          primaryDomain: primaryDomain,
+          bookingUrl: bookingUrl,
         ),
       );
     } catch (error, stack) {
@@ -87,9 +145,128 @@ class SiteContextCubit extends Cubit<SiteContextState> {
   Future<void> setSourceLanguage(String locale) async {
     final site = state.site;
     if (site == null || site.defaultLocale == locale) return;
-    try {
+    await _guard(() async {
       await _cmsRepository.updateSiteDefaultLocale(site.id, locale);
       await resolve();
+    });
+  }
+
+  /// Toggles "Same as interface language". Turning it on immediately aligns
+  /// the source language with [interfaceLanguage] when the site offers it.
+  Future<void> setSourceFollowsUi(
+    bool follows, {
+    required String interfaceLanguage,
+  }) async {
+    final site = state.site;
+    if (site == null || site.sourceLocaleFollowsUi == follows) return;
+    await _guard(() async {
+      await _cmsRepository.updateSiteSourceFollowsUi(site.id, follows);
+      if (follows &&
+          site.locales.contains(interfaceLanguage) &&
+          site.defaultLocale != interfaceLanguage) {
+        await _cmsRepository.updateSiteDefaultLocale(
+          site.id,
+          interfaceLanguage,
+        );
+      }
+      await resolve();
+    });
+  }
+
+  /// Re-syncs the source language after an explicit interface-language change
+  /// (profile modal). Deliberately NOT wired to passive locale emissions
+  /// (startup, settings bootstrap): a teammate merely logging in with another
+  /// interface language must never flip the property's source language.
+  Future<void> followInterfaceLanguage(String interfaceLanguage) async {
+    final site = state.site;
+    if (site == null ||
+        !site.sourceLocaleFollowsUi ||
+        !site.locales.contains(interfaceLanguage) ||
+        site.defaultLocale == interfaceLanguage) {
+      return;
+    }
+    await _guard(() async {
+      await _cmsRepository.updateSiteDefaultLocale(site.id, interfaceLanguage);
+      await resolve();
+    });
+  }
+
+  /// Adds a catalog language to the site's enabled website languages.
+  Future<void> addLanguage(String code) async {
+    final site = state.site;
+    if (site == null || site.locales.contains(code)) return;
+    await _guard(() async {
+      await _cmsRepository.updateSiteLocales(site.id, [...site.locales, code]);
+      await resolve();
+    });
+  }
+
+  /// Removes an enabled language. The source language cannot be removed.
+  /// Stored translations are kept, so re-adding the language restores them.
+  Future<void> removeLanguage(String code) async {
+    final site = state.site;
+    if (site == null ||
+        code == site.defaultLocale ||
+        !site.locales.contains(code)) {
+      return;
+    }
+    await _guard(() async {
+      await _cmsRepository.updateSiteLocales(site.id, [
+        for (final locale in site.locales)
+          if (locale != code) locale,
+      ]);
+      await resolve();
+    });
+  }
+
+  /// Renames the property/site (Settings → Site details).
+  Future<void> setSiteName(String name) async {
+    final site = state.site;
+    final trimmed = name.trim();
+    if (site == null || trimmed.isEmpty || site.name == trimmed) return;
+    await _guard(() async {
+      await _cmsRepository.updateSiteName(site.id, trimmed);
+      await resolve();
+    });
+  }
+
+  /// Updates the booking link in every language's site-config document — the
+  /// link is shared infrastructure, not translated content.
+  Future<void> setBookingUrl(String url) async {
+    final site = state.site;
+    final trimmed = url.trim();
+    if (site == null || trimmed == (state.bookingUrl ?? '')) return;
+    await _guard(() async {
+      final docs = await _cmsRepository.fetchSiteDocuments(
+        siteId: site.id,
+        contentType: 'site_config',
+      );
+      for (final doc in docs) {
+        await _cmsRepository.updateDocumentContent(
+          documentId: doc.id,
+          content: {...doc.content, 'bookingUrl': trimmed},
+        );
+      }
+      await resolve();
+    });
+  }
+
+  void clearError() => emit(state.copyWith(clearError: true));
+
+  Future<String?> _fetchBookingUrl(SiteSummary site) async {
+    final docs = await _cmsRepository.fetchSiteDocuments(
+      siteId: site.id,
+      locale: site.defaultLocale,
+      contentType: 'site_config',
+    );
+    if (docs.isEmpty) return null;
+    final value = docs.first.content['bookingUrl'];
+    return value is String && value.trim().isNotEmpty ? value.trim() : null;
+  }
+
+  Future<void> _guard(Future<void> Function() action) async {
+    try {
+      await action();
     } catch (error, stack) {
       emit(
         state.copyWith(

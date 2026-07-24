@@ -60,17 +60,18 @@ void main() {
       ),
     );
 
-    final circleDots = tester.widgetList<Container>(find.byType(Container)).where(
-      (c) {
-        final d = c.decoration;
-        return d is BoxDecoration && d.shape == BoxShape.circle;
-      },
-    );
+    final circleDots = tester
+        .widgetList<Container>(find.byType(Container))
+        .where((c) {
+          final d = c.decoration;
+          return d is BoxDecoration && d.shape == BoxShape.circle;
+        });
     expect(circleDots, isEmpty);
   });
 
-  testWidgets('mobile renders a phone bezel + host, no address bar',
-      (tester) async {
+  testWidgets('mobile renders a phone bezel + host, no address bar', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(

@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
 import 'package:hosthub_console/app/shell/application/sidebar_mode_cubit.dart';
+import 'package:hosthub_console/app/shell/application/site_context_cubit.dart';
 import 'package:hosthub_console/app/shell/presentation/dialogs/own_profile_dialog.dart';
 import 'package:hosthub_console/core/l10n/application/language_cubit.dart';
 import 'package:hosthub_console/core/l10n/l10n.dart';
@@ -36,13 +37,31 @@ class _FakeUserSettingsCubit extends Cubit<UserSettingsState>
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class _FakeSiteContextCubit extends Cubit<SiteContextState>
+    implements SiteContextCubit {
+  _FakeSiteContextCubit() : super(const SiteContextState());
+
+  final List<String> followCalls = [];
+
+  @override
+  Future<void> followInterfaceLanguage(String interfaceLanguage) async {
+    followCalls.add(interfaceLanguage);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 const _profile = Profile(id: 'p1', email: 'marta@trysilpanorama.com');
 
 Future<
-    ({
-      _FakeUserSettingsCubit userSettings,
-      SidebarModeCubit sidebarMode,
-    })> pumpProfileDialog(
+  ({
+    _FakeUserSettingsCubit userSettings,
+    SidebarModeCubit sidebarMode,
+    _FakeSiteContextCubit siteContext,
+  })
+>
+pumpProfileDialog(
   WidgetTester tester, {
   Size surface = const Size(1360, 880),
 }) async {
@@ -59,10 +78,12 @@ Future<
   final userSettingsCubit = _FakeUserSettingsCubit();
   final languageCubit = LanguageCubit();
   final sidebarModeCubit = SidebarModeCubit();
+  final siteContextCubit = _FakeSiteContextCubit();
   addTearDown(profileCubit.close);
   addTearDown(userSettingsCubit.close);
   addTearDown(languageCubit.close);
   addTearDown(sidebarModeCubit.close);
+  addTearDown(siteContextCubit.close);
 
   final lightTheme = HosthubThemePreset.applyMaterialTheme(
     baseTheme: ThemeData.light(),
@@ -79,6 +100,7 @@ Future<
         BlocProvider<UserSettingsCubit>.value(value: userSettingsCubit),
         BlocProvider<LanguageCubit>.value(value: languageCubit),
         BlocProvider<SidebarModeCubit>.value(value: sidebarModeCubit),
+        BlocProvider<SiteContextCubit>.value(value: siteContextCubit),
       ],
       child: MaterialApp(
         theme: lightTheme,
@@ -106,23 +128,30 @@ Future<
   await tester.tap(find.text('open'));
   await tester.pumpAndSettle();
 
-  return (userSettings: userSettingsCubit, sidebarMode: sidebarModeCubit);
+  return (
+    userSettings: userSettingsCubit,
+    sidebarMode: sidebarModeCubit,
+    siteContext: siteContextCubit,
+  );
 }
 
 void main() {
   testWidgets(
-      'profile modal shows a Preferences section with the interface-language '
-      'dropdown and the compact-side-menu switch on desktop', (tester) async {
-    await pumpProfileDialog(tester);
+    'profile modal shows a Preferences section with the interface-language '
+    'dropdown and the compact-side-menu switch on desktop',
+    (tester) async {
+      await pumpProfileDialog(tester);
 
-    expect(find.text('Preferences'), findsOneWidget);
-    expect(find.text('Interface language'), findsOneWidget);
-    expect(find.text('Compact side menu'), findsOneWidget);
-    expect(find.byType(StyledSwitchTile), findsOneWidget);
-  });
+      expect(find.text('Preferences'), findsOneWidget);
+      expect(find.text('Interface language'), findsOneWidget);
+      expect(find.text('Compact side menu'), findsOneWidget);
+      expect(find.byType(StyledSwitchTile), findsOneWidget);
+    },
+  );
 
-  testWidgets('compact-side-menu switch drives SidebarModeCubit',
-      (tester) async {
+  testWidgets('compact-side-menu switch drives SidebarModeCubit', (
+    tester,
+  ) async {
     final cubits = await pumpProfileDialog(tester);
     expect(cubits.sidebarMode.state, StyledSideMenuMode.expanded);
 
@@ -138,23 +167,29 @@ void main() {
 
     // Open the dropdown on the interface-language tile and pick Dutch.
     await tester.tap(
-      find.descendant(
-        of: find.byType(StyledSelectionTile<String>),
-        matching: find.byType(GestureDetector),
-      ).first,
+      find
+          .descendant(
+            of: find.byType(StyledSelectionTile<String>),
+            matching: find.byType(GestureDetector),
+          )
+          .first,
     );
     await tester.pumpAndSettle();
     await tester.tap(find.text('NL').last);
     await tester.pumpAndSettle();
 
     expect(cubits.userSettings.languageChanges, ['nl']);
+    // The explicit change also offers the site a follow-sync opportunity.
+    expect(cubits.siteContext.followCalls, ['nl']);
   });
 
-  testWidgets('compact-side-menu switch is hidden below the desktop breakpoint',
-      (tester) async {
-    await pumpProfileDialog(tester, surface: const Size(900, 800));
+  testWidgets(
+    'compact-side-menu switch is hidden below the desktop breakpoint',
+    (tester) async {
+      await pumpProfileDialog(tester, surface: const Size(900, 800));
 
-    expect(find.text('Preferences'), findsOneWidget);
-    expect(find.text('Compact side menu'), findsNothing);
-  });
+      expect(find.text('Preferences'), findsOneWidget);
+      expect(find.text('Compact side menu'), findsNothing);
+    },
+  );
 }

@@ -16,46 +16,55 @@ EdgeFunctionTranslationService buildService(EdgeFunctionInvoke invoke) {
 }
 
 void main() {
-  test('sends the TRANSLATION.md payload shape and maps the response',
-      () async {
-    late String calledName;
-    late Map<String, dynamic> calledBody;
-    final service = buildService((name, {body}) async {
-      calledName = name;
-      calledBody = body!;
-      return FunctionResponse(status: 200, data: {
-        'translations': [
-          {'key': 'hero.headline', 'language': 'en', 'value': 'Your home'},
-          {'key': 'hero.subtitle', 'language': 'en', 'value': 'Ski-in luxury'},
-          // Other-language rows must be ignored.
-          {'key': 'hero.headline', 'language': 'no', 'value': 'Ditt hjem'},
-        ],
+  test(
+    'sends the TRANSLATION.md payload shape and maps the response',
+    () async {
+      late String calledName;
+      late Map<String, dynamic> calledBody;
+      final service = buildService((name, {body}) async {
+        calledName = name;
+        calledBody = body!;
+        return FunctionResponse(
+          status: 200,
+          data: {
+            'translations': [
+              {'key': 'hero.headline', 'language': 'en', 'value': 'Your home'},
+              {
+                'key': 'hero.subtitle',
+                'language': 'en',
+                'value': 'Ski-in luxury',
+              },
+              // Other-language rows must be ignored.
+              {'key': 'hero.headline', 'language': 'no', 'value': 'Ditt hjem'},
+            ],
+          },
+        );
       });
-    });
 
-    final result = await service.translateFields(
-      sourceLanguage: 'nl',
-      targetLanguage: 'en',
-      sourceFields: {
-        'hero.headline': 'Jouw bergwoning',
-        'hero.subtitle': 'Ski-in luxe',
-      },
-    );
+      final result = await service.translateFields(
+        sourceLanguage: 'nl',
+        targetLanguage: 'en',
+        sourceFields: {
+          'hero.headline': 'Jouw bergwoning',
+          'hero.subtitle': 'Ski-in luxe',
+        },
+      );
 
-    expect(calledName, 'translate-content');
-    expect(calledBody['siteId'], 'site-1');
-    expect(calledBody['page'], 'home');
-    expect(calledBody['sourceLanguage'], 'nl');
-    expect(calledBody['targetLanguages'], ['en']);
-    expect(calledBody['fields'], [
-      {'key': 'hero.headline', 'sourceText': 'Jouw bergwoning'},
-      {'key': 'hero.subtitle', 'sourceText': 'Ski-in luxe'},
-    ]);
-    expect(result, {
-      'hero.headline': 'Your home',
-      'hero.subtitle': 'Ski-in luxury',
-    });
-  });
+      expect(calledName, 'translate-content');
+      expect(calledBody['siteId'], 'site-1');
+      expect(calledBody['page'], 'home');
+      expect(calledBody['sourceLanguage'], 'nl');
+      expect(calledBody['targetLanguages'], ['en']);
+      expect(calledBody['fields'], [
+        {'key': 'hero.headline', 'sourceText': 'Jouw bergwoning'},
+        {'key': 'hero.subtitle', 'sourceText': 'Ski-in luxe'},
+      ]);
+      expect(result, {
+        'hero.headline': 'Your home',
+        'hero.subtitle': 'Ski-in luxury',
+      });
+    },
+  );
 
   test('returns empty without calling the function for empty input', () async {
     var called = false;
@@ -76,9 +85,10 @@ void main() {
 
   test('wraps function failures in a DomainError', () async {
     final service = buildService((name, {body}) async {
-      throw const FunctionException(status: 403, details: {
-        'error': 'insufficient_permissions',
-      });
+      throw const FunctionException(
+        status: 403,
+        details: {'error': 'insufficient_permissions'},
+      );
     });
 
     await expectLater(

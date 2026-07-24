@@ -11,6 +11,7 @@ class SiteSummary {
     required this.locales,
     required this.timezone,
     required this.createdAt,
+    this.sourceLocaleFollowsUi = false,
     this.contactEmail,
     this.emailFromName,
     this.lodgifyPropertyId,
@@ -23,6 +24,11 @@ class SiteSummary {
   final List<String> locales;
   final String timezone;
   final DateTime createdAt;
+
+  /// When true the source language follows the owner's interface language
+  /// ("Same as interface language" in Settings); `defaultLocale` stays the
+  /// persisted source of truth and is re-synced on explicit user actions.
+  final bool sourceLocaleFollowsUi;
 
   // Per-site website config (see migration 20260723120000). Nullable: the public
   // site falls back to worker env when unset.
@@ -43,6 +49,7 @@ class SiteSummary {
           [],
       timezone: map['timezone'] as String,
       createdAt: DateTime.parse(map['created_at'] as String),
+      sourceLocaleFollowsUi: map['source_locale_follows_ui'] as bool? ?? false,
       contactEmail: map['contact_email'] as String?,
       emailFromName: map['email_from_name'] as String?,
       lodgifyPropertyId: map['lodgify_property_id'] as String?,
@@ -168,6 +175,7 @@ class CmsRepository extends SupabaseRepository {
           .from('sites')
           .select(
             'id, name, default_locale, locales, timezone, created_at, '
+            'source_locale_follows_ui, '
             'contact_email, email_from_name, lodgify_property_id, lodgify_room_type_id',
           )
           .order('created_at', ascending: false);
@@ -190,6 +198,7 @@ class CmsRepository extends SupabaseRepository {
           .from('sites')
           .select(
             'id, name, default_locale, locales, timezone, created_at, '
+            'source_locale_follows_ui, '
             'contact_email, email_from_name, lodgify_property_id, lodgify_room_type_id',
           )
           .eq('id', siteId)
@@ -254,6 +263,55 @@ class CmsRepository extends SupabaseRepository {
     }
   }
 
+  /// Replaces the site's enabled website languages (`sites.locales`).
+  Future<void> updateSiteLocales(String siteId, List<String> locales) async {
+    try {
+      await supabase
+          .from('sites')
+          .update({'locales': locales})
+          .eq('id', siteId);
+    } catch (error, stack) {
+      throw mapError(
+        error,
+        stack,
+        reason: DomainErrorReason.cannotSaveData,
+        context: {'op': 'updateSiteLocales', 'siteId': siteId},
+      );
+    }
+  }
+
+  /// Renames the site (the property display name on the public website).
+  Future<void> updateSiteName(String siteId, String name) async {
+    try {
+      await supabase.from('sites').update({'name': name}).eq('id', siteId);
+    } catch (error, stack) {
+      throw mapError(
+        error,
+        stack,
+        reason: DomainErrorReason.cannotSaveData,
+        context: {'op': 'updateSiteName', 'siteId': siteId},
+      );
+    }
+  }
+
+  /// Toggles whether the source language follows the owner's interface
+  /// language (see [SiteSummary.sourceLocaleFollowsUi]).
+  Future<void> updateSiteSourceFollowsUi(String siteId, bool follows) async {
+    try {
+      await supabase
+          .from('sites')
+          .update({'source_locale_follows_ui': follows})
+          .eq('id', siteId);
+    } catch (error, stack) {
+      throw mapError(
+        error,
+        stack,
+        reason: DomainErrorReason.cannotSaveData,
+        context: {'op': 'updateSiteSourceFollowsUi', 'siteId': siteId},
+      );
+    }
+  }
+
   Future<void> createSite({
     required String name,
     required String defaultLocale,
@@ -277,6 +335,8 @@ class CmsRepository extends SupabaseRepository {
             'default_locale': defaultLocale,
             'locales': locales,
             'timezone': timezone,
+            // Design default: a fresh site authors in the owner's language.
+            'source_locale_follows_ui': true,
           })
           .select('id')
           .single();

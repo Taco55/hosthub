@@ -28,9 +28,13 @@ void main() {
         }
       }
     }
-    expect(offenders, isEmpty,
-        reason: 'Colours must come from ColorScheme / WebsiteStatusColors:\n'
-            '${offenders.join('\n')}');
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'Colours must come from ColorScheme / WebsiteStatusColors:\n'
+          '${offenders.join('\n')}',
+    );
   });
 
   test('no raw BoxDecoration containers doing card/chip chrome', () {
@@ -49,9 +53,13 @@ void main() {
         offenders.add(file.path);
       }
     }
-    expect(offenders, isEmpty,
-        reason: 'Card/shadow chrome must be a StyledWidgets component:\n'
-            '${offenders.join('\n')}');
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'Card/shadow chrome must be a StyledWidgets component:\n'
+          '${offenders.join('\n')}',
+    );
   });
 
   test('user-facing Text() strings resolve through S (context.s)', () {
@@ -65,14 +73,20 @@ void main() {
       final lines = File(file.path).readAsLinesSync();
       for (var i = 0; i < lines.length; i++) {
         final line = lines[i];
-        final match = RegExp("Text\\(\\s*'([^']*[A-Za-z]{2,}[^']*)'").hasMatch(line);
+        final match = RegExp(
+          "Text\\(\\s*'([^']*[A-Za-z]{2,}[^']*)'",
+        ).hasMatch(line);
         if (match && !line.contains('// non-localized')) {
           offenders.add('${file.path}:${i + 1}: ${line.trim()}');
         }
       }
     }
-    expect(offenders, isEmpty,
-        reason: 'User-facing strings must come from the ARB files:\n'
-            '${offenders.join('\n')}');
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'User-facing strings must come from the ARB files:\n'
+          '${offenders.join('\n')}',
+    );
   });
 }

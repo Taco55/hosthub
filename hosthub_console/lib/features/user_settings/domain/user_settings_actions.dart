@@ -13,10 +13,7 @@ enum UserSettingsToastMessage {
 }
 
 class UserSettingsToast {
-  const UserSettingsToast({
-    required this.type,
-    required this.message,
-  });
+  const UserSettingsToast({required this.type, required this.message});
 
   final UserSettingsToastType type;
   final UserSettingsToastMessage message;

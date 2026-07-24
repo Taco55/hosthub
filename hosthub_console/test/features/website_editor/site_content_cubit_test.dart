@@ -71,22 +71,24 @@ void main() {
       expect(cubit.state.isLanguageStale('no'), isTrue);
     });
 
-    test('resetFieldToAi reverts a locked field to source-derived auto',
-        () async {
-      final cubit = build();
-      cubit.editTranslationField('en', 'hero.headline', 'Manual override');
-      expect(
-        cubit.state.translatedField('en', 'hero.headline')!.status,
-        FieldTranslationStatus.locked,
-      );
+    test(
+      'resetFieldToAi reverts a locked field to source-derived auto',
+      () async {
+        final cubit = build();
+        cubit.editTranslationField('en', 'hero.headline', 'Manual override');
+        expect(
+          cubit.state.translatedField('en', 'hero.headline')!.status,
+          FieldTranslationStatus.locked,
+        );
 
-      await cubit.resetFieldToAi('en', 'hero.headline');
+        await cubit.resetFieldToAi('en', 'hero.headline');
 
-      final field = cubit.state.translatedField('en', 'hero.headline')!;
-      expect(field.status, FieldTranslationStatus.auto);
-      expect(field.value, 'Your mountain home in Trysil');
-      expect(cubit.state.isFieldStale('en', 'hero.headline'), isFalse);
-    });
+        final field = cubit.state.translatedField('en', 'hero.headline')!;
+        expect(field.status, FieldTranslationStatus.auto);
+        expect(field.value, 'Your mountain home in Trysil');
+        expect(cubit.state.isFieldStale('en', 'hero.headline'), isFalse);
+      },
+    );
 
     test('publishAll clears dirty and stale for all languages', () async {
       final cubit = build();
@@ -121,10 +123,14 @@ void main() {
         cubit.state.fields.map((f) => f.key),
         containsAll(<String>['chalet.description.0', 'chalet.experience.0']),
       );
-      expect(cubit.state.valueFor('nl', 'chalet.experience.0'),
-          'Ski-in/ski-out via de transportpiste.');
-      expect(cubit.state.valueFor('en', 'chalet.experience.0'),
-          'Ski-in/ski-out via the transport track.');
+      expect(
+        cubit.state.valueFor('nl', 'chalet.experience.0'),
+        'Ski-in/ski-out via de transportpiste.',
+      );
+      expect(
+        cubit.state.valueFor('en', 'chalet.experience.0'),
+        'Ski-in/ski-out via the transport track.',
+      );
     });
 
     test('publish scope covers fields of every page', () async {
@@ -169,10 +175,14 @@ void main() {
       // the insertion point before removal).
       cubit.reorderHighlights(0, 2);
 
-      expect(cubit.state.valueFor('nl', 'highlights.0'),
-          'Ontspan na een dag op de berg.');
-      expect(cubit.state.valueFor('nl', 'highlights.1'),
-          'Direct de Trysilfjellet-pistes op.');
+      expect(
+        cubit.state.valueFor('nl', 'highlights.0'),
+        'Ontspan na een dag op de berg.',
+      );
+      expect(
+        cubit.state.valueFor('nl', 'highlights.1'),
+        'Direct de Trysilfjellet-pistes op.',
+      );
       // The locked EN translation moved along with its row.
       final moved = cubit.state.translatedField('en', 'highlights.1')!;
       expect(moved.value, 'Locked first');

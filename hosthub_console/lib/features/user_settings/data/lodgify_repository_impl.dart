@@ -18,11 +18,7 @@ class LodgifyRepositoryImpl implements LodgifyRepository {
     DateTime? start,
     DateTime? end,
   }) {
-    return _lodgifyService.fetchCalendar(
-      propertyId,
-      start: start,
-      end: end,
-    );
+    return _lodgifyService.fetchCalendar(propertyId, start: start, end: end);
   }
 
   @override
