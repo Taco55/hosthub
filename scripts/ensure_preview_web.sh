@@ -16,6 +16,13 @@ WAIT_SECONDS="${PREVIEW_WEB_WAIT_SECONDS:-60}"
 READY_STREAK_REQUIRED="${PREVIEW_WEB_READY_STREAK:-2}"
 HOLD_MODE="${PREVIEW_WEB_HOLD:-0}"
 HOLD_INTERVAL_SECONDS="${PREVIEW_WEB_HOLD_INTERVAL_SECONDS:-5}"
+# Next.js dev-mode renders of /preview/<locale> routinely take 2-4s (see log),
+# so the health probe needs a generous timeout to avoid false negatives.
+HEALTH_CONNECT_TIMEOUT="${PREVIEW_WEB_HEALTH_CONNECT_TIMEOUT:-2}"
+HEALTH_MAX_TIME="${PREVIEW_WEB_HEALTH_MAX_TIME:-20}"
+# How many consecutive failed probes (with the port already gone) before the
+# hold loop decides the server is really down.
+HOLD_FAILURE_THRESHOLD="${PREVIEW_WEB_HOLD_FAILURE_THRESHOLD:-3}"
 PID_FILE="${REPO_ROOT}/.tmp/preview-web.pid"
 LOG_FILE="${REPO_ROOT}/.tmp/preview-web.log"
 DISPLAY_URL="http://${DISPLAY_HOST}:${PORT}${HEALTH_PATH}"
@@ -41,7 +48,7 @@ listening_pids() {
 }
 
 is_display_healthy() {
-  curl -fs -o /dev/null --connect-timeout 1 --max-time 3 "${DISPLAY_URL}" >/dev/null 2>&1
+  curl -fs -o /dev/null --connect-timeout "${HEALTH_CONNECT_TIMEOUT}" --max-time "${HEALTH_MAX_TIME}" "${DISPLAY_URL}" >/dev/null 2>&1
 }
 
 is_healthy_on_any_loopback() {
@@ -51,7 +58,7 @@ is_healthy_on_any_loopback() {
     "http://localhost:${PORT}${HEALTH_PATH}" \
     "http://127.0.0.1:${PORT}${HEALTH_PATH}" \
     "http://[::1]:${PORT}${HEALTH_PATH}"; do
-    if curl -fs -o /dev/null --connect-timeout 1 --max-time 3 "${health_url}" >/dev/null 2>&1; then
+    if curl -fs -o /dev/null --connect-timeout "${HEALTH_CONNECT_TIMEOUT}" --max-time "${HEALTH_MAX_TIME}" "${health_url}" >/dev/null 2>&1; then
       return 0
     fi
   done
@@ -71,11 +78,21 @@ hold_forever() {
   fi
 
   echo "Holding local preview task open (VS Code background mode)."
+  local failures=0
   while true; do
-    if ! is_display_healthy; then
-      echo "Preview website became unreachable on ${DISPLAY_URL} while holding task open." >&2
-      print_debug_context
-      exit 1
+    if is_display_healthy; then
+      failures=0
+    elif is_listening; then
+      # The server is still bound to the port; a failed probe here just means a
+      # slow dev-mode render/compile exceeded the timeout, not that it is down.
+      failures=0
+    else
+      failures=$((failures + 1))
+      if (( failures >= HOLD_FAILURE_THRESHOLD )); then
+        echo "Preview website became unreachable on ${DISPLAY_URL} while holding task open." >&2
+        print_debug_context
+        exit 1
+      fi
     fi
     sleep "${HOLD_INTERVAL_SECONDS}"
   done

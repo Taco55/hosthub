@@ -69,7 +69,7 @@ function parseAcceptLanguage(header: string | null): Locale | undefined {
   return undefined;
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   if (shouldSkipPath(pathname)) {
     return NextResponse.next();
