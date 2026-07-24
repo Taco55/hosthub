@@ -423,6 +423,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "coin": MessageLookupByLibrary.simpleMessage("Munt"),
     "coins": MessageLookupByLibrary.simpleMessage("Munten"),
     "column": MessageLookupByLibrary.simpleMessage("Kolom"),
+    "compactSideMenuDescription": MessageLookupByLibrary.simpleMessage(
+      "Klap de zijbalk in tot iconen.",
+    ),
+    "compactSideMenuTitle": MessageLookupByLibrary.simpleMessage(
+      "Compact zijmenu",
+    ),
     "company": MessageLookupByLibrary.simpleMessage("Bedrijf"),
     "compass": MessageLookupByLibrary.simpleMessage("Kompas"),
     "computer": MessageLookupByLibrary.simpleMessage("Computer"),
@@ -830,6 +836,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "indicator": MessageLookupByLibrary.simpleMessage("Indicator"),
     "ingredients": MessageLookupByLibrary.simpleMessage("Ingrediënten"),
     "insect": MessageLookupByLibrary.simpleMessage("Insect"),
+    "interfaceLanguageDescription": MessageLookupByLibrary.simpleMessage(
+      "De taal waarin de HostHub-console wordt getoond. Persoonlijk voor jou.",
+    ),
+    "interfaceLanguageTitle": MessageLookupByLibrary.simpleMessage(
+      "Interfacetaal",
+    ),
     "internet": MessageLookupByLibrary.simpleMessage("Internet"),
     "invalidMaxItems": MessageLookupByLibrary.simpleMessage(
       "Voer een geldig aantal items in.",
@@ -1257,6 +1269,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "position": MessageLookupByLibrary.simpleMessage("Positie"),
     "preferPasswordSignIn": MessageLookupByLibrary.simpleMessage(
       "Liever inloggen met een wachtwoord?",
+    ),
+    "preferencesSectionTitle": MessageLookupByLibrary.simpleMessage(
+      "Voorkeuren",
     ),
     "premium": MessageLookupByLibrary.simpleMessage("Premium"),
     "present": MessageLookupByLibrary.simpleMessage("Cadeau"),

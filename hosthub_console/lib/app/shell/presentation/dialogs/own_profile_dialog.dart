@@ -2,11 +2,17 @@ import 'package:flutter/material.dart';
 
 import 'package:app_errors/app_errors.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_localized_locales/flutter_localized_locales.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
+import 'package:hosthub_console/core/l10n/application/language_cubit.dart';
+import 'package:hosthub_console/core/l10n/l10n.dart';
 import 'package:hosthub_console/core/models/models.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:hosthub_console/features/profile/profile.dart';
+import 'package:hosthub_console/features/user_settings/application/user_settings_cubit.dart';
+
+import '../../application/sidebar_mode_cubit.dart';
 
 Future<void> showOwnProfileDialog(
   BuildContext context, {
@@ -28,285 +34,291 @@ Future<void> showOwnProfileDialog(
       ? profile.username!
       : profile.email;
 
-  try {
-    await showStyledModal<void>(
-      context,
-      title: displayName,
-      presentation: StyledModalPresentation.dialog,
-      isDismissible: false,
-      dialogMinWidth: 480,
-      dialogMaxWidth: 480,
-      bodyMinHeight: 400,
-      enableBodyScroll: true,
-      contentPadding: EdgeInsets.zero,
-      steps: StyledModalSteps(
-        children: [
-          // ----- Root: Profile overview + menu -----
-          StyledModalStep(
-            builder: (ctx, flow) {
-              final liveProfile =
-                  ctx.watch<ProfileCubit>().state.profile ?? profile;
-              final chips = _buildAccountChips(ctx, liveProfile);
+  // Evaluated with the page context: inside the dialog the MediaQuery is
+  // narrowed to the dialog width, so the desktop check would always fail.
+  final isDesktopShell = ResponsiveSideMenuScaffold.isPinned(
+    context,
+    ResponsiveSideMenuScaffold.defaultBreakpoint,
+  );
 
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  StyledSection(
-                    isFirstSection: true,
-                    inset: false,
-                    horizontalPadding: 24,
-                    showDividers: false,
-                    children: [
-                      const SizedBox(height: 8),
-                      CircleAvatar(
-                        radius: 32,
-                        backgroundColor: ctx.theme.colorScheme.primary
-                            .withValues(alpha: 0.1),
-                        child: Text(
-                          _profileInitial(liveProfile),
-                          style: ctx.theme.textTheme.headlineSmall?.copyWith(
-                            color: ctx.theme.colorScheme.primary,
-                            fontWeight: FontWeight.w700,
-                          ),
+  // NOTE: the field controllers are intentionally not disposed after the
+  // modal future resolves — that future completes before the dismiss
+  // animation finishes, and the exit relayout would hit a disposed
+  // controller. GC reclaims them (see the styled-widgets modal guide).
+  await showStyledModal<void>(
+    context,
+    title: displayName,
+    presentation: StyledModalPresentation.dialog,
+    isDismissible: false,
+    dialogMinWidth: 480,
+    dialogMaxWidth: 480,
+    bodyMinHeight: 400,
+    enableBodyScroll: true,
+    contentPadding: EdgeInsets.zero,
+    steps: StyledModalSteps(
+      children: [
+        // ----- Root: Profile overview + menu -----
+        StyledModalStep(
+          builder: (ctx, flow) {
+            final liveProfile =
+                ctx.watch<ProfileCubit>().state.profile ?? profile;
+            final chips = _buildAccountChips(ctx, liveProfile);
+
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                StyledSection(
+                  isFirstSection: true,
+                  inset: false,
+                  horizontalPadding: 24,
+                  showDividers: false,
+                  children: [
+                    const SizedBox(height: 8),
+                    CircleAvatar(
+                      radius: 32,
+                      backgroundColor: ctx.theme.colorScheme.primary.withValues(
+                        alpha: 0.1,
+                      ),
+                      child: Text(
+                        _profileInitial(liveProfile),
+                        style: ctx.theme.textTheme.headlineSmall?.copyWith(
+                          color: ctx.theme.colorScheme.primary,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      _preferredDisplayName(liveProfile),
+                      style: ctx.theme.textTheme.titleMedium,
+                    ),
+                    Text(
+                      liveProfile.email,
+                      style: ctx.theme.textTheme.bodyMedium?.copyWith(
+                        color: ctx.theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    if (chips.isNotEmpty) ...[
                       const SizedBox(height: 12),
-                      Text(
-                        _preferredDisplayName(liveProfile),
-                        style: ctx.theme.textTheme.titleMedium,
-                      ),
-                      Text(
-                        liveProfile.email,
-                        style: ctx.theme.textTheme.bodyMedium?.copyWith(
-                          color: ctx.theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      if (chips.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        Wrap(spacing: 8, runSpacing: 8, children: chips),
-                      ],
-                      const SizedBox(height: 8),
+                      Wrap(spacing: 8, runSpacing: 8, children: chips),
                     ],
-                  ),
-                  StyledSection(
-                    inset: false,
-                    horizontalPadding: 24,
-                    children: [
-                      StyledTile(
-                        leading: const Icon(Icons.person_outline),
-                        title: s.editDetailsAction,
-                        subtitle: s.editDetailsDescription,
-                        showChevron: true,
-                        onTap: () => flow.goToChild(0),
-                      ),
-                      StyledTile(
-                        leading: const Icon(Icons.key_outlined),
-                        title: s.changePasswordTitle,
-                        subtitle: s.changePasswordDescription,
-                        showChevron: true,
-                        onTap: () => flow.goToChild(1),
-                      ),
-                    ],
-                  ),
-                ],
-              );
-            },
-            children: [
-              // ----- Child 0: Edit Details -----
-              StyledModalStep(
-                title: s.editDetailsAction,
-                footerActionLabel: s.saveButton,
-                actionResult: StyledModalStepActionResult.back,
-                onActionPressed: (steps, data) async {
-                  if (!(editFormKey.currentState?.validate() ?? false)) {
-                    throw StateError('validation failed');
-                  }
-                  if (!context.mounted) throw StateError('unmounted');
+                    const SizedBox(height: 8),
+                  ],
+                ),
+                StyledSection(
+                  inset: false,
+                  horizontalPadding: 24,
+                  children: [
+                    StyledTile(
+                      leading: const Icon(Icons.person_outline),
+                      title: s.editDetailsAction,
+                      subtitle: s.editDetailsDescription,
+                      showChevron: true,
+                      onTap: () => flow.goToChild(0),
+                    ),
+                    StyledTile(
+                      leading: const Icon(Icons.key_outlined),
+                      title: s.changePasswordTitle,
+                      subtitle: s.changePasswordDescription,
+                      showChevron: true,
+                      onTap: () => flow.goToChild(1),
+                    ),
+                  ],
+                ),
+                StyledSection(
+                  inset: false,
+                  horizontalPadding: 24,
+                  header: s.preferencesSectionTitle,
+                  children: [
+                    const _InterfaceLanguageTile(),
+                    if (isDesktopShell) const _CompactSideMenuTile(),
+                  ],
+                ),
+              ],
+            );
+          },
+          children: [
+            // ----- Child 0: Edit Details -----
+            StyledModalStep(
+              title: s.editDetailsAction,
+              footerActionLabel: s.saveButton,
+              actionResult: StyledModalStepActionResult.back,
+              onActionPressed: (steps, data) async {
+                if (!(editFormKey.currentState?.validate() ?? false)) {
+                  throw StateError('validation failed');
+                }
+                if (!context.mounted) throw StateError('unmounted');
 
-                  final success = await context
-                      .read<ProfileCubit>()
-                      .updateOwnProfile(
-                        email: emailCtrl.text.trim(),
-                        username: usernameCtrl.text.trim().isEmpty
-                            ? null
-                            : usernameCtrl.text.trim(),
-                      );
-                  if (!context.mounted) throw StateError('unmounted');
-
-                  if (!success) {
-                    final domainError = context
-                        .read<ProfileCubit>()
-                        .state
-                        .error;
-                    if (domainError == null) {
-                      throw StateError('save failed');
-                    }
-                    await showAppError(
-                      context,
-                      AppError.fromDomain(context, domainError),
+                final success = await context
+                    .read<ProfileCubit>()
+                    .updateOwnProfile(
+                      email: emailCtrl.text.trim(),
+                      username: usernameCtrl.text.trim().isEmpty
+                          ? null
+                          : usernameCtrl.text.trim(),
                     );
+                if (!context.mounted) throw StateError('unmounted');
+
+                if (!success) {
+                  final domainError = context.read<ProfileCubit>().state.error;
+                  if (domainError == null) {
                     throw StateError('save failed');
                   }
-
-                  showStyledToast(
+                  await showAppError(
                     context,
-                    type: ToastificationType.success,
-                    description: s.userUpdated,
-                    backgroundColor: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest,
+                    AppError.fromDomain(context, domainError),
                   );
-                },
-                builder: (ctx, flow) {
-                  return StyledSection(
-                    isFirstSection: true,
-                    inset: false,
-                    horizontalPadding: 24,
-                    showDividers: false,
-                    children: [
-                      Form(
-                        key: editFormKey,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            StyledTextFormField(
-                              name: 'email',
-                              controller: emailCtrl,
-                              label: s.emailLabel,
-                              autofillHints: const [AutofillHints.email],
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return s.emailRequired;
-                                }
-                                if (!value.contains('@')) {
-                                  return s.emailInvalid;
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 12),
-                            StyledTextFormField(
-                              name: 'username',
-                              controller: usernameCtrl,
-                              label: s.usernameLabel,
-                            ),
-                          ],
-                        ),
+                  throw StateError('save failed');
+                }
+
+                showStyledToast(
+                  context,
+                  type: ToastificationType.success,
+                  description: s.userUpdated,
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest,
+                );
+              },
+              builder: (ctx, flow) {
+                return StyledSection(
+                  isFirstSection: true,
+                  inset: false,
+                  horizontalPadding: 24,
+                  showDividers: false,
+                  children: [
+                    Form(
+                      key: editFormKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          StyledTextFormField(
+                            name: 'email',
+                            controller: emailCtrl,
+                            label: s.emailLabel,
+                            autofillHints: const [AutofillHints.email],
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return s.emailRequired;
+                              }
+                              if (!value.contains('@')) {
+                                return s.emailInvalid;
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          StyledTextFormField(
+                            name: 'username',
+                            controller: usernameCtrl,
+                            label: s.usernameLabel,
+                          ),
+                        ],
                       ),
-                    ],
-                  );
-                },
-              ),
+                    ),
+                  ],
+                );
+              },
+            ),
 
-              // ----- Child 1: Change Password -----
-              StyledModalStep(
-                title: s.changePasswordTitle,
-                onEnter: () {
-                  passwordCtrl.clear();
-                  confirmPasswordCtrl.clear();
-                },
-                footerActionLabel: s.updateButton,
-                actionResult: StyledModalStepActionResult.back,
-                onActionPressed: (steps, data) async {
-                  if (!(passwordFormKey.currentState?.validate() ?? false)) {
-                    throw StateError('validation failed');
-                  }
-                  if (!context.mounted) throw StateError('unmounted');
+            // ----- Child 1: Change Password -----
+            StyledModalStep(
+              title: s.changePasswordTitle,
+              onEnter: () {
+                passwordCtrl.clear();
+                confirmPasswordCtrl.clear();
+              },
+              footerActionLabel: s.updateButton,
+              actionResult: StyledModalStepActionResult.back,
+              onActionPressed: (steps, data) async {
+                if (!(passwordFormKey.currentState?.validate() ?? false)) {
+                  throw StateError('validation failed');
+                }
+                if (!context.mounted) throw StateError('unmounted');
 
-                  final success = await context
-                      .read<ProfileCubit>()
-                      .updateOwnPassword(passwordCtrl.text);
-                  if (!context.mounted) throw StateError('unmounted');
+                final success = await context
+                    .read<ProfileCubit>()
+                    .updateOwnPassword(passwordCtrl.text);
+                if (!context.mounted) throw StateError('unmounted');
 
-                  if (!success) {
-                    final domainError = context
-                        .read<ProfileCubit>()
-                        .state
-                        .error;
-                    if (domainError == null) {
-                      throw StateError('password change failed');
-                    }
-                    await showAppError(
-                      context,
-                      AppError.fromDomain(context, domainError),
-                    );
+                if (!success) {
+                  final domainError = context.read<ProfileCubit>().state.error;
+                  if (domainError == null) {
                     throw StateError('password change failed');
                   }
-
-                  showStyledToast(
+                  await showAppError(
                     context,
-                    type: ToastificationType.success,
-                    description: s.passwordChanged,
-                    backgroundColor: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest,
+                    AppError.fromDomain(context, domainError),
                   );
-                },
-                builder: (ctx, flow) {
-                  return StyledSection(
-                    isFirstSection: true,
-                    inset: false,
-                    horizontalPadding: 24,
-                    showDividers: false,
-                    children: [
-                      Form(
-                        key: passwordFormKey,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            StyledTextFormField(
-                              name: 'new-password',
-                              controller: passwordCtrl,
-                              label: s.newPasswordLabel,
-                              obscureText: true,
-                              enablePasswordToggle: true,
-                              validator: (value) {
-                                if (value == null || value.length < 8) {
-                                  return s.passwordMinLength;
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 12),
-                            StyledTextFormField(
-                              name: 'confirm-password',
-                              controller: confirmPasswordCtrl,
-                              label: s.confirmPasswordLabel,
-                              obscureText: true,
-                              enablePasswordToggle: true,
-                              validator: (value) {
-                                if (value != passwordCtrl.text) {
-                                  return s.passwordsDoNotMatch;
-                                }
-                                return null;
-                              },
-                              onFieldSubmitted: (_) {
-                                if (passwordCtrl.text.trim().isNotEmpty &&
-                                    confirmPasswordCtrl.text
-                                        .trim()
-                                        .isNotEmpty) {
-                                  flow.goNext();
-                                }
-                              },
-                            ),
-                          ],
-                        ),
+                  throw StateError('password change failed');
+                }
+
+                showStyledToast(
+                  context,
+                  type: ToastificationType.success,
+                  description: s.passwordChanged,
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest,
+                );
+              },
+              builder: (ctx, flow) {
+                return StyledSection(
+                  isFirstSection: true,
+                  inset: false,
+                  horizontalPadding: 24,
+                  showDividers: false,
+                  children: [
+                    Form(
+                      key: passwordFormKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          StyledTextFormField(
+                            name: 'new-password',
+                            controller: passwordCtrl,
+                            label: s.newPasswordLabel,
+                            obscureText: true,
+                            enablePasswordToggle: true,
+                            validator: (value) {
+                              if (value == null || value.length < 8) {
+                                return s.passwordMinLength;
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          StyledTextFormField(
+                            name: 'confirm-password',
+                            controller: confirmPasswordCtrl,
+                            label: s.confirmPasswordLabel,
+                            obscureText: true,
+                            enablePasswordToggle: true,
+                            validator: (value) {
+                              if (value != passwordCtrl.text) {
+                                return s.passwordsDoNotMatch;
+                              }
+                              return null;
+                            },
+                            onFieldSubmitted: (_) {
+                              if (passwordCtrl.text.trim().isNotEmpty &&
+                                  confirmPasswordCtrl.text.trim().isNotEmpty) {
+                                flow.goNext();
+                              }
+                            },
+                          ),
+                        ],
                       ),
-                    ],
-                  );
-                },
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  } finally {
-    emailCtrl.dispose();
-    usernameCtrl.dispose();
-    passwordCtrl.dispose();
-    confirmPasswordCtrl.dispose();
-  }
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
 }
 
 List<Widget> _buildAccountChips(BuildContext context, Profile profile) {
@@ -345,4 +357,63 @@ String _preferredDisplayName(Profile profile) {
   return (profile.username?.isNotEmpty ?? false)
       ? profile.username!
       : profile.email;
+}
+
+/// Interface language — a per-user preference (design §4b): the language the
+/// console UI renders in. Persisted through [UserSettingsCubit]; the
+/// session-level listener syncs it into [LanguageCubit] app-wide, so the
+/// change applies immediately regardless of which screen is open.
+class _InterfaceLanguageTile extends StatelessWidget {
+  const _InterfaceLanguageTile();
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    final currentLocale = context.watch<LanguageCubit>().state;
+    final localeNames = LocaleNames.of(context);
+    final supportedLocales = S.delegate.supportedLocales;
+    final selected = supportedLocales
+        .firstWhere(
+          (locale) => locale.languageCode == currentLocale.languageCode,
+          orElse: () => supportedLocales.first,
+        )
+        .languageCode;
+
+    return StyledSelectionTile<String>.dropdown(
+      title: s.interfaceLanguageTitle,
+      subtitle: s.interfaceLanguageDescription,
+      leading: const Icon(Icons.language_outlined),
+      currentValue: selected,
+      options: [for (final locale in supportedLocales) locale.languageCode],
+      optionLabelBuilder: (code) =>
+          localeNames?.nameOf(code) ?? code.toUpperCase(),
+      fieldAutoSize: true,
+      onChanged: (code) {
+        if (code == null || code == currentLocale.languageCode) return;
+        context.read<UserSettingsCubit>().changeLanguage(code);
+      },
+    );
+  }
+}
+
+/// Compact side menu — collapses the rail to the 96px icon strip. Only shown
+/// when the rail is pinned (desktop); in drawer mode the setting is moot.
+class _CompactSideMenuTile extends StatelessWidget {
+  const _CompactSideMenuTile();
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    final mode = context.watch<SidebarModeCubit>().state;
+
+    return StyledSwitchTile(
+      leading: const Icon(Icons.view_sidebar_outlined),
+      title: s.compactSideMenuTitle,
+      subtitle: s.compactSideMenuDescription,
+      value: mode == StyledSideMenuMode.compact,
+      onChanged: (compact) => context.read<SidebarModeCubit>().setMode(
+        compact ? StyledSideMenuMode.compact : StyledSideMenuMode.expanded,
+      ),
+    );
+  }
 }

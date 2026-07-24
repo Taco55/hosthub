@@ -409,6 +409,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "coin": MessageLookupByLibrary.simpleMessage("Coin"),
     "coins": MessageLookupByLibrary.simpleMessage("Coins"),
     "column": MessageLookupByLibrary.simpleMessage("Column"),
+    "compactSideMenuDescription": MessageLookupByLibrary.simpleMessage(
+      "Collapse the sidebar to icons.",
+    ),
+    "compactSideMenuTitle": MessageLookupByLibrary.simpleMessage(
+      "Compact side menu",
+    ),
     "company": MessageLookupByLibrary.simpleMessage("Company"),
     "compass": MessageLookupByLibrary.simpleMessage("Compass"),
     "computer": MessageLookupByLibrary.simpleMessage("Computer"),
@@ -796,6 +802,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "indicator": MessageLookupByLibrary.simpleMessage("Indicator"),
     "ingredients": MessageLookupByLibrary.simpleMessage("Ingredients"),
     "insect": MessageLookupByLibrary.simpleMessage("Insect"),
+    "interfaceLanguageDescription": MessageLookupByLibrary.simpleMessage(
+      "The language the HostHub console is shown in. Personal to you.",
+    ),
+    "interfaceLanguageTitle": MessageLookupByLibrary.simpleMessage(
+      "Interface language",
+    ),
     "internet": MessageLookupByLibrary.simpleMessage("Internet"),
     "invalidMaxItems": MessageLookupByLibrary.simpleMessage(
       "Enter a valid number of items.",
@@ -1209,6 +1221,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "position": MessageLookupByLibrary.simpleMessage("Position"),
     "preferPasswordSignIn": MessageLookupByLibrary.simpleMessage(
       "Prefer signing in with a password?",
+    ),
+    "preferencesSectionTitle": MessageLookupByLibrary.simpleMessage(
+      "Preferences",
     ),
     "premium": MessageLookupByLibrary.simpleMessage("Premium"),
     "present": MessageLookupByLibrary.simpleMessage("Present"),

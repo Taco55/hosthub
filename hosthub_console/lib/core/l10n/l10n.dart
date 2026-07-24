@@ -8154,6 +8154,56 @@ class S {
     );
   }
 
+  /// `Preferences`
+  String get preferencesSectionTitle {
+    return Intl.message(
+      'Preferences',
+      name: 'preferencesSectionTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Interface language`
+  String get interfaceLanguageTitle {
+    return Intl.message(
+      'Interface language',
+      name: 'interfaceLanguageTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The language the HostHub console is shown in. Personal to you.`
+  String get interfaceLanguageDescription {
+    return Intl.message(
+      'The language the HostHub console is shown in. Personal to you.',
+      name: 'interfaceLanguageDescription',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Compact side menu`
+  String get compactSideMenuTitle {
+    return Intl.message(
+      'Compact side menu',
+      name: 'compactSideMenuTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Collapse the sidebar to icons.`
+  String get compactSideMenuDescription {
+    return Intl.message(
+      'Collapse the sidebar to icons.',
+      name: 'compactSideMenuDescription',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Source language`
   String get sourceLanguageLabel {
     return Intl.message(

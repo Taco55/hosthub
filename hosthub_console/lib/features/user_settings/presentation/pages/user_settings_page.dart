@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_localized_locales/flutter_localized_locales.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -12,11 +11,9 @@ import 'package:hosthub_console/app/shell/application/site_context_cubit.dart';
 import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaffold.dart';
 import 'package:app_errors/app_errors.dart';
 import 'package:hosthub_console/core/core.dart';
-import 'package:hosthub_console/core/l10n/l10n.dart';
 import 'package:hosthub_console/core/models/models.dart';
 import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
-import 'package:hosthub_console/core/l10n/application/language_cubit.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/server_settings/application/server_settings_cubit.dart';
 import 'package:hosthub_console/features/server_settings/domain/admin_settings.dart';
@@ -85,17 +82,6 @@ class _UserSettingsView extends StatelessWidget {
         ),
         BlocListener<UserSettingsCubit, UserSettingsState>(
           listenWhen: (previous, current) =>
-              previous.settings?.languageCode != current.settings?.languageCode,
-          listener: (context, state) {
-            final languageCode = state.settings?.languageCode?.trim();
-            if (languageCode == null || languageCode.isEmpty) return;
-            final current = context.read<LanguageCubit>().state.languageCode;
-            if (current == languageCode) return;
-            context.read<LanguageCubit>().changeLang(context, languageCode);
-          },
-        ),
-        BlocListener<UserSettingsCubit, UserSettingsState>(
-          listenWhen: (previous, current) =>
               previous.channelPropertiesToReview !=
                   current.channelPropertiesToReview &&
               current.channelPropertiesToReview != null,
@@ -133,9 +119,6 @@ class _UserSettingsView extends StatelessWidget {
       child: BlocBuilder<UserSettingsCubit, UserSettingsState>(
         builder: (context, state) {
           final theme = Theme.of(context);
-          final locale = context.watch<LanguageCubit>().state;
-          final supportedLocales = S.delegate.supportedLocales;
-          final localeNames = LocaleNames.of(context);
           final settings = state.settings;
           final isLoading =
               state.status == UserSettingsStatus.loading && settings == null;
@@ -150,9 +133,6 @@ class _UserSettingsView extends StatelessWidget {
                   : SingleChildScrollView(
                       child: _UserSettingsSection(
                         theme: theme,
-                        currentLocale: locale,
-                        supportedLocales: supportedLocales,
-                        localeNames: localeNames,
                         settings: settings,
                       ),
                     ),
@@ -165,27 +145,14 @@ class _UserSettingsView extends StatelessWidget {
 }
 
 class _UserSettingsSection extends StatelessWidget {
-  const _UserSettingsSection({
-    required this.theme,
-    required this.currentLocale,
-    required this.supportedLocales,
-    required this.localeNames,
-    required this.settings,
-  });
+  const _UserSettingsSection({required this.theme, required this.settings});
 
   final ThemeData theme;
-  final Locale currentLocale;
-  final List<Locale> supportedLocales;
-  final LocaleNames? localeNames;
   final UserSettings? settings;
 
   @override
   Widget build(BuildContext context) {
     final styledTheme = StyledWidgetsTheme.of(context);
-    final selectedLocale = supportedLocales.firstWhere(
-      (locale) => locale.languageCode == currentLocale.languageCode,
-      orElse: () => supportedLocales.first,
-    );
 
     final status = context.select(
       (UserSettingsCubit cubit) => cubit.state.status,
@@ -215,30 +182,11 @@ class _UserSettingsSection extends StatelessWidget {
           isFirstSection: true,
           header: context.s.generalSectionTitle,
           inset: false,
-          children: [
-            StyledSelectionTile<String>.dropdown(
-              title: context.s.languagePreferenceTitle,
-              subtitle: context.s.languagePreferenceDescription,
-              currentValue: selectedLocale.languageCode,
-              options: supportedLocales
-                  .map((locale) => locale.languageCode)
-                  .toList(),
-              optionLabelBuilder: (value) {
-                final locale = supportedLocales.firstWhere(
-                  (locale) => locale.languageCode == value,
-                  orElse: () => supportedLocales.first,
-                );
-                return _localizedLocaleName(locale, localeNames);
-              },
-              fieldAutoSize: true,
-              onChanged: (value) {
-                if (value == null || value == currentLocale.languageCode)
-                  return;
-                context.read<UserSettingsCubit>().changeLanguage(value);
-              },
-            ),
-            const _SourceLanguageTile(),
-            const _AppInfoTile(),
+          children: const [
+            // Interface language is a personal preference and lives in the
+            // profile modal (design §4b); this page is property scope.
+            _SourceLanguageTile(),
+            _AppInfoTile(),
           ],
         ),
         StyledSection(
@@ -1314,9 +1262,4 @@ String _formatSyncTimestamp(BuildContext context, DateTime timestamp) {
   final local = timestamp.toLocal();
   final localeCode = Localizations.localeOf(context).languageCode;
   return timeago.format(local, locale: localeCode);
-}
-
-String _localizedLocaleName(Locale locale, LocaleNames? localeNames) {
-  return localeNames?.nameOf(locale.languageCode) ??
-      locale.languageCode.toUpperCase();
 }

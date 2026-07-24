@@ -29,7 +29,7 @@ class ResponsiveSideMenuScaffold extends StatefulWidget {
     required this.menuBuilder,
     required this.bodyBuilder,
     this.appBarBuilder,
-    this.breakpoint = 1100,
+    this.breakpoint = defaultBreakpoint,
     this.menuWidth = 320,
     this.backgroundColor,
     this.contentBackgroundColor,
@@ -92,6 +92,9 @@ class ResponsiveSideMenuScaffold extends StatefulWidget {
 
   /// Mirrors the corresponding property on [Scaffold].
   final Widget? bottomNavigationBar;
+
+  /// Default [breakpoint]: the shell-wide desktop threshold.
+  static const double defaultBreakpoint = 1100;
 
   /// Returns true when the screen width exceeds [breakpoint].
   static bool isPinned(BuildContext context, double breakpoint) {

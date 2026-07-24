@@ -116,6 +116,19 @@ class _SessionBlocListenersState extends State<SessionBlocListeners> {
             context.read<LanguageCubit>().changeLang(context, languageCode);
           },
         ),
+        // Keeps the live locale in sync with the per-user interface-language
+        // preference, wherever it is changed (profile modal, settings page).
+        BlocListener<UserSettingsCubit, UserSettingsState>(
+          listenWhen: (previous, current) =>
+              previous.settings?.languageCode != current.settings?.languageCode,
+          listener: (context, state) {
+            final languageCode = state.settings?.languageCode?.trim();
+            if (languageCode == null || languageCode.isEmpty) return;
+            final current = context.read<LanguageCubit>().state.languageCode;
+            if (current == languageCode) return;
+            context.read<LanguageCubit>().changeLang(context, languageCode);
+          },
+        ),
       ],
       child: Builder(
         builder: (ctx) {
