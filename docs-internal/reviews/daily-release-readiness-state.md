@@ -73,8 +73,10 @@ gemotiveerd uitstellen mag alleen met reden in de evidence-kolom.
 
 | D6 | Variant (a) brontaal + Settings-visuele review (Taco) | console+supabase | done | cc3c561. Follow-toggle → eenmalige "Overnemen van interfacetaal"-actie (disabled bij no-op); brontaal-dropdown altijd zichtbaar; bevestigingsdialoog bij elke brontaalwissel (herbaseert vertalingen); kolom+migratie source_locale_follows_ui verwijderd (was alleen lokaal). Visueel: StyledChip-taaltags, gedimd "Niet ingesteld"+chevron-regel, DS uppercase micro-label-koppen, inset-groepen; disabled-tile zonder donker theme-vlak. Besluiten vastgelegd in design_handoff_hosthub_cms/IMPLEMENTATION_NOTES.md |
 
+| D7 | Generieke theme-pass + ConsolePageScaffold verwijderd | beide | done | sw@8e6a78f = v0.9.2 (StyledWebPageScaffoldThemeData: pane-surfaces/pageBackground/pagePadding via preset; primaryAction/isLoading/PopScope/per-pane decorate; StyledSectionThemeData.borderColorDark; +12 lib-tests, 681 groen). Console e503c71: adapter weg, 14 pagina's direct op de lib-scaffold; preset = witte bordered panes op ice, secties = witte tile-groepen zonder interne verticale padding, headers 13/w600 donkerblauw zonder caps (Taco's keuze), tiles 44px, onSurfaceVariant/outline leesbaar; editor: witte .editcol + header-in-card 18px; goldens geregenereerd; 68 app-tests groen; visueel geverifieerd (Reserveringen/Settings/editor) |
+
 ## next_lens
-RUN 4 KLAAR (D1–D6 done, 2026-07-24). Alle CONFORMANCE-secties gedekt; geen openstaande
+RUN 4 KLAAR (D1–D7 done, 2026-07-24). Alle CONFORMANCE-secties gedekt; geen openstaande
 prd-migratie meer (follow-kolom geschrapt). Open (user-gated): console-deploy naar prd. Bewuste
 afwijkingen gedocumenteerd in design_handoff_hosthub_cms/IMPLEMENTATION_NOTES.md.
 
