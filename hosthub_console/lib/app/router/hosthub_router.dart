@@ -151,20 +151,9 @@ class HosthubRouter {
                 siteId: state.uri.queryParameters['siteId'],
               ),
             ),
-            GoRoute(
-              path: '/sites/:siteName/:siteId',
-              builder: (context, state) {
-                final siteId = state.pathParameters['siteId']!;
-                return WebsiteEditorPage(siteId: siteId);
-              },
-            ),
-            GoRoute(
-              path: '/sites/:siteId',
-              builder: (context, state) {
-                final siteId = state.pathParameters['siteId']!;
-                return WebsiteEditorPage(siteId: siteId);
-              },
-            ),
+            // Literal-suffixed site routes must precede the generic
+            // '/sites/:siteName/:siteId' — go_router matches in order, so the
+            // generic route would otherwise swallow '/sites/<id>/team' etc.
             // Legacy raw-JSON document editor, kept reachable for admin use.
             GoRoute(
               path: '/sites/:siteId/documents',
@@ -187,6 +176,20 @@ class HosthubRouter {
               builder: (context, state) {
                 final siteId = state.pathParameters['siteId']!;
                 return SiteSettingsPage(siteId: siteId);
+              },
+            ),
+            GoRoute(
+              path: '/sites/:siteName/:siteId',
+              builder: (context, state) {
+                final siteId = state.pathParameters['siteId']!;
+                return WebsiteEditorPage(siteId: siteId);
+              },
+            ),
+            GoRoute(
+              path: '/sites/:siteId',
+              builder: (context, state) {
+                final siteId = state.pathParameters['siteId']!;
+                return WebsiteEditorPage(siteId: siteId);
               },
             ),
             GoRoute(
