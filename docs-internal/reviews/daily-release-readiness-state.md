@@ -71,11 +71,12 @@ gemotiveerd uitstellen mag alleen met reden in de evidence-kolom.
 | D4 | Ontkoppeling interfacetaal ↔ brontaal (expliciete gebruikersregel) | console | done | 93aecfa; interfacetaal wisselen raakt de brontaal NOOIT — follow-switch is een one-shot uitlijning bij inschakelen; followInterfaceLanguage verwijderd; regressietest bewijst dat een taalwissel de site-context niet bereikt |
 | D5 | Visuele diff met referentiescreenshots (release-build, browser-pane) | console | done | Release-build (dev-env, lokale Supabase) via console-static:43112. Geverifieerd conform: mode A (banner/chip/tabs/save bar), mode B (Editing-pill, coverage, Auto-chips, srcref, draft-ribbon), compacte 96px-rail + hover-flyout + pin, mobiele preview (bezel/statusbar), publish-modal (Klaar/Opnieuw vertalen/3 talen), Settings §5, profielmodal §4c. Gevonden+gefixt: taal-tag onleesbaar (2859c21 — StyledContainer default-padding + onSurfaceVariant te licht) |
 
+| D6 | Variant (a) brontaal + Settings-visuele review (Taco) | console+supabase | done | cc3c561. Follow-toggle → eenmalige "Overnemen van interfacetaal"-actie (disabled bij no-op); brontaal-dropdown altijd zichtbaar; bevestigingsdialoog bij elke brontaalwissel (herbaseert vertalingen); kolom+migratie source_locale_follows_ui verwijderd (was alleen lokaal). Visueel: StyledChip-taaltags, gedimd "Niet ingesteld"+chevron-regel, DS uppercase micro-label-koppen, inset-groepen; disabled-tile zonder donker theme-vlak. Besluiten vastgelegd in design_handoff_hosthub_cms/IMPLEMENTATION_NOTES.md |
+
 ## next_lens
-RUN 4 KLAAR (D1–D5 done, 2026-07-24). Alle CONFORMANCE-secties gedekt. Open (user-gated):
-prd-migratie `source_locale_follows_ui` + deploy (`make apply-migrations ENV=prd`). Bewuste
-afwijkingen gedocumenteerd: StyledSplitView→StyledWebPageScaffold en StyledBrowserFrame→app-lokaal
-SitePreviewFrame (S22-consolidatie); switcher als rail-tile i.p.v. ice-veld (D1).
+RUN 4 KLAAR (D1–D6 done, 2026-07-24). Alle CONFORMANCE-secties gedekt; geen openstaande
+prd-migratie meer (follow-kolom geschrapt). Open (user-gated): console-deploy naar prd. Bewuste
+afwijkingen gedocumenteerd in design_handoff_hosthub_cms/IMPLEMENTATION_NOTES.md.
 
 ## Content / state-machine reference (from the prototype)
 - Property: **Trysil Panorama**, source lang `nl`, locales `[nl, en, no]`.
