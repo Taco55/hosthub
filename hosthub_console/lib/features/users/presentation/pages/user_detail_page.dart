@@ -188,12 +188,12 @@ class _UserDetailPageState extends State<UserDetailPage> {
                 ],
               ),
             ),
-            IconButton(
+            StyledToolbarButton(
+              iconData: Icons.refresh,
               tooltip: context.s.refreshTooltip,
               onPressed: state.isLoading
                   ? null
                   : () => context.read<AdminUserDetailCubit>().refresh(),
-              icon: const Icon(Icons.refresh),
             ),
           ],
         ),

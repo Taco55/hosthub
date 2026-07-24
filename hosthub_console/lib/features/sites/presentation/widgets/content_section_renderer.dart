@@ -262,8 +262,9 @@ class _ObjectArrayEditorState extends State<_ObjectArrayEditor> {
                       ],
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.remove_circle_outline, size: 20),
+                  StyledToolbarButton(
+                    iconData: Icons.remove_circle_outline,
+                    destructive: true,
                     onPressed: () => _removeRow(i),
                     tooltip: context.s.cmsRemoveItem,
                   ),
@@ -413,8 +414,9 @@ class _TitledGroupArrayEditorState extends State<_TitledGroupArrayEditor> {
                       ],
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.remove_circle_outline, size: 20),
+                  StyledToolbarButton(
+                    iconData: Icons.remove_circle_outline,
+                    destructive: true,
                     onPressed: () => _removeRow(i),
                     tooltip: context.s.cmsRemoveItem,
                   ),
@@ -589,9 +591,11 @@ class _ReorderableStringListEditorState
                               child: const Icon(Icons.drag_indicator),
                             ),
                             const SizedBox(height: 6),
-                            StyledIconButton(
+                            StyledToolbarButton(
                               iconData: Icons.remove_circle_outline,
+                              destructive: true,
                               onPressed: () => _removeRow(index),
+                              tooltip: context.s.cmsRemoveItem,
                             ),
                           ],
                         ),
@@ -2154,8 +2158,9 @@ class _AreaSectionsEditorState extends State<_AreaSectionsEditor> {
                     ],
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.remove_circle_outline, size: 20),
+                StyledToolbarButton(
+                  iconData: Icons.remove_circle_outline,
+                  destructive: true,
                   onPressed: () => _removeRow(i),
                   tooltip: context.s.cmsRemoveItem,
                 ),

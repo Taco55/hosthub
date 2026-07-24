@@ -902,7 +902,6 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
   }) {
     final newCount = _markedAsNew.length;
     final l10n = context.s;
-    final theme = Theme.of(context);
     String labeledWithNew(String label) {
       return switch (newCount) {
         0 => label,
@@ -910,15 +909,11 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
       };
     }
 
-    return StyledMenuOverlay<String>(
+    return StyledToolbarButton.menu<String>(
+      iconData: Icons.ios_share,
       tooltip: 'Delen & exporteren',
       verticalOffset: 8,
       showDividers: true,
-      child: _HeaderIconChip(
-        icon: Icons.ios_share,
-        isActive: false,
-        theme: theme,
-      ),
       entries: [
         StyledMenuOverlayEntry(
           value: 'pdf',
@@ -1405,7 +1400,6 @@ class _ReservationsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final isTimeline = viewMode == _ReservationsViewMode.timeline;
     final hasActiveFilter = hiddenStatuses.isNotEmpty || showHistorical;
 
@@ -1430,10 +1424,10 @@ class _ReservationsHeader extends StatelessWidget {
                   });
                 },
               ),
-              _buildFilterButton(context, theme, hasActiveFilter),
+              _buildFilterButton(context, hasActiveFilter),
               if (viewMode == _ReservationsViewMode.list)
-                _buildListColumnsButton(context, theme),
-              if (isTimeline) _buildViewButton(context, theme),
+                _buildListColumnsButton(context),
+              if (isTimeline) _buildViewButton(context),
             ],
           ),
         ),
@@ -1442,12 +1436,10 @@ class _ReservationsHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildFilterButton(
-    BuildContext context,
-    ThemeData theme,
-    bool hasActiveFilter,
-  ) {
-    return StyledMenuOverlay<String>(
+  Widget _buildFilterButton(BuildContext context, bool hasActiveFilter) {
+    return StyledToolbarButton.menu<String>(
+      iconData: Icons.filter_list_rounded,
+      isSelected: hasActiveFilter,
       tooltip: 'Filter',
       verticalOffset: 8,
       showDividers: allStatuses.isNotEmpty,
@@ -1465,19 +1457,16 @@ class _ReservationsHeader extends StatelessWidget {
           onStatusToggled(value);
         }
       },
-      child: _HeaderIconChip(
-        icon: Icons.filter_list_rounded,
-        isActive: hasActiveFilter,
-        theme: theme,
-      ),
     );
   }
 
-  Widget _buildListColumnsButton(BuildContext context, ThemeData theme) {
+  Widget _buildListColumnsButton(BuildContext context) {
     final hasActiveColumnToggles = hiddenListColumns.isNotEmpty;
     final l10n = context.s;
 
-    return StyledMenuOverlay<String>(
+    return StyledToolbarButton.menu<String>(
+      iconData: Icons.view_column_outlined,
+      isSelected: hasActiveColumnToggles,
       tooltip: 'Kolommen',
       verticalOffset: 8,
       entries: [
@@ -1495,15 +1484,10 @@ class _ReservationsHeader extends StatelessWidget {
       onSelected: (value) {
         onListColumnToggled(value);
       },
-      child: _HeaderIconChip(
-        icon: Icons.view_column_outlined,
-        isActive: hasActiveColumnToggles,
-        theme: theme,
-      ),
     );
   }
 
-  Widget _buildViewButton(BuildContext context, ThemeData theme) {
+  Widget _buildViewButton(BuildContext context) {
     final density = timelineDensity;
     final continuous = continuousMonths;
     final outOfMonth = outOfMonthDisplay;
@@ -1542,7 +1526,8 @@ class _ReservationsHeader extends StatelessWidget {
       );
     }
 
-    return StyledMenuOverlay<String>(
+    return StyledToolbarButton.menu<String>(
+      iconData: Icons.tune,
       tooltip: 'Weergave',
       verticalOffset: 8,
       showDividers: true,
@@ -1563,7 +1548,6 @@ class _ReservationsHeader extends StatelessWidget {
             onOutOfMonthDisplayChanged?.call(OutOfMonthDisplay.bookedOnly);
         }
       },
-      child: _HeaderIconChip(icon: Icons.tune, isActive: false, theme: theme),
     );
   }
 
@@ -1585,43 +1569,6 @@ class _ReservationsHeader extends StatelessWidget {
                   ? const Color(0xFF1B5E20)
                   : const Color(0xFFD0D0D0)
             : const Color(0xFFBDBDBD),
-      ),
-    );
-  }
-}
-
-class _HeaderIconChip extends StatelessWidget {
-  const _HeaderIconChip({
-    required this.icon,
-    required this.isActive,
-    required this.theme,
-  });
-
-  final IconData icon;
-  final bool isActive;
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: isActive
-            ? theme.colorScheme.primaryContainer.withValues(alpha: 0.5)
-            : null,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: isActive
-              ? theme.colorScheme.primary.withValues(alpha: 0.3)
-              : theme.dividerColor,
-        ),
-      ),
-      child: Icon(
-        icon,
-        size: 18,
-        color: isActive
-            ? theme.colorScheme.primary
-            : theme.colorScheme.onSurfaceVariant,
       ),
     );
   }
@@ -2301,20 +2248,10 @@ class _CircularCloseButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: 'Sluiten',
-      child: Material(
-        color: const Color(0xFFE1F5FE),
-        shape: const CircleBorder(),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onPressed,
-          child: const Padding(
-            padding: EdgeInsets.all(10),
-            child: Icon(Icons.close, size: 20, color: Color(0xFF37474F)),
-          ),
-        ),
-      ),
+    return StyledToolbarButton(
+      iconData: Icons.close,
+      tooltip: 'Sluiten',
+      onPressed: onPressed,
     );
   }
 }

@@ -22,11 +22,18 @@ class BookingSourceIcon extends StatelessWidget {
           width: size,
           height: size,
           filterQuality: FilterQuality.medium,
+          // If the asset fails to load (e.g. missing in a deployed build),
+          // fall back to the coloured initial instead of a broken-image icon.
+          errorBuilder: (context, error, stackTrace) => _fallbackCircle(info),
         ),
       );
     }
 
     // Fallback: coloured circle with initial.
+    return _fallbackCircle(info);
+  }
+
+  Widget _fallbackCircle(_SourceInfo info) {
     return Container(
       width: size,
       height: size,

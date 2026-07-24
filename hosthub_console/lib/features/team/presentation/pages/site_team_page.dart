@@ -207,13 +207,11 @@ class _MemberActions extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    return Tooltip(
-      message: context.s.teamRemoveMember,
-      child: StyledIconButton(
-        iconData: Icons.remove_circle_outline,
-        iconSize: 20,
-        onPressed: () => _confirmRemove(context),
-      ),
+    return StyledToolbarButton(
+      iconData: Icons.remove_circle_outline,
+      destructive: true,
+      tooltip: context.s.teamRemoveMember,
+      onPressed: () => _confirmRemove(context),
     );
   }
 
@@ -284,33 +282,29 @@ class _InvitationsSection extends StatelessWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Tooltip(
-                    message: s.teamResendInvitation,
-                    child: StyledIconButton(
-                      iconData: Icons.send_outlined,
-                      iconSize: 18,
-                      onPressed: () {
-                        context.read<SiteMembersCubit>().resendInvitation(
-                          invitation: inv,
-                          siteName: siteName,
-                        );
-                        showStyledToast(
-                          context,
-                          type: ToastificationType.success,
-                          description: s.teamInvitationResent,
-                        );
-                      },
-                    ),
+                  StyledToolbarButton(
+                    iconData: Icons.send_outlined,
+                    tooltip: s.teamResendInvitation,
+                    onPressed: () {
+                      context.read<SiteMembersCubit>().resendInvitation(
+                        invitation: inv,
+                        siteName: siteName,
+                      );
+                      showStyledToast(
+                        context,
+                        type: ToastificationType.success,
+                        description: s.teamInvitationResent,
+                      );
+                    },
                   ),
-                  Tooltip(
-                    message: s.teamCancelInvitation,
-                    child: StyledIconButton(
-                      iconData: Icons.cancel_outlined,
-                      iconSize: 18,
-                      onPressed: () {
-                        context.read<SiteMembersCubit>().cancelInvitation(inv);
-                      },
-                    ),
+                  const SizedBox(width: 8),
+                  StyledToolbarButton(
+                    iconData: Icons.cancel_outlined,
+                    destructive: true,
+                    tooltip: s.teamCancelInvitation,
+                    onPressed: () {
+                      context.read<SiteMembersCubit>().cancelInvitation(inv);
+                    },
                   ),
                 ],
               ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:styled_widgets/styled_widgets.dart';
 
 typedef ResponsiveSideMenuBuilder =
     Widget Function(
@@ -188,7 +189,12 @@ class _DefaultResponsiveAppBar extends StatelessWidget
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      leading: IconButton(icon: const Icon(Icons.menu), onPressed: openDrawer),
+      leading: Center(
+        child: StyledToolbarButton(
+          iconData: Icons.menu,
+          onPressed: openDrawer,
+        ),
+      ),
     );
   }
 }

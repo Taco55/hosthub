@@ -21,7 +21,6 @@ class UsersPage extends StatefulWidget {
 
 class _UsersPageState extends State<UsersPage> {
   final _searchController = TextEditingController();
-  Timer? _searchDebounce;
 
   @override
   void initState() {
@@ -34,7 +33,6 @@ class _UsersPageState extends State<UsersPage> {
 
   @override
   void dispose() {
-    _searchDebounce?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -50,14 +48,6 @@ class _UsersPageState extends State<UsersPage> {
       _searchController.clear();
       usersCubit.reset();
     }
-  }
-
-  void _onSearchChanged(String value) {
-    _searchDebounce?.cancel();
-    _searchDebounce = Timer(const Duration(milliseconds: 300), () {
-      if (!mounted) return;
-      context.read<UsersCubit>().loadUsers(query: value);
-    });
   }
 
   Future<void> _refreshUsers() {
@@ -122,7 +112,7 @@ class _UsersPageState extends State<UsersPage> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(child: _buildSearchField(theme, l10n)),
+                    Expanded(child: _buildSearchField()),
                     const SizedBox(width: 12),
                     StyledButton(
                       title: context.s.createUserButton,
@@ -236,43 +226,14 @@ class _UsersPageState extends State<UsersPage> {
     );
   }
 
-  Widget _buildSearchField(ThemeData theme, S l10n) {
-    final colors = theme.colorScheme;
-    return TextField(
+  Widget _buildSearchField() {
+    return StyledSearchField(
       controller: _searchController,
-      decoration: InputDecoration(
-        hintText: context.s.searchEmailHint,
-        prefixIcon: const Icon(Icons.search),
-        suffixIcon: _searchController.text.isEmpty
-            ? null
-            : IconButton(
-                tooltip: context.s.clearSearchTooltip,
-                onPressed: () {
-                  _searchController.clear();
-                  context.read<UsersCubit>().loadUsers(query: '');
-                },
-                icon: const Icon(Icons.clear),
-              ),
-        filled: true,
-        fillColor: colors.surfaceContainerHighest,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Theme.of(context).dividerColor),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Theme.of(context).dividerColor),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: colors.primary, width: 1.5),
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
-        ),
-      ),
-      onChanged: _onSearchChanged,
+      placeholder: context.s.searchEmailHint,
+      clearSemanticLabel: context.s.clearSearchTooltip,
+      minSearchCharacters: 1,
+      onSearch: (query) =>
+          context.read<UsersCubit>().loadUsers(query: query),
     );
   }
 }

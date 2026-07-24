@@ -150,10 +150,12 @@ class _SectionScaffoldState extends State<SectionScaffold> {
         return AppBar(
           automaticallyImplyLeading: false,
           scrolledUnderElevation: 0,
-          leading: IconButton(
-            tooltip: context.s.menuTooltip,
-            icon: const Icon(Icons.menu),
-            onPressed: openDrawer,
+          leading: Center(
+            child: StyledToolbarButton(
+              iconData: Icons.menu,
+              tooltip: context.s.menuTooltip,
+              onPressed: openDrawer,
+            ),
           ),
         );
       },

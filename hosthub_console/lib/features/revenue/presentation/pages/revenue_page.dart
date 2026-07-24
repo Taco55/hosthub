@@ -172,15 +172,12 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
             title: context.s.menuRevenue,
             description: context.s.revenueDescription(propertyName),
             actions: [
-              Tooltip(
-                message: context.s.revenueRefreshTooltip,
-                child: StyledIconButton(
-                  iconData: Icons.refresh,
-                  onPressed: canRefresh
-                      ? () => _loadForProperty(property, force: true)
-                      : null,
-                  enabled: canRefresh,
-                ),
+              StyledToolbarButton(
+                iconData: Icons.refresh,
+                tooltip: context.s.revenueRefreshTooltip,
+                onPressed: canRefresh
+                    ? () => _loadForProperty(property, force: true)
+                    : null,
               ),
             ],
             showLoadingIndicator: state.status == ReservationsStatus.loading,
@@ -2225,20 +2222,10 @@ class _CircularCloseButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: S.of(context).reservationCloseTooltip,
-      child: Material(
-        color: const Color(0xFFE1F5FE),
-        shape: const CircleBorder(),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onPressed,
-          child: const Padding(
-            padding: EdgeInsets.all(10),
-            child: Icon(Icons.close, size: 20, color: Color(0xFF37474F)),
-          ),
-        ),
-      ),
+    return StyledToolbarButton(
+      iconData: Icons.close,
+      tooltip: S.of(context).reservationCloseTooltip,
+      onPressed: onPressed,
     );
   }
 }

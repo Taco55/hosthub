@@ -178,8 +178,8 @@ class _SiteContentBody extends StatelessWidget {
                 ? context.s.cmsSaveDraftButton
                 : null,
             actions: [
-              IconButton(
-                icon: const Icon(Icons.settings_outlined),
+              StyledToolbarButton(
+                iconData: Icons.settings_outlined,
                 tooltip: context.s.siteSettingsTitle,
                 onPressed: () {
                   final siteId = context.read<CmsCubit>().state.site?.id;
@@ -188,9 +188,10 @@ class _SiteContentBody extends StatelessWidget {
                   }
                 },
               ),
-              IconButton(
-                icon: const Icon(Icons.group_outlined),
-                tooltip: 'Team',
+              const SizedBox(width: 8),
+              StyledToolbarButton(
+                iconData: Icons.group_outlined,
+                tooltip: context.s.teamTitle,
                 onPressed: () {
                   final siteId = context.read<CmsCubit>().state.site?.id;
                   if (siteId != null) {
@@ -202,7 +203,7 @@ class _SiteContentBody extends StatelessWidget {
               ),
               if (state.isDirty || state.isPublishing)
                 Padding(
-                  padding: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.only(left: 8, right: 8),
                   child: StyledButton(
                     title: context.s.cmsPublishButton,
                     onPressed: () => _confirmPublish(context, state),
@@ -449,12 +450,13 @@ class _ContentSection extends StatelessWidget {
                   child: _StatusBadge(status: doc.status),
                 ),
                 // Version history button
-                IconButton(
-                  icon: const Icon(Icons.history, size: 18),
-                  onPressed: () => cubit.loadVersionHistory(doc.id),
-                  tooltip: context.s.cmsVersionHistory,
+                Padding(
                   padding: const EdgeInsets.only(left: 4),
-                  constraints: const BoxConstraints(),
+                  child: StyledToolbarButton(
+                    iconData: Icons.history,
+                    onPressed: () => cubit.loadVersionHistory(doc.id),
+                    tooltip: context.s.cmsVersionHistory,
+                  ),
                 ),
               ],
             ],
@@ -542,8 +544,8 @@ class _VersionHistoryPane extends StatelessWidget {
                   ),
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.close, size: 18),
+              StyledToolbarButton(
+                iconData: Icons.close,
                 onPressed: cubit.clearVersionHistory,
               ),
             ],

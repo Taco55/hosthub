@@ -91,12 +91,13 @@ class _TopBar extends StatelessWidget {
             ),
           ),
           if (siteId != null) ...[
-            StyledIconButton(
+            StyledToolbarButton(
               iconData: Icons.settings_outlined,
               tooltip: context.s.siteSettingsTitle,
               onPressed: () => context.go('/sites/$siteId/settings'),
             ),
-            StyledIconButton(
+            const SizedBox(width: 8),
+            StyledToolbarButton(
               iconData: Icons.group_outlined,
               tooltip: context.s.teamTitle,
               onPressed: () => context.go('/sites/$siteId/team'),
