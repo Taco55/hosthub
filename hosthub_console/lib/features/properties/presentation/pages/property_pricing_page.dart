@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
-import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaffold.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/server_settings/data/admin_settings_repository.dart';
 import 'package:hosthub_console/features/server_settings/domain/admin_settings.dart';
@@ -19,14 +18,14 @@ class PropertyPricingPage extends StatelessWidget {
         final current = state.currentProperty;
         if (state.status == PropertyContextStatus.loading ||
             state.status == PropertyContextStatus.initial) {
-          return ConsolePageScaffold(
+          return StyledWebPageScaffold(
             title: context.s.menuPricing,
             description: context.s.pricingDescription,
             leftChild: const Center(child: CircularProgressIndicator()),
           );
         }
         if (current == null) {
-          return ConsolePageScaffold(
+          return StyledWebPageScaffold(
             title: context.s.menuPricing,
             description: context.s.pricingDescription,
             leftChild: Text(context.s.propertyDetailsEmpty),
@@ -44,14 +43,14 @@ class PropertyPricingPage extends StatelessWidget {
           ),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return ConsolePageScaffold(
+              return StyledWebPageScaffold(
                 title: context.s.menuPricing,
                 description: context.s.pricingDescription,
                 leftChild: const Center(child: CircularProgressIndicator()),
               );
             }
             if (snapshot.hasError) {
-              return ConsolePageScaffold(
+              return StyledWebPageScaffold(
                 title: context.s.menuPricing,
                 description: context.s.pricingDescription,
                 leftChild: Text('Failed to load pricing: ${snapshot.error}'),
@@ -60,14 +59,14 @@ class PropertyPricingPage extends StatelessWidget {
 
             final data = snapshot.data;
             if (data == null) {
-              return ConsolePageScaffold(
+              return StyledWebPageScaffold(
                 title: context.s.menuPricing,
                 description: context.s.pricingDescription,
                 leftChild: Text(context.s.propertyDetailsEmpty),
               );
             }
 
-            return ConsolePageScaffold(
+            return StyledWebPageScaffold(
               title: context.s.menuPricing,
               description: context.s.pricingDescription,
               leftChild: ListView(

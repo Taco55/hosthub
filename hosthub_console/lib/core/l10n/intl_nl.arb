@@ -29,6 +29,7 @@
     }
   },
   "saveButton": "Opslaan",
+  "savedLabel": "Opgeslagen",
   "restoreDefaults": "Standaardinstellingen",
   "menuTooltip": "Menu",
   "navigationLabel": "Navigatie",
@@ -1352,6 +1353,10 @@
   "@wePreviewLabel": { "placeholders": { "language": {} } },
   "weDeviceWeb": "Web",
   "weDeviceMobile": "Mobiel",
+  "weShowPreview": "Voorbeeld tonen",
+  "@weShowPreview": { "description": "Tooltip for the button that reveals the live preview pane" },
+  "weHidePreview": "Voorbeeld verbergen",
+  "@weHidePreview": { "description": "Tooltip for the button that hides the live preview pane" },
   "weRibbonStale": "Eerder voorbeeld — wordt automatisch bijgewerkt bij publiceren.",
   "weRibbonDraft": "Conceptvertaling — alleen voor jou zichtbaar tot je publiceert.",
   "wePublishTitle": "Alle talen publiceren",

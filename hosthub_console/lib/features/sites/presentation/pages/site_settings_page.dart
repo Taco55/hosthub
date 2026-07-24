@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
-import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaffold.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:hosthub_console/features/cms/cms.dart';
 
@@ -89,14 +88,16 @@ class _SiteSettingsPageState extends State<SiteSettingsPage> {
       },
       builder: (context, state) {
         final loading = state.status == CmsStatus.loading && !_initialized;
-        return ConsolePageScaffold(
+        return StyledWebPageScaffold(
           title: context.s.siteSettingsTitle,
           description: context.s.siteSettingsSubtitle,
-          actionText: context.s.saveButton,
-          actionIcon: Icons.save_outlined,
-          actionEnabled: !_saving && !loading,
-          actionInProgress: _saving,
-          onAction: (_saving || loading) ? null : () => _save(),
+          primaryAction: StyledWebPageAction(
+            label: context.s.saveButton,
+            icon: Icons.save_outlined,
+            enabled: !_saving && !loading,
+            inProgress: _saving,
+            onPressed: (_saving || loading) ? null : () => _save(),
+          ),
           leftChild: SafeArea(
             child: loading
                 ? const Center(child: CircularProgressIndicator())

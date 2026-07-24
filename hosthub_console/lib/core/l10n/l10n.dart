@@ -234,6 +234,11 @@ class S {
     return Intl.message('Save', name: 'saveButton', desc: '', args: []);
   }
 
+  /// `Saved`
+  String get savedLabel {
+    return Intl.message('Saved', name: 'savedLabel', desc: '', args: []);
+  }
+
   /// `Restore defaults`
   String get restoreDefaults {
     return Intl.message(
@@ -7937,6 +7942,26 @@ class S {
   /// `Mobile`
   String get weDeviceMobile {
     return Intl.message('Mobile', name: 'weDeviceMobile', desc: '', args: []);
+  }
+
+  /// `Show preview`
+  String get weShowPreview {
+    return Intl.message(
+      'Show preview',
+      name: 'weShowPreview',
+      desc: 'Tooltip for the button that reveals the live preview pane',
+      args: [],
+    );
+  }
+
+  /// `Hide preview`
+  String get weHidePreview {
+    return Intl.message(
+      'Hide preview',
+      name: 'weHidePreview',
+      desc: 'Tooltip for the button that hides the live preview pane',
+      args: [],
+    );
   }
 
   /// `Earlier preview — updates automatically on publish.`

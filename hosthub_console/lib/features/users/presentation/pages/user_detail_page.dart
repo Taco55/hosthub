@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 
 import 'package:hosthub_console/core/models/models.dart';
 
-import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaffold.dart';
 import 'package:hosthub_console/features/users/application/admin_user_detail_cubit.dart';
 import 'package:hosthub_console/features/users/domain/models/admin_user_detail.dart';
 import 'package:hosthub_console/features/users/presentation/dialogs/change_user_password_dialog.dart';
@@ -115,7 +114,7 @@ class _UserDetailPageState extends State<UserDetailPage> {
           );
         }
 
-        return ConsolePageScaffold(
+        return StyledWebPageScaffold(
           title: title,
           description: description,
           padding: EdgeInsets.symmetric(

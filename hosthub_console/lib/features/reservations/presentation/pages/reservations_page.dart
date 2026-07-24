@@ -13,7 +13,6 @@ import 'package:printing/printing.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 import 'package:web/web.dart' as web;
 
-import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaffold.dart';
 import 'package:hosthub_console/features/channel_manager/infrastructure/lodgify/lodgify_error_utils.dart';
 import 'package:hosthub_console/features/reservations/application/nightly_rates_cubit.dart';
 import 'package:hosthub_console/features/reservations/application/reservations_cubit.dart';
@@ -302,10 +301,10 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                   return s.isEmpty || !_hiddenStatuses.contains(s);
                 }).toList();
 
-          return ConsolePageScaffold(
+          return StyledWebPageScaffold(
             title: 'Reserveringen',
             description: 'Boekingen voor $propertyName uit Lodgify.',
-            showLoadingIndicator: state.status == ReservationsStatus.loading,
+            isLoading: state.status == ReservationsStatus.loading,
             leftChild: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

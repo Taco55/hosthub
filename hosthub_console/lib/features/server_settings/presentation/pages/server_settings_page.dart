@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
-import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaffold.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/server_settings/application/server_settings_cubit.dart';
 import 'package:hosthub_console/features/server_settings/domain/admin_settings.dart';
@@ -78,7 +77,7 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
         final isMutating = state.status == ServerSettingsStatus.mutating;
         final canSave = _canSave(state) && !isMutating;
 
-        return ConsolePageScaffold(
+        return StyledWebPageScaffold(
           title: context.s.serverSettingsTitle,
           description: context.s.serverSettingsSubtitle,
           leftChild: SafeArea(

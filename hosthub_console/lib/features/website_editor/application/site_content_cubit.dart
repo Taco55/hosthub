@@ -20,6 +20,7 @@ class SiteContentState extends Equatable {
     required this.pageKey,
     required this.previewLanguage,
     required this.previewDevice,
+    required this.previewVisible,
     required this.source,
     required this.translations,
     required this.dirty,
@@ -36,6 +37,10 @@ class SiteContentState extends Equatable {
   final String pageKey;
   final String previewLanguage;
   final PreviewDevice previewDevice;
+
+  /// Whether the right-hand live preview pane is shown. Editing works the same
+  /// either way; hiding it just gives the editor column the full width.
+  final bool previewVisible;
 
   /// Source-language text per field key.
   final Map<String, String> source;
@@ -118,6 +123,7 @@ class SiteContentState extends Equatable {
     String? pageKey,
     String? previewLanguage,
     PreviewDevice? previewDevice,
+    bool? previewVisible,
     Map<String, String>? source,
     Map<String, Map<String, TranslatedField>>? translations,
     bool? dirty,
@@ -135,6 +141,7 @@ class SiteContentState extends Equatable {
       pageKey: pageKey ?? this.pageKey,
       previewLanguage: previewLanguage ?? this.previewLanguage,
       previewDevice: previewDevice ?? this.previewDevice,
+      previewVisible: previewVisible ?? this.previewVisible,
       source: source ?? this.source,
       translations: translations ?? this.translations,
       dirty: dirty ?? this.dirty,
@@ -154,6 +161,7 @@ class SiteContentState extends Equatable {
     pageKey,
     previewLanguage,
     previewDevice,
+    previewVisible,
     source,
     translations,
     dirty,
@@ -302,6 +310,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
       pageKey: 'home',
       previewLanguage: WebsiteSeed.sourceLanguage,
       previewDevice: PreviewDevice.web,
+      previewVisible: true,
       source: source,
       translations: translations,
       dirty: false,
@@ -317,6 +326,12 @@ class SiteContentCubit extends Cubit<SiteContentState> {
 
   void setPreviewDevice(PreviewDevice device) =>
       emit(state.copyWith(previewDevice: device));
+
+  /// Shows/hides the live preview pane. When hidden the editor column takes the
+  /// full width; the preview keeps its language/device selection for when it's
+  /// shown again.
+  void togglePreview() =>
+      emit(state.copyWith(previewVisible: !state.previewVisible));
 
   /// Edits the source text of a field. Dependent auto fields in other
   /// languages become stale automatically (their source hash no longer

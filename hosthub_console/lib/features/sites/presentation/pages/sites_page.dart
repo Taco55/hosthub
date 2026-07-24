@@ -6,7 +6,6 @@ import 'package:styled_widgets/styled_widgets.dart';
 
 import 'package:hosthub_console/features/cms/cms.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
-import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaffold.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
 
 class SitesPage extends StatefulWidget {
@@ -124,7 +123,7 @@ class _SitesPageState extends State<SitesPage> {
         future: _futureSites,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return ConsolePageScaffold(
+            return StyledWebPageScaffold(
               title: context.s.sitesTitle,
               description: context.s.sitesDescription,
               leftChild: const Center(child: CircularProgressIndicator()),
@@ -132,7 +131,7 @@ class _SitesPageState extends State<SitesPage> {
           }
 
           if (snapshot.hasError) {
-            return ConsolePageScaffold(
+            return StyledWebPageScaffold(
               title: context.s.sitesTitle,
               description: context.s.sitesDescription,
               leftChild: Center(
@@ -156,7 +155,7 @@ class _SitesPageState extends State<SitesPage> {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) context.go(_siteContentRoute(preferredSite));
             });
-            return ConsolePageScaffold(
+            return StyledWebPageScaffold(
               title: context.s.sitesTitle,
               description: context.s.sitesDescription,
               leftChild: const Center(child: CircularProgressIndicator()),
@@ -164,7 +163,7 @@ class _SitesPageState extends State<SitesPage> {
           }
 
           // No sites – show create button
-          return ConsolePageScaffold(
+          return StyledWebPageScaffold(
             title: context.s.sitesTitle,
             description: context.s.sitesDescription,
             leftChild: Center(

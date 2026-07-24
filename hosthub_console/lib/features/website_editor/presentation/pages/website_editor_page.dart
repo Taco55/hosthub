@@ -73,14 +73,23 @@ class _WebsiteEditorView extends StatelessWidget {
       },
       builder: (context, state) {
         return StyledWebPageScaffold(
+          // White editor column (design .editcol); preview stays bare.
+          decorateLeftPane: true,
+          panePadding: EdgeInsets.zero,
+          decorateRightPane: false,
           title: context.s.weBreadcrumbWebsite,
           showHeader: false,
           padding: EdgeInsets.zero,
           paneGap: 0,
-          leftPaneSize: const StyledPaneSize.fixed(512),
+          // Fixed editor column beside the preview; when the preview is hidden
+          // the column expands to fill the width (null → Expanded pane) instead
+          // of stranding a 512px column beside empty space.
+          leftPaneSize: state.previewVisible
+              ? const StyledPaneSize.fixed(512)
+              : null,
           leftChild: EditorColumn(state: state, siteId: siteId),
           rightChild: PreviewPane(state: state),
-          showRightPane: true,
+          showRightPane: state.previewVisible,
         );
       },
     );

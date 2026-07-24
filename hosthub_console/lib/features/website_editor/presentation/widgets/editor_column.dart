@@ -90,6 +90,15 @@ class _TopBar extends StatelessWidget {
               ],
             ),
           ),
+          StyledToolbarButton(
+            iconData: Icons.vertical_split_outlined,
+            isSelected: state.previewVisible,
+            tooltip: state.previewVisible
+                ? context.s.weHidePreview
+                : context.s.weShowPreview,
+            onPressed: () => context.read<SiteContentCubit>().togglePreview(),
+          ),
+          const SizedBox(width: 8),
           if (siteId != null) ...[
             StyledToolbarButton(
               iconData: Icons.settings_outlined,
@@ -298,8 +307,14 @@ class _CardShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // A content card (design `.card`): header inside the bordered surface
+    // with the card's own 18px padding — unlike the theme's default
+    // tile-group sections, which hug their rows.
     return StyledSection(
       inset: true,
+      headerInsideGroup: true,
+      innerPadding: const EdgeInsets.all(18),
+      headerInsidePadding: const EdgeInsets.only(bottom: 14),
       header: Row(
         children: [
           StyledIconBadge(icon: icon, size: 34),

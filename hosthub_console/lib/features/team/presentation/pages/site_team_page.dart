@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:app_errors/app_errors.dart';
-import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaffold.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:hosthub_console/features/team/application/site_members_cubit.dart';
 import 'package:hosthub_console/features/team/domain/site_invitation.dart';
@@ -35,7 +34,7 @@ class SiteTeamPage extends StatelessWidget {
       },
       builder: (context, state) {
         if (state.isLoading && state.members.isEmpty) {
-          return ConsolePageScaffold(
+          return StyledWebPageScaffold(
             title: s.teamTitle,
             description: siteName,
             onBack: () async {
@@ -46,7 +45,7 @@ class SiteTeamPage extends StatelessWidget {
           );
         }
 
-        return ConsolePageScaffold(
+        return StyledWebPageScaffold(
           title: s.teamTitle,
           description: siteName,
           onBack: () async {
@@ -62,7 +61,7 @@ class SiteTeamPage extends StatelessWidget {
               minHeight: 40,
             ),
           ],
-          showLoadingIndicator: state.isInviting,
+          isLoading: state.isInviting,
           leftChild: ListView(
             padding: const EdgeInsets.only(top: 8),
             children: [

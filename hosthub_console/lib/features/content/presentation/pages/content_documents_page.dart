@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:styled_widgets/styled_widgets.dart';
 import 'package:provider/provider.dart';
 
 import 'package:hosthub_console/features/cms/cms.dart';
-import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaffold.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
 
 class ContentDocumentsPage extends StatefulWidget {
@@ -30,7 +30,7 @@ class _ContentDocumentsPageState extends State<ContentDocumentsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return ConsolePageScaffold(
+    return StyledWebPageScaffold(
       title: context.s.contentDocumentsTitle,
       description: context.s.contentDocumentsDescription,
       leftChild: Padding(

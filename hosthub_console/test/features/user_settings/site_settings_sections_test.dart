@@ -105,8 +105,8 @@ void main() {
   ) async {
     await pumpSections(tester, _state());
 
-    // Section headers render as the DS uppercase micro-label.
-    expect(find.text('SITE DETAILS'), findsOneWidget);
+    // Section headers render sentence-case (theme: dark-blue 13/w600).
+    expect(find.text('Site details'), findsOneWidget);
     expect(find.text('Trysil Panorama'), findsOneWidget);
     expect(find.text('trysilpanorama.com'), findsOneWidget);
     expect(find.text('https://book.trysilpanorama.com'), findsOneWidget);

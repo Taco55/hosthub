@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaffold.dart';
 import 'package:hosthub_console/features/auth/auth.dart';
 import 'package:hosthub_console/features/users/application/users_cubit.dart';
 import 'package:hosthub_console/features/users/presentation/dialogs/create_user_dialog.dart';
@@ -98,11 +97,11 @@ class _UsersPageState extends State<UsersPage> {
   ) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        return ConsolePageScaffold(
+        return StyledWebPageScaffold(
           title: context.s.usersTitle,
           description: context.s.usersSubtitle,
-          wrapLeftPane: false,
-          wrapRightPane: true,
+          decorateLeftPane: false,
+          decorateRightPane: true,
           contentPadding: const EdgeInsets.fromLTRB(0, 0, 64, 0),
           leftChild: SafeArea(
             child: Column(

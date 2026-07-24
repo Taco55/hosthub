@@ -6,7 +6,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
-import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaffold.dart';
 import 'package:hosthub_console/features/channel_manager/infrastructure/lodgify/lodgify_error_utils.dart';
 import 'package:hosthub_console/features/reservations/application/nightly_rates_cubit.dart';
 import 'package:hosthub_console/features/reservations/application/reservations_cubit.dart';
@@ -168,7 +167,7 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
               .toList(growable: false);
           final totals = _RevenueTotals.fromRows(revenueRows);
 
-          return ConsolePageScaffold(
+          return StyledWebPageScaffold(
             title: context.s.menuRevenue,
             description: context.s.revenueDescription(propertyName),
             actions: [
@@ -180,7 +179,7 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
                     : null,
               ),
             ],
-            showLoadingIndicator: state.status == ReservationsStatus.loading,
+            isLoading: state.status == ReservationsStatus.loading,
             leftChild: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

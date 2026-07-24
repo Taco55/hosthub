@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 import 'package:web/web.dart' as web;
 
-import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaffold.dart';
 import 'package:hosthub_console/features/cms/cms.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/sites/presentation/widgets/content_section_renderer.dart';
@@ -115,7 +114,7 @@ class _SiteContentBody extends StatelessWidget {
 
           if (state.status == CmsStatus.initial ||
               state.status == CmsStatus.loading) {
-            return ConsolePageScaffold(
+            return StyledWebPageScaffold(
               title: pageTitle,
               description: context.s.cmsContentDescription,
               leftChild: const Center(child: CircularProgressIndicator()),
@@ -123,7 +122,7 @@ class _SiteContentBody extends StatelessWidget {
           }
 
           if (state.status == CmsStatus.error) {
-            return ConsolePageScaffold(
+            return StyledWebPageScaffold(
               title: pageTitle,
               description: context.s.cmsContentDescription,
               leftChild: Center(
@@ -164,19 +163,20 @@ class _SiteContentBody extends StatelessWidget {
 
           final showVersionPane = state.versionHistoryDocId != null;
 
-          return ConsolePageScaffold(
+          return StyledWebPageScaffold(
             title: pageTitle,
             description: context.s.cmsContentDescription,
-            isDirty: state.isDirty,
-            isSaving: state.isSaving,
-            onSave: state.isDirty
-                ? () => context.read<CmsCubit>().saveAllDrafts()
-                : null,
-            actionText: state.isSaving
-                ? context.s.cmsSaveDraftButton
-                : state.isDirty
-                ? context.s.cmsSaveDraftButton
-                : null,
+            primaryAction: StyledWebPageAction(
+              label: state.isDirty || state.isSaving
+                  ? context.s.cmsSaveDraftButton
+                  : context.s.savedLabel,
+              icon: Icons.save_outlined,
+              enabled: state.isDirty && !state.isSaving,
+              inProgress: state.isSaving,
+              onPressed: state.isDirty
+                  ? () => context.read<CmsCubit>().saveAllDrafts()
+                  : null,
+            ),
             actions: [
               StyledToolbarButton(
                 iconData: Icons.settings_outlined,
@@ -216,6 +216,9 @@ class _SiteContentBody extends StatelessWidget {
                 ),
             ],
             showRightPane: showVersionPane,
+            // Preserves the old adapter's fixed 380px history pane; the lib
+            // default would let the right pane fill the remaining width.
+            rightPaneSize: const StyledPaneSize.fixed(380),
             rightChild: showVersionPane
                 ? _VersionHistoryPane(
                     versions: state.versions ?? [],

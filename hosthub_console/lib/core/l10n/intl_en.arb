@@ -29,6 +29,7 @@
     }
   },
   "saveButton": "Save",
+  "savedLabel": "Saved",
   "restoreDefaults": "Restore defaults",
   "menuTooltip": "Menu",
   "navigationLabel": "Navigation",
@@ -1348,6 +1349,10 @@
   "@wePreviewLabel": { "placeholders": { "language": {} } },
   "weDeviceWeb": "Web",
   "weDeviceMobile": "Mobile",
+  "weShowPreview": "Show preview",
+  "@weShowPreview": { "description": "Tooltip for the button that reveals the live preview pane" },
+  "weHidePreview": "Hide preview",
+  "@weHidePreview": { "description": "Tooltip for the button that hides the live preview pane" },
   "weRibbonStale": "Earlier preview — updates automatically on publish.",
   "weRibbonDraft": "Draft translation — visible only to you until you publish.",
   "wePublishTitle": "Publish all languages",

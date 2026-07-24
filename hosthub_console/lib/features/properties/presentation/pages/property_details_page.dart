@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
-import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaffold.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/user_settings/user_settings.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
@@ -20,14 +19,14 @@ class PropertyDetailsPage extends StatelessWidget {
         final current = state.currentProperty;
         if (state.status == PropertyContextStatus.loading ||
             state.status == PropertyContextStatus.initial) {
-          return ConsolePageScaffold(
+          return StyledWebPageScaffold(
             title: context.s.propertyDetailsTitle,
             description: context.s.propertyDetailsDescription,
             leftChild: const Center(child: CircularProgressIndicator()),
           );
         }
         if (current == null) {
-          return ConsolePageScaffold(
+          return StyledWebPageScaffold(
             title: context.s.propertyDetailsTitle,
             description: context.s.propertyDetailsDescription,
             leftChild: Text(context.s.propertyDetailsEmpty),
@@ -40,14 +39,14 @@ class PropertyDetailsPage extends StatelessWidget {
           future: propertyRepository.fetchPropertyDetails(current.id),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return ConsolePageScaffold(
+              return StyledWebPageScaffold(
                 title: context.s.propertyDetailsTitle,
                 description: context.s.propertyDetailsDescription,
                 leftChild: const Center(child: CircularProgressIndicator()),
               );
             }
             if (snapshot.hasError) {
-              return ConsolePageScaffold(
+              return StyledWebPageScaffold(
                 title: context.s.propertyDetailsTitle,
                 description: context.s.propertyDetailsDescription,
                 leftChild: Text('Failed to load details: ${snapshot.error}'),
@@ -56,14 +55,14 @@ class PropertyDetailsPage extends StatelessWidget {
 
             final details = snapshot.data;
             if (details == null) {
-              return ConsolePageScaffold(
+              return StyledWebPageScaffold(
                 title: context.s.propertyDetailsTitle,
                 description: context.s.propertyDetailsDescription,
                 leftChild: Text(context.s.propertyDetailsEmpty),
               );
             }
 
-            return ConsolePageScaffold(
+            return StyledWebPageScaffold(
               title: context.s.propertyDetailsTitle,
               description: context.s.propertyDetailsDescription,
               leftChild: ListView(

@@ -15,6 +15,12 @@ abstract final class HosthubDiploraV1Palette {
   static const Color backgroundWhite = Color(0xFFF8FAFC);
   static const Color softGrey = Color(0xFFE1E7EF);
   static const Color darkGrey = Color(0xFFB4B8BF);
+
+  /// Design-system text roles (Just Organize): readable secondary text and
+  /// the outline/footnote grey. `darkGrey` above is too light for text on
+  /// light surfaces and stays for decorative use only.
+  static const Color textVariant = Color(0xFF44474E);
+  static const Color outlineGrey = Color(0xFF74777F);
   static const Color searchPlaceholder = Color(0xFF7794A7);
   static const Color success = Color(0xFF099773);
   static const Color warning = Color(0xFFF68F46);
@@ -59,7 +65,10 @@ abstract final class HosthubThemePreset {
           ? HosthubDiploraV1Palette.softGrey
           : HosthubDiploraV1Palette.outlineDark,
       onSurfaceVariant: isLight
-          ? HosthubDiploraV1Palette.darkGrey
+          ? HosthubDiploraV1Palette.textVariant
+          : HosthubDiploraV1Palette.onSurfaceVariantDark,
+      outline: isLight
+          ? HosthubDiploraV1Palette.outlineGrey
           : HosthubDiploraV1Palette.onSurfaceVariantDark,
       error: HosthubDiploraV1Palette.error,
       onError: Colors.white,
@@ -173,23 +182,55 @@ abstract final class HosthubThemePreset {
         surfaceRadius: const BorderRadius.all(Radius.circular(10)),
         fieldRadius: const BorderRadius.all(Radius.circular(10)),
       ),
+      // Design (Just Organize) tile groups: a white bordered card that hugs
+      // its rows — no internal vertical padding — with a compact dark-blue
+      // sentence-case header and a muted footnote. Content cards (e.g. the
+      // editor's Hero/Highlights) opt into their own padding per instance.
       sections: (t) => t.copyWith(
-        innerPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        topPadding: 20,
-        firstTopPadding: 16,
-        insetBackgroundColor: HosthubDiploraV1Palette.backgroundWhite,
+        innerPadding: const EdgeInsets.symmetric(horizontal: 16),
+        topPadding: 24,
+        firstTopPadding: 0,
+        insetBackgroundColor: Colors.white,
         insetBackgroundColorDark: HosthubDiploraV1Palette.surfaceContainerDark,
+        borderColor: HosthubDiploraV1Palette.softGrey,
+        borderColorDark: HosthubDiploraV1Palette.outlineDark,
+        borderWidth: 1,
         headerTextColor: HosthubDiploraV1Palette.secondary,
+        headerTextStyle: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          height: 1.3,
+        ),
+        headerSpacing: 8,
+        footerTextColor: HosthubDiploraV1Palette.outlineGrey,
         headerInsideTextStyle: const TextStyle(
           fontFamily: 'Roboto',
-          fontSize: 24,
-          height: 1,
+          fontSize: 15.5,
+          height: 1.2,
           letterSpacing: 0,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
           color: HosthubDiploraV1Palette.secondary,
         ),
         uppercaseHeader: false,
         uppercaseInsideHeader: false,
+      ),
+      tiles: (t) => t.copyWith(
+        minHeight: 44,
+        defaultPadding: const EdgeInsets.symmetric(vertical: 10),
+      ),
+      // Design `.set-card` page chrome: every page pane is a white bordered
+      // card on the ice page background; panes carry 24px inner padding.
+      webPageScaffold: (t) => t.copyWith(
+        decoratePanes: true,
+        paneBackgroundColor: Colors.white,
+        paneBackgroundColorDark: HosthubDiploraV1Palette.surfaceContainerDark,
+        paneBorderColor: HosthubDiploraV1Palette.softGrey,
+        paneBorderColorDark: HosthubDiploraV1Palette.outlineDark,
+        paneBorderRadius: const BorderRadius.all(Radius.circular(12)),
+        panePadding: const EdgeInsets.all(24),
+        pageBackgroundColor: HosthubDiploraV1Palette.ice,
+        pageBackgroundColorDark: HosthubDiploraV1Palette.surfaceDark,
+        pagePadding: const EdgeInsets.fromLTRB(64, 24, 64, 24),
       ),
       tables: (t) => t.copyWith(
         uppercaseColumnHeaderLabels: false,

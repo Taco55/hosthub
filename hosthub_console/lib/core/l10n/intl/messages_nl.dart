@@ -1591,6 +1591,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sauceBottle": MessageLookupByLibrary.simpleMessage("Sausfles"),
     "save": MessageLookupByLibrary.simpleMessage("Opslaan"),
     "saveButton": MessageLookupByLibrary.simpleMessage("Opslaan"),
+    "savedLabel": MessageLookupByLibrary.simpleMessage("Opgeslagen"),
     "savings": MessageLookupByLibrary.simpleMessage("Besparingen"),
     "scale": MessageLookupByLibrary.simpleMessage("Schaal"),
     "scan": MessageLookupByLibrary.simpleMessage("Scannen"),
@@ -1920,6 +1921,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "weFreshNotice": MessageLookupByLibrary.simpleMessage(
       "Nieuw concept, komt overeen met je laatste bron.",
     ),
+    "weHidePreview": MessageLookupByLibrary.simpleMessage(
+      "Voorbeeld verbergen",
+    ),
     "weLangDutch": MessageLookupByLibrary.simpleMessage("Nederlands"),
     "weLangEnglish": MessageLookupByLibrary.simpleMessage("Engels"),
     "weLangNorwegian": MessageLookupByLibrary.simpleMessage("Noors"),
@@ -1972,6 +1976,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "weSharedPhotosNote": MessageLookupByLibrary.simpleMessage(
       "Foto\'s worden gedeeld over alle talen — bewerk ze in de bron.",
     ),
+    "weShowPreview": MessageLookupByLibrary.simpleMessage("Voorbeeld tonen"),
     "weSourceChip": m63,
     "weStaleNotice": MessageLookupByLibrary.simpleMessage(
       "Voorbeeld toont een eerdere bronwijziging.",

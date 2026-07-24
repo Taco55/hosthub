@@ -1533,6 +1533,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "sauceBottle": MessageLookupByLibrary.simpleMessage("Sauce Bottle"),
     "save": MessageLookupByLibrary.simpleMessage("Save"),
     "saveButton": MessageLookupByLibrary.simpleMessage("Save"),
+    "savedLabel": MessageLookupByLibrary.simpleMessage("Saved"),
     "savings": MessageLookupByLibrary.simpleMessage("Savings"),
     "scale": MessageLookupByLibrary.simpleMessage("Scale"),
     "scan": MessageLookupByLibrary.simpleMessage("Scan"),
@@ -1840,6 +1841,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "weFreshNotice": MessageLookupByLibrary.simpleMessage(
       "Fresh draft, matches your latest source.",
     ),
+    "weHidePreview": MessageLookupByLibrary.simpleMessage("Hide preview"),
     "weLangDutch": MessageLookupByLibrary.simpleMessage("Dutch"),
     "weLangEnglish": MessageLookupByLibrary.simpleMessage("English"),
     "weLangNorwegian": MessageLookupByLibrary.simpleMessage("Norwegian"),
@@ -1890,6 +1892,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "weSharedPhotosNote": MessageLookupByLibrary.simpleMessage(
       "Photos are shared across all languages — edit them in the source.",
     ),
+    "weShowPreview": MessageLookupByLibrary.simpleMessage("Show preview"),
     "weSourceChip": m63,
     "weStaleNotice": MessageLookupByLibrary.simpleMessage(
       "Preview reflects an earlier source edit.",

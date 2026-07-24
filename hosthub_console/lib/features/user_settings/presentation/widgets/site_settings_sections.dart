@@ -34,19 +34,6 @@ String languageDisplayName(BuildContext context, String code) {
   return resolved[0].toUpperCase() + resolved.substring(1);
 }
 
-/// The DS `.jo-label` micro-label for section headers: small, semibold,
-/// uppercase (via `uppercaseHeader`), loose tracking, muted. Kept per-screen:
-/// the editor's card headers deliberately use the bolder card-title style, so
-/// this is not a theme-wide default.
-TextStyle? sectionHeaderStyle(BuildContext context) {
-  final theme = Theme.of(context);
-  return theme.textTheme.labelSmall?.copyWith(
-    fontWeight: FontWeight.w600,
-    letterSpacing: 0.6,
-    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-  );
-}
-
 /// Dimmed placeholder for an empty value on a read-only/value tile.
 Widget notSetPlaceholder(BuildContext context) {
   final theme = Theme.of(context);
@@ -77,9 +64,6 @@ class _SiteDetailsSection extends StatelessWidget {
       header: s.siteDetailsSectionTitle,
       inset: true,
       horizontalPadding: 0,
-      childMinHeight: 44,
-      headerStyle: sectionHeaderStyle(context),
-      uppercaseHeader: true,
       children: [
         StyledTile(
           leading: const Icon(Icons.home_outlined),
@@ -169,9 +153,6 @@ class _WebsiteLanguagesSection extends StatelessWidget {
       footer: s.websiteLanguagesFooter,
       inset: true,
       horizontalPadding: 0,
-      childMinHeight: 44,
-      headerStyle: sectionHeaderStyle(context),
-      uppercaseHeader: true,
       children: [
         for (final code in site.locales)
           StyledTile(
@@ -283,9 +264,6 @@ class _SourceLanguageSection extends StatelessWidget {
       footer: s.sourceLanguageFooter,
       inset: true,
       horizontalPadding: 0,
-      childMinHeight: 44,
-      headerStyle: sectionHeaderStyle(context),
-      uppercaseHeader: true,
       children: [
         // Always directly editable — deliberately independent from the
         // interface language (user scope). Every change is confirmed: it

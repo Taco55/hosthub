@@ -47,6 +47,10 @@ void main() {
             value: cubit,
             child: BlocBuilder<SiteContentCubit, SiteContentState>(
               builder: (context, state) => StyledWebPageScaffold(
+                // White editor column (design .editcol); preview stays bare.
+                decorateLeftPane: true,
+                panePadding: EdgeInsets.zero,
+                decorateRightPane: false,
                 title: 'Website',
                 showHeader: false,
                 padding: EdgeInsets.zero,

@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
-import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaffold.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/user_settings/user_settings.dart';
 import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
@@ -96,7 +95,7 @@ class PropertySetupPage extends StatelessWidget {
         builder: (context, settingsState) {
           if (settingsState.status == SettingsStatus.initial ||
               settingsState.status == SettingsStatus.loading) {
-            return ConsolePageScaffold(
+            return StyledWebPageScaffold(
               title: 'Properties',
               description: '',
               leftChild: const Center(child: CircularProgressIndicator()),
@@ -106,7 +105,7 @@ class PropertySetupPage extends StatelessWidget {
           final isLodgifyConnected =
               settingsState.settings?.lodgifyConnected ?? false;
 
-          return ConsolePageScaffold(
+          return StyledWebPageScaffold(
             title: 'Properties',
             description: '',
             leftChild: SingleChildScrollView(

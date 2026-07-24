@@ -8,7 +8,6 @@ import 'package:styled_widgets/styled_widgets.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import 'package:hosthub_console/app/shell/application/site_context_cubit.dart';
-import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaffold.dart';
 import 'package:app_errors/app_errors.dart';
 import 'package:hosthub_console/core/core.dart';
 import 'package:hosthub_console/core/models/models.dart';
@@ -135,7 +134,7 @@ class _UserSettingsView extends StatelessWidget {
           final isLoading =
               state.status == UserSettingsStatus.loading && settings == null;
 
-          return ConsolePageScaffold(
+          return StyledWebPageScaffold(
             title: context.s.settingsLabel,
             padding: const EdgeInsets.fromLTRB(32, 24, 32, 24),
 
@@ -201,7 +200,7 @@ class _UserSettingsSection extends StatelessWidget {
         StyledSection(
           isFirstSection: siteSections.isEmpty,
           header: context.s.generalSectionTitle,
-          inset: false,
+          horizontalPadding: 0,
           children: const [
             // Interface language is a personal preference and lives in the
             // profile modal (design §4b); this page is property scope.
@@ -210,7 +209,7 @@ class _UserSettingsSection extends StatelessWidget {
         ),
         StyledSection(
           header: context.s.connectionsSectionTitle,
-          inset: false,
+          horizontalPadding: 0,
           children: [
             Text(context.s.lodgifyTitle),
             StyledTile(
@@ -330,7 +329,7 @@ class _TeamSectionState extends State<_TeamSection> {
 
         return StyledSection(
           header: 'Gebruikers',
-          inset: false,
+          horizontalPadding: 0,
           children: [
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
@@ -671,7 +670,7 @@ class _ChannelFeeDefaultsSectionState
         if (isLoading) {
           return StyledSection(
             header: context.s.channelFeeDefaultsHeader,
-            inset: false,
+            horizontalPadding: 0,
             children: const [Center(child: CircularProgressIndicator())],
           );
         }
@@ -685,7 +684,7 @@ class _ChannelFeeDefaultsSectionState
 
         return StyledSection(
           header: context.s.channelFeeDefaultsHeader,
-          inset: false,
+          horizontalPadding: 0,
           children: [
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
