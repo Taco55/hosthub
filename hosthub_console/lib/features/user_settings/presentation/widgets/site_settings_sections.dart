@@ -206,12 +206,15 @@ class _LanguageTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return SizedBox(
-      width: 32,
-      height: 32,
-      child: StyledContainer(
-        backgroundColor: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+    // Zero padding: StyledContainer's default inset would squeeze the text
+    // out of the fixed 32px box (same recipe as the publish modal's badge).
+    return StyledContainer(
+      backgroundColor: theme.colorScheme.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(8),
+      padding: EdgeInsets.zero,
+      child: SizedBox(
+        width: 32,
+        height: 32,
         child: Center(
           child: Text(
             code.toUpperCase(),
