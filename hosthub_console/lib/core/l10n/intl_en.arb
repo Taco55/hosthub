@@ -953,6 +953,8 @@
       }
     }
   },
+  "propertySetupTitle": "Properties",
+  "propertySetupDescription": "Connect Lodgify or create a property manually to get started.",
   "propertySetupConnectDescription": "Connect Lodgify to import your properties.",
   "propertySetupConnectTitle": "Connect Lodgify",
   "propertySetupConnectBody": "Go to Settings to add your Lodgify API key and connect your account.",

@@ -61,76 +61,51 @@ class _UserDetailPageState extends State<UserDetailPage> {
         ? profile!.username!
         : context.s.usersSubtitle;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final horizontalPadding = constraints.maxWidth >= 1400 ? 48.0 : 24.0;
+    Widget content;
+    if (isLoading && detail == null) {
+      content = const Center(child: CircularProgressIndicator());
+    } else if (detail == null) {
+      content = Center(
+        child: Text(error?.alert ?? context.s.loadUserFailedMessage),
+      );
+    } else {
+      content = SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildProfileCard(context, theme, detail, l10n, state),
+            const SizedBox(height: 16),
+            _buildAppsCard(theme, detail, l10n),
+          ],
+        ),
+      );
+    }
 
-        Widget content;
-        if (isLoading && detail == null) {
-          content = const Center(child: CircularProgressIndicator());
-        } else if (detail == null) {
-          content = Center(
-            child: Text(error?.alert ?? context.s.loadUserFailedMessage),
-          );
-        } else {
-          content = SingleChildScrollView(
-            padding: const EdgeInsets.only(bottom: 48),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    StyledButton(
-                      title: context.s.manageUserAction,
-                      onPressed: state.isMutating
-                          ? null
-                          : () => _openManagementActions(detail),
-                      enabled: !state.isMutating,
-                      leftIconData: Icons.manage_accounts_outlined,
-                      showLeftIcon: true,
-                      minHeight: 40,
-                    ),
-                    StyledButton(
-                      title: context.s.userSettingsAction,
-                      onPressed: () => _showUserSettings(detail),
-                      leftIconData: Icons.tune_outlined,
-                      showLeftIcon: true,
-                      minHeight: 40,
-                      backgroundColor:
-                          theme.colorScheme.surfaceContainerHighest,
-                      labelColor: theme.colorScheme.onSurface,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                _buildProfileCard(context, theme, detail, l10n, state),
-                const SizedBox(height: 16),
-                _buildAppsCard(theme, detail, l10n),
-                const SizedBox(height: 16),
-              ],
-            ),
-          );
-        }
-
-        return StyledWebPageScaffold(
-          title: title,
-          description: description,
-          padding: EdgeInsets.symmetric(
-            horizontal: horizontalPadding,
-            vertical: 24,
-          ),
-          onBack: () async {
-            context.go('/users');
-            return true;
-          },
-          leftChild: Card(
-            clipBehavior: Clip.antiAlias,
-            child: Padding(padding: const EdgeInsets.all(24), child: content),
-          ),
-        );
+    return StyledWebPageScaffold(
+      title: title,
+      description: description,
+      onBack: () async {
+        context.go('/users');
+        return true;
       },
+      actions: detail == null
+          ? null
+          : [
+              StyledToolbarButton(
+                iconData: Icons.tune_outlined,
+                tooltip: context.s.userSettingsAction,
+                onPressed: () => _showUserSettings(detail),
+              ),
+            ],
+      primaryAction: detail == null
+          ? null
+          : StyledWebPageAction(
+              label: context.s.manageUserAction,
+              icon: Icons.manage_accounts_outlined,
+              enabled: !state.isMutating,
+              onPressed: () => _openManagementActions(detail),
+            ),
+      leftChild: content,
     );
   }
 

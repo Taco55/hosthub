@@ -71,130 +71,77 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
             state.status == ServerSettingsStatus.loading &&
             state.settings == null;
         final settings = state.settings ?? AdminSettings.defaults();
-        final horizontalPadding = MediaQuery.sizeOf(context).width >= 1400
-            ? 48.0
-            : 24.0;
         final isMutating = state.status == ServerSettingsStatus.mutating;
         final canSave = _canSave(state) && !isMutating;
 
         return StyledWebPageScaffold(
           title: context.s.serverSettingsTitle,
           description: context.s.serverSettingsSubtitle,
-          leftChild: SafeArea(
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: horizontalPadding,
-                vertical: 24,
-              ),
-              child: isInitialLoadInFlight
-                  ? const Center(child: CircularProgressIndicator())
-                  : ListView(
+          intrinsicPaneHeight: true,
+          primaryAction: StyledWebPageAction(
+            label: context.s.saveButton,
+            icon: Icons.save_outlined,
+            enabled: canSave,
+            inProgress: isMutating,
+            onPressed: () => _save(context, settings),
+          ),
+          leftChild: isInitialLoadInFlight
+              ? const Center(child: CircularProgressIndicator())
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    StyledSection(
+                      isFirstSection: true,
+                      header: 'Algemeen',
+                      inset: false,
                       children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    context.s.serverSettingsTitle,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headlineSmall
-                                        ?.copyWith(fontWeight: FontWeight.w600),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    context.s.serverSettingsSubtitle,
-                                    style: Theme.of(context).textTheme.bodyLarge
-                                        ?.copyWith(
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.onSurfaceVariant,
-                                        ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            StyledButton(
-                              title: context.s.saveButton,
-                              onPressed: canSave
-                                  ? () => _save(context, settings)
-                                  : null,
-                              enabled: canSave,
-                              showProgressIndicatorWhenDisabled: isMutating,
-                              leftIconData: isMutating
-                                  ? null
-                                  : Icons.save_outlined,
-                              showLeftIcon: !isMutating,
-                              minHeight: 44,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        StyledSection(
-                          isFirstSection: true,
-                          header: 'Algemeen',
-                          inset: false,
-                          children: [
-                            StyledTile(
-                              title: context.s.maintenanceModeTitle,
-                              subtitle: context.s.maintenanceModeDescription,
-                              trailing: Switch(
-                                value: _maintenanceMode,
-                                onChanged:
-                                    state.status ==
-                                        ServerSettingsStatus.mutating
-                                    ? null
-                                    : (value) => setState(
-                                        () => _maintenanceMode = value,
-                                      ),
-                              ),
-                            ),
-                            StyledTile(
-                              title: context.s.emailUserOnCreateTitle,
-                              subtitle: context.s.emailUserOnCreateDescription,
-                              trailing: Switch(
-                                value: _emailUserOnCreate,
-                                onChanged:
-                                    state.status ==
-                                        ServerSettingsStatus.mutating
-                                    ? null
-                                    : (value) => setState(
-                                        () => _emailUserOnCreate = value,
-                                      ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        const _UsersAdminSection(),
-                        const SizedBox(height: 16),
-                        const _ListingsAdminSection(),
-                        const SizedBox(height: 16),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: StyledButton(
-                            title: context.s.restoreDefaults,
-                            onPressed:
+                        StyledTile(
+                          title: context.s.maintenanceModeTitle,
+                          subtitle: context.s.maintenanceModeDescription,
+                          trailing: Switch(
+                            value: _maintenanceMode,
+                            onChanged:
                                 state.status == ServerSettingsStatus.mutating
                                 ? null
-                                : _applyDefaults,
-                            enabled:
-                                state.status != ServerSettingsStatus.mutating,
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.error,
-                            labelColor: Theme.of(context).colorScheme.onError,
-                            minHeight: 40,
+                                : (value) =>
+                                      setState(() => _maintenanceMode = value),
+                          ),
+                        ),
+                        StyledTile(
+                          title: context.s.emailUserOnCreateTitle,
+                          subtitle: context.s.emailUserOnCreateDescription,
+                          trailing: Switch(
+                            value: _emailUserOnCreate,
+                            onChanged:
+                                state.status == ServerSettingsStatus.mutating
+                                ? null
+                                : (value) => setState(
+                                    () => _emailUserOnCreate = value,
+                                  ),
                           ),
                         ),
                       ],
                     ),
-            ),
-          ),
+                    const SizedBox(height: 16),
+                    const _UsersAdminSection(),
+                    const SizedBox(height: 16),
+                    const _ListingsAdminSection(),
+                    const SizedBox(height: 16),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: StyledButton(
+                        title: context.s.restoreDefaults,
+                        onPressed: state.status == ServerSettingsStatus.mutating
+                            ? null
+                            : _applyDefaults,
+                        enabled: state.status != ServerSettingsStatus.mutating,
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                        labelColor: Theme.of(context).colorScheme.onError,
+                        minHeight: 40,
+                      ),
+                    ),
+                  ],
+                ),
         );
       },
     );

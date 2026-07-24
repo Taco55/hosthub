@@ -100,33 +100,20 @@ class _UsersPageState extends State<UsersPage> {
         return StyledWebPageScaffold(
           title: context.s.usersTitle,
           description: context.s.usersSubtitle,
-          decorateLeftPane: false,
-          decorateRightPane: true,
-          contentPadding: const EdgeInsets.fromLTRB(0, 0, 64, 0),
-          leftChild: SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(child: _buildSearchField()),
-                    const SizedBox(width: 12),
-                    StyledButton(
-                      title: context.s.createUserButton,
-                      onPressed: _handleCreateUser,
-                      minHeight: 40,
-                      showLeftIcon: true,
-                      leftIconData: Icons.person_add_outlined,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Expanded(
-                  child: _buildUserListCard(context, theme, l10n, usersState),
-                ),
-              ],
-            ),
+          primaryAction: StyledWebPageAction(
+            label: context.s.createUserButton,
+            icon: Icons.person_add_outlined,
+            onPressed: _handleCreateUser,
+          ),
+          leftChild: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildSearchField(),
+              const SizedBox(height: 16),
+              Expanded(
+                child: _buildUserListCard(context, theme, l10n, usersState),
+              ),
+            ],
           ),
         );
       },

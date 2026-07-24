@@ -1385,6 +1385,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "propertySetupConnectTitle": MessageLookupByLibrary.simpleMessage(
       "Verbind Lodgify",
     ),
+    "propertySetupDescription": MessageLookupByLibrary.simpleMessage(
+      "Verbind Lodgify of maak handmatig een accommodatie aan om te beginnen.",
+    ),
     "propertySetupGoToSettings": MessageLookupByLibrary.simpleMessage(
       "Ga naar Instellingen",
     ),
@@ -1413,6 +1416,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "propertySetupSyncTitle": MessageLookupByLibrary.simpleMessage(
       "Synchroniseer accommodaties",
     ),
+    "propertySetupTitle": MessageLookupByLibrary.simpleMessage("Accommodaties"),
     "propertySwitcherLabel": MessageLookupByLibrary.simpleMessage(
       "Accommodatie",
     ),

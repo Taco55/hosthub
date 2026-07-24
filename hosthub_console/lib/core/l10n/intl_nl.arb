@@ -957,6 +957,8 @@
       }
     }
   },
+  "propertySetupTitle": "Accommodaties",
+  "propertySetupDescription": "Verbind Lodgify of maak handmatig een accommodatie aan om te beginnen.",
   "propertySetupConnectDescription": "Verbind Lodgify om je accommodaties te importeren.",
   "propertySetupConnectTitle": "Verbind Lodgify",
   "propertySetupConnectBody": "Ga naar Instellingen om je Lodgify API-sleutel toe te voegen en te verbinden.",

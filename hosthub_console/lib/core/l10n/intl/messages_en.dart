@@ -1333,6 +1333,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "propertySetupConnectTitle": MessageLookupByLibrary.simpleMessage(
       "Connect Lodgify",
     ),
+    "propertySetupDescription": MessageLookupByLibrary.simpleMessage(
+      "Connect Lodgify or create a property manually to get started.",
+    ),
     "propertySetupGoToSettings": MessageLookupByLibrary.simpleMessage(
       "Go to Settings",
     ),
@@ -1361,6 +1364,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "propertySetupSyncTitle": MessageLookupByLibrary.simpleMessage(
       "Sync properties",
     ),
+    "propertySetupTitle": MessageLookupByLibrary.simpleMessage("Properties"),
     "propertySwitcherLabel": MessageLookupByLibrary.simpleMessage("Property"),
     "publicDomainLabel": MessageLookupByLibrary.simpleMessage("Public domain"),
     "puppy": MessageLookupByLibrary.simpleMessage("Puppy"),

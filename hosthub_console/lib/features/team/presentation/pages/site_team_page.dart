@@ -63,7 +63,7 @@ class SiteTeamPage extends StatelessWidget {
           ],
           isLoading: state.isInviting,
           leftChild: ListView(
-            padding: const EdgeInsets.only(top: 8),
+            padding: EdgeInsets.zero,
             children: [
               _MembersSection(members: state.members),
               if (state.pendingInvitations.isNotEmpty) ...[

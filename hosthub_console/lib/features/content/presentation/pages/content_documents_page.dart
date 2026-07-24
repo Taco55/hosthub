@@ -33,10 +33,7 @@ class _ContentDocumentsPageState extends State<ContentDocumentsPage> {
     return StyledWebPageScaffold(
       title: context.s.contentDocumentsTitle,
       description: context.s.contentDocumentsDescription,
-      leftChild: Padding(
-        padding: const EdgeInsets.only(top: 16),
-        child: _buildDocumentList(),
-      ),
+      leftChild: _buildDocumentList(),
     );
   }
 

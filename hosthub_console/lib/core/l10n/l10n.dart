@@ -5399,6 +5399,26 @@ class S {
     );
   }
 
+  /// `Properties`
+  String get propertySetupTitle {
+    return Intl.message(
+      'Properties',
+      name: 'propertySetupTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Connect Lodgify or create a property manually to get started.`
+  String get propertySetupDescription {
+    return Intl.message(
+      'Connect Lodgify or create a property manually to get started.',
+      name: 'propertySetupDescription',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Connect Lodgify to import your properties.`
   String get propertySetupConnectDescription {
     return Intl.message(

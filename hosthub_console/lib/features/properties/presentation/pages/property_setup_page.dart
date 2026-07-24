@@ -96,8 +96,8 @@ class PropertySetupPage extends StatelessWidget {
           if (settingsState.status == SettingsStatus.initial ||
               settingsState.status == SettingsStatus.loading) {
             return StyledWebPageScaffold(
-              title: 'Properties',
-              description: '',
+              title: context.s.propertySetupTitle,
+              description: context.s.propertySetupDescription,
               leftChild: const Center(child: CircularProgressIndicator()),
             );
           }
@@ -106,10 +106,10 @@ class PropertySetupPage extends StatelessWidget {
               settingsState.settings?.lodgifyConnected ?? false;
 
           return StyledWebPageScaffold(
-            title: 'Properties',
-            description: '',
+            title: context.s.propertySetupTitle,
+            description: context.s.propertySetupDescription,
             leftChild: SingleChildScrollView(
-              padding: const EdgeInsets.only(top: 16),
+              padding: EdgeInsets.zero,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
