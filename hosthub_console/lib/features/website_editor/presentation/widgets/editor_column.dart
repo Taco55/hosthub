@@ -310,8 +310,12 @@ class _CardShell extends StatelessWidget {
     // A content card (design `.card`): header inside the bordered surface
     // with the card's own 18px padding — unlike the theme's default
     // tile-group sections, which hug their rows.
+    // horizontalPadding: 0 keeps the card flush with the column's own 22px
+    // gutter (top bar, tabs, banner, save bar) instead of adding the theme's
+    // 24px section inset on top of it.
     return StyledSection(
       inset: true,
+      horizontalPadding: 0,
       headerInsideGroup: true,
       innerPadding: const EdgeInsets.all(18),
       headerInsidePadding: const EdgeInsets.only(bottom: 14),
