@@ -61,8 +61,21 @@ gemotiveerd uitstellen mag alleen met reden in de evidence-kolom.
 
 | C7 | Na-pass met vers geladen tk-* skills over C1/C2-diffs | console | done | 2 bevindingen gefixt: (P1) geen gebruikersfeedback bij save/translate/publish-fouten → BlocListener + showStyledToast per foutcode (+5 ARB-keys en/nl, conform TRANSLATION.md "degrade gracefully with a toast"); (P2) SiteContextCubit zonder DomainError-state en zonder fetch-sequencing → DomainError.from + _fetchSeq-guard (tk-feature-patroon). Analyze clean, 46 tests groen |
 
+## Run 4 — resterende design-gaten + visuele verificatie (2026-07-24)
+
+| # | slice | scope | status | evidence |
+|---|-------|-------|--------|----------|
+| D1 | Onderbroken polish-pass gestabiliseerd | beide | done | dac5dd8 (routervolgorde-fix), 582a06f (brontaal rail→Settings), 4ba8d1d (StyledToolbarButton-sweep), 39da365 (preview-infra); lib sw@54833a4 = v0.9.1 (menu-anchor isSelected, +3 tests, getagd+gepusht) |
+| D2 | Profielmodal §4c: Preferences (interfacetaal + compact zijmenu) | console | done | ef8b757; StyledSelectionTile.dropdown via UserSettingsCubit (sync naar LanguageCubit verplaatst naar SessionBlocListeners), StyledSwitchTile→SidebarModeCubit (desktop-gated met page-context MediaQuery); dispose-na-await-bug in de modal gefixt; +4 widget-tests |
+| D3 | Settings §5: sitegegevens, dynamische websitetalen, brontaal-switch | console+supabase | done | bfbeda0; migratie 20260724130000 (sites.source_locale_follows_ui, lokaal toegepast); SiteContextCubit: add/removeLanguage (bron niet verwijderbaar, confirm-dialog), setSourceFollowsUi, setSiteName, setBookingUrl (write-through alle site_config-docs), primaryDomain; catalogus nl..fi; autosave, geen actieknoppen; +13 tests |
+| D4 | Ontkoppeling interfacetaal ↔ brontaal (expliciete gebruikersregel) | console | done | 93aecfa; interfacetaal wisselen raakt de brontaal NOOIT — follow-switch is een one-shot uitlijning bij inschakelen; followInterfaceLanguage verwijderd; regressietest bewijst dat een taalwissel de site-context niet bereikt |
+| D5 | Visuele diff met referentiescreenshots (release-build, browser-pane) | console | done | Release-build (dev-env, lokale Supabase) via console-static:43112. Geverifieerd conform: mode A (banner/chip/tabs/save bar), mode B (Editing-pill, coverage, Auto-chips, srcref, draft-ribbon), compacte 96px-rail + hover-flyout + pin, mobiele preview (bezel/statusbar), publish-modal (Klaar/Opnieuw vertalen/3 talen), Settings §5, profielmodal §4c. Gevonden+gefixt: taal-tag onleesbaar (2859c21 — StyledContainer default-padding + onSurfaceVariant te licht) |
+
 ## next_lens
-RUN 3 KLAAR (C1–C6 done, 2026-07-24). Openstaand buiten P0–P2: visuele diff met referentie-screenshots via draaiende app (handmatig/vervolgsessie); grip-uitlijning fine-tuning.
+RUN 4 KLAAR (D1–D5 done, 2026-07-24). Alle CONFORMANCE-secties gedekt. Open (user-gated):
+prd-migratie `source_locale_follows_ui` + deploy (`make apply-migrations ENV=prd`). Bewuste
+afwijkingen gedocumenteerd: StyledSplitView→StyledWebPageScaffold en StyledBrowserFrame→app-lokaal
+SitePreviewFrame (S22-consolidatie); switcher als rail-tile i.p.v. ice-veld (D1).
 
 ## Content / state-machine reference (from the prototype)
 - Property: **Trysil Panorama**, source lang `nl`, locales `[nl, en, no]`.
