@@ -67,7 +67,6 @@ class _CreateUserFormState extends State<_CreateUserForm> {
       await context.read<AdminUserRepository>().createUser(
         email: _emailController.text.trim(),
         password: _passwordController.text,
-        skipSeededLists: true,
       );
       if (!mounted) return;
       Navigator.of(context).pop(true);

@@ -204,43 +204,77 @@ class AdminUserRepository {
     }
   }
 
+  /// Creates a password-based account through the `admin_create_user` Edge
+  /// Function.
+  ///
+  /// This cannot run client-side: the console holds the publishable (anon) key
+  /// and `auth.admin.*` answers 403 `not_admin` for it. The function keeps the
+  /// service-role key server-side, verifies the caller is a platform admin, and
+  /// provisions both the auth user and the `profiles` row.
   Future<String> createUser({
     required String email,
     required String password,
     String? username,
-    bool skipSeededLists = true,
   }) async {
     final trimmedEmail = email.trim();
     final normalizedUsername = username?.trim();
     try {
-      final response = await _client.auth.admin.createUser(
-        AdminUserAttributes(email: trimmedEmail, password: password),
+      final accessToken = _client.auth.currentSession?.accessToken;
+      if (accessToken == null || accessToken.isEmpty) {
+        throw DomainErrorCode.unauthorized.err(
+          reason: DomainErrorReason.cannotSaveData,
+          message: 'No access token available for createUser call',
+          context: const {'op': 'createUser', 'auth_session': 'missing'},
+        );
+      }
+
+      final response = await _client.functions.invoke(
+        'admin_create_user',
+        body: {
+          'email': trimmedEmail,
+          'password': password,
+          if (normalizedUsername != null && normalizedUsername.isNotEmpty)
+            'username': normalizedUsername,
+        },
+        headers: {'Authorization': 'Bearer $accessToken'},
       );
 
-      final user = response.user;
-      if (user == null) {
+      final data = response.data;
+      final userId = data is Map ? data['user_id'] as String? : null;
+      if (userId == null || userId.isEmpty) {
         throw DomainErrorCode.serverError.err(
-          reason: DomainErrorReason.cannotLoadData,
+          reason: DomainErrorReason.cannotSaveData,
+          message: 'admin_create_user returned no user_id',
           context: {'op': 'createUser', 'email': trimmedEmail},
         );
       }
 
-      final profile = Profile(
-        id: user.id,
-        email: trimmedEmail,
-        username: (normalizedUsername?.isEmpty ?? true)
-            ? null
-            : normalizedUsername,
-        isAdmin: false,
+      return userId;
+    } on FunctionException catch (error, stack) {
+      // 409 is the function's signal that the address is already taken. Use the
+      // email-specific reason, not usernameExists — this form only asks for an
+      // email, and app_errors renders that one as "Gebruikersnaam bestaat al."
+      if (error.status == 409) {
+        throw DomainErrorCode.dataConflict.err(
+          reason: DomainErrorReason.emailAlreadyRegistered,
+          context: {'op': 'createUser', 'email': trimmedEmail},
+        );
+      }
+      throw _mapError(
+        error,
+        stack,
+        reason: DomainErrorReason.cannotSaveData,
+        context: {
+          'op': 'createUser',
+          'email': trimmedEmail,
+          'status': error.status,
+        },
       );
-      await _client.from(Profile.tableName).upsert(profile.toJson());
-
-      return profile.id;
     } catch (error, stack) {
       throw _mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotLoadData,
+        reason: DomainErrorReason.cannotSaveData,
         context: {'op': 'createUser', 'email': trimmedEmail},
       );
     }
