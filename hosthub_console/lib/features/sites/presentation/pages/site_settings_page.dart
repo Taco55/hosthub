@@ -98,14 +98,12 @@ class _SiteSettingsPageState extends State<SiteSettingsPage> {
             inProgress: _saving,
             onPressed: (_saving || loading) ? null : () => _save(),
           ),
+          intrinsicPaneHeight: true,
           leftChild: SafeArea(
             child: loading
                 ? const Center(child: CircularProgressIndicator())
-                : ListView(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 24,
-                    ),
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       StyledSection(
                         isFirstSection: true,

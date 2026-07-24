@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -56,9 +55,9 @@ class _SectionScaffoldState extends State<SectionScaffold> {
     final mode = context.watch<SidebarModeCubit>().state;
     final isCompact = mode == StyledSideMenuMode.compact;
 
-    final expandedWidth = math.max(
+    final expandedWidth = (MediaQuery.sizeOf(context).width * 0.2).clamp(
       kSidebarExpandedMinWidth,
-      MediaQuery.sizeOf(context).width * 0.2,
+      kSidebarExpandedMaxWidth,
     );
     final railWidth = isCompact ? kSidebarCompactWidth : expandedWidth;
 

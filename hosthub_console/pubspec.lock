@@ -1046,7 +1046,7 @@ packages:
       path: "../../../shared/libraries/styled_widgets"
       relative: true
     source: path
-    version: "0.9.1+59"
+    version: "0.9.3+61"
   supabase:
     dependency: transitive
     description:

@@ -8119,6 +8119,16 @@ class S {
     return Intl.message('HostHub', name: 'appTitle', desc: '', args: []);
   }
 
+  /// `Property`
+  String get propertySwitcherLabel {
+    return Intl.message(
+      'Property',
+      name: 'propertySwitcherLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Loading properties…`
   String get propertySelectorLoading {
     return Intl.message(

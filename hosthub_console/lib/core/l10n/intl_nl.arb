@@ -1380,6 +1380,7 @@
   "weFieldExperience": "Ervaring {number}",
   "@weFieldExperience": { "placeholders": { "number": {} } },
   "appTitle": "HostHub",
+  "propertySwitcherLabel": "Accommodatie",
   "propertySelectorLoading": "Accommodaties laden…",
   "propertySelectorUnavailable": "Accommodaties niet beschikbaar",
   "propertySelectorEmpty": "Geen accommodaties",

@@ -1413,6 +1413,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "propertySetupSyncTitle": MessageLookupByLibrary.simpleMessage(
       "Synchroniseer accommodaties",
     ),
+    "propertySwitcherLabel": MessageLookupByLibrary.simpleMessage(
+      "Accommodatie",
+    ),
     "publicDomainLabel": MessageLookupByLibrary.simpleMessage("Publiek domein"),
     "puppy": MessageLookupByLibrary.simpleMessage("Puppy"),
     "purse": MessageLookupByLibrary.simpleMessage("Portemonnee"),

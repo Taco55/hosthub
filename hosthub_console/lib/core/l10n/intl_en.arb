@@ -1376,6 +1376,7 @@
   "weFieldExperience": "Experience {number}",
   "@weFieldExperience": { "placeholders": { "number": {} } },
   "appTitle": "HostHub",
+  "propertySwitcherLabel": "Property",
   "propertySelectorLoading": "Loading properties…",
   "propertySelectorUnavailable": "Properties unavailable",
   "propertySelectorEmpty": "No properties",

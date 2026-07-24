@@ -132,18 +132,20 @@ class SideMenu extends StatelessWidget {
                 onTap: () => select(MenuItem.pricing),
               ),
             ],
+            // Settings is a primary destination (design §5); personal
+            // preferences live in the profile modal, not here.
+            StyledNavItem(
+              icon: Icons.settings_outlined,
+              label: s.adminSettingsTitle,
+              selected: selectedItem == MenuItem.settings,
+              onTap: () => select(MenuItem.settings),
+            ),
           ],
           switchers: [_PropertySwitcher(onMenuOpenChanged: onMenuOpenChanged)],
           profile: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _ProfileTile(profile: profile, onTap: onAccountTap),
-              StyledSideMenuTile(
-                icon: Icons.settings_outlined,
-                label: s.adminSettingsTitle,
-                selected: selectedItem == MenuItem.settings,
-                onTap: () => select(MenuItem.settings),
-              ),
               if (isAdmin)
                 StyledSideMenuTile(
                   icon: Icons.admin_panel_settings_outlined,
@@ -165,10 +167,12 @@ class SideMenu extends StatelessWidget {
   }
 }
 
-/// Shared rail geometry, matching the design (96px compact rail; expanded
-/// menu is at least this wide and grows with the viewport in the shell).
+/// Shared rail geometry, matching the design (96px compact rail; the
+/// expanded menu tracks 20% of the viewport, clamped to this range so it
+/// never balloons on wide screens).
 const double kSidebarCompactWidth = 96;
-const double kSidebarExpandedMinWidth = 320;
+const double kSidebarExpandedMinWidth = 300;
+const double kSidebarExpandedMaxWidth = 340;
 
 /// Leading icon-box width shared by every row (StyledSideMenu's default).
 const double kSidebarIconBox = 44;
@@ -178,10 +182,9 @@ const double kSidebarIconBox = 44;
 const double kSidebarSideInset = (kSidebarCompactWidth - kSidebarIconBox) / 2;
 
 // ---------------------------------------------------------------------------
-// Property switcher — a rail-aligned context tile backed by StyledMenuOverlay.
-// It borrows StyledSideMenuTile's geometry (icon box + label + chevron) so it
-// reads as part of the menu rather than a form field dropped into it; the
-// compact rail keeps just the icon.
+// Property switcher — the shared ice dropdown field (design `.swf`): rail
+// icon + bordered field with the uppercase PROPERTY label above the current
+// property name. Icon-only on the compact rail.
 // ---------------------------------------------------------------------------
 
 class _PropertySwitcher extends StatelessWidget {
@@ -195,7 +198,7 @@ class _PropertySwitcher extends StatelessWidget {
       builder: (context, state) {
         final isReady = state.status == PropertyContextStatus.loaded;
         final enabled = isReady && state.properties.isNotEmpty;
-        final label = () {
+        final value = () {
           if (state.status == PropertyContextStatus.loading) {
             return context.s.propertySelectorLoading;
           }
@@ -209,113 +212,22 @@ class _PropertySwitcher extends StatelessWidget {
               context.s.propertySelectorSelect;
         }();
 
-        final scope = StyledSideMenuScope.of(context);
-        final collapsed = !scope.expanded;
-
-        final overlay = StyledMenuOverlay<PropertySummary>(
+        return StyledSideMenuSwitcher<PropertySummary>(
+          icon: Icons.apartment_outlined,
+          label: context.s.propertySwitcherLabel,
+          value: value,
+          enabled: enabled,
+          tooltip: context.s.propertySelectorSelect,
           entries: [
             for (final property in state.properties)
               StyledMenuOverlayEntry(value: property, label: property.name),
           ],
           selectedValue: state.currentProperty,
-          showSelectionIndicator: true,
-          enabled: enabled,
           onSelected: (property) =>
               context.read<PropertyContextCubit>().selectProperty(property),
           onOpenChanged: onMenuOpenChanged,
-          tooltip: collapsed ? context.s.propertySelectorSelect : null,
-          child: _PropertySwitcherTile(
-            icon: Icons.apartment_outlined,
-            label: label,
-            enabled: enabled,
-            collapsed: collapsed,
-          ),
         );
-
-        return collapsed
-            ? Align(alignment: Alignment.centerLeft, child: overlay)
-            : overlay;
       },
-    );
-  }
-}
-
-/// The switcher's visual anchor. Mirrors [StyledSideMenuTile] — a rounded,
-/// foreground-tinted row with the icon in the shared icon box — but without an
-/// own tap handler, so the enclosing [StyledMenuOverlay] owns the gesture. The
-/// compact rail collapses it to just the icon box.
-class _PropertySwitcherTile extends StatefulWidget {
-  const _PropertySwitcherTile({
-    required this.icon,
-    required this.label,
-    required this.enabled,
-    required this.collapsed,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool enabled;
-  final bool collapsed;
-
-  @override
-  State<_PropertySwitcherTile> createState() => _PropertySwitcherTileState();
-}
-
-class _PropertySwitcherTileState extends State<_PropertySwitcherTile> {
-  bool _hovering = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final scope = StyledSideMenuScope.of(context);
-    final baseFg = scope.foregroundColor;
-    final fg = baseFg.withValues(alpha: widget.enabled ? 1.0 : 0.5);
-
-    final iconBox = SizedBox(
-      width: scope.iconBox,
-      height: scope.tileHeight,
-      child: Center(
-        child: Icon(widget.icon, size: scope.iconSize, color: fg),
-      ),
-    );
-
-    if (widget.collapsed) {
-      return iconBox;
-    }
-
-    final bgAlpha = widget.enabled && _hovering ? 0.16 : 0.08;
-
-    return MouseRegion(
-      cursor: widget.enabled
-          ? SystemMouseCursors.click
-          : SystemMouseCursors.basic,
-      onEnter: (_) => setState(() => _hovering = true),
-      onExit: (_) => setState(() => _hovering = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        curve: Curves.easeOut,
-        height: scope.tileHeight,
-        decoration: BoxDecoration(
-          color: baseFg.withValues(alpha: bgAlpha),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            iconBox,
-            Expanded(
-              child: Text(
-                widget.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: fg, fontWeight: FontWeight.w600),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(left: 8, right: 12),
-              child: Icon(Icons.unfold_more, size: 18, color: fg),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

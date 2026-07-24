@@ -1361,6 +1361,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "propertySetupSyncTitle": MessageLookupByLibrary.simpleMessage(
       "Sync properties",
     ),
+    "propertySwitcherLabel": MessageLookupByLibrary.simpleMessage("Property"),
     "publicDomainLabel": MessageLookupByLibrary.simpleMessage("Public domain"),
     "puppy": MessageLookupByLibrary.simpleMessage("Puppy"),
     "purse": MessageLookupByLibrary.simpleMessage("Purse"),

@@ -134,20 +134,16 @@ class _UserSettingsView extends StatelessWidget {
           final isLoading =
               state.status == UserSettingsStatus.loading && settings == null;
 
+          // Intrinsic height: the pane card grows with its content and the
+          // page itself scrolls, with the page padding as a scroll inset —
+          // content runs to the screen edge and the gap below the card is
+          // only visible at maximum scroll.
           return StyledWebPageScaffold(
             title: context.s.settingsLabel,
-            padding: const EdgeInsets.fromLTRB(32, 24, 32, 24),
-
-            leftChild: SafeArea(
-              child: isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : SingleChildScrollView(
-                      child: _UserSettingsSection(
-                        theme: theme,
-                        settings: settings,
-                      ),
-                    ),
-            ),
+            intrinsicPaneHeight: true,
+            leftChild: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _UserSettingsSection(theme: theme, settings: settings),
           );
         },
       ),
