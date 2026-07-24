@@ -23,12 +23,6 @@ class _FakeSiteContextCubit extends Cubit<SiteContextState>
   Future<void> removeLanguage(String code) async => calls.add('remove:$code');
 
   @override
-  Future<void> setSourceFollowsUi(
-    bool follows, {
-    required String interfaceLanguage,
-  }) async => calls.add('follow:$follows:$interfaceLanguage');
-
-  @override
   Future<void> setSourceLanguage(String locale) async =>
       calls.add('source:$locale');
 
@@ -37,8 +31,9 @@ class _FakeSiteContextCubit extends Cubit<SiteContextState>
 }
 
 SiteContextState _state({
-  bool followsUi = false,
   List<String> locales = const ['nl', 'en', 'no'],
+  String? primaryDomain = 'trysilpanorama.com',
+  String? bookingUrl = 'https://book.trysilpanorama.com',
 }) => SiteContextState(
   status: SiteContextStatus.loaded,
   site: SiteSummary(
@@ -48,10 +43,9 @@ SiteContextState _state({
     locales: locales,
     timezone: 'Europe/Oslo',
     createdAt: DateTime.utc(2026, 2, 18),
-    sourceLocaleFollowsUi: followsUi,
   ),
-  primaryDomain: 'trysilpanorama.com',
-  bookingUrl: 'https://book.trysilpanorama.com',
+  primaryDomain: primaryDomain,
+  bookingUrl: bookingUrl,
 );
 
 Future<_FakeSiteContextCubit> pumpSections(
@@ -111,10 +105,19 @@ void main() {
   ) async {
     await pumpSections(tester, _state());
 
-    expect(find.text('Site details'), findsOneWidget);
+    // Section headers render as the DS uppercase micro-label.
+    expect(find.text('SITE DETAILS'), findsOneWidget);
     expect(find.text('Trysil Panorama'), findsOneWidget);
     expect(find.text('trysilpanorama.com'), findsOneWidget);
     expect(find.text('https://book.trysilpanorama.com'), findsOneWidget);
+  });
+
+  testWidgets('empty domain and booking link show the dimmed placeholder', (
+    tester,
+  ) async {
+    await pumpSections(tester, _state(primaryDomain: null, bookingUrl: null));
+
+    expect(find.text('Not set'), findsNWidgets(2));
   });
 
   testWidgets(
@@ -155,25 +158,50 @@ void main() {
   });
 
   testWidgets(
-    'follow switch off reveals the source dropdown; toggling it on calls '
-    'setSourceFollowsUi with the interface language',
+    'adopt-interface-language action asks for confirmation and then sets '
+    'the source language once',
     (tester) async {
+      // Test platform locale is English; source is nl → adopt is enabled.
       final cubit = await pumpSections(tester, _state());
 
-      // Off by default in this state → the explicit dropdown is visible.
-      expect(find.text('Choose a different language'), findsOneWidget);
-
-      await tester.tap(find.byType(Switch));
+      expect(find.text('Use my interface language'), findsOneWidget);
+      await tester.tap(find.text('Use my interface language'));
       await tester.pumpAndSettle();
 
-      expect(cubit.calls.single, startsWith('follow:true:'));
+      // Confirmation explains the re-translation consequence; cancel first.
+      expect(find.textContaining('Change the source language'), findsOneWidget);
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(cubit.calls, isEmpty);
+
+      await tester.tap(find.text('Use my interface language'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Change'));
+      await tester.pumpAndSettle();
+
+      expect(cubit.calls, ['source:en']);
     },
   );
 
-  testWidgets('follow switch on hides the source dropdown', (tester) async {
-    await pumpSections(tester, _state(followsUi: true));
+  testWidgets('source dropdown is always visible and confirms the change', (
+    tester,
+  ) async {
+    final cubit = await pumpSections(tester, _state());
 
-    expect(find.text('Choose a different language'), findsNothing);
+    // The dropdown field shows the current source language.
+    expect(find.text('Source language'), findsWidgets);
+
+    // Open the dropdown on the source-language tile and pick Norwegian
+    // (labels fall back to upper-cased codes without the names delegate).
+    await tester.tap(find.text('NL').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('NO').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Change'));
+    await tester.pumpAndSettle();
+
+    expect(cubit.calls, ['source:no']);
   });
 
   testWidgets('no sections render when no site is linked', (tester) async {

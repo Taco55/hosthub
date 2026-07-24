@@ -8,7 +8,6 @@ import 'package:hosthub_console/features/properties/properties.dart';
 SiteSummary _site({
   String defaultLocale = 'nl',
   List<String> locales = const ['nl', 'en', 'no'],
-  bool sourceLocaleFollowsUi = false,
   String name = 'Trysil Panorama',
 }) => SiteSummary(
   id: 'site-1',
@@ -17,7 +16,6 @@ SiteSummary _site({
   locales: locales,
   timezone: 'Europe/Oslo',
   createdAt: DateTime.utc(2026, 2, 18),
-  sourceLocaleFollowsUi: sourceLocaleFollowsUi,
 );
 
 ContentDocument _siteConfigDoc(String locale, Map<String, dynamic> content) =>
@@ -73,12 +71,6 @@ class _FakeCmsRepository implements CmsRepository {
   }
 
   @override
-  Future<void> updateSiteSourceFollowsUi(String siteId, bool follows) async {
-    writes.add('followsUi=$follows');
-    site = _copy(sourceLocaleFollowsUi: follows);
-  }
-
-  @override
   Future<void> updateSiteName(String siteId, String name) async {
     writes.add('name=$name');
     site = _copy(name: name);
@@ -99,7 +91,6 @@ class _FakeCmsRepository implements CmsRepository {
   SiteSummary _copy({
     String? defaultLocale,
     List<String>? locales,
-    bool? sourceLocaleFollowsUi,
     String? name,
   }) => SiteSummary(
     id: site.id,
@@ -108,7 +99,6 @@ class _FakeCmsRepository implements CmsRepository {
     locales: locales ?? site.locales,
     timezone: site.timezone,
     createdAt: site.createdAt,
-    sourceLocaleFollowsUi: sourceLocaleFollowsUi ?? site.sourceLocaleFollowsUi,
   );
 
   @override
@@ -184,48 +174,13 @@ void main() {
     expect(cubit.state.site?.locales, ['nl', 'en']);
   });
 
-  test('setSourceFollowsUi(true) aligns the source language with the '
-      'interface language when the site offers it', () async {
+  test('setSourceLanguage persists the new source language', () async {
     final cubit = await makeCubit();
 
-    await cubit.setSourceFollowsUi(true, interfaceLanguage: 'en');
+    await cubit.setSourceLanguage('en');
 
-    expect(repository.writes, contains('followsUi=true'));
     expect(repository.writes, contains('defaultLocale=en'));
     expect(cubit.state.site?.defaultLocale, 'en');
-    expect(cubit.state.site?.sourceLocaleFollowsUi, isTrue);
-  });
-
-  test('setSourceFollowsUi(true) keeps the source language when the interface '
-      'language is not an enabled website language', () async {
-    final cubit = await makeCubit();
-
-    await cubit.setSourceFollowsUi(true, interfaceLanguage: 'fi');
-
-    expect(repository.writes, contains('followsUi=true'));
-    expect(
-      repository.writes.where((w) => w.startsWith('defaultLocale=')),
-      isEmpty,
-    );
-    expect(cubit.state.site?.defaultLocale, 'nl');
-  });
-
-  test('the follow switch is a one-shot alignment: no cubit API re-syncs the '
-      'source language on later interface-language changes', () async {
-    final cubit = await makeCubit();
-
-    await cubit.setSourceFollowsUi(true, interfaceLanguage: 'nl');
-    repository.writes.clear();
-
-    // Interface language and source language stay decoupled (design §4b):
-    // there is deliberately no followInterfaceLanguage-style member that a
-    // locale change could call into.
-    expect(
-      cubit.state.site?.sourceLocaleFollowsUi,
-      isTrue,
-      reason: 'flag persists, but only drives the Settings UI',
-    );
-    expect(repository.writes, isEmpty);
   });
 
   test('setSiteName and setBookingUrl persist the site details', () async {

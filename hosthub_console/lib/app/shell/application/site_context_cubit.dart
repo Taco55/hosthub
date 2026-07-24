@@ -17,9 +17,10 @@ const List<String> kSiteLanguageCatalog = [
 
 /// The site belonging to the currently selected property, resolved with the
 /// same name-matching the sites page uses. Owns the property-scope site
-/// settings shown on the Settings page: source language (`default_locale` +
-/// the follows-interface switch), the enabled website languages, and the
-/// site-details values (name, primary domain, booking link).
+/// settings shown on the Settings page: the source language
+/// (`default_locale`, strictly independent from the per-user interface
+/// language), the enabled website languages, and the site-details values
+/// (name, primary domain, booking link).
 class SiteContextState extends Equatable {
   const SiteContextState({
     this.status = SiteContextStatus.initial,
@@ -71,7 +72,6 @@ class SiteContextState extends Equatable {
     site?.name,
     site?.defaultLocale,
     site?.locales,
-    site?.sourceLocaleFollowsUi,
     primaryDomain,
     bookingUrl,
     error,
@@ -147,31 +147,6 @@ class SiteContextCubit extends Cubit<SiteContextState> {
     if (site == null || site.defaultLocale == locale) return;
     await _guard(() async {
       await _cmsRepository.updateSiteDefaultLocale(site.id, locale);
-      await resolve();
-    });
-  }
-
-  /// Toggles "Same as interface language". Turning it on aligns the source
-  /// language with [interfaceLanguage] ONCE, as part of this deliberate
-  /// property-scope action. It is a one-shot alignment: later interface-
-  /// language changes never touch the source language (design §4b — the two
-  /// concepts stay decoupled).
-  Future<void> setSourceFollowsUi(
-    bool follows, {
-    required String interfaceLanguage,
-  }) async {
-    final site = state.site;
-    if (site == null || site.sourceLocaleFollowsUi == follows) return;
-    await _guard(() async {
-      await _cmsRepository.updateSiteSourceFollowsUi(site.id, follows);
-      if (follows &&
-          site.locales.contains(interfaceLanguage) &&
-          site.defaultLocale != interfaceLanguage) {
-        await _cmsRepository.updateSiteDefaultLocale(
-          site.id,
-          interfaceLanguage,
-        );
-      }
       await resolve();
     });
   }

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 8dCpewhQaGSAwGX1gxGC6hJUBTBhWc5SaVEEAbrWbAcxUzGIMz0tuoW4q5GbQKP
+\restrict X0fGz8IU5c481g3EInFgIIhKVROETR8UxLaUzpIhL7eBKSJ1bPu8bqRmGePZCsI
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -749,8 +749,7 @@ CREATE TABLE public.sites (
     contact_email text,
     email_from_name text,
     lodgify_property_id text,
-    lodgify_room_type_id text,
-    source_locale_follows_ui boolean DEFAULT false NOT NULL
+    lodgify_room_type_id text
 );
 
 
@@ -1883,5 +1882,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON T
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 8dCpewhQaGSAwGX1gxGC6hJUBTBhWc5SaVEEAbrWbAcxUzGIMz0tuoW4q5GbQKP
+\unrestrict X0fGz8IU5c481g3EInFgIIhKVROETR8UxLaUzpIhL7eBKSJ1bPu8bqRmGePZCsI
 

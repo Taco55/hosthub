@@ -8259,43 +8259,53 @@ class S {
     return Intl.message('Source', name: 'sourceBadgeLabel', desc: '', args: []);
   }
 
-  /// `Same as interface language`
-  String get sameAsInterfaceLanguageTitle {
+  /// `Not set`
+  String get notSet {
+    return Intl.message('Not set', name: 'notSet', desc: '', args: []);
+  }
+
+  /// `Change`
+  String get changeButton {
+    return Intl.message('Change', name: 'changeButton', desc: '', args: []);
+  }
+
+  /// `Use my interface language`
+  String get adoptInterfaceLanguageTitle {
     return Intl.message(
-      'Same as interface language',
-      name: 'sameAsInterfaceLanguageTitle',
+      'Use my interface language',
+      name: 'adoptInterfaceLanguageTitle',
       desc: '',
       args: [],
     );
   }
 
-  /// `Write your website in the language your console is set to ({language}).`
-  String sameAsInterfaceLanguageSubtitle(String language) {
+  /// `One-time action: sets the source language to {language}.`
+  String adoptInterfaceLanguageSubtitle(String language) {
     return Intl.message(
-      'Write your website in the language your console is set to ($language).',
-      name: 'sameAsInterfaceLanguageSubtitle',
+      'One-time action: sets the source language to $language.',
+      name: 'adoptInterfaceLanguageSubtitle',
       desc: '',
       args: [language],
     );
   }
 
-  /// `Choose a different language`
-  String get chooseDifferentLanguageTitle {
+  /// `Change the source language to {language}?`
+  String changeSourceLanguageConfirmTitle(String language) {
     return Intl.message(
-      'Choose a different language',
-      name: 'chooseDifferentLanguageTitle',
+      'Change the source language to $language?',
+      name: 'changeSourceLanguageConfirmTitle',
       desc: '',
-      args: [],
+      args: [language],
     );
   }
 
-  /// `Write in a language other than your interface language.`
-  String get chooseDifferentLanguageSubtitle {
+  /// `You'll write your website in {language} from now on. The other languages are re-translated from the new source on publish; locked fields keep your wording.`
+  String changeSourceLanguageConfirmMessage(String language) {
     return Intl.message(
-      'Write in a language other than your interface language.',
-      name: 'chooseDifferentLanguageSubtitle',
+      'You\'ll write your website in $language from now on. The other languages are re-translated from the new source on publish; locked fields keep your wording.',
+      name: 'changeSourceLanguageConfirmMessage',
       desc: '',
-      args: [],
+      args: [language],
     );
   }
 

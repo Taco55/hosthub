@@ -34,6 +34,30 @@ String languageDisplayName(BuildContext context, String code) {
   return resolved[0].toUpperCase() + resolved.substring(1);
 }
 
+/// The DS `.jo-label` micro-label for section headers: small, semibold,
+/// uppercase (via `uppercaseHeader`), loose tracking, muted. Kept per-screen:
+/// the editor's card headers deliberately use the bolder card-title style, so
+/// this is not a theme-wide default.
+TextStyle? sectionHeaderStyle(BuildContext context) {
+  final theme = Theme.of(context);
+  return theme.textTheme.labelSmall?.copyWith(
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.6,
+    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+  );
+}
+
+/// Dimmed placeholder for an empty value on a read-only/value tile.
+Widget notSetPlaceholder(BuildContext context) {
+  final theme = Theme.of(context);
+  return Text(
+    context.s.notSet,
+    style: theme.textTheme.bodyMedium?.copyWith(
+      color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+    ),
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Site details
 // ---------------------------------------------------------------------------
@@ -51,7 +75,11 @@ class _SiteDetailsSection extends StatelessWidget {
     return StyledSection(
       isFirstSection: true,
       header: s.siteDetailsSectionTitle,
-      inset: false,
+      inset: true,
+      horizontalPadding: 0,
+      childMinHeight: 44,
+      headerStyle: sectionHeaderStyle(context),
+      uppercaseHeader: true,
       children: [
         StyledTile(
           leading: const Icon(Icons.home_outlined),
@@ -68,15 +96,18 @@ class _SiteDetailsSection extends StatelessWidget {
             await context.read<SiteContextCubit>().setSiteName(name);
           },
         ),
+        // Read-only (domains are infrastructure): no chevron, and an empty
+        // value renders as the dimmed "Not set" placeholder — one consistent
+        // trailing pattern across these rows.
         StyledTile(
           leading: const Icon(Icons.language_outlined),
           title: s.publicDomainLabel,
-          value: state.primaryDomain ?? '—',
+          value: state.primaryDomain ?? notSetPlaceholder(context),
         ),
         StyledTile(
           leading: const Icon(Icons.link_outlined),
           title: s.bookingLinkLabel,
-          value: state.bookingUrl ?? '—',
+          value: state.bookingUrl ?? notSetPlaceholder(context),
           valueMaxWidthFraction: 0.5,
           showChevron: true,
           onTap: () async {
@@ -136,7 +167,11 @@ class _WebsiteLanguagesSection extends StatelessWidget {
     return StyledSection(
       header: s.websiteLanguagesSectionTitle,
       footer: s.websiteLanguagesFooter,
-      inset: false,
+      inset: true,
+      horizontalPadding: 0,
+      childMinHeight: 44,
+      headerStyle: sectionHeaderStyle(context),
+      uppercaseHeader: true,
       children: [
         for (final code in site.locales)
           StyledTile(
@@ -197,7 +232,10 @@ class _WebsiteLanguagesSection extends StatelessWidget {
   }
 }
 
-/// The small uppercase language tag from the design (`.flagmini`).
+/// The small uppercase language tag from the design (`.flagmini`), built on
+/// [StyledChip] so it needs no bespoke chrome. labelStyle keeps labelSmall's
+/// own dark colour: this theme's onSurfaceVariant is too light to read on
+/// surfaceContainerHighest.
 class _LanguageTag extends StatelessWidget {
   const _LanguageTag({required this.code});
 
@@ -206,25 +244,14 @@ class _LanguageTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // Zero padding: StyledContainer's default inset would squeeze the text
-    // out of the fixed 32px box (same recipe as the publish modal's badge).
-    return StyledContainer(
+    return StyledChip(
+      label: code.toUpperCase(),
       backgroundColor: theme.colorScheme.surfaceContainerHighest,
-      borderRadius: BorderRadius.circular(8),
-      padding: EdgeInsets.zero,
-      child: SizedBox(
-        width: 32,
-        height: 32,
-        child: Center(
-          child: Text(
-            code.toUpperCase(),
-            // labelSmall's own (dark) colour: this theme's onSurfaceVariant
-            // is too light to read on surfaceContainerHighest.
-            style: theme.textTheme.labelSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
+      cornerRadius: 8,
+      minHeight: 28,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      labelStyle: theme.textTheme.labelSmall?.copyWith(
+        fontWeight: FontWeight.w700,
       ),
     );
   }
@@ -243,41 +270,75 @@ class _SourceLanguageSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = context.s;
     final site = state.site!;
+    final colorScheme = Theme.of(context).colorScheme;
     final interfaceLanguage = context.watch<LanguageCubit>().state.languageCode;
+    // The one-time adopt action only makes sense when it would change
+    // something and the website actually offers the interface language.
+    final canAdopt =
+        site.locales.contains(interfaceLanguage) &&
+        site.defaultLocale != interfaceLanguage;
 
     return StyledSection(
       header: s.sourceLanguageLabel,
       footer: s.sourceLanguageFooter,
-      inset: false,
+      inset: true,
+      horizontalPadding: 0,
+      childMinHeight: 44,
+      headerStyle: sectionHeaderStyle(context),
+      uppercaseHeader: true,
       children: [
-        StyledSwitchTile(
+        // Always directly editable — deliberately independent from the
+        // interface language (user scope). Every change is confirmed: it
+        // re-bases what all other languages are translated from.
+        StyledSelectionTile<String>.dropdown(
+          title: s.sourceLanguageLabel,
+          subtitle: s.sourceLanguageDescription,
           leading: const Icon(Icons.translate),
-          title: s.sameAsInterfaceLanguageTitle,
-          subtitle: s.sameAsInterfaceLanguageSubtitle(
+          currentValue: site.defaultLocale,
+          options: site.locales,
+          optionLabelBuilder: (code) => languageDisplayName(context, code),
+          fieldAutoSize: true,
+          onChanged: (code) {
+            if (code == null || code == site.defaultLocale) return;
+            _confirmSourceLanguageChange(context, code);
+          },
+        ),
+        // Variant (a) of the design note: a one-time action instead of a
+        // stateful "follows interface language" toggle — a toggle that only
+        // acts once would suggest a live binding that intentionally does
+        // not exist.
+        StyledTile(
+          leading: Icon(
+            Icons.sync_alt,
+            color: canAdopt ? colorScheme.primary : null,
+          ),
+          title: s.adoptInterfaceLanguageTitle,
+          titleColor: canAdopt ? colorScheme.primary : null,
+          subtitle: s.adoptInterfaceLanguageSubtitle(
             languageDisplayName(context, interfaceLanguage),
           ),
-          value: site.sourceLocaleFollowsUi,
-          onChanged: (follows) =>
-              context.read<SiteContextCubit>().setSourceFollowsUi(
-                follows,
-                interfaceLanguage: interfaceLanguage,
-              ),
+          enabled: canAdopt,
+          // Disabled = dimmed row, not the theme's dark disabled surface —
+          // inside an inset group that slab reads as a rendering glitch.
+          disabledBackgroundColor: Colors.transparent,
+          onTap: canAdopt
+              ? () => _confirmSourceLanguageChange(context, interfaceLanguage)
+              : null,
         ),
-        if (!site.sourceLocaleFollowsUi)
-          StyledSelectionTile<String>.dropdown(
-            title: s.chooseDifferentLanguageTitle,
-            subtitle: s.chooseDifferentLanguageSubtitle,
-            leading: const Icon(Icons.language_outlined),
-            currentValue: site.defaultLocale,
-            options: site.locales,
-            optionLabelBuilder: (code) => languageDisplayName(context, code),
-            fieldAutoSize: true,
-            onChanged: (code) {
-              if (code == null || code == site.defaultLocale) return;
-              context.read<SiteContextCubit>().setSourceLanguage(code);
-            },
-          ),
       ],
+    );
+  }
+
+  void _confirmSourceLanguageChange(BuildContext context, String code) {
+    final s = context.s;
+    final language = languageDisplayName(context, code);
+    showStyledAlertDialog(
+      context,
+      title: s.changeSourceLanguageConfirmTitle(language),
+      message: s.changeSourceLanguageConfirmMessage(language),
+      actionText: s.changeButton,
+      dismissText: s.cancelButton,
+      onAction: () => context.read<SiteContextCubit>().setSourceLanguage(code),
     );
   }
 }
