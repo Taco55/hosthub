@@ -52,3 +52,6 @@ supabase/.temp/
 # Local agent instruction files
 AGENTS.md
 CLAUDE.md
+
+# fvm (SDK-symlink; .fvmrc is de bron van waarheid)
+.fvm/

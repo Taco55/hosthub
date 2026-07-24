@@ -1,0 +1,6 @@
+{
+  // Pin de Dart-extensie op de project-SDK (.fvmrc = 3.35.7) zodat de
+  // globale fvm-versiekiezer nooit een nieuwere engine tegen dit project
+  // aan compileert (SemanticsFlags/dart:ui-mismatch).
+  "dart.flutterSdkPath": ".fvm/flutter_sdk"
+}
