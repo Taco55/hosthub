@@ -1384,5 +1384,10 @@
   "sourceLanguageLabel": "Brontaal",
   "sourceLanguageUnavailable": "Geen website gekoppeld",
   "versionFooter": "v{version}",
-  "@versionFooter": { "placeholders": { "version": {} } }
+  "@versionFooter": { "placeholders": { "version": {} } },
+  "weErrorLoadFailed": "Kon de website-inhoud niet laden",
+  "weErrorSaveFailed": "Kon je wijzigingen niet opslaan — ze blijven in de editor staan",
+  "weErrorTranslateFailed": "Kon de vertaling niet verversen — de laatste goede versie blijft staan",
+  "weErrorResetFailed": "Kon dit veld niet terugzetten naar AI",
+  "weErrorPublishFailed": "Publiceren mislukt — je wijzigingen blijven als concept bewaard"
 }

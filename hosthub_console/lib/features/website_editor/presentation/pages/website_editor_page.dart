@@ -84,7 +84,36 @@ class _WebsiteEditorView extends StatelessWidget {
       },
     );
 
-    if (siteId == null) return view;
+    // Non-blocking error feedback (TRANSLATION.md: degrade gracefully with a
+    // toast; edits/drafts are kept). Cleared after showing so a repeat of the
+    // same failure surfaces again.
+    final withErrorToasts = BlocListener<SiteContentCubit, SiteContentState>(
+      listenWhen: (prev, next) =>
+          next.errorMessage != null &&
+          prev.errorMessage != next.errorMessage,
+      listener: (context, state) {
+        final s = context.s;
+        final message = switch (state.errorMessage) {
+          'load_failed' => s.weErrorLoadFailed,
+          'save_failed' => s.weErrorSaveFailed,
+          'translate_failed' => s.weErrorTranslateFailed,
+          'reset_failed' => s.weErrorResetFailed,
+          'publish_failed' => s.weErrorPublishFailed,
+          _ => null,
+        };
+        if (message != null) {
+          showStyledToast(
+            context,
+            type: ToastificationType.error,
+            title: message,
+          );
+        }
+        context.read<SiteContentCubit>().clearErrorMessage();
+      },
+      child: view,
+    );
+
+    if (siteId == null) return withErrorToasts;
 
     // The rail's source-language switcher changes sites.default_locale; reload
     // the editor content so the authoring language follows it.
@@ -94,7 +123,7 @@ class _WebsiteEditorView extends StatelessWidget {
           next.site?.id == siteId,
       listener: (context, _) =>
           context.read<SiteContentCubit>().loadContent(),
-      child: view,
+      child: withErrorToasts,
     );
   }
 }

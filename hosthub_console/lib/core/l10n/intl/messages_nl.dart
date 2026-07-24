@@ -1839,6 +1839,21 @@ class MessageLookup extends MessageLookupByLibrary {
     "weDeviceMobile": MessageLookupByLibrary.simpleMessage("Mobiel"),
     "weDeviceWeb": MessageLookupByLibrary.simpleMessage("Web"),
     "weEditingChip": m52,
+    "weErrorLoadFailed": MessageLookupByLibrary.simpleMessage(
+      "Kon de website-inhoud niet laden",
+    ),
+    "weErrorPublishFailed": MessageLookupByLibrary.simpleMessage(
+      "Publiceren mislukt — je wijzigingen blijven als concept bewaard",
+    ),
+    "weErrorResetFailed": MessageLookupByLibrary.simpleMessage(
+      "Kon dit veld niet terugzetten naar AI",
+    ),
+    "weErrorSaveFailed": MessageLookupByLibrary.simpleMessage(
+      "Kon je wijzigingen niet opslaan — ze blijven in de editor staan",
+    ),
+    "weErrorTranslateFailed": MessageLookupByLibrary.simpleMessage(
+      "Kon de vertaling niet verversen — de laatste goede versie blijft staan",
+    ),
     "weFieldExperience": m53,
     "weFieldHeadline": MessageLookupByLibrary.simpleMessage("Titel"),
     "weFieldHeroPhotos": MessageLookupByLibrary.simpleMessage("Hero-foto\'s"),

@@ -59,6 +59,8 @@ gemotiveerd uitstellen mag alleen met reden in de evidence-kolom.
 | C5 | Publish-modal | console | done | Review: geen P0–P2-afwijkingen. Taalbadge-rijen (NL/EN/NO), bron=Ready / targets=Re-translate, Cancel + 'Publish N languages', async publish in de dialog; confirm cleart dirty+stale, cancel laat staat intact — alles getest |
 | C6 | Adherence + gedragsmodel | beide | done | Adherence-tests groen (geen hex buiten statustokens, geen chrome buiten StyledWidgets, strings via ARB); state machine volledig door cubit-tests gedekt; nieuwe C1/C2-code lib-first (StyledSideMenu/StyledMenuOverlay/StyledReorderableList) en zonder hardcoded values |
 
+| C7 | Na-pass met vers geladen tk-* skills over C1/C2-diffs | console | done | 2 bevindingen gefixt: (P1) geen gebruikersfeedback bij save/translate/publish-fouten → BlocListener + showStyledToast per foutcode (+5 ARB-keys en/nl, conform TRANSLATION.md "degrade gracefully with a toast"); (P2) SiteContextCubit zonder DomainError-state en zonder fetch-sequencing → DomainError.from + _fetchSeq-guard (tk-feature-patroon). Analyze clean, 46 tests groen |
+
 ## next_lens
 RUN 3 KLAAR (C1–C6 done, 2026-07-24). Openstaand buiten P0–P2: visuele diff met referentie-screenshots via draaiende app (handmatig/vervolgsessie); grip-uitlijning fine-tuning.
 

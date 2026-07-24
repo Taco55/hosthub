@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:app_errors/app_errors.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -15,19 +16,27 @@ class SiteContextState extends Equatable {
   const SiteContextState({
     this.status = SiteContextStatus.initial,
     this.site,
+    this.error,
   });
 
   final SiteContextStatus status;
   final SiteSummary? site;
+  final DomainError? error;
 
-  SiteContextState copyWith({SiteContextStatus? status, SiteSummary? site}) =>
+  SiteContextState copyWith({
+    SiteContextStatus? status,
+    SiteSummary? site,
+    DomainError? error,
+    bool clearError = false,
+  }) =>
       SiteContextState(
         status: status ?? this.status,
         site: site ?? this.site,
+        error: clearError ? null : (error ?? this.error),
       );
 
   @override
-  List<Object?> get props => [status, site?.id, site?.defaultLocale];
+  List<Object?> get props => [status, site?.id, site?.defaultLocale, error];
 }
 
 class SiteContextCubit extends Cubit<SiteContextState> {
@@ -44,11 +53,14 @@ class SiteContextCubit extends Cubit<SiteContextState> {
   final CmsRepository _cmsRepository;
   final PropertyContextCubit _propertyContext;
   late final StreamSubscription<PropertyContextState> _propertySub;
+  int _fetchSeq = 0;
 
   Future<void> resolve() async {
-    emit(state.copyWith(status: SiteContextStatus.loading));
+    final seq = ++_fetchSeq;
+    emit(state.copyWith(status: SiteContextStatus.loading, clearError: true));
     try {
       final sites = await _cmsRepository.fetchSites();
+      if (seq != _fetchSeq) return; // Stale — a newer resolve superseded us.
       if (sites.isEmpty) {
         emit(const SiteContextState(status: SiteContextStatus.loaded));
         return;
@@ -60,8 +72,14 @@ class SiteContextCubit extends Cubit<SiteContextState> {
           site: _resolvePreferredSite(sites, property?.name),
         ),
       );
-    } catch (_) {
-      emit(state.copyWith(status: SiteContextStatus.error));
+    } catch (error, stack) {
+      if (seq != _fetchSeq) return;
+      emit(
+        state.copyWith(
+          status: SiteContextStatus.error,
+          error: DomainError.from(error, stack: stack),
+        ),
+      );
     }
   }
 
@@ -72,8 +90,13 @@ class SiteContextCubit extends Cubit<SiteContextState> {
     try {
       await _cmsRepository.updateSiteDefaultLocale(site.id, locale);
       await resolve();
-    } catch (_) {
-      emit(state.copyWith(status: SiteContextStatus.error));
+    } catch (error, stack) {
+      emit(
+        state.copyWith(
+          status: SiteContextStatus.error,
+          error: DomainError.from(error, stack: stack),
+        ),
+      );
     }
   }
 

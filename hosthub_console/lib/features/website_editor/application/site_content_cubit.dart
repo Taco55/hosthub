@@ -477,6 +477,10 @@ class SiteContentCubit extends Cubit<SiteContentState> {
     _scheduleAutosave();
   }
 
+  /// Clears the surfaced error after the UI has shown it (so an identical
+  /// follow-up failure triggers feedback again).
+  void clearErrorMessage() => emit(state.copyWith(clearError: true));
+
   void openPublish() => emit(state.copyWith(publishOpen: true));
   void closePublish() => emit(state.copyWith(publishOpen: false));
 

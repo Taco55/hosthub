@@ -8183,6 +8183,56 @@ class S {
       args: [version],
     );
   }
+
+  /// `Couldn't load the website content`
+  String get weErrorLoadFailed {
+    return Intl.message(
+      'Couldn\'t load the website content',
+      name: 'weErrorLoadFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Couldn't save your changes — they are kept in the editor`
+  String get weErrorSaveFailed {
+    return Intl.message(
+      'Couldn\'t save your changes — they are kept in the editor',
+      name: 'weErrorSaveFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Couldn't refresh the translation — the last good version is kept`
+  String get weErrorTranslateFailed {
+    return Intl.message(
+      'Couldn\'t refresh the translation — the last good version is kept',
+      name: 'weErrorTranslateFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Couldn't reset this field to AI`
+  String get weErrorResetFailed {
+    return Intl.message(
+      'Couldn\'t reset this field to AI',
+      name: 'weErrorResetFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Publishing failed — your changes are kept as drafts`
+  String get weErrorPublishFailed {
+    return Intl.message(
+      'Publishing failed — your changes are kept as drafts',
+      name: 'weErrorPublishFailed',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

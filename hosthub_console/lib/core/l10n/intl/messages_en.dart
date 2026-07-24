@@ -1761,6 +1761,21 @@ class MessageLookup extends MessageLookupByLibrary {
     "weDeviceMobile": MessageLookupByLibrary.simpleMessage("Mobile"),
     "weDeviceWeb": MessageLookupByLibrary.simpleMessage("Web"),
     "weEditingChip": m52,
+    "weErrorLoadFailed": MessageLookupByLibrary.simpleMessage(
+      "Couldn\'t load the website content",
+    ),
+    "weErrorPublishFailed": MessageLookupByLibrary.simpleMessage(
+      "Publishing failed — your changes are kept as drafts",
+    ),
+    "weErrorResetFailed": MessageLookupByLibrary.simpleMessage(
+      "Couldn\'t reset this field to AI",
+    ),
+    "weErrorSaveFailed": MessageLookupByLibrary.simpleMessage(
+      "Couldn\'t save your changes — they are kept in the editor",
+    ),
+    "weErrorTranslateFailed": MessageLookupByLibrary.simpleMessage(
+      "Couldn\'t refresh the translation — the last good version is kept",
+    ),
     "weFieldExperience": m53,
     "weFieldHeadline": MessageLookupByLibrary.simpleMessage("Headline"),
     "weFieldHeroPhotos": MessageLookupByLibrary.simpleMessage("Hero photos"),
