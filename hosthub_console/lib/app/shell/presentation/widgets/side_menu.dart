@@ -8,16 +8,15 @@ import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 
 import '../../application/sidebar_mode_cubit.dart';
-import '../../application/site_context_cubit.dart';
 import 'menu_item.dart';
 
 /// The console navigation rail, composed from the shared [StyledSideMenu],
 /// mirroring the dashboard rail design: logo header with pin/collapse toggle,
 /// primary nav items (Website, Reservations, Revenue, Pricing), the Property
-/// and Source-language switchers pinned at the bottom as ice dropdown fields,
-/// then the profile tile, logout and a version footer. In the compact 96px
-/// rail only the icons remain; the desktop shell overlays the expanded menu
-/// while hovering.
+/// switcher pinned at the bottom as a rail-aligned context tile, then the
+/// profile tile, logout and a version footer. The source-language selector
+/// lives on the Settings page. In the compact 96px rail only the icons remain;
+/// the desktop shell overlays the expanded menu while hovering.
 class SideMenu extends StatelessWidget {
   const SideMenu({
     super.key,
@@ -90,6 +89,10 @@ class SideMenu extends StatelessWidget {
           showSwitchersWhenCompact: true,
           showProfileWhenCompact: true,
           showFooterWhenCompact: true,
+          switcherPadding: const EdgeInsets.symmetric(
+            horizontal: kSidebarSideInset,
+            vertical: 4,
+          ),
           header: const _MenuLogo(),
           items: [
             if (hasProperties) ...[
@@ -132,7 +135,6 @@ class SideMenu extends StatelessWidget {
           ],
           switchers: [
             _PropertySwitcher(onMenuOpenChanged: onMenuOpenChanged),
-            _SourceLanguageSwitcher(onMenuOpenChanged: onMenuOpenChanged),
           ],
           profile: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -170,97 +172,19 @@ class SideMenu extends StatelessWidget {
 const double kSidebarCompactWidth = 96;
 const double kSidebarExpandedMinWidth = 320;
 
+/// Leading icon-box width shared by every row (StyledSideMenu's default).
+const double kSidebarIconBox = 44;
+
+/// Horizontal inset that centres the icon box in the compact rail. Applied to
+/// the switcher too so the Property tile lines up with the nav icons.
+const double kSidebarSideInset = (kSidebarCompactWidth - kSidebarIconBox) / 2;
+
 // ---------------------------------------------------------------------------
-// Switchers — ice dropdown fields backed by StyledMenuOverlay in both states
-// (the icon stays rail-aligned; expanding only reveals the field).
+// Property switcher — a rail-aligned context tile backed by StyledMenuOverlay.
+// It borrows StyledSideMenuTile's geometry (icon box + label + chevron) so it
+// reads as part of the menu rather than a form field dropped into it; the
+// compact rail keeps just the icon.
 // ---------------------------------------------------------------------------
-
-Widget _switcherIconBox(BuildContext context, IconData icon,
-    {required bool enabled}) {
-  final scope = StyledSideMenuScope.of(context);
-  final fg = scope.foregroundColor.withValues(alpha: enabled ? 1.0 : 0.5);
-  return SizedBox(
-    width: scope.iconBox,
-    height: scope.iconBox,
-    child: Center(child: Icon(icon, size: scope.iconSize, color: fg)),
-  );
-}
-
-Widget _switcherField(
-  BuildContext context, {
-  required String value,
-  required bool enabled,
-}) {
-  final colorScheme = Theme.of(context).colorScheme;
-  final fg =
-      colorScheme.onPrimaryContainer.withValues(alpha: enabled ? 1.0 : 0.5);
-  return Container(
-    height: 40,
-    padding: const EdgeInsets.symmetric(horizontal: 12),
-    decoration: BoxDecoration(
-      color: colorScheme.primaryContainer,
-      border: Border.all(
-        color: colorScheme.onPrimaryContainer.withValues(alpha: 0.24),
-      ),
-      borderRadius: BorderRadius.circular(10),
-    ),
-    child: Row(
-      children: [
-        Expanded(
-          child: Text(
-            value,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: fg),
-          ),
-        ),
-        Icon(Icons.unfold_more, size: 18, color: fg),
-      ],
-    ),
-  );
-}
-
-Widget _switcherOverlay<T>({
-  required BuildContext context,
-  required IconData icon,
-  required bool enabled,
-  required String tooltip,
-  required String value,
-  required List<StyledMenuOverlayEntry<T>> entries,
-  required T? selectedValue,
-  required ValueChanged<T> onSelected,
-  ValueChanged<bool>? onOpenChanged,
-}) {
-  final scope = StyledSideMenuScope.of(context);
-  final collapsed = !scope.expanded;
-  final iconBox = _switcherIconBox(context, icon, enabled: enabled);
-  final child = collapsed
-      ? iconBox
-      : Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            iconBox,
-            const SizedBox(width: 4),
-            Expanded(
-              child: _switcherField(context, value: value, enabled: enabled),
-            ),
-          ],
-        );
-
-  final overlay = StyledMenuOverlay<T>(
-    entries: entries,
-    selectedValue: selectedValue,
-    showSelectionIndicator: true,
-    enabled: enabled,
-    onSelected: onSelected,
-    onOpenChanged: onOpenChanged,
-    tooltip: collapsed ? tooltip : null,
-    child: child,
-  );
-
-  return collapsed
-      ? Align(alignment: Alignment.centerLeft, child: overlay)
-      : overlay;
-}
 
 class _PropertySwitcher extends StatelessWidget {
   const _PropertySwitcher({this.onMenuOpenChanged});
@@ -287,76 +211,112 @@ class _PropertySwitcher extends StatelessWidget {
               context.s.propertySelectorSelect;
         }();
 
-        return _switcherOverlay<PropertySummary>(
-          context: context,
-          icon: Icons.apartment_outlined,
-          enabled: enabled,
-          tooltip: context.s.propertySelectorSelect,
-          value: label,
+        final scope = StyledSideMenuScope.of(context);
+        final collapsed = !scope.expanded;
+
+        final overlay = StyledMenuOverlay<PropertySummary>(
           entries: [
             for (final property in state.properties)
               StyledMenuOverlayEntry(value: property, label: property.name),
           ],
           selectedValue: state.currentProperty,
+          showSelectionIndicator: true,
+          enabled: enabled,
           onSelected: (property) =>
               context.read<PropertyContextCubit>().selectProperty(property),
           onOpenChanged: onMenuOpenChanged,
+          tooltip: collapsed ? context.s.propertySelectorSelect : null,
+          child: _PropertySwitcherTile(
+            icon: Icons.apartment_outlined,
+            label: label,
+            enabled: enabled,
+            collapsed: collapsed,
+          ),
         );
+
+        return collapsed
+            ? Align(alignment: Alignment.centerLeft, child: overlay)
+            : overlay;
       },
     );
   }
 }
 
-class _SourceLanguageSwitcher extends StatelessWidget {
-  const _SourceLanguageSwitcher({this.onMenuOpenChanged});
+/// The switcher's visual anchor. Mirrors [StyledSideMenuTile] — a rounded,
+/// foreground-tinted row with the icon in the shared icon box — but without an
+/// own tap handler, so the enclosing [StyledMenuOverlay] owns the gesture. The
+/// compact rail collapses it to just the icon box.
+class _PropertySwitcherTile extends StatefulWidget {
+  const _PropertySwitcherTile({
+    required this.icon,
+    required this.label,
+    required this.enabled,
+    required this.collapsed,
+  });
 
-  final ValueChanged<bool>? onMenuOpenChanged;
+  final IconData icon;
+  final String label;
+  final bool enabled;
+  final bool collapsed;
+
+  @override
+  State<_PropertySwitcherTile> createState() => _PropertySwitcherTileState();
+}
+
+class _PropertySwitcherTileState extends State<_PropertySwitcherTile> {
+  bool _hovering = false;
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<SiteContextCubit, SiteContextState>(
-      builder: (context, state) {
-        final site = state.site;
-        final enabled = site != null && site.locales.length > 1;
-        final value = site == null
-            ? context.s.sourceLanguageUnavailable
-            : _languageName(context, site.defaultLocale);
+    final scope = StyledSideMenuScope.of(context);
+    final baseFg = scope.foregroundColor;
+    final fg = baseFg.withValues(alpha: widget.enabled ? 1.0 : 0.5);
 
-        return _switcherOverlay<String>(
-          context: context,
-          icon: Icons.translate,
-          enabled: enabled,
-          tooltip: context.s.sourceLanguageLabel,
-          value: value,
-          entries: [
-            for (final locale in site?.locales ?? const <String>[])
-              StyledMenuOverlayEntry(
-                value: locale,
-                label: _languageName(context, locale),
-              ),
-          ],
-          selectedValue: site?.defaultLocale,
-          onSelected: (locale) =>
-              context.read<SiteContextCubit>().setSourceLanguage(locale),
-          onOpenChanged: onMenuOpenChanged,
-        );
-      },
+    final iconBox = SizedBox(
+      width: scope.iconBox,
+      height: scope.tileHeight,
+      child: Center(child: Icon(widget.icon, size: scope.iconSize, color: fg)),
     );
-  }
 
-  static String _languageName(BuildContext context, String code) {
-    final s = context.s;
-    switch (code) {
-      case 'nl':
-        return s.weLangDutch;
-      case 'en':
-        return s.weLangEnglish;
-      case 'no':
-      case 'nb':
-        return s.weLangNorwegian;
-      default:
-        return code.toUpperCase();
+    if (widget.collapsed) {
+      return iconBox;
     }
+
+    final bgAlpha = widget.enabled && _hovering ? 0.16 : 0.08;
+
+    return MouseRegion(
+      cursor: widget.enabled
+          ? SystemMouseCursors.click
+          : SystemMouseCursors.basic,
+      onEnter: (_) => setState(() => _hovering = true),
+      onExit: (_) => setState(() => _hovering = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOut,
+        height: scope.tileHeight,
+        decoration: BoxDecoration(
+          color: baseFg.withValues(alpha: bgAlpha),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            iconBox,
+            Expanded(
+              child: Text(
+                widget.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: fg, fontWeight: FontWeight.w600),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 8, right: 12),
+              child: Icon(Icons.unfold_more, size: 18, color: fg),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

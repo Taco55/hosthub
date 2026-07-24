@@ -8,6 +8,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
+import 'package:hosthub_console/app/shell/application/site_context_cubit.dart';
 import 'package:hosthub_console/app/shell/presentation/widgets/console_page_scaffold.dart';
 import 'package:app_errors/app_errors.dart';
 import 'package:hosthub_console/core/core.dart';
@@ -236,6 +237,7 @@ class _UserSettingsSection extends StatelessWidget {
                 context.read<UserSettingsCubit>().changeLanguage(value);
               },
             ),
+            const _SourceLanguageTile(),
             const _AppInfoTile(),
           ],
         ),
@@ -459,9 +461,10 @@ class _TeamMembersList extends StatelessWidget {
             ),
           ),
           trailing: member.memberRole != SiteMemberRole.owner
-              ? IconButton(
-                  icon: const Icon(Icons.remove_circle_outline, size: 20),
-                  tooltip: 'Verwijderen',
+              ? StyledToolbarButton(
+                  iconData: Icons.remove_circle_outline,
+                  destructive: true,
+                  tooltip: context.s.teamRemoveMember,
                   onPressed: () => _confirmRemove(context, member),
                 )
               : null,
@@ -523,9 +526,10 @@ class _TeamInvitationsList extends StatelessWidget {
               ),
             ),
           ),
-          trailing: IconButton(
-            icon: const Icon(Icons.cancel_outlined, size: 20),
-            tooltip: 'Annuleren',
+          trailing: StyledToolbarButton(
+            iconData: Icons.cancel_outlined,
+            destructive: true,
+            tooltip: context.s.teamCancelInvitation,
             onPressed: () {
               context.read<SiteMembersCubit>().cancelPartnerInvitation(inv);
             },
@@ -533,6 +537,54 @@ class _TeamInvitationsList extends StatelessWidget {
         );
       }).toList(),
     );
+  }
+}
+
+/// Source language of the property website (`sites.default_locale`) — the
+/// language the content is authored in. Moved here from the navigation rail;
+/// disabled when no site is linked or the site is single-language.
+class _SourceLanguageTile extends StatelessWidget {
+  const _SourceLanguageTile();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<SiteContextCubit, SiteContextState>(
+      builder: (context, state) {
+        final site = state.site;
+        final locales = site?.locales ?? const <String>[];
+        final enabled = site != null && locales.length > 1;
+
+        return StyledSelectionTile<String>.dropdown(
+          title: context.s.sourceLanguageLabel,
+          subtitle: context.s.sourceLanguageDescription,
+          currentValue: site?.defaultLocale,
+          options: locales,
+          enabled: enabled,
+          nullPlaceholder: context.s.sourceLanguageUnavailable,
+          optionLabelBuilder: (value) => _sourceLanguageName(context, value),
+          fieldAutoSize: true,
+          onChanged: (value) {
+            if (value == null || value == site?.defaultLocale) return;
+            context.read<SiteContextCubit>().setSourceLanguage(value);
+          },
+        );
+      },
+    );
+  }
+
+  static String _sourceLanguageName(BuildContext context, String code) {
+    final s = context.s;
+    switch (code) {
+      case 'nl':
+        return s.weLangDutch;
+      case 'en':
+        return s.weLangEnglish;
+      case 'no':
+      case 'nb':
+        return s.weLangNorwegian;
+      default:
+        return code.toUpperCase();
+    }
   }
 }
 
@@ -906,10 +958,10 @@ class _LodgifyApiKeyControl extends StatelessWidget {
       );
     }
 
-    return IconButton(
-      onPressed: isBusy ? null : onEdit,
-      icon: const Icon(Icons.edit_outlined),
+    return StyledToolbarButton(
+      iconData: Icons.edit_outlined,
       tooltip: context.s.edit,
+      onPressed: isBusy ? null : onEdit,
     );
   }
 }

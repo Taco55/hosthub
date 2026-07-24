@@ -1665,6 +1665,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "soundLabel": MessageLookupByLibrary.simpleMessage("Geluid"),
     "soup": MessageLookupByLibrary.simpleMessage("Soep"),
     "source": MessageLookupByLibrary.simpleMessage("Bron"),
+    "sourceLanguageDescription": MessageLookupByLibrary.simpleMessage(
+      "Taal waarin je de website-inhoud invoert",
+    ),
     "sourceLanguageLabel": MessageLookupByLibrary.simpleMessage("Brontaal"),
     "sourceLanguageUnavailable": MessageLookupByLibrary.simpleMessage(
       "Geen website gekoppeld",

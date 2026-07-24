@@ -1597,6 +1597,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "soundLabel": MessageLookupByLibrary.simpleMessage("Sound"),
     "soup": MessageLookupByLibrary.simpleMessage("Soup"),
     "source": MessageLookupByLibrary.simpleMessage("Source"),
+    "sourceLanguageDescription": MessageLookupByLibrary.simpleMessage(
+      "The language you enter your website content in",
+    ),
     "sourceLanguageLabel": MessageLookupByLibrary.simpleMessage(
       "Source language",
     ),

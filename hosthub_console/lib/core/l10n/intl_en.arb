@@ -1378,6 +1378,7 @@
   "sidebarPinTooltip": "Pin menu",
   "sidebarCollapseTooltip": "Collapse menu",
   "sourceLanguageLabel": "Source language",
+  "sourceLanguageDescription": "The language you enter your website content in",
   "sourceLanguageUnavailable": "No website linked",
   "versionFooter": "v{version}",
   "@versionFooter": { "placeholders": { "version": {} } },

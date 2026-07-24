@@ -1382,6 +1382,7 @@
   "sidebarPinTooltip": "Menu vastzetten",
   "sidebarCollapseTooltip": "Menu inklappen",
   "sourceLanguageLabel": "Brontaal",
+  "sourceLanguageDescription": "Taal waarin je de website-inhoud invoert",
   "sourceLanguageUnavailable": "Geen website gekoppeld",
   "versionFooter": "v{version}",
   "@versionFooter": { "placeholders": { "version": {} } },

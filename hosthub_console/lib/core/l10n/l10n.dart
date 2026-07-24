@@ -8164,6 +8164,16 @@ class S {
     );
   }
 
+  /// `The language you enter your website content in`
+  String get sourceLanguageDescription {
+    return Intl.message(
+      'The language you enter your website content in',
+      name: 'sourceLanguageDescription',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `No website linked`
   String get sourceLanguageUnavailable {
     return Intl.message(
