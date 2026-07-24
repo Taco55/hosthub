@@ -75,8 +75,10 @@ gemotiveerd uitstellen mag alleen met reden in de evidence-kolom.
 
 | D7 | Generieke theme-pass + ConsolePageScaffold verwijderd | beide | done | sw@8e6a78f = v0.9.2 (StyledWebPageScaffoldThemeData: pane-surfaces/pageBackground/pagePadding via preset; primaryAction/isLoading/PopScope/per-pane decorate; StyledSectionThemeData.borderColorDark; +12 lib-tests, 681 groen). Console e503c71: adapter weg, 14 pagina's direct op de lib-scaffold; preset = witte bordered panes op ice, secties = witte tile-groepen zonder interne verticale padding, headers 13/w600 donkerblauw zonder caps (Taco's keuze), tiles 44px, onSurfaceVariant/outline leesbaar; editor: witte .editcol + header-in-card 18px; goldens geregenereerd; 68 app-tests groen; visueel geverifieerd (Reserveringen/Settings/editor) |
 
+| D8 | Rail per design + scroll-through (review Taco) | beide | done | sw@cec100c = v0.9.3 (StyledSideMenuSwitcher: ice-veld met uppercase label, +4 tests); console 2f53597: railbreedte clamp 300–340, Property-switcher via lib-widget (ACCOMMODATIE-label), Settings als nav-item boven, settings-pagina's op intrinsicPaneHeight (padding als scroll-inset — kaart scrolt door de schermrand, gap alleen bij max scroll); visueel geverifieerd |
+
 ## next_lens
-RUN 4 KLAAR (D1–D7 done, 2026-07-24). Alle CONFORMANCE-secties gedekt; geen openstaande
+RUN 4 KLAAR (D1–D8 done, 2026-07-24). Alle CONFORMANCE-secties gedekt; geen openstaande
 prd-migratie meer (follow-kolom geschrapt). Open (user-gated): console-deploy naar prd. Bewuste
 afwijkingen gedocumenteerd in design_handoff_hosthub_cms/IMPLEMENTATION_NOTES.md.
 
