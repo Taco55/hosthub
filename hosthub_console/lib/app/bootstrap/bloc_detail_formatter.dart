@@ -104,7 +104,8 @@ abstract final class BlocDetailFormatter {
 
     try {
       final error = d.error;
-      if (error != null) parts.add('error: ${shortString(error, maxLength: 60)}');
+      if (error != null)
+        parts.add('error: ${shortString(error, maxLength: 60)}');
     } catch (_) {}
 
     return parts.join(', ');

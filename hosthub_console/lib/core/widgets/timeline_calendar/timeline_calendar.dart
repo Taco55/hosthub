@@ -120,7 +120,8 @@ class TimelineCalendar extends StatelessWidget {
     TimelineCalendarEntry,
     bool isFirstSegment,
     bool isLastSegment,
-  )? entryBuilder;
+  )?
+  entryBuilder;
 
   /// Height of each booking bar.
   final double barHeight;
@@ -187,21 +188,27 @@ class TimelineCalendar extends StatelessWidget {
 
     // Grid geometry
     final firstOfMonth = DateTime(focusedMonth.year, focusedMonth.month, 1);
-    final lastOfMonth =
-        DateTime(focusedMonth.year, focusedMonth.month + 1, 0);
+    final lastOfMonth = DateTime(focusedMonth.year, focusedMonth.month + 1, 0);
     // ISO weekday: 1 = Monday … 7 = Sunday
-    final startOfGrid =
-        firstOfMonth.subtract(Duration(days: firstOfMonth.weekday - 1));
+    final startOfGrid = firstOfMonth.subtract(
+      Duration(days: firstOfMonth.weekday - 1),
+    );
     final totalCells = (firstOfMonth.weekday - 1) + lastOfMonth.day;
     final weekCount = (totalCells / 7).ceil();
 
     // Navigation constraints
-    final canGoBack = rangeStart == null ||
-        DateTime(focusedMonth.year, focusedMonth.month - 1)
-            .isAfter(DateTime(rangeStart!.year, rangeStart!.month - 1));
-    final canGoForward = rangeEnd == null ||
-        DateTime(focusedMonth.year, focusedMonth.month + 1)
-            .isBefore(DateTime(rangeEnd!.year, rangeEnd!.month + 1));
+    final canGoBack =
+        rangeStart == null ||
+        DateTime(
+          focusedMonth.year,
+          focusedMonth.month - 1,
+        ).isAfter(DateTime(rangeStart!.year, rangeStart!.month - 1));
+    final canGoForward =
+        rangeEnd == null ||
+        DateTime(
+          focusedMonth.year,
+          focusedMonth.month + 1,
+        ).isBefore(DateTime(rangeEnd!.year, rangeEnd!.month + 1));
 
     final weekRows = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -223,8 +230,7 @@ class TimelineCalendar extends StatelessWidget {
             outOfMonthDisplay: outOfMonthDisplay,
             theme: theme,
           ),
-          if (w < weekCount - 1)
-            SizedBox(height: weekSpacing),
+          if (w < weekCount - 1) SizedBox(height: weekSpacing),
         ],
       ],
     );
@@ -241,13 +247,13 @@ class TimelineCalendar extends StatelessWidget {
             canGoForward: canGoForward,
             onPrevious: canGoBack
                 ? () => onMonthChanged?.call(
-                      DateTime(focusedMonth.year, focusedMonth.month - 1),
-                    )
+                    DateTime(focusedMonth.year, focusedMonth.month - 1),
+                  )
                 : null,
             onNext: canGoForward
                 ? () => onMonthChanged?.call(
-                      DateTime(focusedMonth.year, focusedMonth.month + 1),
-                    )
+                    DateTime(focusedMonth.year, focusedMonth.month + 1),
+                  )
                 : null,
           ),
           const SizedBox(height: 4),
@@ -261,9 +267,7 @@ class TimelineCalendar extends StatelessWidget {
         if (shrinkWrap)
           weekRows
         else
-          Expanded(
-            child: SingleChildScrollView(child: weekRows),
-          ),
+          Expanded(child: SingleChildScrollView(child: weekRows)),
       ],
     );
   }
@@ -442,7 +446,7 @@ class _WeekRow extends StatelessWidget {
   final double dayLabelHeight;
   final ValueChanged<TimelineCalendarEntry>? onEntryTap;
   final Widget Function(BuildContext, TimelineCalendarEntry, bool, bool)?
-      entryBuilder;
+  entryBuilder;
   final OutOfMonthDisplay outOfMonthDisplay;
   final ThemeData theme;
 
@@ -485,10 +489,12 @@ class _WeekRow extends StatelessWidget {
                     } else {
                       // bookedOnly: show only if an entry covers this day
                       // AND that entry also overlaps the focused month.
-                      final monthFirst =
-                          DateTime(focusedYear, focusedMonth, 1);
-                      final monthNext =
-                          DateTime(focusedYear, focusedMonth + 1, 1);
+                      final monthFirst = DateTime(focusedYear, focusedMonth, 1);
+                      final monthNext = DateTime(
+                        focusedYear,
+                        focusedMonth + 1,
+                        1,
+                      );
                       visible = overlapping.any((e) {
                         final s = TimelineCalendar._dateOnly(e.start);
                         final eEnd = TimelineCalendar._dateOnly(e.end);
@@ -541,8 +547,7 @@ class _WeekRow extends StatelessWidget {
     final weekEndDate = weekStart.add(const Duration(days: 7));
 
     // Clamp to this week
-    var barStart =
-        entryStart.isBefore(weekStart) ? weekStart : entryStart;
+    var barStart = entryStart.isBefore(weekStart) ? weekStart : entryStart;
     var barEnd = entryEnd.isAfter(weekEndDate) ? weekEndDate : entryEnd;
 
     // Clamp or skip bars based on the out-of-month display mode.
@@ -566,11 +571,13 @@ class _WeekRow extends StatelessWidget {
     final colSpan = barEnd.difference(barStart).inDays;
     if (colSpan <= 0) return const SizedBox.shrink();
 
-    final isFirstSegment = entryStart == barStart ||
+    final isFirstSegment =
+        entryStart == barStart ||
         (entryStart.year == barStart.year &&
             entryStart.month == barStart.month &&
             entryStart.day == barStart.day);
-    final isLastSegment = entryEnd == barEnd ||
+    final isLastSegment =
+        entryEnd == barEnd ||
         (entryEnd.year == barEnd.year &&
             entryEnd.month == barEnd.month &&
             entryEnd.day == barEnd.day);
@@ -581,7 +588,8 @@ class _WeekRow extends StatelessWidget {
     return Positioned(
       left: startCol * cellWidth + (isFirstSegment ? hInset * 2 : 0),
       top: dayNumberHeight + barTopPadding,
-      width: colSpan * cellWidth -
+      width:
+          colSpan * cellWidth -
           (isFirstSegment ? hInset * 2 : 0) -
           (isLastSegment ? hInset * 2 : 0),
       height: barHeight,
@@ -652,8 +660,8 @@ class _DayCell extends StatelessWidget {
       fontWeight: isToday ? FontWeight.w700 : FontWeight.w600,
       color: inMonth
           ? (isToday
-              ? theme.colorScheme.onPrimary
-              : theme.colorScheme.onSurface.withValues(alpha: 0.85))
+                ? theme.colorScheme.onPrimary
+                : theme.colorScheme.onSurface.withValues(alpha: 0.85))
           : theme.colorScheme.onSurface.withValues(alpha: 0.30),
     );
 
@@ -714,10 +722,12 @@ class _DayCell extends StatelessWidget {
                         fontSize: 9,
                         fontWeight: FontWeight.w500,
                         color: inMonth
-                            ? theme.colorScheme.onSurface
-                                .withValues(alpha: 0.65)
-                            : theme.colorScheme.onSurfaceVariant
-                                .withValues(alpha: 0.45),
+                            ? theme.colorScheme.onSurface.withValues(
+                                alpha: 0.65,
+                              )
+                            : theme.colorScheme.onSurfaceVariant.withValues(
+                                alpha: 0.45,
+                              ),
                       ),
                     ),
                   ),
@@ -758,13 +768,14 @@ class _DefaultBookingBar extends StatelessWidget {
       bottomRight: isLastSegment ? radius : Radius.zero,
     );
 
-    final effectiveTextColor = entry.textColor ??
+    final effectiveTextColor =
+        entry.textColor ??
         (outlined
             ? entry.color
             : (ThemeData.estimateBrightnessForColor(entry.color) ==
-                    Brightness.dark
-                ? Colors.white
-                : Colors.black87));
+                      Brightness.dark
+                  ? Colors.white
+                  : Colors.black87));
 
     return Container(
       decoration: BoxDecoration(

@@ -1,4 +1,3 @@
-
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hosthub_console/app/bootstrap/bloc_registry.dart';
@@ -14,10 +13,7 @@ import 'package:hosthub_console/features/team/team_di.dart';
 import 'package:hosthub_console/features/website_editor/website_editor_di.dart';
 import 'package:hosthub_console/core/services/services.dart';
 
-void initializeAppConfig({
-  required bool enableLogging,
-  bool? enableApiLogger,
-}) {
+void initializeAppConfig({required bool enableLogging, bool? enableApiLogger}) {
   AppConfig.initialize(
     clientAppKey: 'hosthub_console',
     deepLinkScheme: 'rentaladmin',

@@ -43,13 +43,12 @@ class _SwitchPropertyDialog extends StatelessWidget {
                     final isSelected = current?.id == property.id;
                     return ListTile(
                       title: Text(property.name),
-                      trailing:
-                          isSelected
-                              ? Icon(
-                                  Icons.check,
-                                  color: Theme.of(context).colorScheme.primary,
-                                )
-                              : null,
+                      trailing: isSelected
+                          ? Icon(
+                              Icons.check,
+                              color: Theme.of(context).colorScheme.primary,
+                            )
+                          : null,
                       onTap: () => Navigator.of(context).pop(property),
                     );
                   },

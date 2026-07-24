@@ -71,7 +71,7 @@ class SideMenu extends StatelessWidget {
       builder: (context, propertyState) {
         final hasProperties =
             propertyState.status == PropertyContextStatus.loaded &&
-                propertyState.properties.isNotEmpty;
+            propertyState.properties.isNotEmpty;
 
         return StyledSideMenu(
           mode: collapsed
@@ -133,9 +133,7 @@ class SideMenu extends StatelessWidget {
               ),
             ],
           ],
-          switchers: [
-            _PropertySwitcher(onMenuOpenChanged: onMenuOpenChanged),
-          ],
+          switchers: [_PropertySwitcher(onMenuOpenChanged: onMenuOpenChanged)],
           profile: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -275,7 +273,9 @@ class _PropertySwitcherTileState extends State<_PropertySwitcherTile> {
     final iconBox = SizedBox(
       width: scope.iconBox,
       height: scope.tileHeight,
-      child: Center(child: Icon(widget.icon, size: scope.iconSize, color: fg)),
+      child: Center(
+        child: Icon(widget.icon, size: scope.iconSize, color: fg),
+      ),
     );
 
     if (widget.collapsed) {
@@ -335,7 +335,8 @@ class _ProfileTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scope = StyledSideMenuScope.maybeOf(context);
-    final fg = scope?.foregroundColor ??
+    final fg =
+        scope?.foregroundColor ??
         Theme.of(context).colorScheme.onPrimaryContainer;
     final profile = this.profile;
 
@@ -358,10 +359,10 @@ class _ProfileTile extends StatelessWidget {
         foregroundColor: fg,
         child: Text(
           _resolveInitial(profile),
-          style: Theme.of(context)
-              .textTheme
-              .labelLarge
-              ?.copyWith(color: fg, fontWeight: FontWeight.w700),
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            color: fg,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
       label: displayName,
@@ -408,9 +409,10 @@ class _VersionFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     final scope = StyledSideMenuScope.maybeOf(context);
     final expanded = scope?.expanded ?? true;
-    final fg = (scope?.foregroundColor ??
-            Theme.of(context).colorScheme.onPrimaryContainer)
-        .withValues(alpha: 0.6);
+    final fg =
+        (scope?.foregroundColor ??
+                Theme.of(context).colorScheme.onPrimaryContainer)
+            .withValues(alpha: 0.6);
 
     return FutureBuilder<PackageInfo>(
       future: PackageInfo.fromPlatform(),
@@ -425,10 +427,9 @@ class _VersionFooter extends StatelessWidget {
             alignment: expanded ? Alignment.centerRight : Alignment.center,
             child: Text(
               context.s.versionFooter(version),
-              style: Theme.of(context)
-                  .textTheme
-                  .labelSmall
-                  ?.copyWith(color: fg),
+              style: Theme.of(
+                context,
+              ).textTheme.labelSmall?.copyWith(color: fg),
             ),
           ),
         );

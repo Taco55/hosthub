@@ -112,7 +112,11 @@ const Map<String, List<EditorFieldDef>> kPageFields = {
     ),
   ],
   'area': [
-    EditorFieldDef(key: 'area.intro', card: EditorCard.content, multiline: true),
+    EditorFieldDef(
+      key: 'area.intro',
+      card: EditorCard.content,
+      multiline: true,
+    ),
   ],
   'contact': [
     EditorFieldDef(key: 'contact.title', card: EditorCard.content),
@@ -156,7 +160,8 @@ List<EditorFieldDef> effectiveFieldsFor(
 /// Computes the source-text hash used to detect stale auto translations.
 /// sha256 hex — identical to the hash the translate-content Edge Function
 /// stores in `site_translations.source_hash`, so staleness survives reloads.
-String sourceHashOf(String text) => sha256.convert(utf8.encode(text)).toString();
+String sourceHashOf(String text) =>
+    sha256.convert(utf8.encode(text)).toString();
 
 /// Seed content for the Trysil Panorama Home page (from the design prototype).
 /// Source = `nl`; `en`/`no` are the reference AI translations.

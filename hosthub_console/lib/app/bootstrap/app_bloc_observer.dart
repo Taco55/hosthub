@@ -49,7 +49,8 @@ class AppBlocObserver extends BlocObserver {
     final extra = BlocDetailFormatter.stateDetail(transition.nextState);
 
     _emit(
-      header: '${_Ansi.cyan}▸${_Ansi.reset} '
+      header:
+          '${_Ansi.cyan}▸${_Ansi.reset} '
           '${bloc.runtimeType} • $event  '
           '${_Ansi.dim}$from${_Ansi.reset} → '
           '${_Ansi.green}$to${_Ansi.reset}',
@@ -68,7 +69,8 @@ class AppBlocObserver extends BlocObserver {
     final extra = BlocDetailFormatter.stateDetail(change.nextState);
 
     _emit(
-      header: '${_Ansi.cyan}▸${_Ansi.reset} '
+      header:
+          '${_Ansi.cyan}▸${_Ansi.reset} '
           '${bloc.runtimeType}  '
           '${_Ansi.dim}$from${_Ansi.reset} → '
           '${_Ansi.green}$to${_Ansi.reset}',
@@ -91,7 +93,11 @@ class AppBlocObserver extends BlocObserver {
     _transitionedBlocs.remove(bloc);
   }
 
-  void _emit({required String header, String eventInfo = '', String extra = ''}) {
+  void _emit({
+    required String header,
+    String eventInfo = '',
+    String extra = '',
+  }) {
     final buffer = StringBuffer(header);
     if (eventInfo.isNotEmpty) {
       buffer.write('\n  ${_Ansi.dim}↳ $eventInfo${_Ansi.reset}');

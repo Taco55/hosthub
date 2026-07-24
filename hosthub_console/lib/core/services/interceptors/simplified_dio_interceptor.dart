@@ -53,17 +53,17 @@ class SimplifiedDioInterceptor implements Interceptor {
     bool logResponseBody = true,
     bool logRequestBody = true,
     void Function(String log)? logger,
-  })  : _jsonEncoder = const JsonEncoder.withIndent('  '),
-        requestStyle = requestStyle ?? _defaultRequestStyle,
-        responseStyle = responseStyle ?? _defaultResponseStyle,
-        errorStyle = errorStyle ?? _defaultErrorStyle,
-        _logRequestHeaders = logRequestHeaders,
-        _logResponseHeaders = logResponseHeaders,
-        _logRequestTimeout = logRequestTimeout,
-        _logApiRequest = logRequest,
-        _logResponseBody = logResponseBody,
-        _logRequestBody = logRequestBody,
-        _logger = logger ?? log;
+  }) : _jsonEncoder = const JsonEncoder.withIndent('  '),
+       requestStyle = requestStyle ?? _defaultRequestStyle,
+       responseStyle = responseStyle ?? _defaultResponseStyle,
+       errorStyle = errorStyle ?? _defaultErrorStyle,
+       _logRequestHeaders = logRequestHeaders,
+       _logResponseHeaders = logResponseHeaders,
+       _logRequestTimeout = logRequestTimeout,
+       _logApiRequest = logRequest,
+       _logResponseBody = logResponseBody,
+       _logRequestBody = logRequestBody,
+       _logger = logger ?? log;
 
   static const Styles _defaultRequestStyle = Styles.YELLOW;
   static const Styles _defaultResponseStyle = Styles.GREEN;
@@ -86,9 +86,9 @@ class SimplifiedDioInterceptor implements Interceptor {
   late final Styles errorStyle;
 
   void _log({required String key, required String value, Styles? style}) {
-    final coloredMessage = Colorize('$key$value').apply(
-      style ?? Styles.LIGHT_GRAY,
-    );
+    final coloredMessage = Colorize(
+      '$key$value',
+    ).apply(style ?? Styles.LIGHT_GRAY);
     _logger('$coloredMessage');
   }
 
@@ -107,14 +107,17 @@ class SimplifiedDioInterceptor implements Interceptor {
     _log(
       key: isResponse
           ? key
-          : '${isFormData ? '[formData.fields]' : !isValueNull ? '[Json]' : ''} $key',
+          : '${isFormData
+                ? '[formData.fields]'
+                : !isValueNull
+                ? '[Json]'
+                : ''} $key',
       value: encodedJson,
       style: style,
     );
 
     if (isFormData && !isResponse) {
-      final files = (value as FormData)
-          .files
+      final files = (value as FormData).files
           .map((e) => e.value.filename ?? 'Null or Empty filename')
           .toList();
       if (files.isNotEmpty) {
@@ -148,14 +151,16 @@ class SimplifiedDioInterceptor implements Interceptor {
     _log(key: 'Uri: ', value: options.uri.toString(), style: requestStyle);
     _log(key: 'Method: ', value: options.method, style: requestStyle);
     _log(
-        key: 'Request Id: ',
-        value: options.headers['request_id'],
-        style: requestStyle);
+      key: 'Request Id: ',
+      value: options.headers['request_id'],
+      style: requestStyle,
+    );
 
     _log(
-        key: 'Date: ',
-        value: DateTime.now().toLocal().toIso8601String(),
-        style: style);
+      key: 'Date: ',
+      value: DateTime.now().toLocal().toIso8601String(),
+      style: style,
+    );
 
     if (_logRequestHeaders) {
       _logHeaders(headers: options.headers, style: style);
@@ -201,15 +206,17 @@ class SimplifiedDioInterceptor implements Interceptor {
     }
 
     _log(
-        key: 'Request Id: ',
-        value: response.requestOptions.headers["request_id"],
-        style: style);
+      key: 'Request Id: ',
+      value: response.requestOptions.headers["request_id"],
+      style: style,
+    );
 
     if (response.headers.map["date"]?.first != null) {
       _log(
-          key: 'Date: ',
-          value: response.headers.map["date"]!.first,
-          style: style);
+        key: 'Date: ',
+        value: response.headers.map["date"]!.first,
+        style: style,
+      );
     }
 
     if (_logResponseBody) {
@@ -231,9 +238,8 @@ class SimplifiedDioInterceptor implements Interceptor {
     );
   }
 
-  void _delay() async => await Future.delayed(
-        const Duration(milliseconds: 200),
-      );
+  void _delay() async =>
+      await Future.delayed(const Duration(milliseconds: 200));
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {

@@ -31,8 +31,8 @@ class PreviewPane extends StatelessWidget {
     final normalized = domain
         .replaceFirst(RegExp(r'^https?://'), '')
         .replaceAll(RegExp(r'/$'), '');
-    final scheme = normalized.contains('localhost') ||
-            normalized.startsWith('127.0.0.1')
+    final scheme =
+        normalized.contains('localhost') || normalized.startsWith('127.0.0.1')
         ? 'http'
         : 'https';
     final marker = state.lastSavedAt?.millisecondsSinceEpoch ?? 0;
@@ -44,7 +44,8 @@ class PreviewPane extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final lang = state.previewLanguage;
     final liveUrl = _liveUrl;
-    final displayHost = (kCmsPreviewDomain.trim().isNotEmpty
+    final displayHost =
+        (kCmsPreviewDomain.trim().isNotEmpty
             ? kCmsPreviewDomain.trim()
             : state.previewDomain) ??
         'trysilpanorama.com';
@@ -59,9 +60,7 @@ class PreviewPane extends StatelessWidget {
           ? SitePreviewFrameDevice.mobile
           : SitePreviewFrameDevice.desktop,
       expandContent: isLive,
-      child: isLive
-          ? LiveSiteFrame(url: liveUrl)
-          : _SitePreview(state: state),
+      child: isLive ? LiveSiteFrame(url: liveUrl) : _SitePreview(state: state),
     );
 
     return ColoredBox(
@@ -122,8 +121,9 @@ class _PreviewToolbar extends StatelessWidget {
         size: 13,
         color: isSource ? scheme.primary : autoTokens.foreground,
       ),
-      backgroundColor:
-          isSource ? scheme.primaryContainer : autoTokens.background,
+      backgroundColor: isSource
+          ? scheme.primaryContainer
+          : autoTokens.background,
       labelColor: isSource ? scheme.primary : autoTokens.foreground,
     );
 
@@ -134,8 +134,8 @@ class _PreviewToolbar extends StatelessWidget {
           StyledSegment(
             label: languageShort(code),
             badge: code == state.sourceLanguage ? null : 'AI',
-            statusDotColor: code != state.sourceLanguage &&
-                    state.isLanguageStale(code)
+            statusDotColor:
+                code != state.sourceLanguage && state.isLanguageStale(code)
                 ? autoTokens.foreground
                 : null,
           ),
@@ -146,7 +146,10 @@ class _PreviewToolbar extends StatelessWidget {
 
     final deviceToggle = StyledSegmentedControl.compact(
       segments: [
-        StyledSegment(label: s.weDeviceWeb, icon: Icons.desktop_windows_outlined),
+        StyledSegment(
+          label: s.weDeviceWeb,
+          icon: Icons.desktop_windows_outlined,
+        ),
         StyledSegment(label: s.weDeviceMobile, icon: Icons.smartphone_outlined),
       ],
       selectedIndex: state.previewDevice == PreviewDevice.web ? 0 : 1,
@@ -163,10 +166,9 @@ class _PreviewToolbar extends StatelessWidget {
         statusPill,
         Text(
           s.wePreviewLabel(languageName(context, state.previewLanguage)),
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: scheme.onSurfaceVariant),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
         ),
         deviceToggle,
         localeSwitcher,
@@ -218,19 +220,18 @@ class _SitePreview extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: scheme.surface,
-                  fontWeight: FontWeight.w700,
-                ),
+              color: scheme.surface,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           const SizedBox(height: 6),
           Text(
             subtitle,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: scheme.surface.withValues(alpha: 0.9)),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: scheme.surface.withValues(alpha: 0.9),
+            ),
           ),
         ],
       ),
@@ -242,10 +243,9 @@ class _SitePreview extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           child: Text(
             text,
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: scheme.onSurfaceVariant),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
           ),
         ),
     ];

@@ -58,7 +58,7 @@ class WebsitePageContent {
 /// CmsRepository.publishDocument).
 class WebsiteContentRepository extends SupabaseRepository {
   WebsiteContentRepository({required SupabaseClient supabase})
-      : super(supabase);
+    : super(supabase);
 
   static const String page = 'home';
 
@@ -162,7 +162,9 @@ class WebsiteContentRepository extends SupabaseRepository {
       final parts = fieldKey.split('.'); // chalet.<list>.<index>
       final index = int.tryParse(parts[2]);
       if (index == null) return;
-      final list = List<dynamic>.from(content[parts[1]] as List<dynamic>? ?? []);
+      final list = List<dynamic>.from(
+        content[parts[1]] as List<dynamic>? ?? [],
+      );
       while (list.length <= index) {
         list.add('');
       }
@@ -215,7 +217,8 @@ class WebsiteContentRepository extends SupabaseRepository {
           .maybeSingle();
       final siteSourceLanguage =
           (siteRow?['default_locale'] as String?) ?? sourceLanguage;
-      final siteLocales = (siteRow?['locales'] as List<dynamic>?)
+      final siteLocales =
+          (siteRow?['locales'] as List<dynamic>?)
               ?.map((l) => l as String)
               .toList() ??
           locales;
@@ -242,8 +245,7 @@ class WebsiteContentRepository extends SupabaseRepository {
 
       // Highlight rows are repeatable: derive the actual count from the
       // source document so extra rows survive a reload.
-      final homeDoc =
-          contentByDocLocale['page:home:$sourceLanguage'];
+      final homeDoc = contentByDocLocale['page:home:$sourceLanguage'];
       final highlightCount = math.max(
         2,
         (homeDoc?['highlights'] as List<dynamic>?)?.length ?? 0,
@@ -266,8 +268,9 @@ class WebsiteContentRepository extends SupabaseRepository {
           .eq('page', page);
       final rowsByLangKey = <String, Map<String, dynamic>>{
         for (final row in translationRows as List<dynamic>)
-          '${row['language']}:${row['field_key']}':
-              Map<String, dynamic>.from(row as Map),
+          '${row['language']}:${row['field_key']}': Map<String, dynamic>.from(
+            row as Map,
+          ),
       };
 
       final translations = <String, Map<String, TranslatedField>>{};
@@ -438,13 +441,16 @@ class WebsiteContentRepository extends SupabaseRepository {
           'published_by': supabase.auth.currentUser?.id,
         });
       }
-      await supabase.from('cms_documents').update({
-        'content': content,
-        'status': status,
-        'updated_by': supabase.auth.currentUser?.id,
-        if (status == 'published')
-          'published_at': DateTime.now().toUtc().toIso8601String(),
-      }).eq('id', documentId);
+      await supabase
+          .from('cms_documents')
+          .update({
+            'content': content,
+            'status': status,
+            'updated_by': supabase.auth.currentUser?.id,
+            if (status == 'published')
+              'published_at': DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('id', documentId);
     }
   }
 }

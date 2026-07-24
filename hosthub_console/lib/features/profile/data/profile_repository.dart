@@ -45,17 +45,18 @@ class ProfileRepository extends SupabaseRepository {
     required String email,
     String? username,
   }) async {
-    final updatedProfile = profile.copyWith(
-      email: email,
-      username: username,
-    );
+    final updatedProfile = profile.copyWith(email: email, username: username);
 
     try {
       if (email != profile.email) {
         await supabase.auth.updateUser(UserAttributes(email: email));
       }
 
-      await upsert(Profile.tableName, updatedProfile.toJson(), ensureCreatedBy: false);
+      await upsert(
+        Profile.tableName,
+        updatedProfile.toJson(),
+        ensureCreatedBy: false,
+      );
       return updatedProfile;
     } catch (error, stack) {
       throw mapError(

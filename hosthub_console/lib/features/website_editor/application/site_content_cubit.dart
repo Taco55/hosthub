@@ -63,9 +63,9 @@ class SiteContentState extends Equatable {
 
   /// Target locales in display order (source first, then the rest).
   List<String> get orderedLocales => [
-        sourceLanguage,
-        ...locales.where((l) => l != sourceLanguage),
-      ];
+    sourceLanguage,
+    ...locales.where((l) => l != sourceLanguage),
+  ];
 
   List<String> get targetLanguages =>
       locales.where((l) => l != sourceLanguage).toList();
@@ -76,8 +76,8 @@ class SiteContentState extends Equatable {
 
   /// Every editable field across all pages (translate/publish scope).
   List<EditorFieldDef> get allFields => [
-        for (final page in kPageFields.keys) ...effectiveFieldsFor(page, source),
-      ];
+    for (final page in kPageFields.keys) ...effectiveFieldsFor(page, source),
+  ];
 
   String currentSourceHash(String key) => sourceHashOf(source[key] ?? '');
 
@@ -108,8 +108,7 @@ class SiteContentState extends Equatable {
   /// (locked, or fresh auto). Used for the coverage meter.
   double coverage(String language) {
     if (fields.isEmpty) return 1;
-    final upToDate =
-        fields.where((f) => !isFieldStale(language, f.key)).length;
+    final upToDate = fields.where((f) => !isFieldStale(language, f.key)).length;
     return upToDate / fields.length;
   }
 
@@ -149,21 +148,21 @@ class SiteContentState extends Equatable {
 
   @override
   List<Object?> get props => [
-        propertyName,
-        sourceLanguage,
-        locales,
-        pageKey,
-        previewLanguage,
-        previewDevice,
-        source,
-        translations,
-        dirty,
-        publishOpen,
-        translating,
-        errorMessage,
-        previewDomain,
-        lastSavedAt,
-      ];
+    propertyName,
+    sourceLanguage,
+    locales,
+    pageKey,
+    previewLanguage,
+    previewDevice,
+    source,
+    translations,
+    dirty,
+    publishOpen,
+    translating,
+    errorMessage,
+    previewDomain,
+    lastSavedAt,
+  ];
 }
 
 /// Drives the website editor: the source-language + auto/locked translation
@@ -182,11 +181,11 @@ class SiteContentCubit extends Cubit<SiteContentState> {
     WebsiteContentRepository? repository,
     String? siteId,
     Duration autosaveDebounce = const Duration(milliseconds: 800),
-  })  : _translationService = translationService,
-        _repository = repository,
-        _siteId = siteId,
-        _autosaveDebounce = autosaveDebounce,
-        super(_seedState());
+  }) : _translationService = translationService,
+       _repository = repository,
+       _siteId = siteId,
+       _autosaveDebounce = autosaveDebounce,
+       super(_seedState());
 
   final TranslationService _translationService;
   final WebsiteContentRepository? _repository;
@@ -217,8 +216,8 @@ class SiteContentCubit extends Cubit<SiteContentState> {
           // Keep the preview on a valid locale when the source changed.
           previewLanguage:
               (content.locales ?? state.locales).contains(state.previewLanguage)
-                  ? state.previewLanguage
-                  : sourceLanguage,
+              ? state.previewLanguage
+              : sourceLanguage,
           source: content.source,
           translations: content.translations,
           previewDomain: content.previewDomain,
@@ -360,7 +359,9 @@ class SiteContentCubit extends Cubit<SiteContentState> {
         status: FieldTranslationStatus.auto,
         sourceHash: state.currentSourceHash(key),
       );
-      emit(state.copyWith(translations: updated, dirty: true, clearError: true));
+      emit(
+        state.copyWith(translations: updated, dirty: true, clearError: true),
+      );
       _dirtyTranslationFields.add((language, key));
       _scheduleAutosave();
     } catch (_) {
@@ -387,8 +388,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
         final langMap = updated.putIfAbsent(language, () => {});
         final autoSources = <String, String>{
           for (final field in state.allFields)
-            if ((langMap[field.key]?.status ??
-                    FieldTranslationStatus.auto) ==
+            if ((langMap[field.key]?.status ?? FieldTranslationStatus.auto) ==
                 FieldTranslationStatus.auto)
               field.key: state.source[field.key] ?? '',
         };
@@ -541,7 +541,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
   }
 
   Map<String, Map<String, TranslatedField>> _cloneTranslations() => {
-        for (final entry in state.translations.entries)
-          entry.key: Map<String, TranslatedField>.from(entry.value),
-      };
+    for (final entry in state.translations.entries)
+      entry.key: Map<String, TranslatedField>.from(entry.value),
+  };
 }

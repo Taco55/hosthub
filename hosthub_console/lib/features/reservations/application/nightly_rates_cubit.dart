@@ -64,8 +64,8 @@ class NightlyRatesState extends Equatable {
 class NightlyRatesCubit extends Cubit<NightlyRatesState> {
   NightlyRatesCubit({
     required ChannelManagerRepository channelManagerRepository,
-  })  : _repo = channelManagerRepository,
-        super(const NightlyRatesState());
+  }) : _repo = channelManagerRepository,
+       super(const NightlyRatesState());
 
   final ChannelManagerRepository _repo;
 
@@ -94,10 +94,12 @@ class NightlyRatesCubit extends Cubit<NightlyRatesState> {
     }
 
     if (!isClosed) {
-      emit(state.copyWith(
-        status: NightlyRatesStatus.loading,
-        propertyId: propertyId,
-      ));
+      emit(
+        state.copyWith(
+          status: NightlyRatesStatus.loading,
+          propertyId: propertyId,
+        ),
+      );
     }
 
     try {
@@ -115,23 +117,23 @@ class NightlyRatesCubit extends Cubit<NightlyRatesState> {
 
       final newStart = (state.loadedStart != null && !isNewProperty)
           ? (windowStart.isBefore(state.loadedStart!)
-              ? windowStart
-              : state.loadedStart!)
+                ? windowStart
+                : state.loadedStart!)
           : windowStart;
       final newEnd = (state.loadedEnd != null && !isNewProperty)
-          ? (windowEnd.isAfter(state.loadedEnd!)
-              ? windowEnd
-              : state.loadedEnd!)
+          ? (windowEnd.isAfter(state.loadedEnd!) ? windowEnd : state.loadedEnd!)
           : windowEnd;
 
-      emit(NightlyRatesState(
-        status: NightlyRatesStatus.loaded,
-        rates: mergedRates,
-        rateCurrency: result.currency ?? state.rateCurrency,
-        loadedStart: newStart,
-        loadedEnd: newEnd,
-        propertyId: propertyId,
-      ));
+      emit(
+        NightlyRatesState(
+          status: NightlyRatesStatus.loaded,
+          rates: mergedRates,
+          rateCurrency: result.currency ?? state.rateCurrency,
+          loadedStart: newStart,
+          loadedEnd: newEnd,
+          propertyId: propertyId,
+        ),
+      );
     } catch (_) {
       // Rates are non-critical — silently keep whatever we already have.
       if (!isClosed) {

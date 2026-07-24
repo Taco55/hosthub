@@ -216,9 +216,7 @@ class ProfileCubit extends Cubit<ProfileState> {
     try {
       await _sessionManager.ensureFreshSession();
       await _profileRepository.updateOwnPassword(newPassword);
-      emit(
-        state.copyWith(status: ProfileStatus.loaded, error: null),
-      );
+      emit(state.copyWith(status: ProfileStatus.loaded, error: null));
       return true;
     } on DomainError catch (error) {
       if (await _handleAuthConstraint(error)) {

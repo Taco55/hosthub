@@ -130,16 +130,15 @@ class _ResponsiveSideMenuScaffoldState
       backgroundColor: widget.backgroundColor,
       extendBodyBehindAppBar: widget.extendBodyBehindAppBar,
       appBar: appBar,
-      drawer:
-          isPinned
-              ? null
-              : (menu is Drawer
-                  ? menu
-                  : Drawer(
-                      elevation: widget.drawerElevation,
-                      width: widget.menuWidth,
-                      child: menu,
-                    )),
+      drawer: isPinned
+          ? null
+          : (menu is Drawer
+                ? menu
+                : Drawer(
+                    elevation: widget.drawerElevation,
+                    width: widget.menuWidth,
+                    child: menu,
+                  )),
       floatingActionButton: widget.floatingActionButton,
       bottomNavigationBar: widget.bottomNavigationBar,
       body: Row(
@@ -193,10 +192,7 @@ class _DefaultResponsiveAppBar extends StatelessWidget
   Widget build(BuildContext context) {
     return AppBar(
       leading: Center(
-        child: StyledToolbarButton(
-          iconData: Icons.menu,
-          onPressed: openDrawer,
-        ),
+        child: StyledToolbarButton(iconData: Icons.menu, onPressed: openDrawer),
       ),
     );
   }

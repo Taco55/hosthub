@@ -29,7 +29,7 @@ class ApiClient {
   final String? _defaultApiVersion;
 
   ApiClient({required String baseUrl, String? apiVersion})
-      : _defaultApiVersion = apiVersion?.trim().replaceAll('/', '') {
+    : _defaultApiVersion = apiVersion?.trim().replaceAll('/', '') {
     api.options = BaseOptions(
       baseUrl: baseUrl,
       connectTimeout: _connectTimeout,
@@ -207,10 +207,7 @@ class ApiClient {
       baseUrl,
       apiVersion ?? _defaultApiVersion,
     );
-    final resolvedEndPoint = _normalizeEndPoint(
-      endPoint,
-      resolvedBaseUrl,
-    );
+    final resolvedEndPoint = _normalizeEndPoint(endPoint, resolvedBaseUrl);
 
     try {
       while (true) {

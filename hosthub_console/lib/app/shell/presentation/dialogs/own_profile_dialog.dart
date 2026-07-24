@@ -13,7 +13,6 @@ import 'package:hosthub_console/features/profile/profile.dart';
 import 'package:hosthub_console/features/user_settings/application/user_settings_cubit.dart';
 
 import '../../application/sidebar_mode_cubit.dart';
-import '../../application/site_context_cubit.dart';
 
 Future<void> showOwnProfileDialog(
   BuildContext context, {
@@ -391,11 +390,9 @@ class _InterfaceLanguageTile extends StatelessWidget {
       fieldAutoSize: true,
       onChanged: (code) {
         if (code == null || code == currentLocale.languageCode) return;
+        // Interface language is strictly user scope: changing it must never
+        // change the property's source language (design §4b).
         context.read<UserSettingsCubit>().changeLanguage(code);
-        // Explicit user action: when the site's source language follows the
-        // interface language (Settings §5), keep it aligned. Passive locale
-        // emissions (startup/bootstrap) deliberately never trigger this.
-        context.read<SiteContextCubit>().followInterfaceLanguage(code);
       },
     );
   }

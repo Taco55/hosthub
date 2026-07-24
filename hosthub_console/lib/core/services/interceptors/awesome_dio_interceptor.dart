@@ -50,14 +50,14 @@ class AwesomeDioInterceptor implements Interceptor {
     bool logResponseHeaders = true,
     bool logRequestTimeout = true,
     void Function(String log)? logger,
-  })  : _jsonEncoder = const JsonEncoder.withIndent('  '),
-        requestStyle = requestStyle ?? _defaultRequestStyle,
-        responseStyle = responseStyle ?? _defaultResponseStyle,
-        errorStyle = errorStyle ?? _defaultErrorStyle,
-        _logRequestHeaders = logRequestHeaders,
-        _logResponseHeaders = logResponseHeaders,
-        _logRequestTimeout = logRequestTimeout,
-        _logger = logger ?? log;
+  }) : _jsonEncoder = const JsonEncoder.withIndent('  '),
+       requestStyle = requestStyle ?? _defaultRequestStyle,
+       responseStyle = responseStyle ?? _defaultResponseStyle,
+       errorStyle = errorStyle ?? _defaultErrorStyle,
+       _logRequestHeaders = logRequestHeaders,
+       _logResponseHeaders = logResponseHeaders,
+       _logRequestTimeout = logRequestTimeout,
+       _logger = logger ?? log;
 
   static const Styles _defaultRequestStyle = Styles.YELLOW;
   static const Styles _defaultResponseStyle = Styles.GREEN;
@@ -74,9 +74,9 @@ class AwesomeDioInterceptor implements Interceptor {
   late final Styles errorStyle;
 
   void _log({required String key, required String value, Styles? style}) {
-    final coloredMessage = Colorize('$key$value').apply(
-      style ?? Styles.LIGHT_GRAY,
-    );
+    final coloredMessage = Colorize(
+      '$key$value',
+    ).apply(style ?? Styles.LIGHT_GRAY);
     _logger('$coloredMessage');
   }
 
@@ -95,14 +95,17 @@ class AwesomeDioInterceptor implements Interceptor {
     _log(
       key: isResponse
           ? key
-          : '${isFormData ? '[formData.fields]' : !isValueNull ? '[Json]' : ''} $key',
+          : '${isFormData
+                ? '[formData.fields]'
+                : !isValueNull
+                ? '[Json]'
+                : ''} $key',
       value: encodedJson,
       style: style,
     );
 
     if (isFormData && !isResponse) {
-      final files = (value as FormData)
-          .files
+      final files = (value as FormData).files
           .map((e) => e.value.filename ?? 'Null or Empty filename')
           .toList();
       if (files.isNotEmpty) {
@@ -136,9 +139,10 @@ class AwesomeDioInterceptor implements Interceptor {
     _log(key: 'Uri: ', value: options.uri.toString(), style: requestStyle);
     _log(key: 'Method: ', value: options.method, style: requestStyle);
     _log(
-        key: 'Request Id: ',
-        value: options.headers["request_id"],
-        style: requestStyle);
+      key: 'Request Id: ',
+      value: options.headers["request_id"],
+      style: requestStyle,
+    );
     _log(
       key: 'Response Type: ',
       value: options.responseType.toString(),
@@ -209,9 +213,8 @@ class AwesomeDioInterceptor implements Interceptor {
     );
   }
 
-  void _delay() async => await Future.delayed(
-        const Duration(milliseconds: 200),
-      );
+  void _delay() async =>
+      await Future.delayed(const Duration(milliseconds: 200));
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {

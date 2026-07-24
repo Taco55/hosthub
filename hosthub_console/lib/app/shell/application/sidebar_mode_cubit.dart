@@ -11,8 +11,8 @@ class SidebarModeCubit extends Cubit<StyledSideMenuMode> {
   void setMode(StyledSideMenuMode mode) => emit(mode);
 
   void toggle() => emit(
-        state == StyledSideMenuMode.expanded
-            ? StyledSideMenuMode.compact
-            : StyledSideMenuMode.expanded,
-      );
+    state == StyledSideMenuMode.expanded
+        ? StyledSideMenuMode.compact
+        : StyledSideMenuMode.expanded,
+  );
 }

@@ -16,10 +16,7 @@ abstract class ChannelManagerRepository {
   });
 
   /// Update the internal notes for a reservation.
-  Future<void> updateReservationNotes(
-    String reservationId,
-    String notes,
-  );
+  Future<void> updateReservationNotes(String reservationId, String notes);
 
   /// Fetch nightly rates for a property within a date range.
   ///

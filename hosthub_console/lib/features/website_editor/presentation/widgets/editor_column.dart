@@ -228,18 +228,17 @@ class _Banner extends StatelessWidget {
       children: [
         Text(
           title,
-          style: Theme.of(context)
-              .textTheme
-              .bodyMedium
-              ?.copyWith(fontWeight: FontWeight.w700, color: scheme.primary),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: scheme.primary,
+          ),
         ),
         const SizedBox(height: 2),
         Text(
           body,
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: scheme.primary),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: scheme.primary),
         ),
       ],
     );
@@ -270,10 +269,9 @@ class _TranslationStatusToolbar extends StatelessWidget {
         Expanded(
           child: Text(
             stale ? context.s.weStaleNotice : context.s.weFreshNotice,
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: tokens.foreground),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: tokens.foreground),
           ),
         ),
         if (stale)
@@ -308,10 +306,9 @@ class _CardShell extends StatelessWidget {
           const SizedBox(width: 12),
           Text(
             title,
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.w700),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
         ],
       ),
@@ -328,8 +325,9 @@ class _HeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    final heroFields =
-        state.fields.where((f) => f.card == EditorCard.hero).toList();
+    final heroFields = state.fields
+        .where((f) => f.card == EditorCard.hero)
+        .toList();
     return _CardShell(
       icon: Icons.auto_awesome,
       title: s.weCardHero,
@@ -359,10 +357,10 @@ class _HeroPhotos extends StatelessWidget {
     final s = context.s;
     final label = Text(
       s.weFieldHeroPhotos,
-      style: Theme.of(context)
-          .textTheme
-          .bodySmall
-          ?.copyWith(fontWeight: FontWeight.w600, color: scheme.onSurface),
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        fontWeight: FontWeight.w600,
+        color: scheme.onSurface,
+      ),
     );
 
     if (!state.isSourceMode) {
@@ -402,11 +400,11 @@ class _HeroPhotos extends StatelessWidget {
   }
 
   Widget _photoTile(ColorScheme scheme) => StyledContainer(
-        borderRadius: BorderRadius.circular(11),
-        backgroundColor: scheme.surfaceContainerHighest,
-        padding: EdgeInsets.zero,
-        child: const SizedBox(width: 88, height: 64),
-      );
+    borderRadius: BorderRadius.circular(11),
+    backgroundColor: scheme.surfaceContainerHighest,
+    padding: EdgeInsets.zero,
+    child: const SizedBox(width: 88, height: 64),
+  );
 
   Widget _addPhotoTile(BuildContext context, ColorScheme scheme) =>
       StyledContainer(
@@ -423,10 +421,9 @@ class _HeroPhotos extends StatelessWidget {
               Icon(Icons.add, color: scheme.primary, size: 20),
               Text(
                 context.s.weAddPhoto,
-                style: Theme.of(context)
-                    .textTheme
-                    .labelSmall
-                    ?.copyWith(color: scheme.primary),
+                style: Theme.of(
+                  context,
+                ).textTheme.labelSmall?.copyWith(color: scheme.primary),
               ),
             ],
           ),
@@ -442,8 +439,9 @@ class _HighlightsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cubit = context.read<SiteContentCubit>();
     final s = context.s;
-    final highlightFields =
-        state.fields.where((f) => f.card == EditorCard.highlights).toList();
+    final highlightFields = state.fields
+        .where((f) => f.card == EditorCard.highlights)
+        .toList();
     // Reordering rearranges the source rows (all languages move along); in
     // translation mode the rows are fixed and carry their status chips.
     final canReorder = state.isSourceMode && highlightFields.length > 1;
@@ -559,7 +557,10 @@ class _SaveBar extends StatelessWidget {
             Container(
               width: 8,
               height: 8,
-              decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
+              decoration: BoxDecoration(
+                color: dotColor,
+                shape: BoxShape.circle,
+              ),
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -567,10 +568,9 @@ class _SaveBar extends StatelessWidget {
                 statusText,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.copyWith(color: scheme.onSurfaceVariant),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
               ),
             ),
             StyledButton(

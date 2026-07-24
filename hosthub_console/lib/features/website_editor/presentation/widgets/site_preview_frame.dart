@@ -118,10 +118,7 @@ class SitePreviewFrame extends StatelessWidget {
               ),
             ),
           ),
-          if (toolbar != null) ...[
-            const SizedBox(width: 12),
-            toolbar!,
-          ],
+          if (toolbar != null) ...[const SizedBox(width: 12), toolbar!],
         ],
       ),
     );
@@ -136,13 +133,15 @@ class SitePreviewFrame extends StatelessWidget {
           boxShadow: _resolveShadow(context),
           padding: EdgeInsets.zero,
           child: Column(
-            mainAxisSize:
-                expandContent ? MainAxisSize.max : MainAxisSize.min,
+            mainAxisSize: expandContent ? MainAxisSize.max : MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               chrome,
               Divider(height: 1, thickness: 1, color: scheme.outlineVariant),
-              if (expandContent) Expanded(child: child) else Flexible(child: child),
+              if (expandContent)
+                Expanded(child: child)
+              else
+                Flexible(child: child),
             ],
           ),
         ),
@@ -172,8 +171,7 @@ class SitePreviewFrame extends StatelessWidget {
         child: ColoredBox(
           color: scheme.surface,
           child: Column(
-            mainAxisSize:
-                expandContent ? MainAxisSize.max : MainAxisSize.min,
+            mainAxisSize: expandContent ? MainAxisSize.max : MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
@@ -199,7 +197,10 @@ class SitePreviewFrame extends StatelessWidget {
                   ],
                 ),
               ),
-              if (expandContent) Expanded(child: child) else Flexible(child: child),
+              if (expandContent)
+                Expanded(child: child)
+              else
+                Flexible(child: child),
             ],
           ),
         ),
@@ -210,10 +211,7 @@ class SitePreviewFrame extends StatelessWidget {
       child: Column(
         mainAxisSize: expandContent ? MainAxisSize.max : MainAxisSize.min,
         children: [
-          if (toolbar != null) ...[
-            toolbar!,
-            const SizedBox(height: 16),
-          ],
+          if (toolbar != null) ...[toolbar!, const SizedBox(height: 16)],
           if (expandContent) Expanded(child: phone) else phone,
         ],
       ),
@@ -221,13 +219,13 @@ class SitePreviewFrame extends StatelessWidget {
   }
 
   Widget _trafficDot(Color color) => Container(
-        width: 10,
-        height: 10,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.55),
-          shape: BoxShape.circle,
-        ),
-      );
+    width: 10,
+    height: 10,
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.55),
+      shape: BoxShape.circle,
+    ),
+  );
 
   static String _host(String? url) {
     if (url == null || url.isEmpty) return '';

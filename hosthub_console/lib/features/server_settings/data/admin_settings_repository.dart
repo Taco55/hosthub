@@ -41,9 +41,7 @@ class AdminSettingsRepository implements OnboardingPort {
         throw StateError('No admin settings returned after save.');
       }
 
-      final saved = AdminSettings.fromJson(
-        Map<String, dynamic>.from(response),
-      );
+      final saved = AdminSettings.fromJson(Map<String, dynamic>.from(response));
       _cachedSettings = saved;
       return saved;
     } catch (error, stack) {

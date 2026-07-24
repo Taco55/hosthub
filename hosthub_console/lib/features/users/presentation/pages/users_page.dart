@@ -72,8 +72,7 @@ class _UsersPageState extends State<UsersPage> {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<AuthBloc, AuthState>(
-      listenWhen: (previous, current) =>
-          previous.status != current.status,
+      listenWhen: (previous, current) => previous.status != current.status,
       listener: (context, state) => _handleAuthChanged(state),
       builder: (context, authState) {
         final theme = Theme.of(context);
@@ -166,13 +165,22 @@ class _UsersPageState extends State<UsersPage> {
                   variant: StyledTableVariant.plain,
 
                   columns: [
-                    StyledDataColumn(columnHeaderLabel: context.s.emailLabel, flex: 4),
-                    StyledDataColumn(columnHeaderLabel: context.s.usernameLabel, flex: 3),
+                    StyledDataColumn(
+                      columnHeaderLabel: context.s.emailLabel,
+                      flex: 4,
+                    ),
+                    StyledDataColumn(
+                      columnHeaderLabel: context.s.usernameLabel,
+                      flex: 3,
+                    ),
                     StyledDataColumn(
                       columnHeaderLabel: context.s.subscriptionLabel,
                       flex: 2,
                     ),
-                    StyledDataColumn(columnHeaderLabel: context.s.roleLabel, flex: 2),
+                    StyledDataColumn(
+                      columnHeaderLabel: context.s.roleLabel,
+                      flex: 2,
+                    ),
                   ],
                   itemCount: users.length,
                   rowBuilder: (tableContext, index) {
@@ -232,8 +240,7 @@ class _UsersPageState extends State<UsersPage> {
       placeholder: context.s.searchEmailHint,
       clearSemanticLabel: context.s.clearSearchTooltip,
       minSearchCharacters: 1,
-      onSearch: (query) =>
-          context.read<UsersCubit>().loadUsers(query: query),
+      onSearch: (query) => context.read<UsersCubit>().loadUsers(query: query),
     );
   }
 }

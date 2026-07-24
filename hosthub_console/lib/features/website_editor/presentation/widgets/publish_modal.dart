@@ -47,10 +47,9 @@ class _PublishContent extends StatelessWidget {
       children: [
         Text(
           s.wePublishSubtitle(languageName(context, state.sourceLanguage)),
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: scheme.onSurfaceVariant),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
         ),
         const SizedBox(height: 12),
         for (final code in state.orderedLocales)
@@ -68,9 +67,7 @@ class _PublishContent extends StatelessWidget {
                   : s.wePublishRetranslate,
               size: StyledChipSize.display,
               leading: Icon(
-                code == state.sourceLanguage
-                    ? Icons.check
-                    : Icons.auto_awesome,
+                code == state.sourceLanguage ? Icons.check : Icons.auto_awesome,
                 size: 13,
                 color: code == state.sourceLanguage
                     ? ready.foreground
@@ -101,9 +98,9 @@ class _PublishContent extends StatelessWidget {
           child: Text(
             languageShort(code),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: scheme.primary,
-                  fontWeight: FontWeight.w700,
-                ),
+              color: scheme.primary,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ),

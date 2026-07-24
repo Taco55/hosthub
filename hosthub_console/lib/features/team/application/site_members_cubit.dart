@@ -52,8 +52,8 @@ class SiteMembersState extends Equatable {
 
 class SiteMembersCubit extends Cubit<SiteMembersState> {
   SiteMembersCubit({required SiteMemberRepository repository})
-      : _repository = repository,
-        super(const SiteMembersState());
+    : _repository = repository,
+      super(const SiteMembersState());
 
   final SiteMemberRepository _repository;
 
@@ -64,16 +64,20 @@ class SiteMembersCubit extends Cubit<SiteMembersState> {
         _repository.fetchMembers(siteId),
         _repository.fetchInvitations(siteId),
       ]);
-      emit(state.copyWith(
-        status: SiteMembersStatus.ready,
-        members: results[0] as List<SiteMember>,
-        invitations: results[1] as List<SiteInvitation>,
-      ));
+      emit(
+        state.copyWith(
+          status: SiteMembersStatus.ready,
+          members: results[0] as List<SiteMember>,
+          invitations: results[1] as List<SiteInvitation>,
+        ),
+      );
     } catch (error, stack) {
-      emit(state.copyWith(
-        status: SiteMembersStatus.error,
-        error: DomainError.from(error, stack: stack),
-      ));
+      emit(
+        state.copyWith(
+          status: SiteMembersStatus.error,
+          error: DomainError.from(error, stack: stack),
+        ),
+      );
     }
   }
 
@@ -96,10 +100,12 @@ class SiteMembersCubit extends Cubit<SiteMembersState> {
       await loadTeam(siteId);
       return true;
     } catch (error, stack) {
-      emit(state.copyWith(
-        status: SiteMembersStatus.ready,
-        error: DomainError.from(error, stack: stack),
-      ));
+      emit(
+        state.copyWith(
+          status: SiteMembersStatus.ready,
+          error: DomainError.from(error, stack: stack),
+        ),
+      );
       return false;
     }
   }
@@ -114,9 +120,7 @@ class SiteMembersCubit extends Cubit<SiteMembersState> {
         siteName: siteName,
       );
     } catch (error, stack) {
-      emit(state.copyWith(
-        error: DomainError.from(error, stack: stack),
-      ));
+      emit(state.copyWith(error: DomainError.from(error, stack: stack)));
     }
   }
 
@@ -128,9 +132,7 @@ class SiteMembersCubit extends Cubit<SiteMembersState> {
       await _repository.updateMemberRole(member.id, newRole);
       await loadTeam(siteId);
     } catch (error, stack) {
-      emit(state.copyWith(
-        error: DomainError.from(error, stack: stack),
-      ));
+      emit(state.copyWith(error: DomainError.from(error, stack: stack)));
     }
   }
 
@@ -142,9 +144,7 @@ class SiteMembersCubit extends Cubit<SiteMembersState> {
       await _repository.removeMember(member.id);
       await loadTeam(siteId);
     } catch (error, stack) {
-      emit(state.copyWith(
-        error: DomainError.from(error, stack: stack),
-      ));
+      emit(state.copyWith(error: DomainError.from(error, stack: stack)));
     }
   }
 
@@ -156,9 +156,7 @@ class SiteMembersCubit extends Cubit<SiteMembersState> {
       await _repository.cancelInvitation(invitation.id);
       await loadTeam(siteId);
     } catch (error, stack) {
-      emit(state.copyWith(
-        error: DomainError.from(error, stack: stack),
-      ));
+      emit(state.copyWith(error: DomainError.from(error, stack: stack)));
     }
   }
 
@@ -174,16 +172,20 @@ class SiteMembersCubit extends Cubit<SiteMembersState> {
         _repository.fetchMembersForOwner(),
         _repository.fetchInvitationsForOwner(),
       ]);
-      emit(state.copyWith(
-        status: SiteMembersStatus.ready,
-        members: results[0] as List<SiteMember>,
-        invitations: results[1] as List<SiteInvitation>,
-      ));
+      emit(
+        state.copyWith(
+          status: SiteMembersStatus.ready,
+          members: results[0] as List<SiteMember>,
+          invitations: results[1] as List<SiteInvitation>,
+        ),
+      );
     } catch (error, stack) {
-      emit(state.copyWith(
-        status: SiteMembersStatus.error,
-        error: DomainError.from(error, stack: stack),
-      ));
+      emit(
+        state.copyWith(
+          status: SiteMembersStatus.error,
+          error: DomainError.from(error, stack: stack),
+        ),
+      );
     }
   }
 
@@ -198,10 +200,12 @@ class SiteMembersCubit extends Cubit<SiteMembersState> {
       await loadAccountTeam();
       return true;
     } catch (error, stack) {
-      emit(state.copyWith(
-        status: SiteMembersStatus.ready,
-        error: DomainError.from(error, stack: stack),
-      ));
+      emit(
+        state.copyWith(
+          status: SiteMembersStatus.ready,
+          error: DomainError.from(error, stack: stack),
+        ),
+      );
       return false;
     }
   }
@@ -212,9 +216,7 @@ class SiteMembersCubit extends Cubit<SiteMembersState> {
       await _repository.removeFromAllSites(member.profileId);
       await loadAccountTeam();
     } catch (error, stack) {
-      emit(state.copyWith(
-        error: DomainError.from(error, stack: stack),
-      ));
+      emit(state.copyWith(error: DomainError.from(error, stack: stack)));
     }
   }
 
@@ -224,9 +226,7 @@ class SiteMembersCubit extends Cubit<SiteMembersState> {
       await _repository.cancelInvitationsByEmail(invitation.email);
       await loadAccountTeam();
     } catch (error, stack) {
-      emit(state.copyWith(
-        error: DomainError.from(error, stack: stack),
-      ));
+      emit(state.copyWith(error: DomainError.from(error, stack: stack)));
     }
   }
 

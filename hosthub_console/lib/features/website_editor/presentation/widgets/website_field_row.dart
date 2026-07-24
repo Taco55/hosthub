@@ -92,9 +92,9 @@ class WebsiteFieldRow extends StatelessWidget {
           child: Text(
             languageShort(state.sourceLanguage),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w700,
-                ),
+              color: scheme.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
         const SizedBox(width: 8),
@@ -103,10 +103,9 @@ class WebsiteFieldRow extends StatelessWidget {
             sourceText,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: scheme.outline),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: scheme.outline),
           ),
         ),
         if (locked)

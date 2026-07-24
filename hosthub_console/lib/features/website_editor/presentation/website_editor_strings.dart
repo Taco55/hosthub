@@ -26,8 +26,7 @@ String languageShort(String code) =>
 /// Localized field label for an editor field key.
 String fieldLabel(BuildContext context, String fieldKey) {
   final s = context.s;
-  final highlightMatch =
-      RegExp(r'^highlights\.(\d+)$').firstMatch(fieldKey);
+  final highlightMatch = RegExp(r'^highlights\.(\d+)$').firstMatch(fieldKey);
   if (highlightMatch != null) {
     return s.weFieldHighlight(int.parse(highlightMatch.group(1)!) + 1);
   }

@@ -151,8 +151,11 @@ class SiteContextCubit extends Cubit<SiteContextState> {
     });
   }
 
-  /// Toggles "Same as interface language". Turning it on immediately aligns
-  /// the source language with [interfaceLanguage] when the site offers it.
+  /// Toggles "Same as interface language". Turning it on aligns the source
+  /// language with [interfaceLanguage] ONCE, as part of this deliberate
+  /// property-scope action. It is a one-shot alignment: later interface-
+  /// language changes never touch the source language (design §4b — the two
+  /// concepts stay decoupled).
   Future<void> setSourceFollowsUi(
     bool follows, {
     required String interfaceLanguage,
@@ -169,24 +172,6 @@ class SiteContextCubit extends Cubit<SiteContextState> {
           interfaceLanguage,
         );
       }
-      await resolve();
-    });
-  }
-
-  /// Re-syncs the source language after an explicit interface-language change
-  /// (profile modal). Deliberately NOT wired to passive locale emissions
-  /// (startup, settings bootstrap): a teammate merely logging in with another
-  /// interface language must never flip the property's source language.
-  Future<void> followInterfaceLanguage(String interfaceLanguage) async {
-    final site = state.site;
-    if (site == null ||
-        !site.sourceLocaleFollowsUi ||
-        !site.locales.contains(interfaceLanguage) ||
-        site.defaultLocale == interfaceLanguage) {
-      return;
-    }
-    await _guard(() async {
-      await _cmsRepository.updateSiteDefaultLocale(site.id, interfaceLanguage);
       await resolve();
     });
   }

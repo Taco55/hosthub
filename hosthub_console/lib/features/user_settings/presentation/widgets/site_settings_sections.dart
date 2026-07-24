@@ -215,9 +215,10 @@ class _LanguageTag extends StatelessWidget {
         child: Center(
           child: Text(
             code.toUpperCase(),
+            // labelSmall's own (dark) colour: this theme's onSurfaceVariant
+            // is too light to read on surfaceContainerHighest.
             style: theme.textTheme.labelSmall?.copyWith(
               fontWeight: FontWeight.w700,
-              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
         ),

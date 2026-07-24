@@ -8,10 +8,7 @@ sealed class ChannelProperty with _$ChannelProperty {
   const ChannelProperty._();
 
   @JsonSerializable(fieldRename: FieldRename.snake)
-  const factory ChannelProperty({
-    String? id,
-    String? name,
-  }) = _ChannelProperty;
+  const factory ChannelProperty({String? id, String? name}) = _ChannelProperty;
 
   factory ChannelProperty.fromJson(Map<String, dynamic> json) =>
       _$ChannelPropertyFromJson(json);

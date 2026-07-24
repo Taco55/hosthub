@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
 
-
 enum UserManagementAction { editProfile, changePassword, deleteUser }
 
 Future<UserManagementAction?> showUserManagementActionsDialog(

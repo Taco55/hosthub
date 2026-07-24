@@ -210,26 +210,23 @@ void main() {
     expect(cubit.state.site?.defaultLocale, 'nl');
   });
 
-  test(
-    'followInterfaceLanguage syncs only when the follow switch is on',
-    () async {
-      final cubit = await makeCubit();
+  test('the follow switch is a one-shot alignment: no cubit API re-syncs the '
+      'source language on later interface-language changes', () async {
+    final cubit = await makeCubit();
 
-      // Switch off → explicit interface-language change must not touch it.
-      await cubit.followInterfaceLanguage('en');
-      expect(repository.writes, isEmpty);
+    await cubit.setSourceFollowsUi(true, interfaceLanguage: 'nl');
+    repository.writes.clear();
 
-      await cubit.setSourceFollowsUi(true, interfaceLanguage: 'nl');
-      repository.writes.clear();
-
-      await cubit.followInterfaceLanguage('en');
-      expect(repository.writes, contains('defaultLocale=en'));
-
-      repository.writes.clear();
-      await cubit.followInterfaceLanguage('fi'); // not an enabled language
-      expect(repository.writes, isEmpty);
-    },
-  );
+    // Interface language and source language stay decoupled (design §4b):
+    // there is deliberately no followInterfaceLanguage-style member that a
+    // locale change could call into.
+    expect(
+      cubit.state.site?.sourceLocaleFollowsUi,
+      isTrue,
+      reason: 'flag persists, but only drives the Settings UI',
+    );
+    expect(repository.writes, isEmpty);
+  });
 
   test('setSiteName and setBookingUrl persist the site details', () async {
     final cubit = await makeCubit(

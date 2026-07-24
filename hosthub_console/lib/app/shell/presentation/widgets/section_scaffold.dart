@@ -45,8 +45,7 @@ class _SectionScaffoldState extends State<SectionScaffold> {
 
   @override
   Widget build(BuildContext context) {
-    final isPinned =
-        ResponsiveSideMenuScaffold.isPinned(context, _breakpoint);
+    final isPinned = ResponsiveSideMenuScaffold.isPinned(context, _breakpoint);
     if (!isPinned) return _buildNarrow(context);
     return _buildDesktop(context);
   }
@@ -159,7 +158,8 @@ class _SectionScaffoldState extends State<SectionScaffold> {
           ),
         );
       },
-      bodyBuilder: (context, isPinned) => _buildBody(context, isPinned: isPinned),
+      bodyBuilder: (context, isPinned) =>
+          _buildBody(context, isPinned: isPinned),
     );
 
     if (kIsWeb) return scaffold;
@@ -227,9 +227,9 @@ class _SectionScaffoldState extends State<SectionScaffold> {
     final propertyState = context.watch<PropertyContextCubit>().state;
     final shouldForcePropertySetup =
         propertyState.status == PropertyContextStatus.loaded &&
-            propertyState.properties.isEmpty &&
-            widget.selectedItem != MenuItem.settings &&
-            widget.selectedItem != MenuItem.adminOptions;
+        propertyState.properties.isEmpty &&
+        widget.selectedItem != MenuItem.settings &&
+        widget.selectedItem != MenuItem.adminOptions;
     if (shouldForcePropertySetup) {
       return const PropertySetupPage();
     }

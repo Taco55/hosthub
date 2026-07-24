@@ -11,7 +11,7 @@ import 'package:hosthub_console/core/services/lodgify_service.dart';
 /// domain models.
 class LodgifyChannelManagerRepository implements ChannelManagerRepository {
   LodgifyChannelManagerRepository({required LodgifyService lodgifyService})
-      : _lodgifyService = lodgifyService;
+    : _lodgifyService = lodgifyService;
 
   final LodgifyService _lodgifyService;
 
@@ -20,8 +20,8 @@ class LodgifyChannelManagerRepository implements ChannelManagerRepository {
     final lodgifyProperties = await _lodgifyService.fetchProperties();
     return lodgifyProperties
         .map(
-          (p) => LodgifyPropertyDto(id: p.id, name: p.name, raw: p.raw)
-              .toDomain(),
+          (p) =>
+              LodgifyPropertyDto(id: p.id, name: p.name, raw: p.raw).toDomain(),
         )
         .toList();
   }

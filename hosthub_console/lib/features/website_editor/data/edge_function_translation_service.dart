@@ -7,10 +7,11 @@ import 'translation_service.dart';
 
 /// Signature of `SupabaseClient.functions.invoke` — injectable so tests can
 /// fake the Edge Function without a running Supabase stack.
-typedef EdgeFunctionInvoke = Future<FunctionResponse> Function(
-  String functionName, {
-  Map<String, dynamic>? body,
-});
+typedef EdgeFunctionInvoke =
+    Future<FunctionResponse> Function(
+      String functionName, {
+      Map<String, dynamic>? body,
+    });
 
 /// [TranslationService] backed by the `translate-content` Edge Function. The
 /// function holds the provider key server-side, skips locked fields and
@@ -23,9 +24,10 @@ class EdgeFunctionTranslationService extends SupabaseRepository
     required this.siteId,
     required this.page,
     EdgeFunctionInvoke? invoke,
-  })  : _invoke = invoke ??
-            ((name, {body}) => supabase.functions.invoke(name, body: body)),
-        super(supabase);
+  }) : _invoke =
+           invoke ??
+           ((name, {body}) => supabase.functions.invoke(name, body: body)),
+       super(supabase);
 
   static const String functionName = 'translate-content';
 

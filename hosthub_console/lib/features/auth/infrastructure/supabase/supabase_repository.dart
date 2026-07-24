@@ -40,8 +40,10 @@ abstract class SupabaseRepository {
     DomainErrorReason? reason,
     Map<String, Object?> context = const {},
   }) {
-    final base = DomainError.from(error, stack: stack)
-        .ensureLogoutOnInvalidRefresh();
+    final base = DomainError.from(
+      error,
+      stack: stack,
+    ).ensureLogoutOnInvalidRefresh();
     final mergedContext = <String, Object?>{
       'repository': runtimeType.toString(),
       if (base.context != null) ...base.context!,

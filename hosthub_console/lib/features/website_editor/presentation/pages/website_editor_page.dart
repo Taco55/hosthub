@@ -41,8 +41,9 @@ class WebsiteEditorPage extends StatelessWidget {
                 siteId: id,
                 page: WebsiteContentRepository.page,
               ),
-              repository:
-                  WebsiteContentRepository(supabase: Supabase.instance.client),
+              repository: WebsiteContentRepository(
+                supabase: Supabase.instance.client,
+              ),
               siteId: id,
             )..loadContent()),
       child: _WebsiteEditorView(siteId: id),
@@ -89,8 +90,7 @@ class _WebsiteEditorView extends StatelessWidget {
     // same failure surfaces again.
     final withErrorToasts = BlocListener<SiteContentCubit, SiteContentState>(
       listenWhen: (prev, next) =>
-          next.errorMessage != null &&
-          prev.errorMessage != next.errorMessage,
+          next.errorMessage != null && prev.errorMessage != next.errorMessage,
       listener: (context, state) {
         final s = context.s;
         final message = switch (state.errorMessage) {
@@ -121,8 +121,7 @@ class _WebsiteEditorView extends StatelessWidget {
       listenWhen: (prev, next) =>
           prev.site?.defaultLocale != next.site?.defaultLocale &&
           next.site?.id == siteId,
-      listener: (context, _) =>
-          context.read<SiteContentCubit>().loadContent(),
+      listener: (context, _) => context.read<SiteContentCubit>().loadContent(),
       child: withErrorToasts,
     );
   }

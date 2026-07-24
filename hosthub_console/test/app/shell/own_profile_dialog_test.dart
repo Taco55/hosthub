@@ -37,19 +37,19 @@ class _FakeUserSettingsCubit extends Cubit<UserSettingsState>
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+/// Records every member access so tests can prove the dialog never touches
+/// the property-scope site context (interface language is user scope only).
 class _FakeSiteContextCubit extends Cubit<SiteContextState>
     implements SiteContextCubit {
   _FakeSiteContextCubit() : super(const SiteContextState());
 
-  final List<String> followCalls = [];
+  final List<Symbol> invocations = [];
 
   @override
-  Future<void> followInterfaceLanguage(String interfaceLanguage) async {
-    followCalls.add(interfaceLanguage);
+  dynamic noSuchMethod(Invocation invocation) {
+    invocations.add(invocation.memberName);
+    return super.noSuchMethod(invocation);
   }
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 const _profile = Profile(id: 'p1', email: 'marta@trysilpanorama.com');
@@ -179,8 +179,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(cubits.userSettings.languageChanges, ['nl']);
-    // The explicit change also offers the site a follow-sync opportunity.
-    expect(cubits.siteContext.followCalls, ['nl']);
+    // Interface language is user scope: the change must never reach the
+    // property-scope site context (source language stays untouched).
+    expect(cubits.siteContext.invocations, isEmpty);
   });
 
   testWidgets(

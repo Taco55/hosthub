@@ -191,7 +191,8 @@ class LodgifyCalendarDto {
 
     // Try extracting from room_types[]/rooms[].people if not found yet.
     if (adults == null && children == null && infants == null) {
-      final roomList = _readByPath(map, const ['room_types']) ??
+      final roomList =
+          _readByPath(map, const ['room_types']) ??
           _readByPath(map, const ['roomTypes']) ??
           _readByPath(map, const ['rooms']);
       if (roomList is List && roomList.isNotEmpty) {
@@ -264,19 +265,22 @@ class LodgifyCalendarDto {
 
           for (final people in peopleSources) {
             found = true;
-            sumAdults += _readFirstInt(people, const [
+            sumAdults +=
+                _readFirstInt(people, const [
                   ['adults'],
                   ['numberOfAdults'],
                   ['number_of_adults'],
                 ]) ??
                 0;
-            sumChildren += _readFirstInt(people, const [
+            sumChildren +=
+                _readFirstInt(people, const [
                   ['children'],
                   ['numberOfChildren'],
                   ['number_of_children'],
                 ]) ??
                 0;
-            sumInfants += _readFirstInt(people, const [
+            sumInfants +=
+                _readFirstInt(people, const [
                   ['infants'],
                   ['babies'],
                   ['numberOfInfants'],
@@ -318,7 +322,10 @@ class LodgifyCalendarDto {
       }
     }
 
-    if (guestCount == null && adults == null && children == null && infants == null) {
+    if (guestCount == null &&
+        adults == null &&
+        children == null &&
+        infants == null) {
       debugPrint(
         '[LodgifyDTO] No guest counts found. '
         'Top keys: ${map.keys.take(20).toList()}',

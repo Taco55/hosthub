@@ -45,10 +45,7 @@ String costTypeLabel(CostType type) {
 
 /// A single cost entry with an amount and calculation type.
 class CostEntry {
-  const CostEntry({
-    this.amount = 0,
-    this.type = CostType.perBooking,
-  });
+  const CostEntry({this.amount = 0, this.type = CostType.perBooking});
 
   final double amount;
   final CostType type;
@@ -62,9 +59,9 @@ class CostEntry {
   }
 
   Map<String, dynamic> toMap() => {
-        'amount': amount,
-        'type': _costTypeToString(type),
-      };
+    'amount': amount,
+    'type': _costTypeToString(type),
+  };
 
   /// Calculate the effective cost given booking context.
   double resolve({int guests = 1, int nights = 1}) {
@@ -113,28 +110,22 @@ class ChannelConfig {
       cleaningCost: CostEntry.fromMap(
         costs['cleaning'] as Map<String, dynamic>?,
       ),
-      linenCost: CostEntry.fromMap(
-        costs['linen'] as Map<String, dynamic>?,
-      ),
-      serviceCost: CostEntry.fromMap(
-        costs['service'] as Map<String, dynamic>?,
-      ),
-      otherCost: CostEntry.fromMap(
-        costs['other'] as Map<String, dynamic>?,
-      ),
+      linenCost: CostEntry.fromMap(costs['linen'] as Map<String, dynamic>?),
+      serviceCost: CostEntry.fromMap(costs['service'] as Map<String, dynamic>?),
+      otherCost: CostEntry.fromMap(costs['other'] as Map<String, dynamic>?),
     );
   }
 
   Map<String, dynamic> toMap() => {
-        'commission_percentage': commissionPercentage,
-        'rate_markup_percentage': rateMarkupPercentage,
-        'costs': {
-          'cleaning': cleaningCost.toMap(),
-          'linen': linenCost.toMap(),
-          'service': serviceCost.toMap(),
-          'other': otherCost.toMap(),
-        },
-      };
+    'commission_percentage': commissionPercentage,
+    'rate_markup_percentage': rateMarkupPercentage,
+    'costs': {
+      'cleaning': cleaningCost.toMap(),
+      'linen': linenCost.toMap(),
+      'service': serviceCost.toMap(),
+      'other': otherCost.toMap(),
+    },
+  };
 
   /// Total fixed costs for a booking given guest count and number of nights.
   double totalCosts({int guests = 1, int nights = 1}) {
@@ -190,23 +181,17 @@ class ChannelSettings {
   factory ChannelSettings.fromMap(Map<String, dynamic>? map) {
     if (map == null) return const ChannelSettings();
     return ChannelSettings(
-      booking: ChannelConfig.fromMap(
-        map['booking'] as Map<String, dynamic>?,
-      ),
-      airbnb: ChannelConfig.fromMap(
-        map['airbnb'] as Map<String, dynamic>?,
-      ),
-      other: ChannelConfig.fromMap(
-        map['other'] as Map<String, dynamic>?,
-      ),
+      booking: ChannelConfig.fromMap(map['booking'] as Map<String, dynamic>?),
+      airbnb: ChannelConfig.fromMap(map['airbnb'] as Map<String, dynamic>?),
+      other: ChannelConfig.fromMap(map['other'] as Map<String, dynamic>?),
     );
   }
 
   Map<String, dynamic> toMap() => {
-        'booking': booking.toMap(),
-        'airbnb': airbnb.toMap(),
-        'other': other.toMap(),
-      };
+    'booking': booking.toMap(),
+    'airbnb': airbnb.toMap(),
+    'other': other.toMap(),
+  };
 
   /// Resolve the channel config for a given source string.
   ChannelConfig configForSource(String? source) {

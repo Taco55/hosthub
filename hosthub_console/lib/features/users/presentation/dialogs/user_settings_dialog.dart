@@ -13,11 +13,7 @@ Future<void> showUserSettingsDialog(
     builder: (context) {
       return AlertDialog(
         title: Text(context.s.userSettingsAction),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-           
-           
-          ],
-        ),
+        content: Column(mainAxisSize: MainAxisSize.min, children: []),
         actions: [
           StyledButton(
             title: context.s.closeButton,

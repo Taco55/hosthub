@@ -122,9 +122,10 @@ String? _dateOnly(DateTime? value) {
 }
 
 class ReservationsCubit extends Cubit<ReservationsState> {
-  ReservationsCubit({required ChannelManagerRepository channelManagerRepository})
-    : _channelManagerRepository = channelManagerRepository,
-      super(const ReservationsState.initial());
+  ReservationsCubit({
+    required ChannelManagerRepository channelManagerRepository,
+  }) : _channelManagerRepository = channelManagerRepository,
+       super(const ReservationsState.initial());
 
   final ChannelManagerRepository _channelManagerRepository;
 
@@ -134,8 +135,7 @@ class ReservationsCubit extends Cubit<ReservationsState> {
     DateTime? end,
   }) async {
     final now = DateTime.now();
-    final rangeStart =
-        start ?? DateTime(now.year - 1, now.month, 1);
+    final rangeStart = start ?? DateTime(now.year - 1, now.month, 1);
     final rangeEnd =
         end ??
         DateTime(now.year, now.month + 12, 0).add(const Duration(days: 14));
