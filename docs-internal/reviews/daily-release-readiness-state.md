@@ -77,8 +77,10 @@ gemotiveerd uitstellen mag alleen met reden in de evidence-kolom.
 
 | D8 | Rail per design + scroll-through (review Taco) | beide | done | sw@cec100c = v0.9.3 (StyledSideMenuSwitcher: ice-veld met uppercase label, +4 tests); console 2f53597: railbreedte clamp 300–340, Property-switcher via lib-widget (ACCOMMODATIE-label), Settings als nav-item boven, settings-pagina's op intrinsicPaneHeight (padding als scroll-inset — kaart scrolt door de schermrand, gap alleen bij max scroll); visueel geverifieerd |
 
+| D9 | Upgrade Flutter 3.44.8 + nieuwste dependencies (Taco: "alles het nieuwste") | beide | done | Project gepind op 3.44.8 (.fvmrc + .fvm/flutter_sdk-symlink + .vscode dart.flutterSdkPath; fvm global blijft bewust 3.35.7 voor Diplora). pub upgrade + package_info_plus ^10.2.1 (major); toastification nu 3.7.1 (mixed-summary-issue definitief weg). Bewust behouden: `onReorder`-deprecation in lib+console (vervanger `onReorderItem` bestaat niet in 3.35.7 waar Diplora op zit). Lib: 685 tests groen onder 3.44.8, geen lockfile-diff. Console: 68 tests groen (goldens ongewijzigd!), analyze 2 bekende infos, release-build + browser-smoke ok (login, Instellingen-secties, geen console-errors) |
+
 ## next_lens
-RUN 4 KLAAR (D1–D8 done, 2026-07-24). Alle CONFORMANCE-secties gedekt; geen openstaande
+RUN 4 KLAAR (D1–D9 done, 2026-07-24). Alle CONFORMANCE-secties gedekt; geen openstaande
 prd-migratie meer (follow-kolom geschrapt). Open (user-gated): console-deploy naar prd. Bewuste
 afwijkingen gedocumenteerd in design_handoff_hosthub_cms/IMPLEMENTATION_NOTES.md.
 
