@@ -2,12 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:app_errors/app_errors.dart';
+import 'package:hosthub_console/core/core.dart';
+import 'package:hosthub_console/features/auth/infrastructure/supabase/supabase_onboarding_adapter.dart';
 import 'package:hosthub_console/features/users/data/admin_user_repository.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
-Future<bool?> showCreateUserDialog(BuildContext context) {
-  return showDialog<bool>(
+/// Creates an account and — when `admin_settings.email_user_on_create` is on —
+/// sends the welcome email with a set-your-password link.
+///
+/// Returns `true` when the account was created. The welcome email is a
+/// best-effort follow-up: the account already exists once creation succeeds, so
+/// a mail failure only raises a warning toast instead of reporting failure.
+Future<bool?> showCreateUserDialog(BuildContext context) async {
+  final createdEmail = await showDialog<String>(
     context: context,
     builder: (dialogContext) {
       final theme = Theme.of(dialogContext);
@@ -21,7 +29,7 @@ Future<bool?> showCreateUserDialog(BuildContext context) {
         actions: [
           StyledButton(
             title: context.s.cancelButton,
-            onPressed: () => Navigator.of(dialogContext).pop(false),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             minHeight: 40,
             backgroundColor: theme.colorScheme.surfaceContainerHighest,
             labelColor: theme.colorScheme.onSurface,
@@ -30,6 +38,27 @@ Future<bool?> showCreateUserDialog(BuildContext context) {
       );
     },
   );
+
+  if (createdEmail == null) return false;
+  if (!context.mounted) return true;
+
+  // sendAccountCreatedEmail checks the emailUserOnCreate setting itself and
+  // returns without sending when it is off.
+  try {
+    await I.get<SupabaseOnboardingAdapter>().sendAccountCreatedEmail(
+      email: createdEmail,
+    );
+  } catch (error, stack) {
+    if (!context.mounted) return true;
+    final domainError = DomainError.from(error, stack: stack);
+    showStyledToast(
+      context,
+      type: ToastificationType.warning,
+      description: AppError.fromDomain(context, domainError).alert,
+    );
+  }
+
+  return true;
 }
 
 class _CreateUserForm extends StatefulWidget {
@@ -63,13 +92,15 @@ class _CreateUserFormState extends State<_CreateUserForm> {
       _errorMessage = null;
     });
 
+    final email = _emailController.text.trim();
     try {
       await context.read<AdminUserRepository>().createUser(
-        email: _emailController.text.trim(),
+        email: email,
         password: _passwordController.text,
       );
       if (!mounted) return;
-      Navigator.of(context).pop(true);
+      // The email is handed back so the caller can send the welcome mail.
+      Navigator.of(context).pop(email);
     } catch (error, stack) {
       final domainError = DomainError.from(error, stack: stack);
       final message = AppError.fromDomain(context, domainError).alert;
