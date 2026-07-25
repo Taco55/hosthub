@@ -21,6 +21,8 @@ import 'package:hosthub_console/features/channel_manager/domain/models/models.da
 import 'package:hosthub_console/core/l10n/l10n.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:hosthub_console/features/reservations/presentation/dialogs/reservation_details_dialog.dart';
+import 'package:hosthub_console/features/reservations/presentation/reservation_display.dart';
+import 'package:hosthub_console/features/revenue/domain/booking_revenue.dart';
 import 'package:hosthub_console/features/user_settings/user_settings.dart';
 
 enum _ReservationsViewMode { list, timeline }
@@ -454,7 +456,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
       final dayLabels = <DateTime, String>{};
       for (final e in state.entries) {
         if (e.startDate == null || e.endDate == null) continue;
-        final rev = _extractRevenue(e, l10n: l10n);
+        final rev = readBookingPayloadRevenue(e);
         num? rate = rev.nightlyRate;
         if (rate == null && rev.total != null) {
           final nights = _dateOnly(
@@ -463,7 +465,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
           if (nights > 0) rate = rev.total! / nights;
         }
         if (rate == null) continue;
-        final rateStr = _formatAmount(rate, rev.currency);
+        final rateStr = formatAmount(rate, rev.currency);
         var d = _dateOnly(e.startDate!);
         final end = _dateOnly(e.endDate!);
         while (d.isBefore(end)) {
@@ -478,7 +480,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
       for (final entry in ratesState.rates.entries) {
         dayLabels.putIfAbsent(
           entry.key,
-          () => _formatAmount(entry.value, ratesState.rateCurrency),
+          () => formatAmount(entry.value, ratesState.rateCurrency),
         );
       }
 
@@ -499,10 +501,10 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                 _dateOnly(e.endDate!).isBefore(today) ||
                 _dateOnly(e.endDate!).isAtSameMomentAs(today);
             final baseColor = BookingSourceIcon.barColor(e.source);
-            final guestInfo = _guestBreakdown(e, unknownLabel: '');
+            final guestInfo = guestBreakdown(e, unknownLabel: '');
             final name = e.guestName ?? l10n.revenueUnknownBooker;
             final label = guestInfo.isNotEmpty ? '$name ($guestInfo)' : name;
-            final nights = _stayNights(e.startDate, e.endDate);
+            final nights = stayNights(e.startDate, e.endDate);
             final tooltipParts = <String>[
               name,
               '${dateFormatter.format(e.startDate!.toLocal())} → ${dateFormatter.format(e.endDate!.toLocal())}',
@@ -786,7 +788,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     required DateFormat dateTimeFormatter,
   }) {
     final rateCurrency = context.read<NightlyRatesCubit>().state.rateCurrency;
-    final revenue = _extractRevenue(entry, l10n: context.s);
+    final revenue = readBookingPayloadRevenue(entry);
     final cubit = context.read<ReservationsCubit>();
 
     return showReservationDetailsDialog(
@@ -802,8 +804,11 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
         net: revenue.net,
         outstanding: revenue.outstanding,
         lines: [
-          for (final item in revenue.breakdown)
-            ReservationRevenueLine(label: item.label, amount: item.amount),
+          for (final line in revenue.lines)
+            ReservationRevenueLine(
+              label: revenueLineLabel(line.kind, context.s),
+              amount: line.amount,
+            ),
         ],
       ),
       // Only this screen can write a note back: it owns the reservations cubit.
@@ -1054,14 +1059,14 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
         _ExportColumn.departure: e.endDate != null
             ? dateFormatter.format(e.endDate!.toLocal())
             : '',
-        _ExportColumn.guestName: _escapeHtml(_guestDisplayName(e)),
-        _ExportColumn.guests: _escapeHtml(_guestBreakdown(e, unknownLabel: '')),
+        _ExportColumn.guestName: _escapeHtml(guestDisplayName(e, fallback: l10n.revenueUnknownBooker)),
+        _ExportColumn.guests: _escapeHtml(guestBreakdown(e, unknownLabel: '')),
         _ExportColumn.babyBed: _formatBabyExportValue(
           e.infantCount,
           l10n: l10n,
         ),
         _ExportColumn.nights:
-            _stayNights(e.startDate, e.endDate)?.toString() ?? '',
+            stayNights(e.startDate, e.endDate)?.toString() ?? '',
         _ExportColumn.status: _escapeHtml(e.status ?? ''),
         _ExportColumn.source: _escapeHtml(e.source ?? ''),
         _ExportColumn.notes: _escapeHtml(
@@ -1111,8 +1116,8 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
       final departure = e.endDate != null
           ? dateFormatter.format(e.endDate!.toLocal())
           : '';
-      final guestName = _guestDisplayName(e);
-      final guests = _guestBreakdown(e, unknownLabel: '');
+      final guestName = guestDisplayName(e, fallback: l10n.revenueUnknownBooker);
+      final guests = guestBreakdown(e, unknownLabel: '');
       final babyBed = _formatBabyExportValue(e.infantCount, l10n: l10n);
       final notes = (e.notes ?? '').replaceAll(RegExp(r'[\t\r\n]+'), ' ');
       buf.writeln(
@@ -1165,14 +1170,14 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
         _ExportColumn.departure: entry.endDate != null
             ? dateFormatter.format(entry.endDate!.toLocal())
             : '',
-        _ExportColumn.guestName: _guestDisplayName(entry),
-        _ExportColumn.guests: _guestBreakdown(entry, unknownLabel: ''),
+        _ExportColumn.guestName: guestDisplayName(entry, fallback: l10n.revenueUnknownBooker),
+        _ExportColumn.guests: guestBreakdown(entry, unknownLabel: ''),
         _ExportColumn.babyBed: _formatBabyExportValue(
           entry.infantCount,
           l10n: l10n,
         ),
         _ExportColumn.nights:
-            _stayNights(entry.startDate, entry.endDate)?.toString() ?? '',
+            stayNights(entry.startDate, entry.endDate)?.toString() ?? '',
         _ExportColumn.status: entry.status ?? '',
         _ExportColumn.source: entry.source ?? '',
         _ExportColumn.notes: (entry.notes ?? '').replaceAll(
@@ -1749,7 +1754,7 @@ class _ReservationListView extends StatelessWidget {
                     .toList(),
                 rowBuilder: (tableContext, index) {
                   final entry = entries[index];
-                  final nights = _stayNights(entry.startDate, entry.endDate);
+                  final nights = stayNights(entry.startDate, entry.endDate);
                   final key = _reservationKey(entry);
                   final isNew = markedAsNew.contains(key);
 
@@ -1758,7 +1763,7 @@ class _ReservationListView extends StatelessWidget {
                     FontWeight? fontWeight,
                     TextAlign textAlign = TextAlign.left,
                   }) {
-                    final safeValue = _valueOrDash(value);
+                    final safeValue = valueOrDash(value);
                     return Text(
                       safeValue,
                       maxLines: 1,
@@ -1781,21 +1786,21 @@ class _ReservationListView extends StatelessWidget {
                         ),
                       ),
                       _ReservationListColumn.guestName => textCell(
-                        _guestDisplayName(entry),
+                        guestDisplayName(entry, fallback: l10n.revenueUnknownBooker),
                         fontWeight: FontWeight.w600,
                       ),
                       _ReservationListColumn.checkIn => textCell(
-                        _formatDateTime(dateFormatter, entry.startDate),
+                        formatDateTime(entry.startDate, dateFormatter),
                       ),
                       _ReservationListColumn.checkOut => textCell(
-                        _formatDateTime(dateFormatter, entry.endDate),
+                        formatDateTime(entry.endDate, dateFormatter),
                       ),
                       _ReservationListColumn.nights => textCell(
                         nights?.toString(),
                         textAlign: TextAlign.right,
                       ),
                       _ReservationListColumn.guests => textCell(
-                        _guestBreakdown(entry, unknownLabel: ''),
+                        guestBreakdown(entry, unknownLabel: ''),
                         textAlign: TextAlign.left,
                       ),
                       _ReservationListColumn.babyBed => textCell(
@@ -1808,7 +1813,7 @@ class _ReservationListView extends StatelessWidget {
                       ),
                       _ReservationListColumn.status => textCell(entry.status),
                       _ReservationListColumn.booked => textCell(
-                        _formatDateTime(dateTimeFormatter, entry.createdAt),
+                        formatDateTime(entry.createdAt, dateTimeFormatter),
                       ),
                       _ReservationListColumn.isNew => Center(
                         child: SizedBox(
@@ -1876,45 +1881,6 @@ List<MetricTileData> _monthMetrics(_MonthSummary summary, {required S l10n}) {
       caption: l10n.reservationsBarNights(summary.occupiedNights),
     ),
   ];
-}
-
-class _RevenueData {
-  const _RevenueData({
-    required this.currency,
-    required this.nightlyRate,
-    required this.total,
-    required this.paid,
-    required this.outstanding,
-    required this.net,
-    required this.payout,
-    required this.breakdown,
-  });
-
-  final String? currency;
-  final num? nightlyRate;
-  final num? total;
-  final num? paid;
-  final num? outstanding;
-  final num? net;
-  final num? payout;
-  final List<_RevenueBreakdownItem> breakdown;
-
-  bool get hasAnyData {
-    return nightlyRate != null ||
-        total != null ||
-        paid != null ||
-        outstanding != null ||
-        net != null ||
-        payout != null ||
-        breakdown.isNotEmpty;
-  }
-}
-
-class _RevenueBreakdownItem {
-  const _RevenueBreakdownItem({required this.label, required this.amount});
-
-  final String label;
-  final num amount;
 }
 
 class _MonthSummary {
@@ -2022,489 +1988,6 @@ int _overlapDays(
   final overlapEnd = end.isBefore(rangeEnd) ? end : rangeEnd;
   if (overlapEnd.isBefore(overlapStart)) return 0;
   return overlapEnd.difference(overlapStart).inDays + 1;
-}
-
-int? _stayNights(DateTime? start, DateTime? end) {
-  if (start == null || end == null) return null;
-  final nights = _dateOnly(end).difference(_dateOnly(start)).inDays;
-  return nights <= 0 ? 1 : nights;
-}
-
-String _guestDisplayName(Reservation entry, {String fallback = '-'}) {
-  final name = entry.guestName?.trim();
-  if (name == null || name.isEmpty) return fallback;
-  return name;
-}
-
-String? _formatDateTime(DateFormat formatter, DateTime? date) {
-  if (date == null) return null;
-  return formatter.format(date.toLocal());
-}
-
-_RevenueData _extractRevenue(Reservation entry, {required S l10n}) {
-  final raw = entry.raw;
-  final currency =
-      _readFirstStringFromMap(raw, const [
-        ['currency'],
-        ['currencyCode'],
-        ['currency_code'],
-        ['pricing', 'currency'],
-        ['financials', 'currency'],
-        ['money', 'currency'],
-      ]) ??
-      entry.currency;
-
-  final nightlyRate = _normalizeMoney(
-    _readFirstNumFromMap(raw, const [
-      ['nightlyRate'],
-      ['nightly_rate'],
-      ['ratePerNight'],
-      ['rate_per_night'],
-      ['pricing', 'nightlyRate'],
-      ['pricing', 'nightly_rate'],
-      ['financials', 'nightlyRate'],
-      ['financials', 'nightly_rate'],
-    ]),
-  );
-
-  var total = _normalizeMoney(
-    entry.totalAmount ??
-        _readFirstNumFromMap(raw, const [
-          ['totalAmount'],
-          ['total_amount'],
-          ['total'],
-          ['amount'],
-          ['price'],
-          ['pricing', 'total'],
-          ['quote', 'total'],
-          ['financials', 'total'],
-          ['revenue', 'total'],
-        ]),
-  );
-  var paid = _normalizeMoney(
-    _readFirstNumFromMap(raw, const [
-      ['paid'],
-      ['paidAmount'],
-      ['paid_amount'],
-      ['amountPaid'],
-      ['amount_paid'],
-      ['collectedAmount'],
-      ['collected_amount'],
-      ['payments', 'paid'],
-      ['payment', 'paid'],
-      ['financials', 'paid'],
-    ]),
-  );
-  var outstanding = _normalizeMoney(
-    _readFirstNumFromMap(raw, const [
-      ['outstanding'],
-      ['amountDue'],
-      ['amount_due'],
-      ['balanceDue'],
-      ['balance_due'],
-      ['remainingAmount'],
-      ['remaining_amount'],
-      ['payments', 'due'],
-      ['payment', 'due'],
-      ['financials', 'due'],
-      ['financials', 'outstanding'],
-    ]),
-  );
-  final net = _normalizeMoney(
-    _readFirstNumFromMap(raw, const [
-      ['net'],
-      ['netAmount'],
-      ['net_amount'],
-      ['financials', 'net'],
-      ['revenue', 'net'],
-    ]),
-  );
-  final payout = _normalizeMoney(
-    _readFirstNumFromMap(raw, const [
-      ['payout'],
-      ['ownerPayout'],
-      ['owner_payout'],
-      ['financials', 'payout'],
-      ['revenue', 'payout'],
-    ]),
-  );
-
-  if (total != null) {
-    if (paid == null && outstanding != null) {
-      paid = _normalizeMoney(total - outstanding);
-    }
-    if (outstanding == null && paid != null) {
-      outstanding = _normalizeMoney(total - paid);
-    }
-  } else if (paid != null && outstanding != null) {
-    total = _normalizeMoney(paid + outstanding);
-  }
-
-  final breakdown = <_RevenueBreakdownItem>[];
-  _addBreakdownItem(
-    breakdown,
-    l10n.revenueBreakdownRent,
-    _readFirstNumFromMap(raw, const [
-      ['rent'],
-      ['rentAmount'],
-      ['rent_amount'],
-      ['baseRate'],
-      ['base_rate'],
-      ['baseAmount'],
-      ['base_amount'],
-      ['pricing', 'rent'],
-      ['pricing', 'base'],
-      ['financials', 'rent'],
-    ]),
-  );
-  _addBreakdownItem(
-    breakdown,
-    l10n.revenueBreakdownCleaning,
-    _readFirstNumFromMap(raw, const [
-          ['cleaningFee'],
-          ['cleaning_fee'],
-          ['fees', 'cleaning'],
-          ['pricing', 'cleaningFee'],
-          ['pricing', 'cleaning_fee'],
-          ['financials', 'cleaning'],
-        ]) ??
-        _feeFromPriceTypes(raw, (label) {
-          final l = label.toLowerCase();
-          return l.contains('clean') || l.contains('schoon');
-        }),
-  );
-  _addBreakdownItem(
-    breakdown,
-    l10n.revenueBreakdownLinen,
-    _readFirstNumFromMap(raw, const [
-          ['linenFee'],
-          ['linen_fee'],
-          ['linensFee'],
-          ['linens_fee'],
-          ['linen'],
-          ['linens'],
-          ['bedlinen'],
-          ['bed_linen'],
-          ['bedLinen'],
-          ['bedLinenCost'],
-          ['bed_linen_cost'],
-          ['linenRental'],
-          ['linen_rental'],
-          ['fees', 'linen'],
-          ['fees', 'linens'],
-          ['pricing', 'linenFee'],
-          ['pricing', 'linensFee'],
-          ['pricing', 'linen'],
-          ['pricing', 'linens'],
-          ['financials', 'linen'],
-          ['financials', 'linens'],
-        ]) ??
-        _feeFromPriceTypes(raw, (label) {
-          final l = label.toLowerCase();
-          return l.contains('linen') ||
-              l.contains('linnen') ||
-              l.contains('bedlinen') ||
-              l.contains('bed linen');
-        }),
-  );
-  _addBreakdownItem(
-    breakdown,
-    l10n.revenueBreakdownServiceCosts,
-    _readFirstNumFromMap(raw, const [
-      ['serviceFee'],
-      ['service_fee'],
-      ['fees', 'service'],
-      ['pricing', 'serviceFee'],
-      ['pricing', 'service_fee'],
-      ['financials', 'service'],
-    ]),
-  );
-  _addBreakdownItem(
-    breakdown,
-    l10n.revenueBreakdownTax,
-    _readFirstNumFromMap(raw, const [
-      ['tax'],
-      ['taxes'],
-      ['vat'],
-      ['taxAmount'],
-      ['tax_amount'],
-      ['pricing', 'tax'],
-      ['financials', 'tax'],
-      ['financials', 'taxes'],
-    ]),
-  );
-  _addBreakdownItem(
-    breakdown,
-    l10n.revenueBreakdownChannelFee,
-    _readFirstNumFromMap(raw, const [
-      ['commission'],
-      ['commissionFee'],
-      ['commission_fee'],
-      ['channelFee'],
-      ['channel_fee'],
-      ['otaFee'],
-      ['ota_fee'],
-      ['fees', 'commission'],
-      ['financials', 'commission'],
-    ]),
-  );
-  _addBreakdownItem(
-    breakdown,
-    l10n.revenueBreakdownDiscounts,
-    _readFirstNumFromMap(raw, const [
-      ['discount'],
-      ['discountAmount'],
-      ['discount_amount'],
-      ['pricing', 'discount'],
-      ['financials', 'discount'],
-    ]),
-  );
-  _addBreakdownItem(
-    breakdown,
-    l10n.revenueBreakdownDeposit,
-    _readFirstNumFromMap(raw, const [
-      ['deposit'],
-      ['securityDeposit'],
-      ['security_deposit'],
-      ['pricing', 'deposit'],
-      ['financials', 'deposit'],
-    ]),
-  );
-  _addBreakdownItem(
-    breakdown,
-    l10n.revenueBreakdownExtraCharges,
-    _readFirstNumFromMap(raw, const [
-      ['extras'],
-      ['extraFees'],
-      ['extra_fees'],
-      ['fees', 'extras'],
-      ['pricing', 'extras'],
-      ['financials', 'extras'],
-    ]),
-  );
-
-  return _RevenueData(
-    currency: currency,
-    nightlyRate: nightlyRate,
-    total: total,
-    paid: paid,
-    outstanding: outstanding,
-    net: net,
-    payout: payout,
-    breakdown: breakdown,
-  );
-}
-
-Map<String, dynamic>? _asStringDynamicMap(Object? value) {
-  if (value == null) return null;
-  if (value is Map<String, dynamic>) return value;
-  if (value is Map) {
-    final converted = <String, dynamic>{};
-    for (final entry in value.entries) {
-      converted[entry.key.toString()] = entry.value;
-    }
-    return converted;
-  }
-  return null;
-}
-
-int? _coerceInt(Object? value) {
-  if (value == null) return null;
-  if (value is int) return value;
-  if (value is num) return value.toInt();
-  if (value is String) {
-    final trimmed = value.trim();
-    if (trimmed.isEmpty) return null;
-    return int.tryParse(trimmed) ??
-        num.tryParse(trimmed.replaceAll(',', '.'))?.toInt();
-  }
-  return null;
-}
-
-num? _feeFromPriceTypes(
-  Map<String, dynamic> raw,
-  bool Function(String label) labelMatcher,
-) {
-  final roomTypes =
-      _readByPathFromMap(raw, const ['room_types']) ??
-      _readByPathFromMap(raw, const ['roomTypes']);
-  if (roomTypes is! List) return null;
-  for (final roomType in roomTypes) {
-    final roomMap = _asStringDynamicMap(roomType);
-    if (roomMap == null) continue;
-    final priceTypes =
-        _readByPathFromMap(roomMap, const ['price_types']) ??
-        _readByPathFromMap(roomMap, const ['priceTypes']);
-    if (priceTypes is! List) continue;
-    for (final priceType in priceTypes) {
-      final typeMap = _asStringDynamicMap(priceType);
-      if (typeMap == null) continue;
-      final rawType = _readByPathFromMap(typeMap, const ['type']);
-      final typeValue = _coerceInt(rawType);
-      if (typeValue != 2) continue; // only fee-type items
-      final description = _readFirstStringFromMap(typeMap, const [
-        ['description'],
-        ['name'],
-        ['title'],
-      ]);
-      if (description != null && labelMatcher(description)) {
-        final subtotal = _readFirstNumFromMap(typeMap, const [
-          ['subtotal'],
-          ['amount'],
-          ['total'],
-        ]);
-        final normalized = _normalizeMoney(subtotal);
-        if (normalized != null) return normalized;
-      }
-    }
-  }
-  return null;
-}
-
-void _addBreakdownItem(
-  List<_RevenueBreakdownItem> items,
-  String label,
-  num? amount,
-) {
-  final normalized = _normalizeMoney(amount);
-  if (normalized == null) return;
-  items.add(_RevenueBreakdownItem(label: label, amount: normalized));
-}
-
-num? _readFirstNumFromMap(Map<String, dynamic> map, List<List<String>> paths) {
-  for (final path in paths) {
-    final value = _readByPathFromMap(map, path);
-    final amount = _parseAmount(value);
-    if (amount != null) return amount;
-  }
-  return null;
-}
-
-String? _readFirstStringFromMap(
-  Map<String, dynamic> map,
-  List<List<String>> paths,
-) {
-  for (final path in paths) {
-    final value = _readByPathFromMap(map, path);
-    if (value is String) {
-      final trimmed = value.trim();
-      if (trimmed.isNotEmpty) return trimmed;
-    }
-  }
-  return null;
-}
-
-Object? _readByPathFromMap(Map<String, dynamic> map, List<String> path) {
-  Object? current = map;
-
-  for (final segment in path) {
-    if (current is! Map) return null;
-
-    Object? next;
-    if (current is Map<String, dynamic>) {
-      next = current[segment];
-      if (next == null) {
-        final lower = segment.toLowerCase();
-        for (final entry in current.entries) {
-          if (entry.key.toLowerCase() == lower) {
-            next = entry.value;
-            break;
-          }
-        }
-      }
-    } else {
-      for (final entry in current.entries) {
-        final key = entry.key.toString();
-        if (key == segment || key.toLowerCase() == segment.toLowerCase()) {
-          next = entry.value;
-          break;
-        }
-      }
-    }
-
-    if (next == null) return null;
-    current = next;
-  }
-
-  return current;
-}
-
-num? _parseAmount(Object? value) {
-  if (value == null) return null;
-  if (value is num) return value;
-  if (value is String) {
-    final trimmed = value.trim();
-    if (trimmed.isEmpty) return null;
-
-    final cleaned = trimmed.replaceAll(RegExp(r'[^0-9,.\-]'), '');
-    if (cleaned.isEmpty || cleaned == '-' || cleaned == '.' || cleaned == ',') {
-      return null;
-    }
-
-    var normalized = cleaned;
-    if (cleaned.contains(',') && cleaned.contains('.')) {
-      if (cleaned.lastIndexOf(',') > cleaned.lastIndexOf('.')) {
-        normalized = cleaned.replaceAll('.', '').replaceAll(',', '.');
-      } else {
-        normalized = cleaned.replaceAll(',', '');
-      }
-    } else if (cleaned.contains(',')) {
-      normalized = cleaned.replaceAll(',', '.');
-    }
-
-    return num.tryParse(normalized);
-  }
-  return null;
-}
-
-num? _normalizeMoney(num? value) {
-  if (value == null) return null;
-  final asDouble = value.toDouble();
-  if (asDouble.isNaN || asDouble.isInfinite) return null;
-  if (asDouble.abs() < 0.005) return 0;
-  return value;
-}
-
-String _formatAmount(num? amount, String? currency) {
-  if (amount == null) return '-';
-  final value = amount % 1 == 0
-      ? amount.toInt().toString()
-      : amount.toStringAsFixed(2);
-  if (currency == null || currency.trim().isEmpty) return value;
-  return '$value ${currency.trim().toUpperCase()}';
-}
-
-String _guestBreakdown(Reservation entry, {String unknownLabel = '-'}) {
-  final adults = entry.adultCount;
-  final children = entry.childCount;
-  final hasBreakdown = adults != null || children != null;
-  final totalGuests = _resolvedGuestTotal(entry);
-
-  if (totalGuests == null && !hasBreakdown) {
-    return unknownLabel;
-  }
-
-  if (!hasBreakdown) {
-    return totalGuests?.toString() ?? unknownLabel;
-  }
-
-  final adultsText = adults?.toString() ?? '?';
-  final childrenText = children?.toString() ?? '?';
-  final adultsAndChildren = (adults ?? 0) + (children ?? 0);
-  final resolvedTotal = adults != null && children != null
-      ? adultsAndChildren
-      : (totalGuests ?? adultsAndChildren);
-  return '$resolvedTotal ($adultsText + $childrenText)';
-}
-
-int? _resolvedGuestTotal(Reservation entry) {
-  if (entry.guestCount != null) return entry.guestCount;
-
-  final adults = entry.adultCount;
-  final children = entry.childCount;
-  final infants = entry.infantCount;
-  if (adults == null && children == null && infants == null) return null;
-  return (adults ?? 0) + (children ?? 0) + (infants ?? 0);
 }
 
 String _reservationKey(Reservation entry) {
@@ -2716,13 +2199,6 @@ String _escapeHtml(String value) {
       .replaceAll('<', '&lt;')
       .replaceAll('>', '&gt;')
       .replaceAll('"', '&quot;');
-}
-
-String _valueOrDash(String? value) {
-  if (value == null) return '-';
-  final trimmed = value.trim();
-  if (trimmed.isEmpty) return '-';
-  return trimmed;
 }
 
 DateTime _dateOnly(DateTime date) {

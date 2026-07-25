@@ -1,6 +1,8 @@
 import 'package:intl/intl.dart';
 
+import 'package:hosthub_console/core/l10n/l10n.dart';
 import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
+import 'package:hosthub_console/features/revenue/domain/booking_revenue.dart';
 
 /// Formatting the reservations and revenue screens share.
 ///
@@ -82,16 +84,6 @@ String formatAmount(num? amount, String? currency) {
   return '$value ${currency.trim().toUpperCase()}';
 }
 
-/// Drops values that cannot be money (NaN, infinity) and rounds a fraction of
-/// a cent to zero, so `-0.00` never reaches the screen.
-num? normalizeMoney(num? value) {
-  if (value == null) return null;
-  final asDouble = value.toDouble();
-  if (asDouble.isNaN || asDouble.isInfinite) return null;
-  if (asDouble.abs() < 0.005) return 0;
-  return value;
-}
-
 /// A date in the viewer's local zone, or null when there is no date.
 String? formatDateTime(DateTime? date, DateFormat formatter) {
   if (date == null) return null;
@@ -99,3 +91,31 @@ String? formatDateTime(DateTime? date, DateFormat formatter) {
 }
 
 DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
+
+/// The label for a breakdown line. The domain classifies a line by
+/// [BookingRevenueLineKind]; naming it is a presentation concern, which is why
+/// the two screens can share one reader and still speak the user's language.
+String revenueLineLabel(BookingRevenueLineKind kind, S l10n) {
+  switch (kind) {
+    case BookingRevenueLineKind.rent:
+      return l10n.revenueBreakdownRent;
+    case BookingRevenueLineKind.cleaning:
+      return l10n.revenueBreakdownCleaning;
+    case BookingRevenueLineKind.linen:
+      return l10n.revenueBreakdownLinen;
+    case BookingRevenueLineKind.service:
+      return l10n.revenueBreakdownServiceCosts;
+    case BookingRevenueLineKind.otherCosts:
+      return l10n.revenueBreakdownOtherCosts;
+    case BookingRevenueLineKind.channelFee:
+      return l10n.revenueBreakdownChannelFee;
+    case BookingRevenueLineKind.tax:
+      return l10n.revenueBreakdownTax;
+    case BookingRevenueLineKind.discount:
+      return l10n.revenueBreakdownDiscounts;
+    case BookingRevenueLineKind.deposit:
+      return l10n.revenueBreakdownDeposit;
+    case BookingRevenueLineKind.extra:
+      return l10n.revenueBreakdownExtraCharges;
+  }
+}

@@ -297,8 +297,14 @@ class _MenuLogo extends StatelessWidget {
 
     return Row(
       children: [
-        mark,
-        const SizedBox(width: 11),
+        // The same icon column the nav rows use, so the mark keeps its centre
+        // when the menu expands instead of sliding left, and lands on the one
+        // vertical axis the design asks for. Centring it across the rail (the
+        // compact case above) works out to the same centre.
+        SizedBox(
+          width: StyledSideMenuScope.maybeOf(context)?.iconBox ?? 44,
+          child: Center(child: mark),
+        ),
         Expanded(
           child: Text(
             context.s.appTitle,

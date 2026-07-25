@@ -1,4 +1,3 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -29,21 +28,15 @@ void main() {
     );
   });
 
-  testWidgets('golden: rail row tooltip on hover', (tester) async {
+  testWidgets('golden: pinned rail at rest', (tester) async {
     await pumpShell(tester, surface: const Size(900, 800));
 
-    final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
-    await gesture.addPointer(location: Offset.zero);
-    addTearDown(gesture.removePointer);
-    // Hover the icon itself and capture before the rail's 350ms hover-intent
-    // delay elapses: this is the row's own label, not the expanded panel.
-    // (The hover expansion itself is covered in the library's scaffold tests.)
-    await gesture.moveTo(tester.getCenter(find.byIcon(Icons.show_chart)));
-    await tester.pumpAndSettle();
-
+    // No hover: the 72px rail as it sits. Its hovered state is the expanded
+    // panel below, and the row label that used to live here (first a flyout,
+    // then a tooltip) is gone — the panel arrives before either could show.
     await expectLater(
       find.byType(MaterialApp),
-      matchesGoldenFile('goldens/nav_03_rail_row_tooltip.png'),
+      matchesGoldenFile('goldens/nav_03_rail.png'),
     );
   });
 

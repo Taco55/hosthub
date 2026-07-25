@@ -79,7 +79,23 @@ gemotiveerd uitstellen mag alleen met reden in de evidence-kolom.
 
 | D9 | Upgrade Flutter 3.44.8 + nieuwste dependencies (Taco: "alles het nieuwste") | beide | done | Project gepind op 3.44.8 (.fvmrc + .fvm/flutter_sdk-symlink + .vscode dart.flutterSdkPath; fvm global blijft bewust 3.35.7 voor Diplora). pub upgrade + package_info_plus ^10.2.1 (major); toastification nu 3.7.1 (mixed-summary-issue definitief weg). Bewust behouden: `onReorder`-deprecation in lib+console (vervanger `onReorderItem` bestaat niet in 3.35.7 waar Diplora op zit). Lib: 685 tests groen onder 3.44.8, geen lockfile-diff. Console: 68 tests groen (goldens ongewijzigd!), analyze 2 bekende infos, release-build + browser-smoke ok (login, Instellingen-secties, geen console-errors) |
 
+
+## Run 5 — drie-schermen-handoff afmaken (2026-07-25, opdracht "alles na elkaar")
+
+Slices uit `design_handoff_hosthub_cms/IMPLEMENTATION_PLAN.md` die na run 4 open stonden.
+Rubric-fasen 0–7 per slice; analyze = `fvm flutter analyze` (baseline 2 bekende infos),
+test = `fvm flutter test <pad>`. **Let op:** de repo draait op Flutter 3.44.8 via fvm — de
+kale `flutter` op PATH is nog 3.35.7 en die mix bouwt test-assets met de verkeerde engine.
+
+| # | slice | scope | status | evidence |
+|---|-------|-------|--------|----------|
+| E1 | Lodgify-payloadparsing naar het domein | console | done | 927 regels uit revenue + 400 uit reservations → `revenue/domain/booking_revenue.dart` (getypeerde `BookingRevenueLineKind`, labels blijven presentatie). Pagina's: reservations 3064→2206, revenue 2455→1350. Unie van beide lezers, dus reservations kent nu ook de `cleaningCost`-paden en revenue de huur/korting/borg/extra-regels. +15 tests (`booking_revenue_test.dart`), 179 groen, analyze clean |
+| E2 | Website-editor §11-gaten (coverage-meter → `N of M fields yours`, rest van de ~25 punten) | console | todo | |
+| E3 | Visuele verificatie van de drie schermen tegen `HostHub CMS.dc.html` | console | todo | login is user-gated |
+
 ## next_lens
+RUN 5 loopt: E1 done, E2 (website-editor §11) is de volgende lens, dan E3 (visueel).
+
 RUN 4 KLAAR (D1–D9 done, 2026-07-24). Alle CONFORMANCE-secties gedekt; geen openstaande
 prd-migratie meer (follow-kolom geschrapt). Open (user-gated): console-deploy naar prd. Bewuste
 afwijkingen gedocumenteerd in design_handoff_hosthub_cms/IMPLEMENTATION_NOTES.md.
