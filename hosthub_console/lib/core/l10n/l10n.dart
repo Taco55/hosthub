@@ -7349,6 +7349,36 @@ class S {
     return Intl.message('Notes', name: 'reservationNotes', desc: '', args: []);
   }
 
+  /// `Add a note…`
+  String get reservationNotesHint {
+    return Intl.message(
+      'Add a note…',
+      name: 'reservationNotesHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No reservation ID — saving is not possible`
+  String get reservationNotesDisabledHint {
+    return Intl.message(
+      'No reservation ID — saving is not possible',
+      name: 'reservationNotesDisabledHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Save to Lodgify`
+  String get reservationNotesSave {
+    return Intl.message(
+      'Save to Lodgify',
+      name: 'reservationNotesSave',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Created`
   String get reservationCreatedAt {
     return Intl.message(

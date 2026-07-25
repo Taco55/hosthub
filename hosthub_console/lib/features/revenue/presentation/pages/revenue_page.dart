@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:app_errors/app_errors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -13,6 +11,7 @@ import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/server_settings/data/admin_settings_repository.dart';
 import 'package:hosthub_console/features/server_settings/domain/admin_settings.dart';
 import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
+import 'package:hosthub_console/features/reservations/presentation/dialogs/reservation_details_dialog.dart';
 import 'package:hosthub_console/features/revenue/domain/revenue_breakdown.dart';
 import 'package:hosthub_console/core/l10n/l10n.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
@@ -584,17 +583,28 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
     required AdminSettings settings,
     required PropertySummary? property,
   }) {
-    return showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return _ReservationDetailsDialog(
-          entry: entry,
-          dateFormatter: dateFormatter,
-          dateTimeFormatter: dateTimeFormatter,
-          settings: settings,
-          property: property,
-        );
-      },
+    final revenue = _extractReservationRevenueData(
+      entry,
+      settings: settings,
+      property: property,
+      l10n: context.s,
+    );
+
+    return showReservationDetailsDialog(
+      context,
+      entry: entry,
+      dateFormatter: dateFormatter,
+      dateTimeFormatter: dateTimeFormatter,
+      revenue: ReservationRevenueSummary(
+        currency: revenue.currency,
+        total: revenue.total,
+        net: revenue.net,
+        outstanding: revenue.outstanding,
+        lines: [
+          for (final item in revenue.breakdown)
+            ReservationRevenueLine(label: item.label, amount: item.amount),
+        ],
+      ),
     );
   }
 
@@ -1385,39 +1395,6 @@ String _guestDisplayName(Reservation entry, {required String fallback}) {
   return name;
 }
 
-String _guestBreakdown(Reservation entry, {String unknownLabel = '-'}) {
-  final adults = entry.adultCount;
-  final children = entry.childCount;
-  final hasBreakdown = adults != null || children != null;
-  final totalGuests = _resolvedGuestTotal(entry);
-
-  if (totalGuests == null && !hasBreakdown) {
-    return unknownLabel;
-  }
-
-  if (!hasBreakdown) {
-    return totalGuests?.toString() ?? unknownLabel;
-  }
-
-  final adultsText = adults?.toString() ?? '?';
-  final childrenText = children?.toString() ?? '?';
-  final adultsAndChildren = (adults ?? 0) + (children ?? 0);
-  final resolvedTotal = adults != null && children != null
-      ? adultsAndChildren
-      : (totalGuests ?? adultsAndChildren);
-  return '$resolvedTotal ($adultsText + $childrenText)';
-}
-
-int? _resolvedGuestTotal(Reservation entry) {
-  if (entry.guestCount != null) return entry.guestCount;
-
-  final adults = entry.adultCount;
-  final children = entry.childCount;
-  final infants = entry.infantCount;
-  if (adults == null && children == null && infants == null) return null;
-  return (adults ?? 0) + (children ?? 0) + (infants ?? 0);
-}
-
 _ExtractedRevenue _extractRevenue(Reservation entry) {
   final raw = entry.raw;
   final currency =
@@ -2152,259 +2129,6 @@ String? _formatDate(DateTime? date, DateFormat formatter) {
   return formatter.format(date.toLocal());
 }
 
-String? _formatDateTime(DateTime? date, DateFormat formatter) {
-  if (date == null) return null;
-  return formatter.format(date.toLocal());
-}
-
-class _ReservationDetailsDialog extends StatelessWidget {
-  const _ReservationDetailsDialog({
-    required this.entry,
-    required this.dateFormatter,
-    required this.dateTimeFormatter,
-    required this.settings,
-    required this.property,
-  });
-
-  final Reservation entry;
-  final DateFormat dateFormatter;
-  final DateFormat dateTimeFormatter;
-  final AdminSettings settings;
-  final PropertySummary? property;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final s = context.s;
-    final revenue = _extractReservationRevenueData(
-      entry,
-      settings: settings,
-      property: property,
-      l10n: s,
-    );
-    final prettyRaw = const JsonEncoder.withIndent('  ').convert(entry.raw);
-    final nights = _stayNights(entry.startDate, entry.endDate);
-    final guestName = _guestDisplayName(
-      entry,
-      fallback: s.revenueUnknownBooker,
-    );
-
-    final dialogBg = theme.brightness == Brightness.light
-        ? Colors.white
-        : theme.colorScheme.surfaceContainerLow;
-
-    return Dialog(
-      backgroundColor: dialogBg,
-      insetPadding: EdgeInsets.all(context.styledSpacing.xl),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 520, maxHeight: 760),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                context.styledSpacing.lg,
-                context.styledSpacing.md,
-                context.styledSpacing.lg,
-                context.styledSpacing.md,
-              ),
-              child: Row(
-                children: [
-                  _CircularCloseButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                  SizedBox(width: context.styledSpacing.md),
-                  Expanded(
-                    child: Text(
-                      guestName,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Divider(height: 1, color: theme.dividerColor),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    StyledSection(
-                      isFirstSection: true,
-                      header: s.reservationSectionBooker,
-                      children: [
-                        StyledTile(title: s.reservationName, value: guestName),
-                        StyledTile(
-                          title: s.reservationEmail,
-                          value: _valueOrDash(entry.guestEmail),
-                        ),
-                        StyledTile(
-                          title: s.reservationPhone,
-                          value: _valueOrDash(entry.guestPhone),
-                        ),
-                      ],
-                    ),
-                    StyledSection(
-                      header: s.reservationSectionStay,
-                      children: [
-                        StyledTile(
-                          title: s.reservationCheckIn,
-                          value:
-                              _formatDate(entry.startDate, dateFormatter) ??
-                              '-',
-                        ),
-                        StyledTile(
-                          title: s.reservationCheckOut,
-                          value:
-                              _formatDate(entry.endDate, dateFormatter) ?? '-',
-                        ),
-                        StyledTile(
-                          title: s.reservationNights,
-                          value: nights != null ? '$nights' : '-',
-                        ),
-                        StyledTile(
-                          title: s.reservationStatus,
-                          value: _valueOrDash(entry.status),
-                        ),
-                        StyledTile(
-                          title: s.reservationSource,
-                          value: _valueOrDash(entry.source),
-                        ),
-                        if (entry.reservationId != null &&
-                            entry.reservationId!.isNotEmpty)
-                          StyledTile(
-                            title: s.reservationId,
-                            value: entry.reservationId!,
-                          ),
-                      ],
-                    ),
-                    StyledSection(
-                      header: s.reservationSectionGuests,
-                      children: [
-                        StyledTile(
-                          title: s.reservationGuestTotal,
-                          value: _guestBreakdown(entry),
-                        ),
-                        StyledTile(
-                          title: s.reservationAdults,
-                          value: entry.adultCount?.toString() ?? '-',
-                        ),
-                        StyledTile(
-                          title: s.reservationChildren,
-                          value: entry.childCount?.toString() ?? '-',
-                        ),
-                        StyledTile(
-                          title: s.reservationInfants,
-                          value: entry.infantCount?.toString() ?? '-',
-                        ),
-                      ],
-                    ),
-                    if (revenue.hasAnyData)
-                      StyledSection(
-                        header: s.reservationSectionRevenue,
-                        children: [
-                          if (revenue.total != null)
-                            StyledTile(
-                              title: s.reservationGross,
-                              value: _formatAmount(
-                                revenue.total,
-                                revenue.currency,
-                              ),
-                            ),
-                          for (final item in revenue.breakdown)
-                            StyledTile(
-                              title: item.label,
-                              value: _formatAmount(
-                                item.amount,
-                                revenue.currency,
-                              ),
-                            ),
-                          if (revenue.net != null)
-                            StyledTile(
-                              title: s.reservationNet,
-                              value: _formatAmount(
-                                revenue.net,
-                                revenue.currency,
-                              ),
-                            ),
-                          if (revenue.outstanding != null)
-                            StyledTile(
-                              title: s.reservationOutstanding,
-                              value: _formatAmount(
-                                revenue.outstanding,
-                                revenue.currency,
-                              ),
-                            ),
-                        ],
-                      ),
-                    StyledSection(
-                      header: s.reservationSectionOther,
-                      children: [
-                        if (entry.notes != null &&
-                            entry.notes!.trim().isNotEmpty)
-                          StyledTile(
-                            title: s.reservationNotes,
-                            value: entry.notes!.trim(),
-                          ),
-                        StyledTile(
-                          title: s.reservationCreatedAt,
-                          value:
-                              _formatDateTime(
-                                entry.createdAt,
-                                dateTimeFormatter,
-                              ) ??
-                              '-',
-                        ),
-                        StyledTile(
-                          title: s.reservationUpdatedAt,
-                          value:
-                              _formatDateTime(
-                                entry.updatedAt,
-                                dateTimeFormatter,
-                              ) ??
-                              '-',
-                        ),
-                      ],
-                    ),
-                    StyledSection(
-                      header: s.reservationSectionPayload,
-                      inset: false,
-                      children: [
-                        Container(
-                          width: double.infinity,
-                          padding: EdgeInsets.all(context.styledSpacing.md),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surface,
-                            borderRadius: StyledWidgetsTheme.of(
-                              context,
-                            ).sharedLayout.surfaceRadius,
-                            border: Border.all(color: theme.dividerColor),
-                          ),
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: SelectableText(
-                              prettyRaw,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                fontFamily: 'monospace',
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: context.styledSpacing.lg),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _ReservationRevenueData {
   const _ReservationRevenueData({
     required this.currency,
@@ -2442,21 +2166,6 @@ class _ReservationRevenueBreakdownItem {
 
   final String label;
   final num amount;
-}
-
-class _CircularCloseButton extends StatelessWidget {
-  const _CircularCloseButton({required this.onPressed});
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return StyledToolbarButton(
-      iconData: Icons.close,
-      tooltip: S.of(context).reservationCloseTooltip,
-      onPressed: onPressed,
-    );
-  }
 }
 
 _ReservationRevenueData _extractReservationRevenueData(

@@ -20,6 +20,7 @@ import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
 import 'package:hosthub_console/core/l10n/l10n.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
+import 'package:hosthub_console/features/reservations/presentation/dialogs/reservation_details_dialog.dart';
 import 'package:hosthub_console/features/user_settings/user_settings.dart';
 
 enum _ReservationsViewMode { list, timeline }
@@ -782,16 +783,29 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     required DateFormat dateTimeFormatter,
   }) {
     final rateCurrency = context.read<NightlyRatesCubit>().state.rateCurrency;
-    return showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return _ReservationDetailsDialog(
-          entry: entry,
-          dateFormatter: dateFormatter,
-          dateTimeFormatter: dateTimeFormatter,
-          rateCurrency: rateCurrency,
-        );
-      },
+    final revenue = _extractRevenue(entry);
+    final cubit = context.read<ReservationsCubit>();
+
+    return showReservationDetailsDialog(
+      context,
+      entry: entry,
+      dateFormatter: dateFormatter,
+      dateTimeFormatter: dateTimeFormatter,
+      revenue: ReservationRevenueSummary(
+        // The booking's own currency, falling back to the one the nightly-rate
+        // settings report for this property.
+        currency: revenue.currency ?? rateCurrency,
+        total: revenue.total,
+        net: revenue.net,
+        outstanding: revenue.outstanding,
+        lines: [
+          for (final item in revenue.breakdown)
+            ReservationRevenueLine(label: item.label, amount: item.amount),
+        ],
+      ),
+      // Only this screen can write a note back: it owns the reservations cubit.
+      onSaveNotes: (reservationId, notes) =>
+          cubit.updateNotes(reservationId, notes),
     );
   }
 
@@ -1803,377 +1817,6 @@ class _ReservationListView extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _ReservationDetailsDialog extends StatefulWidget {
-  const _ReservationDetailsDialog({
-    required this.entry,
-    required this.dateFormatter,
-    required this.dateTimeFormatter,
-    this.rateCurrency,
-  });
-
-  final Reservation entry;
-  final DateFormat dateFormatter;
-  final DateFormat dateTimeFormatter;
-  final String? rateCurrency;
-
-  @override
-  State<_ReservationDetailsDialog> createState() =>
-      _ReservationDetailsDialogState();
-}
-
-class _ReservationDetailsDialogState extends State<_ReservationDetailsDialog> {
-  late final TextEditingController _notesController;
-  bool _isSavingNotes = false;
-  bool _notesSaved = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _notesController = TextEditingController(
-      text: widget.entry.notes?.trim() ?? '',
-    );
-  }
-
-  @override
-  void dispose() {
-    _notesController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _saveNotes() async {
-    final reservationId = widget.entry.reservationId;
-    if (reservationId == null || reservationId.isEmpty) return;
-
-    setState(() {
-      _isSavingNotes = true;
-      _notesSaved = false;
-    });
-
-    try {
-      await context.read<ReservationsCubit>().updateNotes(
-        reservationId,
-        _notesController.text.trim(),
-      );
-      if (!mounted) return;
-      setState(() {
-        _isSavingNotes = false;
-        _notesSaved = true;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _isSavingNotes = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final entry = widget.entry;
-    final dateFormatter = widget.dateFormatter;
-    final dateTimeFormatter = widget.dateTimeFormatter;
-    final theme = Theme.of(context);
-    final prettyRaw = const JsonEncoder.withIndent('  ').convert(entry.raw);
-    final rawRevenue = _extractRevenue(entry);
-    // Use rateCurrency from Lodgify rate settings as fallback.
-    final effectiveCurrency = rawRevenue.currency ?? widget.rateCurrency;
-    final revenue = rawRevenue.currency == null && effectiveCurrency != null
-        ? _RevenueData(
-            currency: effectiveCurrency,
-            nightlyRate: rawRevenue.nightlyRate,
-            total: rawRevenue.total,
-            paid: rawRevenue.paid,
-            outstanding: rawRevenue.outstanding,
-            net: rawRevenue.net,
-            payout: rawRevenue.payout,
-            breakdown: rawRevenue.breakdown,
-          )
-        : rawRevenue;
-    final nights = _stayNights(entry.startDate, entry.endDate);
-    final hasReservationId =
-        entry.reservationId != null && entry.reservationId!.isNotEmpty;
-
-    final dialogBg = theme.brightness == Brightness.light
-        ? Colors.white
-        : theme.colorScheme.surfaceContainerLow;
-
-    return Dialog(
-      backgroundColor: dialogBg,
-      insetPadding: EdgeInsets.all(context.styledSpacing.xl),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 520, maxHeight: 760),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                context.styledSpacing.lg,
-                context.styledSpacing.md,
-                context.styledSpacing.lg,
-                context.styledSpacing.md,
-              ),
-              child: Row(
-                children: [
-                  _CircularCloseButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                  SizedBox(width: context.styledSpacing.md),
-                  Expanded(
-                    child: Text(
-                      _guestDisplayName(entry),
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Divider(height: 1, color: theme.dividerColor),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    StyledSection(
-                      isFirstSection: true,
-                      header: 'Boeker',
-                      children: [
-                        StyledTile(
-                          title: 'Naam',
-                          value: _guestDisplayName(entry),
-                        ),
-                        StyledTile(
-                          title: 'E-mail',
-                          value: _valueOrDash(entry.guestEmail),
-                        ),
-                        StyledTile(
-                          title: 'Telefoon',
-                          value: _valueOrDash(entry.guestPhone),
-                        ),
-                      ],
-                    ),
-                    StyledSection(
-                      header: 'Verblijf',
-                      children: [
-                        StyledTile(
-                          title: 'Check-in',
-                          value:
-                              _formatDateTime(dateFormatter, entry.startDate) ??
-                              '-',
-                        ),
-                        StyledTile(
-                          title: 'Check-out',
-                          value:
-                              _formatDateTime(dateFormatter, entry.endDate) ??
-                              '-',
-                        ),
-                        StyledTile(
-                          title: 'Nachten',
-                          value: nights != null ? '$nights' : '-',
-                        ),
-                        StyledTile(
-                          title: 'Status',
-                          value: _valueOrDash(entry.status),
-                        ),
-                        StyledTile(
-                          title: 'Bron',
-                          trailing: BookingSourceIcon(
-                            source: entry.source,
-                            size: 24,
-                          ),
-                        ),
-                        if (hasReservationId)
-                          StyledTile(
-                            title: 'Reservering-ID',
-                            value: entry.reservationId!,
-                          ),
-                      ],
-                    ),
-                    StyledSection(
-                      header: 'Gasten',
-                      children: [
-                        StyledTile(
-                          title: 'Totaal',
-                          value: _guestBreakdown(entry),
-                        ),
-                        StyledTile(
-                          title: 'Volwassenen',
-                          value: entry.adultCount?.toString() ?? '-',
-                        ),
-                        StyledTile(
-                          title: 'Kinderen',
-                          value: entry.childCount?.toString() ?? '-',
-                        ),
-                        StyledTile(
-                          title: 'Baby\'s',
-                          value: entry.infantCount?.toString() ?? '-',
-                        ),
-                      ],
-                    ),
-                    if (revenue.hasAnyData)
-                      StyledSection(
-                        header: 'Opbrengsten',
-                        children: [
-                          if (revenue.total != null)
-                            StyledTile(
-                              title: 'Bruto',
-                              value: _formatAmount(
-                                revenue.total,
-                                revenue.currency,
-                              ),
-                            ),
-                          for (final item in revenue.breakdown)
-                            StyledTile(
-                              title: item.label,
-                              value: _formatAmount(
-                                item.amount,
-                                revenue.currency,
-                              ),
-                            ),
-                          if (revenue.net != null)
-                            StyledTile(
-                              title: 'Netto',
-                              value: _formatAmount(
-                                revenue.net,
-                                revenue.currency,
-                              ),
-                            ),
-                          if (revenue.outstanding != null)
-                            StyledTile(
-                              title: 'Openstaand',
-                              value: _formatAmount(
-                                revenue.outstanding,
-                                revenue.currency,
-                              ),
-                            ),
-                        ],
-                      ),
-                    StyledSection(
-                      header: 'Notities',
-                      inset: false,
-                      children: [
-                        TextField(
-                          controller: _notesController,
-                          enabled: hasReservationId && !_isSavingNotes,
-                          maxLines: 4,
-                          decoration: InputDecoration(
-                            hintText: hasReservationId
-                                ? 'Voeg een notitie toe...'
-                                : 'Geen reservering-ID — opslaan niet mogelijk',
-                            border: const OutlineInputBorder(),
-                            contentPadding: EdgeInsets.all(
-                              context.styledSpacing.lg,
-                            ),
-                          ),
-                          style: theme.textTheme.bodySmall,
-                        ),
-                        SizedBox(height: context.styledSpacing.sm),
-                        Row(
-                          children: [
-                            if (_notesSaved)
-                              Text(
-                                'Opgeslagen',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: Colors.green[700],
-                                ),
-                              ),
-                            const Spacer(),
-                            if (_isSavingNotes)
-                              const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            else if (hasReservationId)
-                              TextButton.icon(
-                                onPressed: _saveNotes,
-                                icon: const Icon(Icons.save_outlined, size: 18),
-                                label: const Text('Opslaan in Lodgify'),
-                                style: TextButton.styleFrom(
-                                  foregroundColor: Colors.grey[700],
-                                  textStyle: const TextStyle(fontSize: 13),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    StyledSection(
-                      header: 'Overig',
-                      children: [
-                        StyledTile(
-                          title: 'Aangemaakt',
-                          value:
-                              _formatDateTime(
-                                dateTimeFormatter,
-                                entry.createdAt,
-                              ) ??
-                              '-',
-                        ),
-                        StyledTile(
-                          title: 'Bijgewerkt',
-                          value:
-                              _formatDateTime(
-                                dateTimeFormatter,
-                                entry.updatedAt,
-                              ) ??
-                              '-',
-                        ),
-                      ],
-                    ),
-                    StyledSection(
-                      header: 'Volledige payload',
-                      inset: false,
-                      children: [
-                        Container(
-                          width: double.infinity,
-                          padding: EdgeInsets.all(context.styledSpacing.md),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surface,
-                            borderRadius: StyledWidgetsTheme.of(
-                              context,
-                            ).sharedLayout.surfaceRadius,
-                            border: Border.all(color: theme.dividerColor),
-                          ),
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: SelectableText(
-                              prettyRaw,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                fontFamily: 'monospace',
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: context.styledSpacing.lg),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CircularCloseButton extends StatelessWidget {
-  const _CircularCloseButton({required this.onPressed});
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return StyledToolbarButton(
-      iconData: Icons.close,
-      tooltip: 'Sluiten',
-      onPressed: onPressed,
     );
   }
 }

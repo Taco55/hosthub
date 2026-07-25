@@ -1520,6 +1520,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "reservationNewCount": m43,
     "reservationNights": MessageLookupByLibrary.simpleMessage("Nachten"),
     "reservationNotes": MessageLookupByLibrary.simpleMessage("Notities"),
+    "reservationNotesDisabledHint": MessageLookupByLibrary.simpleMessage(
+      "Geen reservering-ID — opslaan niet mogelijk",
+    ),
+    "reservationNotesHint": MessageLookupByLibrary.simpleMessage(
+      "Voeg een notitie toe…",
+    ),
+    "reservationNotesSave": MessageLookupByLibrary.simpleMessage(
+      "Opslaan in Lodgify",
+    ),
     "reservationOutstanding": MessageLookupByLibrary.simpleMessage(
       "Openstaand",
     ),

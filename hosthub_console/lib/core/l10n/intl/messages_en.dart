@@ -1460,6 +1460,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "reservationNewCount": m43,
     "reservationNights": MessageLookupByLibrary.simpleMessage("Nights"),
     "reservationNotes": MessageLookupByLibrary.simpleMessage("Notes"),
+    "reservationNotesDisabledHint": MessageLookupByLibrary.simpleMessage(
+      "No reservation ID — saving is not possible",
+    ),
+    "reservationNotesHint": MessageLookupByLibrary.simpleMessage("Add a note…"),
+    "reservationNotesSave": MessageLookupByLibrary.simpleMessage(
+      "Save to Lodgify",
+    ),
     "reservationOutstanding": MessageLookupByLibrary.simpleMessage(
       "Outstanding",
     ),
