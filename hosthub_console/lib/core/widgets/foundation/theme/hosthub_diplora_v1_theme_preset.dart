@@ -280,9 +280,6 @@ abstract final class HosthubThemePreset {
         ),
         expandedWidth: 284,
         railWidth: 72,
-        // Labels sit beside the icon on the rail (design §"Label-toegang"), not
-        // below it where they would collide with the next row.
-        compactLabels: StyledSideMenuCompactLabels.flyout,
       ),
       // Design `.dt th` / `.dt tfoot td`: a **light** header band with a muted
       // grey label — not white-on-primary. A saturated band would become the
@@ -303,6 +300,10 @@ abstract final class HosthubThemePreset {
         // `.tbl-wrap{border-radius:14px}` — larger than the shared 10px surface
         // radius, which the design reserves for controls.
         borderRadius: const BorderRadius.all(Radius.circular(14)),
+        // `.tbl-wrap{background:#fff}` with the header band a shade darker on
+        // top of it, which is what makes the band read as chrome.
+        backgroundColor: Colors.white,
+        backgroundColorDark: HosthubDiploraV1Palette.surfaceContainerDark,
         headerBackgroundColor: HosthubDiploraV1Palette.backgroundWhite,
         headerBackgroundColorDark: HosthubDiploraV1Palette.surfaceContainerDark,
         columnHeaderTextColorDark: HosthubDiploraV1Palette.onSurfaceVariantDark,
