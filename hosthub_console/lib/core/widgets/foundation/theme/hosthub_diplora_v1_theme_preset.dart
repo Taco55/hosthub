@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
 import 'app_colors.dart';
+import 'timeline_calendar_theme.dart';
 
 abstract final class HosthubDiploraV1Palette {
   const HosthubDiploraV1Palette._();
@@ -25,6 +26,16 @@ abstract final class HosthubDiploraV1Palette {
   static const Color success = Color(0xFF099773);
   static const Color warning = Color(0xFFF68F46);
   static const Color error = Color(0xFFEB5757);
+
+  /// [success] darkened towards [secondary] for use as **small text**.
+  ///
+  /// `success` itself only reaches ~3.7:1 on white — enough for an icon or a
+  /// bar (non-text contrast), short of AA for a 10-11px label. Derived rather
+  /// than authored as a second hex so the two greens cannot drift apart.
+  static final Color successText = Color.lerp(success, secondary, 0.35)!;
+
+  /// [warning] darkened on the same principle as [successText].
+  static final Color warningText = Color.lerp(warning, secondary, 0.4)!;
   static const Color errorSoft = Color(0x33EB5757);
   static const Color surfaceDark = Color(0xFF0C1B26);
   static const Color surfaceContainerDark = Color(0xFF132433);
@@ -90,6 +101,13 @@ abstract final class HosthubThemePreset {
       canvasColor: colorScheme.surface,
       dividerColor: colorScheme.outlineVariant,
       iconTheme: baseTheme.iconTheme.copyWith(size: 24),
+      extensions: [
+        ...baseTheme.extensions.values,
+        // `TimelineCalendar` is app-local, so its density and past-booking
+        // treatment have no `styled_widgets` preset group to live in. Reading
+        // them from here is what keeps them out of `reservations_page.dart`.
+        TimelineCalendarTheme.standard,
+      ],
     );
   }
 
@@ -169,7 +187,6 @@ abstract final class HosthubThemePreset {
   static StyledWidgetsThemeData styledTheme({
     required ThemeData lightMaterialTheme,
   }) {
-    final onPrimary = lightMaterialTheme.colorScheme.onPrimary;
     final baseColumnHeaderTextStyle =
         lightMaterialTheme.textTheme.titleSmall ??
         const TextStyle(fontSize: 14, fontWeight: FontWeight.w600);
@@ -182,6 +199,13 @@ abstract final class HosthubThemePreset {
         surfaceRadius: const BorderRadius.all(Radius.circular(10)),
         fieldRadius: const BorderRadius.all(Radius.circular(10)),
       ),
+      // The design's 4px scale (`--jo-space-*`). Stated explicitly even though
+      // it matches the library defaults: screens read gaps from here via
+      // `context.styledSpacing`, so this is the one place the rhythm is set.
+      // Nothing off the scale — `6`, `10` and `14` round to a neighbouring
+      // step. Widget-internal geometry tuned to something other than page
+      // layout belongs in that widget's own group, not here.
+      spacing: (t) => t.copyWith(xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32),
       // Design (Just Organize) tile groups: a white bordered card that hugs
       // its rows — no internal vertical padding — with a compact dark-blue
       // sentence-case header and a muted footnote. Content cards (e.g. the
@@ -234,17 +258,64 @@ abstract final class HosthubThemePreset {
         pageBackgroundColorDark: HosthubDiploraV1Palette.surfaceDark,
         pagePadding: const EdgeInsets.fromLTRB(64, 24, 64, 24),
       ),
+      // Design `.dt th` / `.dt tfoot td`: a **light** header band with a muted
+      // grey label — not white-on-primary. A saturated band would become the
+      // loudest element on every page and collide with the ice sidebar and ice
+      // active states, which are where `primary`/`ice` earn their emphasis; a
+      // light band reads as chrome, which is what a header is. Applied here so
+      // all four tables in the console change together (reservations, revenue,
+      // team, listings) — never per call site.
+      //
+      // The design uppercases at 10px; we keep sentence case (the preset and
+      // every call site already do) and take the design's other header size,
+      // `.trow .th` at 600 11.5px, which is legible where 10px caps are not.
       tables: (t) => t.copyWith(
         uppercaseColumnHeaderLabels: false,
+        headerBackgroundColor: HosthubDiploraV1Palette.backgroundWhite,
+        headerBackgroundColorDark: HosthubDiploraV1Palette.surfaceContainerDark,
+        columnHeaderTextColorDark: HosthubDiploraV1Palette.onSurfaceVariantDark,
         columnHeaderTextStyle: baseColumnHeaderTextStyle.copyWith(
+          fontSize: 11.5,
           fontWeight: FontWeight.w600,
-          color: onPrimary,
+          color: HosthubDiploraV1Palette.outlineGrey,
         ),
         trinaColumnTextStyle: baseColumnHeaderTextStyle.copyWith(
+          fontSize: 11.5,
           fontWeight: FontWeight.w700,
-          color: onPrimary,
+          color: HosthubDiploraV1Palette.outlineGrey,
           letterSpacing: 0.1,
         ),
+      ),
+      // Design `.tbtn`: 40x36, radius 10, hairline border, and ice + primary
+      // when the control carries an active filter/toggle (`.tbtn.on`) — the
+      // same pairing the sidebar uses, and ice in both brightnesses.
+      //
+      // The enabled background, icon and border colours are deliberately left
+      // to resolve from the colour scheme rather than pinned to white/softGrey:
+      // this group has no dark counterparts, so a literal light value would
+      // stay light in dark mode. The resolved fallbacks land within a shade of
+      // the design in light mode and stay correct in dark.
+      toolbarButton: (t) => t.copyWith(
+        buttonWidth: 40,
+        buttonHeight: 36,
+        iconSize: 20,
+        borderRadius: const BorderRadius.all(Radius.circular(10)),
+        borderWidth: 1,
+        selectedBackgroundColor: HosthubDiploraV1Palette.ice,
+        selectedBorderColor: HosthubDiploraV1Palette.ice,
+        selectedIconColor: HosthubDiploraV1Palette.primary,
+      ),
+      // Design `.kpi`. Only two values need stating: the label, value and
+      // caption styles already resolve to this design's tokens
+      // (`outline` / `onSurface` / `onSurfaceVariant`, at 9.5/18/10.5), the
+      // surface follows the inset-section card, and the border follows
+      // `dividerColor` — all of which are correct in both brightnesses.
+      statTiles: (t) => t.copyWith(
+        // `.kpi .kl svg` #b3c2d4 — decorative, which is exactly what
+        // `darkGrey` is reserved for, and it reads on light and dark alike.
+        iconColor: HosthubDiploraV1Palette.darkGrey,
+        // A positive caption is 10.5px text, so it takes the darkened green.
+        positiveColor: HosthubDiploraV1Palette.successText,
       ),
       formFields: (t) => t.copyWith(
         input: t.input.copyWith(contentPadding: const EdgeInsets.all(16)),
@@ -252,9 +323,23 @@ abstract final class HosthubThemePreset {
       searchFields: (t) => t.copyWith(
         placeholderColor: HosthubDiploraV1Palette.searchPlaceholder,
       ),
+      // Also the home of menu-overlay styling, which dropdowns and
+      // `StyledToolbarButton.menu` share — hence the check colours for the
+      // Filter / Kolommen / Weergave menus living here rather than on
+      // `toolbarButton`, so dropdown menus get them too.
+      //
+      // The green is `Palette.success`, not the prototype's #1F8A4C: it sits in
+      // the same cool family as `primary`, it is already the toast success
+      // colour, and `BookingSourceIcon`'s Website pastel is a tint of it. A
+      // check mark is a graphic, so `success` itself is fine here; small text
+      // takes `successText`. Section-header styling needs no override — it
+      // resolves to 9.5/w600/0.5 in `outline`, which is the design's `.mhd`.
       dropdowns: (t) => t.copyWith(
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         minHeight: 40,
+        menuCheckedColor: HosthubDiploraV1Palette.success,
+        menuUncheckedColor: HosthubDiploraV1Palette.softGrey,
+        menuCheckDisabledColor: HosthubDiploraV1Palette.darkGrey,
       ),
       buttons: (t) => t.copyWith(
         cornerRadius: 12,
