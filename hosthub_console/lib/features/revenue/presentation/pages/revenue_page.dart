@@ -1754,26 +1754,23 @@ num? _fallbackChannelFeeFromRules(
   return _normalizeMoney(total * (percentage / 100));
 }
 
+/// The commission rule itself lives in the domain
+/// ([ChannelSettings.commissionPercentageForSource]); this only supplies the
+/// account defaults, so Revenue and the Pricing preview can never resolve a
+/// different percentage for the same booking.
 double _channelFeePercentageForSource(
   String? source,
   AdminSettings settings,
   PropertySummary? property,
 ) {
-  // Use per-channel commission override from channel settings if available.
-  final override = property?.channelSettings
-      .configForSource(source)
-      .commissionPercentage;
-  if (override != null) return override;
-
-  // Fall back to admin defaults.
-  final normalized = source?.trim().toLowerCase() ?? '';
-  if (normalized.contains('booking')) {
-    return settings.bookingChannelFeePercentage;
-  }
-  if (normalized.contains('airbnb')) {
-    return settings.airbnbChannelFeePercentage;
-  }
-  return settings.otherChannelFeePercentage;
+  final channelSettings =
+      property?.channelSettings ?? const ChannelSettings();
+  return channelSettings.commissionPercentageForSource(
+    source,
+    airbnbDefault: settings.airbnbChannelFeePercentage,
+    bookingDefault: settings.bookingChannelFeePercentage,
+    otherDefault: settings.otherChannelFeePercentage,
+  );
 }
 
 num? _readFirstNumFromMap(Map<String, dynamic> map, List<List<String>> paths) {

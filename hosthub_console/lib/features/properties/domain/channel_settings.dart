@@ -127,6 +127,42 @@ class ChannelConfig {
     },
   };
 
+  /// Settle one stay against this channel's rules.
+  ///
+  /// `net = (base + markup) − commission − (cleaning + linen + service + other)`
+  ///
+  /// [commissionPercentage] is the already-resolved percentage: pass
+  /// [ChannelSettings.commissionPercentageForSource] so a per-channel override
+  /// wins over the admin default. Passing it in keeps this free of any
+  /// dependency on where those defaults are stored.
+  ///
+  /// This is the only place the payout arithmetic lives — the Revenue table and
+  /// the Pricing preview both call it, so a change lands in both at once.
+  ChannelSettlement settle({
+    required double baseRate,
+    required int nights,
+    required int guests,
+    required double commissionPercentage,
+  }) {
+    final safeNights = nights < 0 ? 0 : nights;
+    final safeGuests = guests < 1 ? 1 : guests;
+
+    final markupPerNight = baseRate * ((rateMarkupPercentage ?? 0) / 100);
+    final markup = markupPerNight * safeNights;
+    final gross = (baseRate + markupPerNight) * safeNights;
+    final commission = gross * (commissionPercentage / 100);
+
+    return ChannelSettlement(
+      baseRate: baseRate,
+      nights: safeNights,
+      guests: safeGuests,
+      markup: markup,
+      gross: gross,
+      commission: commission,
+      fixedCosts: totalCosts(guests: safeGuests, nights: safeNights),
+    );
+  }
+
   /// Total fixed costs for a booking given guest count and number of nights.
   double totalCosts({int guests = 1, int nights = 1}) {
     return cleaningCost.resolve(guests: guests, nights: nights) +
@@ -166,6 +202,47 @@ class ChannelConfig {
   }
 }
 
+/// What a booking is worth once the channel's rules are applied.
+///
+/// The single settlement result used by both the Revenue table and the Pricing
+/// payout preview, so the two can never disagree. Every field is derived, so a
+/// caller reads rather than recomputes.
+class ChannelSettlement {
+  const ChannelSettlement({
+    required this.baseRate,
+    required this.nights,
+    required this.guests,
+    required this.markup,
+    required this.gross,
+    required this.commission,
+    required this.fixedCosts,
+  });
+
+  /// Nightly rate before this channel's markup.
+  final double baseRate;
+  final int nights;
+  final int guests;
+
+  /// Amount the channel markup adds across the whole stay.
+  final double markup;
+
+  /// What the guest pays: `(baseRate + markup per night) * nights`.
+  final double gross;
+
+  /// The channel's cut of [gross].
+  final double commission;
+
+  /// Cleaning, linen, service and other costs, each resolved per its own
+  /// [CostType].
+  final double fixedCosts;
+
+  /// What the host keeps.
+  double get net => gross - commission - fixedCosts;
+
+  /// Gross minus commission, before the host's own costs — the channel payout.
+  double get payout => gross - commission;
+}
+
 /// Container for all channel settings on a property.
 class ChannelSettings {
   const ChannelSettings({
@@ -199,6 +276,50 @@ class ChannelSettings {
     if (normalized.contains('booking')) return booking;
     if (normalized.contains('airbnb')) return airbnb;
     return other;
+  }
+
+  /// The commission percentage that applies to [source]: a per-channel override
+  /// when the property sets one, otherwise the account default for that channel.
+  ///
+  /// The defaults are passed in rather than read from `AdminSettings`, so this
+  /// rule can live in the domain without reaching into another feature.
+  double commissionPercentageForSource(
+    String? source, {
+    required double airbnbDefault,
+    required double bookingDefault,
+    required double otherDefault,
+  }) {
+    final config = configForSource(source);
+    final override = config.commissionPercentage;
+    if (override != null) return override;
+
+    final normalized = source?.trim().toLowerCase() ?? '';
+    if (normalized.contains('booking')) return bookingDefault;
+    if (normalized.contains('airbnb')) return airbnbDefault;
+    return otherDefault;
+  }
+
+  /// Settle a stay booked through [source] against that channel's rules.
+  ChannelSettlement settleForSource(
+    String? source, {
+    required double baseRate,
+    required int nights,
+    required int guests,
+    required double airbnbDefaultCommission,
+    required double bookingDefaultCommission,
+    required double otherDefaultCommission,
+  }) {
+    return configForSource(source).settle(
+      baseRate: baseRate,
+      nights: nights,
+      guests: guests,
+      commissionPercentage: commissionPercentageForSource(
+        source,
+        airbnbDefault: airbnbDefaultCommission,
+        bookingDefault: bookingDefaultCommission,
+        otherDefault: otherDefaultCommission,
+      ),
+    );
   }
 
   bool equals(ChannelSettings other) =>
