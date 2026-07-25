@@ -1578,6 +1578,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "sidebarCollapseTooltip": MessageLookupByLibrary.simpleMessage(
       "Collapse menu",
     ),
+    "sidebarExpandTooltip": MessageLookupByLibrary.simpleMessage(
+      "Show menu labels",
+    ),
     "sidebarPinTooltip": MessageLookupByLibrary.simpleMessage("Pin menu"),
     "signInWithMagicLink": MessageLookupByLibrary.simpleMessage(
       "Sign in with magic link",

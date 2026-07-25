@@ -1648,6 +1648,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "sidebarCollapseTooltip": MessageLookupByLibrary.simpleMessage(
       "Menu inklappen",
     ),
+    "sidebarExpandTooltip": MessageLookupByLibrary.simpleMessage(
+      "Menu-labels tonen",
+    ),
     "sidebarPinTooltip": MessageLookupByLibrary.simpleMessage(
       "Menu vastzetten",
     ),

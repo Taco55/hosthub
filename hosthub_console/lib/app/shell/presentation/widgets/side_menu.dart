@@ -15,8 +15,10 @@ import 'menu_item.dart';
 /// primary nav items (Website, Reservations, Revenue, Pricing), the Property
 /// switcher pinned at the bottom as a rail-aligned context tile, then the
 /// profile tile, logout and a version footer. The source-language selector
-/// lives on the Settings page. In the compact 96px rail only the icons remain;
-/// the desktop shell overlays the expanded menu while hovering.
+/// lives on the Settings page. In the compact 72px rail only the icons remain;
+/// hovering a row shows its label beside it, and tapping the rail header asks
+/// the shell to overlay the expanded menu — the route that also works on touch,
+/// where hover does not exist.
 class SideMenu extends StatelessWidget {
   const SideMenu({
     super.key,
@@ -31,7 +33,7 @@ class SideMenu extends StatelessWidget {
     this.showModeToggle = false,
     this.expandedOverride,
     this.onAnyItemSelected,
-    this.onMenuOpenChanged,
+    this.onExpandRequested,
   });
 
   final double? width;
@@ -48,14 +50,16 @@ class SideMenu extends StatelessWidget {
   /// Shows the pin/collapse toggle in the header.
   final bool showModeToggle;
 
-  /// Forces the expanded visual state (used by the hover flyout).
+  /// Forces the expanded visual state (used by the shell's rail overlay).
   final bool? expandedOverride;
 
-  /// Extra callback after any nav selection (the flyout closes itself).
+  /// Extra callback after any nav selection (closes the rail overlay).
   final VoidCallback? onAnyItemSelected;
 
-  /// Reports switcher dropdowns opening/closing (keeps the flyout open).
-  final ValueChanged<bool>? onMenuOpenChanged;
+  /// Tap on the compact rail's header: asks the shell to expand the rail over
+  /// the content. The only route to the labels on touch, where hover — and so
+  /// the per-row label flyout — does not exist.
+  final VoidCallback? onExpandRequested;
 
   @override
   Widget build(BuildContext context) {
@@ -78,14 +82,21 @@ class SideMenu extends StatelessWidget {
               ? StyledSideMenuMode.compact
               : StyledSideMenuMode.expanded,
           expandedOverride: expandedOverride,
-          expandedMinWidth: width ?? kSidebarExpandedMinWidth,
+          expandedMinWidth: width ?? kSidebarExpandedWidth,
           compactWidth: kSidebarCompactWidth,
+          iconBox: kSidebarIconBox,
+          headerHeight: kSidebarHeaderHeight,
           expandOnHoverWhenCompact: false,
+          // Labels sit beside the icon on the rail (design §"Label-toegang"),
+          // not below it where they would collide with the next row.
+          compactLabels: StyledSideMenuCompactLabels.flyout,
+          onCompactHeaderTap: onExpandRequested,
           onModeChanged: showModeToggle
               ? (mode) => context.read<SidebarModeCubit>().setMode(mode)
               : null,
           pinTooltip: s.sidebarPinTooltip,
           collapseTooltip: s.sidebarCollapseTooltip,
+          expandTooltip: s.sidebarExpandTooltip,
           showSwitchersWhenCompact: true,
           showProfileWhenCompact: true,
           showFooterWhenCompact: true,
@@ -141,7 +152,7 @@ class SideMenu extends StatelessWidget {
               onTap: () => select(MenuItem.settings),
             ),
           ],
-          switchers: [_PropertySwitcher(onMenuOpenChanged: onMenuOpenChanged)],
+          switchers: const [_PropertySwitcher()],
           profile: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -167,18 +178,25 @@ class SideMenu extends StatelessWidget {
   }
 }
 
-/// Shared rail geometry, matching the design (96px compact rail; the
-/// expanded menu tracks 20% of the viewport, clamped to this range so it
-/// never balloons on wide screens).
-const double kSidebarCompactWidth = 96;
-const double kSidebarExpandedMinWidth = 300;
-const double kSidebarExpandedMaxWidth = 340;
+/// Shared rail geometry: a 72px compact rail and a 284px expanded menu. The
+/// design draws the rail at 96px (`.sb2.compact`), but 96 costs the page
+/// content ~24px between 600 and 1100px and only buys empty space around the
+/// 48px rows — a deliberate deviation, reviewed against the design on
+/// 2026-07-24.
+const double kSidebarCompactWidth = 72;
+const double kSidebarExpandedWidth = 284;
 
-/// Leading icon-box width shared by every row (StyledSideMenu's default).
-const double kSidebarIconBox = 44;
+/// Leading icon-box width shared by every row.
+const double kSidebarIconBox = 48;
 
-/// Horizontal inset that centres the icon box in the compact rail. Applied to
-/// the switcher too so the Property tile lines up with the nav icons.
+/// Header block height, identical in both states (design: 72px).
+const double kSidebarHeaderHeight = 72;
+
+/// Horizontal row inset, 12px in both modes (design `.sb2-nav{padding:6px 12px}`,
+/// which `.sb2.compact` does not override, and `(72 - 48) / 2` in the rail), so
+/// the icons keep their x position when the menu expands and sit centred in the
+/// rail. Applied to the switcher too so the Property tile lines up with the nav
+/// icons.
 const double kSidebarSideInset = (kSidebarCompactWidth - kSidebarIconBox) / 2;
 
 // ---------------------------------------------------------------------------
@@ -188,9 +206,7 @@ const double kSidebarSideInset = (kSidebarCompactWidth - kSidebarIconBox) / 2;
 // ---------------------------------------------------------------------------
 
 class _PropertySwitcher extends StatelessWidget {
-  const _PropertySwitcher({this.onMenuOpenChanged});
-
-  final ValueChanged<bool>? onMenuOpenChanged;
+  const _PropertySwitcher();
 
   @override
   Widget build(BuildContext context) {
@@ -225,7 +241,6 @@ class _PropertySwitcher extends StatelessWidget {
           selectedValue: state.currentProperty,
           onSelected: (property) =>
               context.read<PropertyContextCubit>().selectProperty(property),
-          onOpenChanged: onMenuOpenChanged,
         );
       },
     );
@@ -290,6 +305,9 @@ String _resolveInitial(Profile profile) {
   return source.isEmpty ? '?' : source.characters.first.toUpperCase();
 }
 
+/// Brand header: the mark plus the wordmark when expanded, the mark alone —
+/// centred — on the compact rail, where it doubles as the tap-to-expand target
+/// (the shell wires `onExpandRequested`).
 class _MenuLogo extends StatelessWidget {
   const _MenuLogo();
 
@@ -298,16 +316,39 @@ class _MenuLogo extends StatelessWidget {
     final theme = Theme.of(context);
     final scope = StyledSideMenuScope.maybeOf(context);
     final expanded = scope?.expanded ?? true;
-    if (!expanded) return const SizedBox.shrink();
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Text(
-        context.s.appTitle,
-        style: theme.textTheme.titleLarge?.copyWith(
-          color: theme.colorScheme.onPrimaryContainer,
-          fontWeight: FontWeight.w700,
-        ),
+
+    final mark = Container(
+      width: 34,
+      height: 34,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary,
+        borderRadius: BorderRadius.circular(9),
       ),
+      child: Icon(
+        Icons.holiday_village_outlined,
+        size: 20,
+        color: theme.colorScheme.onPrimary,
+      ),
+    );
+
+    if (!expanded) return Center(child: mark);
+
+    return Row(
+      children: [
+        mark,
+        const SizedBox(width: 11),
+        Expanded(
+          child: Text(
+            context.s.appTitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: theme.colorScheme.onPrimaryContainer,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

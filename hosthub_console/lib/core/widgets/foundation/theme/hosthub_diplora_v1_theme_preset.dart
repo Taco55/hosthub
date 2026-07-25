@@ -219,7 +219,9 @@ abstract final class HosthubThemePreset {
         defaultPadding: const EdgeInsets.symmetric(vertical: 10),
       ),
       // Design `.set-card` page chrome: every page pane is a white bordered
-      // card on the ice page background; panes carry 24px inner padding.
+      // card on the white page surface (`--jo-surface`, the design `.frame`
+      // background — ice blue is the sidebar only); panes carry 24px inner
+      // padding.
       webPageScaffold: (t) => t.copyWith(
         decoratePanes: true,
         paneBackgroundColor: Colors.white,
@@ -228,7 +230,7 @@ abstract final class HosthubThemePreset {
         paneBorderColorDark: HosthubDiploraV1Palette.outlineDark,
         paneBorderRadius: const BorderRadius.all(Radius.circular(12)),
         panePadding: const EdgeInsets.all(24),
-        pageBackgroundColor: HosthubDiploraV1Palette.ice,
+        pageBackgroundColor: Colors.white,
         pageBackgroundColorDark: HosthubDiploraV1Palette.surfaceDark,
         pagePadding: const EdgeInsets.fromLTRB(64, 24, 64, 24),
       ),

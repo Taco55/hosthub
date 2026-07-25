@@ -18,7 +18,9 @@ import '../../application/sidebar_mode_cubit.dart';
 import 'menu_item.dart';
 import 'side_menu.dart';
 
-class SectionScaffold extends StatefulWidget {
+/// The console section shell: the shared [StyledSideMenuScaffold] wired to the
+/// console's [SideMenu] and the guarded navigation it triggers.
+class SectionScaffold extends StatelessWidget {
   const SectionScaffold({
     super.key,
     required this.selectedItem,
@@ -28,137 +30,38 @@ class SectionScaffold extends StatefulWidget {
   final MenuItem selectedItem;
   final Widget Function(BuildContext context, bool isPinned) builder;
 
-  @override
-  State<SectionScaffold> createState() => _SectionScaffoldState();
-}
-
-class _SectionScaffoldState extends State<SectionScaffold> {
-  static const double _breakpoint = 1100;
-
-  // Desktop hover flyout over the compact rail (mirrors the dashboard shell):
-  // the expanded menu overlays the content, so nothing reflows.
-  bool _hovering = false;
-  // A switcher dropdown is open in the flyout; keep it from collapsing while
-  // the pointer is over the (elevated) menu.
-  bool _menuOpen = false;
+  /// Three-band responsive strategy (design §"Responsieve strategie"): the full
+  /// menu from 1100px, the pinned 72px icon rail down to 600px — no hamburger,
+  /// navigation stays visible — and only below that the hamburger drawer. The
+  /// shared [StyledSideMenuScaffold] owns the layout, the rail overlay and the
+  /// drawer; this widget only supplies the console's menu and body.
+  static const StyledSideMenuBreakpoints _breakpoints =
+      StyledSideMenuBreakpoints(expandedMin: 1100, railMin: 600);
 
   @override
   Widget build(BuildContext context) {
-    final isPinned = ResponsiveSideMenuScaffold.isPinned(context, _breakpoint);
-    if (!isPinned) return _buildNarrow(context);
-    return _buildDesktop(context);
-  }
-
-  // -- desktop: pinned rail + hover flyout ---------------------------------
-
-  Widget _buildDesktop(BuildContext context) {
-    final mode = context.watch<SidebarModeCubit>().state;
-    final isCompact = mode == StyledSideMenuMode.compact;
-
-    final expandedWidth = (MediaQuery.sizeOf(context).width * 0.2).clamp(
-      kSidebarExpandedMinWidth,
-      kSidebarExpandedMaxWidth,
-    );
-    final railWidth = isCompact ? kSidebarCompactWidth : expandedWidth;
-
-    if (!isCompact && _hovering) {
-      // Keep state consistent if the mode flips while hovering.
-      _hovering = false;
-    }
-
-    final scaffold = Scaffold(
-      body: Stack(
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              MouseRegion(
-                onEnter: isCompact
-                    ? (_) => setState(() => _hovering = true)
-                    : null,
-                child: SizedBox(
-                  width: railWidth,
-                  height: double.infinity,
-                  child: _buildMenu(
-                    context,
-                    isPinned: true,
-                    width: railWidth,
-                    collapsed: isCompact,
-                    // Pinned-expanded rail exposes the collapse toggle.
-                    showModeToggle: !isCompact,
-                  ),
-                ),
-              ),
-              Expanded(child: _buildBody(context, isPinned: true)),
-            ],
+    final scaffold = StyledSideMenuScaffold(
+      breakpoints: _breakpoints,
+      // The pin preference only applies where both widths fit.
+      compact:
+          context.watch<SidebarModeCubit>().state ==
+          StyledSideMenuMode.compact,
+      expandedWidth: kSidebarExpandedWidth,
+      railWidth: kSidebarCompactWidth,
+      appBarBuilder: (context, openDrawer) => AppBar(
+        automaticallyImplyLeading: false,
+        scrolledUnderElevation: 0,
+        leading: Center(
+          child: StyledToolbarButton(
+            iconData: Icons.menu,
+            tooltip: context.s.menuTooltip,
+            onPressed: openDrawer,
           ),
-          if (isCompact && _hovering)
-            Positioned(
-              left: 0,
-              top: 0,
-              bottom: 0,
-              child: MouseRegion(
-                onExit: (_) {
-                  // Keep the flyout open while a switcher menu is open.
-                  if (!_menuOpen) setState(() => _hovering = false);
-                },
-                child: Material(
-                  elevation: 8,
-                  child: SizedBox(
-                    width: expandedWidth,
-                    child: _buildMenu(
-                      context,
-                      isPinned: true,
-                      width: expandedWidth,
-                      collapsed: true,
-                      expandedOverride: true,
-                      showModeToggle: true,
-                      onAnyItemSelected: () =>
-                          setState(() => _hovering = false),
-                      onMenuOpenChanged: (open) =>
-                          setState(() => _menuOpen = open),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
+        ),
       ),
-    );
-
-    if (kIsWeb) return scaffold;
-    return SelectionArea(child: scaffold);
-  }
-
-  // -- narrow: drawer + hamburger (existing responsive behaviour) ----------
-
-  Widget _buildNarrow(BuildContext context) {
-    final scaffold = ResponsiveSideMenuScaffold(
-      breakpoint: _breakpoint,
-      menuWidth: kSidebarExpandedMinWidth,
-      menuSafeArea: false,
-      menuBuilder: (context, isPinned, closeDrawer) => _buildMenu(
-        context,
-        isPinned: isPinned,
-        width: kSidebarExpandedMinWidth,
-        closeDrawer: closeDrawer,
-      ),
-      appBarBuilder: (context, isPinned, openDrawer) {
-        if (isPinned) return null;
-        return AppBar(
-          automaticallyImplyLeading: false,
-          scrolledUnderElevation: 0,
-          leading: Center(
-            child: StyledToolbarButton(
-              iconData: Icons.menu,
-              tooltip: context.s.menuTooltip,
-              onPressed: openDrawer,
-            ),
-          ),
-        );
-      },
-      bodyBuilder: (context, isPinned) =>
-          _buildBody(context, isPinned: isPinned),
+      menuBuilder: _buildMenu,
+      bodyBuilder: (context, form) =>
+          _buildBody(context, isPinned: form.isPinned),
     );
 
     if (kIsWeb) return scaffold;
@@ -167,56 +70,44 @@ class _SectionScaffoldState extends State<SectionScaffold> {
 
   // -- shared menu/body construction ---------------------------------------
 
-  Widget _buildMenu(
-    BuildContext context, {
-    required bool isPinned,
-    required double width,
-    bool collapsed = false,
-    bool showModeToggle = false,
-    bool? expandedOverride,
-    VoidCallback? onAnyItemSelected,
-    ValueChanged<bool>? onMenuOpenChanged,
-    VoidCallback? closeDrawer,
-  }) {
+  Widget _buildMenu(BuildContext context, StyledSideMenuPlacement placement) {
     final authState = context.watch<AuthBloc>().state;
     final profileState = context.watch<ProfileCubit>().state;
     final guard = context.read<NavigationGuardController>();
 
+    final dismiss = placement.dismiss;
+
     return SideMenu(
-      width: width,
-      collapsed: collapsed,
-      showModeToggle: showModeToggle,
-      expandedOverride: expandedOverride,
-      onAnyItemSelected: onAnyItemSelected,
-      onMenuOpenChanged: onMenuOpenChanged,
+      width: placement.width,
+      collapsed: placement.collapsed,
+      // The pinned expanded menu and the rail overlay offer the pin toggle;
+      // in the forced rail band there is no other width to switch to.
+      showModeToggle: placement.canChangeMode && !placement.isDrawer,
+      expandedOverride: placement.expandedOverride,
+      onAnyItemSelected: dismiss,
+      onExpandRequested: placement.requestExpand,
       profile: profileState.profile,
-      selectedItem: widget.selectedItem,
+      selectedItem: selectedItem,
       onItemSelected: (item) {
-        if (item == widget.selectedItem) return;
-        _confirmAndNavigate(
-          context,
-          guard,
-          item,
-          isPinned: isPinned,
-          closeDrawer: closeDrawer,
-        );
+        if (item == selectedItem) return;
+        _confirmAndNavigate(context, guard, item, dismiss: dismiss);
       },
       onPropertyDetailsTap: () async {
         if (!await guard.canNavigateAway()) return;
-        if (!isPinned) closeDrawer?.call();
+        dismiss?.call();
         if (!context.mounted) return;
         GoRouter.of(context).go('/properties/details');
       },
       onLogout: authState.status == AuthStatus.authenticated
           ? () {
-              if (!isPinned) closeDrawer?.call();
+              dismiss?.call();
               context.read<AuthBloc>().add(const AuthEvent.logout());
             }
           : null,
       onAccountTap: profileState.profile == null
           ? null
           : () {
-              if (!isPinned) closeDrawer?.call();
+              dismiss?.call();
               _handleAccountTap(context, profileState.profile!);
             },
     );
@@ -227,12 +118,12 @@ class _SectionScaffoldState extends State<SectionScaffold> {
     final shouldForcePropertySetup =
         propertyState.status == PropertyContextStatus.loaded &&
         propertyState.properties.isEmpty &&
-        widget.selectedItem != MenuItem.settings &&
-        widget.selectedItem != MenuItem.adminOptions;
+        selectedItem != MenuItem.settings &&
+        selectedItem != MenuItem.adminOptions;
     if (shouldForcePropertySetup) {
       return const PropertySetupPage();
     }
-    return widget.builder(context, isPinned);
+    return builder(context, isPinned);
   }
 
   void _navigate(GoRouter router, MenuItem item) {
@@ -265,12 +156,11 @@ class _SectionScaffoldState extends State<SectionScaffold> {
     BuildContext context,
     NavigationGuardController guard,
     MenuItem item, {
-    required bool isPinned,
-    VoidCallback? closeDrawer,
+    VoidCallback? dismiss,
   }) async {
     final router = GoRouter.of(context);
     if (!await guard.canNavigateAway()) return;
-    if (!isPinned) closeDrawer?.call();
+    dismiss?.call();
     _navigate(router, item);
   }
 

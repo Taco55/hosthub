@@ -35,11 +35,11 @@ Future<void> showOwnProfileDialog(
       : profile.email;
 
   // Evaluated with the page context: inside the dialog the MediaQuery is
-  // narrowed to the dialog width, so the desktop check would always fail.
-  final isDesktopShell = ResponsiveSideMenuScaffold.isPinned(
-    context,
-    ResponsiveSideMenuScaffold.defaultBreakpoint,
-  );
+  // narrowed to the dialog width, so the desktop check would always fail. The
+  // compact-rail preference only bites where both widths fit.
+  final isDesktopShell =
+      StyledSideMenuBreakpoints.standard.of(context) ==
+      StyledSideMenuForm.expanded;
 
   // NOTE: the field controllers are intentionally not disposed after the
   // modal future resolves — that future completes before the dismiss
@@ -398,8 +398,9 @@ class _InterfaceLanguageTile extends StatelessWidget {
   }
 }
 
-/// Compact side menu — collapses the rail to the 96px icon strip. Only shown
-/// when the rail is pinned (desktop); in drawer mode the setting is moot.
+/// Compact side menu — collapses the rail to the 72px icon strip. Only shown
+/// from the expanded breakpoint (1100px) up: below it the rail is already
+/// compact by necessity, and in drawer mode the setting is moot.
 class _CompactSideMenuTile extends StatelessWidget {
   const _CompactSideMenuTile();
 

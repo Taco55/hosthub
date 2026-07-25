@@ -8209,6 +8209,16 @@ class S {
     );
   }
 
+  /// `Show menu labels`
+  String get sidebarExpandTooltip {
+    return Intl.message(
+      'Show menu labels',
+      name: 'sidebarExpandTooltip',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Site details`
   String get siteDetailsSectionTitle {
     return Intl.message(

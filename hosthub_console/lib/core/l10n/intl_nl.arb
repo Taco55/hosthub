@@ -1389,6 +1389,7 @@
   "propertySelectorSelect": "Kies accommodatie",
   "sidebarPinTooltip": "Menu vastzetten",
   "sidebarCollapseTooltip": "Menu inklappen",
+  "sidebarExpandTooltip": "Menu-labels tonen",
   "siteDetailsSectionTitle": "Sitegegevens",
   "propertyNameLabel": "Naam accommodatie",
   "publicDomainLabel": "Publiek domein",
