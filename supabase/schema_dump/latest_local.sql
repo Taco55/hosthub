@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict X0fGz8IU5c481g3EInFgIIhKVROETR8UxLaUzpIhL7eBKSJ1bPu8bqRmGePZCsI
+\restrict f8UDwJy5COdfFHJuitwCWEtRzUM7wBGGuVcdpUWOfwvQnzdg35UB7ErLpHW2uE8
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -110,6 +110,36 @@ $$;
 
 
 ALTER FUNCTION public.accept_pending_invitations(p_user_id uuid, p_user_email text) OWNER TO postgres;
+
+--
+-- Name: account_owner_for(uuid); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.account_owner_for(check_user_id uuid) RETURNS uuid
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+  select case
+    when check_user_id is null then null
+    when exists (
+      select 1 from public.sites where owner_profile_id = check_user_id
+    ) then check_user_id
+    else (
+      select case
+               when count(distinct s.owner_profile_id) = 1
+                 then (array_agg(distinct s.owner_profile_id))[1]
+               else check_user_id
+             end
+        from public.site_members sm
+        join public.sites s on s.id = sm.site_id
+       where sm.profile_id = check_user_id
+         and s.owner_profile_id is not null
+    )
+  end;
+$$;
+
+
+ALTER FUNCTION public.account_owner_for(check_user_id uuid) OWNER TO postgres;
 
 --
 -- Name: cms_next_version(); Type: FUNCTION; Schema: public; Owner: postgres
@@ -322,6 +352,40 @@ $$;
 
 
 ALTER FUNCTION public.handle_new_user() OWNER TO postgres;
+
+--
+-- Name: has_account_access(uuid, uuid, public.site_member_role); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.has_account_access(check_owner_profile_id uuid, check_user_id uuid, min_role public.site_member_role DEFAULT 'viewer'::public.site_member_role) RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+  select public.is_admin(check_user_id)
+    or (
+      check_owner_profile_id is not null
+      and (
+        check_owner_profile_id = check_user_id
+        or exists (
+          select 1
+            from public.site_members sm
+            join public.sites s on s.id = sm.site_id
+           where s.owner_profile_id = check_owner_profile_id
+             and sm.profile_id = check_user_id
+             and (
+               case min_role
+                 when 'viewer' then sm.role in ('viewer', 'editor', 'owner')
+                 when 'editor' then sm.role in ('editor', 'owner')
+                 when 'owner'  then sm.role = 'owner'
+               end
+             )
+        )
+      )
+    );
+$$;
+
+
+ALTER FUNCTION public.has_account_access(check_owner_profile_id uuid, check_user_id uuid, min_role public.site_member_role) OWNER TO postgres;
 
 --
 -- Name: has_site_access(uuid, uuid, public.site_member_role); Type: FUNCTION; Schema: public; Owner: postgres
@@ -627,7 +691,8 @@ CREATE TABLE public.properties (
     linen_cost_fixed numeric DEFAULT 0 NOT NULL,
     service_cost_fixed numeric DEFAULT 0 NOT NULL,
     other_cost_fixed numeric DEFAULT 0 NOT NULL,
-    channel_settings jsonb
+    channel_settings jsonb,
+    owner_profile_id uuid DEFAULT public.account_owner_for(auth.uid())
 );
 
 
@@ -1026,6 +1091,13 @@ CREATE INDEX idx_cms_media_tags ON public.cms_media USING gin (tags);
 
 
 --
+-- Name: idx_properties_owner_profile_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_properties_owner_profile_id ON public.properties USING btree (owner_profile_id);
+
+
+--
 -- Name: idx_site_invitations_email; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1211,6 +1283,14 @@ ALTER TABLE ONLY public.profiles
 
 
 --
+-- Name: properties properties_owner_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.properties
+    ADD CONSTRAINT properties_owner_profile_id_fkey FOREIGN KEY (owner_profile_id) REFERENCES public.profiles(id) ON DELETE SET NULL;
+
+
+--
 -- Name: site_domains site_domains_site_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1272,6 +1352,20 @@ ALTER TABLE ONLY public.sites
 
 ALTER TABLE ONLY public.user_settings
     ADD CONSTRAINT user_settings_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+
+
+--
+-- Name: properties Account can read listings; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Account can read listings" ON public.properties FOR SELECT TO authenticated USING (public.has_account_access(owner_profile_id, auth.uid()));
+
+
+--
+-- Name: properties Account editors manage listings; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Account editors manage listings" ON public.properties TO authenticated USING (public.has_account_access(owner_profile_id, auth.uid(), 'editor'::public.site_member_role)) WITH CHECK (public.has_account_access(owner_profile_id, auth.uid(), 'editor'::public.site_member_role));
 
 
 --
@@ -1526,6 +1620,12 @@ ALTER TABLE public.lodgify_api_keys ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: properties; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.properties ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: settings; Type: ROW SECURITY; Schema: public; Owner: postgres
 --
 
@@ -1587,6 +1687,15 @@ GRANT ALL ON FUNCTION public.accept_pending_invitations(p_user_id uuid, p_user_e
 
 
 --
+-- Name: FUNCTION account_owner_for(check_user_id uuid); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.account_owner_for(check_user_id uuid) TO anon;
+GRANT ALL ON FUNCTION public.account_owner_for(check_user_id uuid) TO authenticated;
+GRANT ALL ON FUNCTION public.account_owner_for(check_user_id uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION cms_next_version(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -1629,6 +1738,15 @@ GRANT ALL ON FUNCTION public.get_site_lodgify_api_key(p_site_id uuid) TO service
 GRANT ALL ON FUNCTION public.handle_new_user() TO anon;
 GRANT ALL ON FUNCTION public.handle_new_user() TO authenticated;
 GRANT ALL ON FUNCTION public.handle_new_user() TO service_role;
+
+
+--
+-- Name: FUNCTION has_account_access(check_owner_profile_id uuid, check_user_id uuid, min_role public.site_member_role); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.has_account_access(check_owner_profile_id uuid, check_user_id uuid, min_role public.site_member_role) TO anon;
+GRANT ALL ON FUNCTION public.has_account_access(check_owner_profile_id uuid, check_user_id uuid, min_role public.site_member_role) TO authenticated;
+GRANT ALL ON FUNCTION public.has_account_access(check_owner_profile_id uuid, check_user_id uuid, min_role public.site_member_role) TO service_role;
 
 
 --
@@ -1741,7 +1859,6 @@ GRANT ALL ON TABLE public.profiles TO service_role;
 -- Name: TABLE properties; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON TABLE public.properties TO anon;
 GRANT ALL ON TABLE public.properties TO authenticated;
 GRANT ALL ON TABLE public.properties TO service_role;
 
@@ -1750,7 +1867,6 @@ GRANT ALL ON TABLE public.properties TO service_role;
 -- Name: SEQUENCE properties_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON SEQUENCE public.properties_id_seq TO anon;
 GRANT ALL ON SEQUENCE public.properties_id_seq TO authenticated;
 GRANT ALL ON SEQUENCE public.properties_id_seq TO service_role;
 
@@ -1882,5 +1998,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON T
 -- PostgreSQL database dump complete
 --
 
-\unrestrict X0fGz8IU5c481g3EInFgIIhKVROETR8UxLaUzpIhL7eBKSJ1bPu8bqRmGePZCsI
+\unrestrict f8UDwJy5COdfFHJuitwCWEtRzUM7wBGGuVcdpUWOfwvQnzdg35UB7ErLpHW2uE8
 

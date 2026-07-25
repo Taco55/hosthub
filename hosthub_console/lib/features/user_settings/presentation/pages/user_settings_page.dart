@@ -21,6 +21,7 @@ import 'package:hosthub_console/features/team/domain/site_invitation.dart';
 import 'package:hosthub_console/features/team/domain/site_member.dart';
 import 'package:hosthub_console/features/team/domain/site_member_role.dart';
 import 'package:hosthub_console/features/team/presentation/dialogs/invite_member_dialog.dart';
+import 'package:hosthub_console/features/user_settings/presentation/widgets/listings_section.dart';
 import 'package:hosthub_console/features/user_settings/presentation/widgets/site_settings_sections.dart';
 import 'package:hosthub_console/features/user_settings/user_settings.dart';
 
@@ -278,6 +279,10 @@ class _UserSettingsSection extends StatelessWidget {
             _LastSyncTile(lastSyncedAt: lastSyncedAt),
           ],
         ),
+        // Listings are account data, so they sit right under the Lodgify
+        // connection that normally creates them — the manual add/remove is the
+        // escape hatch for testing a website setup without a sync.
+        const ListingsSection(),
         const _ChannelFeeDefaultsSection(),
         const _TeamSection(),
       ],

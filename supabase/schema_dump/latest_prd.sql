@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict FHPiZHU5Q0eNpLwRNbSqUcUlSPtq2vWE4Gir44BE77bkRAtffwM3Cpz74YyiYYk
+\restrict 3pLjqDJNptUjO2BpgOUWlnjLRKewkFgl74yIS4YfRD6V9kUcO2IILmveYVAHyyz
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -110,6 +110,36 @@ $$;
 
 
 ALTER FUNCTION public.accept_pending_invitations(p_user_id uuid, p_user_email text) OWNER TO postgres;
+
+--
+-- Name: account_owner_for(uuid); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.account_owner_for(check_user_id uuid) RETURNS uuid
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+  select case
+    when check_user_id is null then null
+    when exists (
+      select 1 from public.sites where owner_profile_id = check_user_id
+    ) then check_user_id
+    else (
+      select case
+               when count(distinct s.owner_profile_id) = 1
+                 then (array_agg(distinct s.owner_profile_id))[1]
+               else check_user_id
+             end
+        from public.site_members sm
+        join public.sites s on s.id = sm.site_id
+       where sm.profile_id = check_user_id
+         and s.owner_profile_id is not null
+    )
+  end;
+$$;
+
+
+ALTER FUNCTION public.account_owner_for(check_user_id uuid) OWNER TO postgres;
 
 --
 -- Name: cms_next_version(); Type: FUNCTION; Schema: public; Owner: postgres
@@ -285,6 +315,24 @@ $$;
 ALTER FUNCTION public.get_effective_lodgify_api_key(p_user_id uuid) OWNER TO postgres;
 
 --
+-- Name: get_site_lodgify_api_key(uuid); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.get_site_lodgify_api_key(p_site_id uuid) RETURNS text
+    LANGUAGE sql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+  select lak.api_key
+  from public.sites s
+  join public.lodgify_api_keys lak on lak.profile_id = s.owner_profile_id
+  where s.id = p_site_id and btrim(lak.api_key) <> ''
+  limit 1;
+$$;
+
+
+ALTER FUNCTION public.get_site_lodgify_api_key(p_site_id uuid) OWNER TO postgres;
+
+--
 -- Name: handle_new_user(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -302,6 +350,40 @@ $$;
 
 
 ALTER FUNCTION public.handle_new_user() OWNER TO postgres;
+
+--
+-- Name: has_account_access(uuid, uuid, public.site_member_role); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.has_account_access(check_owner_profile_id uuid, check_user_id uuid, min_role public.site_member_role DEFAULT 'viewer'::public.site_member_role) RETURNS boolean
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+  select public.is_admin(check_user_id)
+    or (
+      check_owner_profile_id is not null
+      and (
+        check_owner_profile_id = check_user_id
+        or exists (
+          select 1
+            from public.site_members sm
+            join public.sites s on s.id = sm.site_id
+           where s.owner_profile_id = check_owner_profile_id
+             and sm.profile_id = check_user_id
+             and (
+               case min_role
+                 when 'viewer' then sm.role in ('viewer', 'editor', 'owner')
+                 when 'editor' then sm.role in ('editor', 'owner')
+                 when 'owner'  then sm.role = 'owner'
+               end
+             )
+        )
+      )
+    );
+$$;
+
+
+ALTER FUNCTION public.has_account_access(check_owner_profile_id uuid, check_user_id uuid, min_role public.site_member_role) OWNER TO postgres;
 
 --
 -- Name: has_site_access(uuid, uuid, public.site_member_role); Type: FUNCTION; Schema: public; Owner: postgres
@@ -389,16 +471,21 @@ begin
     delete from public.lodgify_api_keys
      where profile_id = new.profile_id;
     new.lodgify_api_key := null;
+    new.lodgify_api_key_last4 := null;
     return new;
   end if;
 
-  -- Marker means "already stored server-side", keep secret unchanged.
+  -- Marker means "already stored server-side", keep secret + hint unchanged.
   if v_new_key in ('__server_stored__', '__lodgify_server_stored__') then
     new.lodgify_api_key := '__lodgify_server_stored__';
+    if tg_op = 'UPDATE' then
+      new.lodgify_api_key_last4 := old.lodgify_api_key_last4;
+    end if;
     return new;
   end if;
 
-  -- New raw key: store in secure table and replace visible value with marker.
+  -- New raw key: store in secure table, replace visible value with marker, and
+  -- surface only the last 4 chars as a non-secret hint.
   insert into public.lodgify_api_keys (profile_id, api_key)
   values (new.profile_id, v_new_key)
   on conflict (profile_id) do update
@@ -406,6 +493,7 @@ begin
       updated_at = now();
 
   new.lodgify_api_key := '__lodgify_server_stored__';
+  new.lodgify_api_key_last4 := right(v_new_key, 4);
   return new;
 end;
 $$;
@@ -601,7 +689,8 @@ CREATE TABLE public.properties (
     linen_cost_fixed numeric DEFAULT 0 NOT NULL,
     service_cost_fixed numeric DEFAULT 0 NOT NULL,
     other_cost_fixed numeric DEFAULT 0 NOT NULL,
-    channel_settings jsonb
+    channel_settings jsonb,
+    owner_profile_id uuid DEFAULT public.account_owner_for(auth.uid())
 );
 
 
@@ -687,6 +776,28 @@ CREATE TABLE public.site_members (
 ALTER TABLE public.site_members OWNER TO postgres;
 
 --
+-- Name: site_translations; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.site_translations (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    site_id uuid NOT NULL,
+    page text NOT NULL,
+    field_key text NOT NULL,
+    language text NOT NULL,
+    value text NOT NULL,
+    status text DEFAULT 'auto'::text NOT NULL,
+    source_hash text,
+    translated_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT site_translations_status_check CHECK ((status = ANY (ARRAY['auto'::text, 'locked'::text])))
+);
+
+
+ALTER TABLE public.site_translations OWNER TO postgres;
+
+--
 -- Name: sites; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -697,11 +808,43 @@ CREATE TABLE public.sites (
     default_locale text NOT NULL,
     locales text[] NOT NULL,
     timezone text DEFAULT 'Europe/Oslo'::text NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    contact_email text,
+    email_from_name text,
+    lodgify_property_id text,
+    lodgify_room_type_id text
 );
 
 
 ALTER TABLE public.sites OWNER TO postgres;
+
+--
+-- Name: COLUMN sites.contact_email; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.sites.contact_email IS 'Recipient for this site''s contact form (falls back to worker CONTACT_EMAIL_TO).';
+
+
+--
+-- Name: COLUMN sites.email_from_name; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.sites.email_from_name IS 'Display name for outbound emails from this site (falls back to sites.name).';
+
+
+--
+-- Name: COLUMN sites.lodgify_property_id; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.sites.lodgify_property_id IS 'Lodgify property/house id for this site''s booking funnel (falls back to env).';
+
+
+--
+-- Name: COLUMN sites.lodgify_room_type_id; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.sites.lodgify_room_type_id IS 'Lodgify room type id for this site''s booking funnel (falls back to env).';
+
 
 --
 -- Name: user_settings; Type: TABLE; Schema: public; Owner: postgres
@@ -719,6 +862,7 @@ CREATE TABLE public.user_settings (
     export_language_code text,
     export_columns jsonb,
     export_pdf_orientation text DEFAULT 'portrait'::text NOT NULL,
+    lodgify_api_key_last4 text,
     CONSTRAINT user_settings_export_pdf_orientation_check CHECK ((export_pdf_orientation = ANY (ARRAY['portrait'::text, 'landscape'::text])))
 );
 
@@ -878,6 +1022,22 @@ ALTER TABLE ONLY public.site_members
 
 
 --
+-- Name: site_translations site_translations_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.site_translations
+    ADD CONSTRAINT site_translations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: site_translations site_translations_site_id_page_field_key_language_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.site_translations
+    ADD CONSTRAINT site_translations_site_id_page_field_key_language_key UNIQUE (site_id, page, field_key, language);
+
+
+--
 -- Name: sites sites_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -929,6 +1089,13 @@ CREATE INDEX idx_cms_media_tags ON public.cms_media USING gin (tags);
 
 
 --
+-- Name: idx_properties_owner_profile_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_properties_owner_profile_id ON public.properties USING btree (owner_profile_id);
+
+
+--
 -- Name: idx_site_invitations_email; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -954,6 +1121,13 @@ CREATE INDEX idx_site_members_profile_id ON public.site_members USING btree (pro
 --
 
 CREATE INDEX idx_site_members_site_id ON public.site_members USING btree (site_id);
+
+
+--
+-- Name: idx_site_translations_site_page_lang; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_site_translations_site_page_lang ON public.site_translations USING btree (site_id, page, language);
 
 
 --
@@ -996,6 +1170,13 @@ CREATE TRIGGER set_profiles_updated_at BEFORE UPDATE ON public.profiles FOR EACH
 --
 
 CREATE TRIGGER set_settings_updated_at BEFORE UPDATE ON public.settings FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- Name: site_translations set_site_translations_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER set_site_translations_updated_at BEFORE UPDATE ON public.site_translations FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
 
 --
@@ -1100,6 +1281,14 @@ ALTER TABLE ONLY public.profiles
 
 
 --
+-- Name: properties properties_owner_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.properties
+    ADD CONSTRAINT properties_owner_profile_id_fkey FOREIGN KEY (owner_profile_id) REFERENCES public.profiles(id) ON DELETE SET NULL;
+
+
+--
 -- Name: site_domains site_domains_site_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1140,6 +1329,14 @@ ALTER TABLE ONLY public.site_members
 
 
 --
+-- Name: site_translations site_translations_site_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.site_translations
+    ADD CONSTRAINT site_translations_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.sites(id) ON DELETE CASCADE;
+
+
+--
 -- Name: sites sites_owner_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1153,6 +1350,20 @@ ALTER TABLE ONLY public.sites
 
 ALTER TABLE ONLY public.user_settings
     ADD CONSTRAINT user_settings_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+
+
+--
+-- Name: properties Account can read listings; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Account can read listings" ON public.properties FOR SELECT TO authenticated USING (public.has_account_access(owner_profile_id, auth.uid()));
+
+
+--
+-- Name: properties Account editors manage listings; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Account editors manage listings" ON public.properties TO authenticated USING (public.has_account_access(owner_profile_id, auth.uid(), 'editor'::public.site_member_role)) WITH CHECK (public.has_account_access(owner_profile_id, auth.uid(), 'editor'::public.site_member_role));
 
 
 --
@@ -1234,6 +1445,13 @@ CREATE POLICY "Site domains limited to site owners" ON public.site_domains USING
   WHERE ((s.id = site_domains.site_id) AND (s.owner_profile_id = auth.uid())))))) WITH CHECK ((public.is_admin(auth.uid()) OR (EXISTS ( SELECT 1
    FROM public.sites s
   WHERE ((s.id = site_domains.site_id) AND (s.owner_profile_id = auth.uid()))))));
+
+
+--
+-- Name: site_translations Site editors manage translations; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Site editors manage translations" ON public.site_translations TO authenticated USING ((public.is_admin(auth.uid()) OR public.has_site_access(site_id, auth.uid(), 'editor'::public.site_member_role))) WITH CHECK ((public.is_admin(auth.uid()) OR public.has_site_access(site_id, auth.uid(), 'editor'::public.site_member_role)));
 
 
 --
@@ -1400,6 +1618,12 @@ ALTER TABLE public.lodgify_api_keys ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: properties; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.properties ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: settings; Type: ROW SECURITY; Schema: public; Owner: postgres
 --
 
@@ -1422,6 +1646,12 @@ ALTER TABLE public.site_invitations ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE public.site_members ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: site_translations; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.site_translations ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: sites; Type: ROW SECURITY; Schema: public; Owner: postgres
@@ -1455,6 +1685,15 @@ GRANT ALL ON FUNCTION public.accept_pending_invitations(p_user_id uuid, p_user_e
 
 
 --
+-- Name: FUNCTION account_owner_for(check_user_id uuid); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.account_owner_for(check_user_id uuid) TO anon;
+GRANT ALL ON FUNCTION public.account_owner_for(check_user_id uuid) TO authenticated;
+GRANT ALL ON FUNCTION public.account_owner_for(check_user_id uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION cms_next_version(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -1480,12 +1719,31 @@ GRANT ALL ON FUNCTION public.get_effective_lodgify_api_key(p_user_id uuid) TO se
 
 
 --
+-- Name: FUNCTION get_site_lodgify_api_key(p_site_id uuid); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION public.get_site_lodgify_api_key(p_site_id uuid) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.get_site_lodgify_api_key(p_site_id uuid) TO anon;
+GRANT ALL ON FUNCTION public.get_site_lodgify_api_key(p_site_id uuid) TO authenticated;
+GRANT ALL ON FUNCTION public.get_site_lodgify_api_key(p_site_id uuid) TO service_role;
+
+
+--
 -- Name: FUNCTION handle_new_user(); Type: ACL; Schema: public; Owner: postgres
 --
 
 GRANT ALL ON FUNCTION public.handle_new_user() TO anon;
 GRANT ALL ON FUNCTION public.handle_new_user() TO authenticated;
 GRANT ALL ON FUNCTION public.handle_new_user() TO service_role;
+
+
+--
+-- Name: FUNCTION has_account_access(check_owner_profile_id uuid, check_user_id uuid, min_role public.site_member_role); Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON FUNCTION public.has_account_access(check_owner_profile_id uuid, check_user_id uuid, min_role public.site_member_role) TO anon;
+GRANT ALL ON FUNCTION public.has_account_access(check_owner_profile_id uuid, check_user_id uuid, min_role public.site_member_role) TO authenticated;
+GRANT ALL ON FUNCTION public.has_account_access(check_owner_profile_id uuid, check_user_id uuid, min_role public.site_member_role) TO service_role;
 
 
 --
@@ -1598,7 +1856,6 @@ GRANT ALL ON TABLE public.profiles TO service_role;
 -- Name: TABLE properties; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON TABLE public.properties TO anon;
 GRANT ALL ON TABLE public.properties TO authenticated;
 GRANT ALL ON TABLE public.properties TO service_role;
 
@@ -1607,7 +1864,6 @@ GRANT ALL ON TABLE public.properties TO service_role;
 -- Name: SEQUENCE properties_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON SEQUENCE public.properties_id_seq TO anon;
 GRANT ALL ON SEQUENCE public.properties_id_seq TO authenticated;
 GRANT ALL ON SEQUENCE public.properties_id_seq TO service_role;
 
@@ -1646,6 +1902,15 @@ GRANT ALL ON TABLE public.site_invitations TO service_role;
 GRANT ALL ON TABLE public.site_members TO anon;
 GRANT ALL ON TABLE public.site_members TO authenticated;
 GRANT ALL ON TABLE public.site_members TO service_role;
+
+
+--
+-- Name: TABLE site_translations; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.site_translations TO anon;
+GRANT ALL ON TABLE public.site_translations TO authenticated;
+GRANT ALL ON TABLE public.site_translations TO service_role;
 
 
 --
@@ -1730,5 +1995,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON T
 -- PostgreSQL database dump complete
 --
 
-\unrestrict FHPiZHU5Q0eNpLwRNbSqUcUlSPtq2vWE4Gir44BE77bkRAtffwM3Cpz74YyiYYk
+\unrestrict 3pLjqDJNptUjO2BpgOUWlnjLRKewkFgl74yIS4YfRD6V9kUcO2IILmveYVAHyyz
 
