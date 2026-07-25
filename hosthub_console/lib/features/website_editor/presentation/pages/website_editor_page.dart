@@ -88,6 +88,10 @@ class _WebsiteEditorView extends StatelessWidget {
           leftPaneSize: state.previewVisible
               ? const StyledPaneSize.fixed(512)
               : null,
+          // §11d: with the preview hidden the editor takes the full width but
+          // centres its content — a form line does not become more readable by
+          // being 1600px wide.
+          contentMaxWidth: state.previewVisible ? null : 760,
           leftChild: EditorColumn(state: state, siteId: siteId),
           rightChild: PreviewPane(state: state),
           showRightPane: state.previewVisible,

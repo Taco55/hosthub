@@ -52,10 +52,15 @@ Future<SiteContentCubit> pumpEditor(WidgetTester tester) async {
               showHeader: false,
               padding: EdgeInsets.zero,
               paneGap: 0,
-              leftPaneSize: const StyledPaneSize.fixed(512),
+              // Mirrors WebsiteEditorPage's own bindings so the preview
+              // toggle behaves here as it does in the app.
+              leftPaneSize: state.previewVisible
+                  ? const StyledPaneSize.fixed(512)
+                  : null,
+              contentMaxWidth: state.previewVisible ? null : 760,
               leftChild: EditorColumn(state: state),
               rightChild: PreviewPane(state: state),
-              showRightPane: true,
+              showRightPane: state.previewVisible,
             ),
           ),
         ),
@@ -187,6 +192,24 @@ void main() {
       tester.widget<Text>(find.textContaining('fields yours')).data,
       startsWith('1 of '),
     );
+  });
+
+  testWidgets('hiding the preview widens the editor but keeps the line short', (
+    tester,
+  ) async {
+    final cubit = await pumpEditor(tester);
+    final scaffold = () => tester.widget<StyledWebPageScaffold>(
+      find.byType(StyledWebPageScaffold),
+    );
+
+    // Beside the preview the column is fixed; the width cap does not apply.
+    expect(scaffold().contentMaxWidth, isNull);
+
+    cubit.togglePreview();
+    await tester.pumpAndSettle();
+
+    // §11d: full width, but the form still reads at a sane measure.
+    expect(scaffold().contentMaxWidth, 760);
   });
 
   testWidgets('preview binds to the selected language and device toggles', (
