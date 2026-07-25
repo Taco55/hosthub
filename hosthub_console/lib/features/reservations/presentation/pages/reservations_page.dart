@@ -546,29 +546,29 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                           spacing: compact ? 8 : 12,
                           runSpacing: compact ? 8 : 12,
                           children: [
-                            _MetricTile(
+                            StyledStatTile(
                               label: 'Boekingen maand',
                               value: '${summary.bookingCount}',
                               icon: Icons.book_online_outlined,
-                              compact: compact,
+                              dense: compact,
                             ),
-                            _MetricTile(
+                            StyledStatTile(
                               label: 'Aankomsten',
                               value: '${summary.arrivals}',
                               icon: Icons.login_outlined,
-                              compact: compact,
+                              dense: compact,
                             ),
-                            _MetricTile(
+                            StyledStatTile(
                               label: 'Vertrekken',
                               value: '${summary.departures}',
                               icon: Icons.logout_outlined,
-                              compact: compact,
+                              dense: compact,
                             ),
-                            _MetricTile(
+                            StyledStatTile(
                               label: 'Nachten bezet',
                               value: '${summary.occupiedNights}',
                               icon: Icons.hotel_outlined,
-                              compact: compact,
+                              dense: compact,
                             ),
                           ],
                         );
@@ -695,29 +695,29 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                   spacing: compact ? 8 : 12,
                   runSpacing: compact ? 8 : 12,
                   children: [
-                    _MetricTile(
+                    StyledStatTile(
                       label: 'Boekingen maand',
                       value: '${timelineSummary.bookingCount}',
                       icon: Icons.book_online_outlined,
-                      compact: compact,
+                      dense: compact,
                     ),
-                    _MetricTile(
+                    StyledStatTile(
                       label: 'Aankomsten',
                       value: '${timelineSummary.arrivals}',
                       icon: Icons.login_outlined,
-                      compact: compact,
+                      dense: compact,
                     ),
-                    _MetricTile(
+                    StyledStatTile(
                       label: 'Vertrekken',
                       value: '${timelineSummary.departures}',
                       icon: Icons.logout_outlined,
-                      compact: compact,
+                      dense: compact,
                     ),
-                    _MetricTile(
+                    StyledStatTile(
                       label: 'Nachten bezet',
                       value: '${timelineSummary.occupiedNights}',
                       icon: Icons.hotel_outlined,
-                      compact: compact,
+                      dense: compact,
                     ),
                   ],
                 );
@@ -1758,23 +1758,23 @@ class _ReservationListView extends StatelessWidget {
               spacing: compact ? 8 : 12,
               runSpacing: compact ? 8 : 12,
               children: [
-                _MetricTile(
+                StyledStatTile(
                   label: 'Totaal',
                   value: '${entries.length}',
                   icon: Icons.receipt_long_outlined,
-                  compact: compact,
+                  dense: compact,
                 ),
-                _MetricTile(
+                StyledStatTile(
                   label: 'Komend',
                   value: '$upcomingCount',
                   icon: Icons.upcoming_outlined,
-                  compact: compact,
+                  dense: compact,
                 ),
-                _MetricTile(
+                StyledStatTile(
                   label: 'Aankomst deze week',
                   value: '$arrivalsThisWeek',
                   icon: Icons.login_outlined,
-                  compact: compact,
+                  dense: compact,
                 ),
               ],
             );
@@ -2251,81 +2251,6 @@ class _CircularCloseButton extends StatelessWidget {
       iconData: Icons.close,
       tooltip: 'Sluiten',
       onPressed: onPressed,
-    );
-  }
-}
-
-class _MetricTile extends StatelessWidget {
-  const _MetricTile({
-    required this.label,
-    required this.value,
-    required this.icon,
-    this.compact = false,
-  });
-
-  final String label;
-  final String value;
-  final IconData icon;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    if (compact) {
-      return Tooltip(
-        message: label,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: theme.dividerColor),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 16),
-              const SizedBox(width: 6),
-              Text(
-                value,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.dividerColor),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 18),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                value,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              Text(label, style: theme.textTheme.bodySmall),
-            ],
-          ),
-        ],
-      ),
     );
   }
 }
