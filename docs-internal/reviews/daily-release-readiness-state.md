@@ -90,11 +90,23 @@ kale `flutter` op PATH is nog 3.35.7 en die mix bouwt test-assets met de verkeer
 | # | slice | scope | status | evidence |
 |---|-------|-------|--------|----------|
 | E1 | Lodgify-payloadparsing naar het domein | console | done | 927 regels uit revenue + 400 uit reservations → `revenue/domain/booking_revenue.dart` (getypeerde `BookingRevenueLineKind`, labels blijven presentatie). Pagina's: reservations 3064→2206, revenue 2455→1350. Unie van beide lezers, dus reservations kent nu ook de `cleaningCost`-paden en revenue de huur/korting/borg/extra-regels. +15 tests (`booking_revenue_test.dart`), 179 groen, analyze clean |
-| E2 | Website-editor §11-gaten (coverage-meter → `N of M fields yours`, rest van de ~25 punten) | console | todo | |
+| E2 | Website-editor §11-gaten | console | done | Vijf commits: `60328c2` (locale-switcher naar de editorheader, geen AI-badges, previewheader alleen Live preview + Web/Mobiel, Team/gear/breadcrumb-segment weg), `aa04050` (coverage-meter → `N of M fields yours`, chip ís de schakelaar met tooltip, één in-sessie undo, banners weg), `fbbffb4` (tweeregelige eerlijke statusregel + Saved/Saving-indicator, publicatiedialoog "Wat gaat live" met checkbox per taal + Nagekeken/Concept/Overgeslagen + live meetellende knoplabel), `8f137a5` (lazy vertalen bij openen van een taal + één spacing-token tussen velden), `09f50a3` (wit invoervlak i.p.v. leesgrijs). Lib: `c35e572` (`actionTextListenable`), `formFields.input.backgroundColorDark`. 51 editor-tests groen |
 | E3 | Visuele verificatie van de drie schermen tegen `HostHub CMS.dc.html` | console | todo | login is user-gated |
 
 ## next_lens
-RUN 5 loopt: E1 done, E2 (website-editor §11) is de volgende lens, dan E3 (visueel).
+RUN 5 loopt: E1 + E2 done. E3 (visuele verificatie) is de volgende lens — die vraagt een
+ingelogde sessie, dus user-gated.
+
+**Nog open uit §11, met reden:** de kostenbeheersing (hash-cache, één request per taal, locked
+overslaan, alleen ingeschakelde talen) zit al in de Edge Function en `translateNow`; een
+`autoTranslate`-instelling is bewust niet gebouwd (§11a: "a setting is a worse answer than a model
+that is right by default"). De `DEBUG`-ribbon is Flutters eigen `debugShowCheckedModeBanner` (alleen
+debug-builds) en de oranje `Preview mode`-balk zit in de site zelf, niet in de console.
+
+**Let op voor de volgende sessie:** tijdens run 5 werkte een tweede sessie in dezelfde repo aan de
+tabelrand (`tables.plain.borderWidth`) en de rail; hun werk stond ongecommit in de tree. Twee
+chrome-goldens en `shell_responsive_test` faalden daardoor aan het eind van E2 — dat is hun werk,
+niet dat van E1/E2.
 
 RUN 4 KLAAR (D1–D9 done, 2026-07-24). Alle CONFORMANCE-secties gedekt; geen openstaande
 prd-migratie meer (follow-kolom geschrapt). Open (user-gated): console-deploy naar prd. Bewuste
