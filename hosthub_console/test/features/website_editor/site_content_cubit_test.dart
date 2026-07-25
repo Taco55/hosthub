@@ -237,6 +237,31 @@ void main() {
       expect(cubit.state.pendingAutoSwitch, isNull);
     });
 
+    test('opening a stale language translates it, without a button', () async {
+      // §11a: translation is lazy — on open, and on publish. There is no
+      // trigger to press, and no eager translate on every source save.
+      final cubit = build();
+      cubit.editSourceField('hero.headline', 'Nieuwe titel');
+      expect(cubit.state.isLanguageStale('en'), isTrue);
+
+      cubit.setPreviewLanguage('en');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state.isLanguageStale('en'), isFalse);
+      // The language nobody opened is left alone until publish.
+      expect(cubit.state.isLanguageStale('no'), isTrue);
+    });
+
+    test('opening a language that is already current costs nothing', () async {
+      final cubit = build();
+      expect(cubit.state.isLanguageStale('en'), isFalse);
+
+      cubit.setPreviewLanguage('en');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(cubit.state.translating, isEmpty);
+    });
+
     test('locking keeps the text and stops re-translation touching it', () {
       final cubit = build();
       final before = cubit.state.valueFor('en', 'hero.subtitle');

@@ -314,7 +314,7 @@ class _HeroCard extends StatelessWidget {
             label: fieldLabel(context, field.key),
             autofocus: field.key == 'hero.headline' && state.isSourceMode,
           ),
-          const SizedBox(height: 14),
+          SizedBox(height: context.styledSpacing.lg),
         ],
         _HeroPhotos(state: state),
       ],
@@ -464,7 +464,9 @@ class _HighlightsCard extends StatelessWidget {
               field: field,
               label: fieldLabel(context, field.key),
             ),
-            const SizedBox(height: 14),
+            // §11e: field-to-field spacing inside a section is one token; the
+            // section's own padding supplies the outer breathing room.
+            SizedBox(height: context.styledSpacing.lg),
           ],
         if (state.isSourceMode)
           Align(
@@ -499,7 +501,7 @@ class _ContentCard extends StatelessWidget {
             field: field,
             label: fieldLabel(context, field.key),
           ),
-          const SizedBox(height: 14),
+          SizedBox(height: context.styledSpacing.lg),
         ],
       ],
     );

@@ -376,16 +376,29 @@ class SiteContentCubit extends Cubit<SiteContentState> {
   void selectPage(String pageKey) =>
       emit(state.copyWith(pageKey: pageKey, clearPendingAutoSwitch: true));
 
+  /// Opens a language for editing — and translates it if it needs it (§11a).
+  ///
+  /// Translation is lazy on purpose: not on every source save (that pays for
+  /// languages nobody looks at) and not behind a button (there is never a
+  /// reason to answer "no" to it). It happens at the two moments the
+  /// translation is actually needed — when the owner opens the language, and
+  /// at publish for languages they never opened.
   void setPreviewLanguage(String language) {
+    final isTarget = language != state.sourceLanguage;
     emit(
       state.copyWith(
         previewLanguage: language,
-        reviewedLanguages: language == state.sourceLanguage
-            ? state.reviewedLanguages
-            : {...state.reviewedLanguages, language},
+        reviewedLanguages: isTarget
+            ? {...state.reviewedLanguages, language}
+            : state.reviewedLanguages,
         clearPendingAutoSwitch: true,
       ),
     );
+    if (isTarget && state.isLanguageStale(language)) {
+      // ignore: discarded_futures — the lane renders the result when it lands;
+      // failures surface as a message, the old text stays.
+      translateNow([language]);
+    }
   }
 
   void setPreviewDevice(PreviewDevice device) =>
