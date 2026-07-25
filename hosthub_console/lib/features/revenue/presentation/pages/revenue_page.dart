@@ -337,7 +337,6 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
           variant: StyledTableVariant.plain,
           dense: true,
           uppercaseHeaderLabels: false,
-          layout: const StyledTableLayout(headerHeight: 58),
           columns: [
             StyledDataColumn(
               columnHeader: Text(

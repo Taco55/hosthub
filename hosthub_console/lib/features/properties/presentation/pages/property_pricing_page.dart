@@ -400,33 +400,20 @@ class _ChannelExpansionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final spacing = context.styledSpacing;
-    // The 8 here is why these rows sat narrower than every other card in the
-    // app; sections own the horizontal inset.
-    final sectionInset = StyledWidgetsTheme.of(
-      context,
-    ).sections.innerPadding.resolve(Directionality.of(context));
 
-    return ExpansionTile(
+    // Design `.chan`: header row, hairline, body. `StyledExpansionTile` is that
+    // row — header geometry, chevron and inset all come from the tile theme, so
+    // the only thing stated here is the design's `.chan-body{padding-bottom}`.
+    return StyledExpansionTile(
       initiallyExpanded: initiallyExpanded,
       onExpansionChanged: (expanded) {
         if (expanded) onExpanded();
       },
       leading: leading,
-      title: Text(
-        channelName,
-        style: theme.textTheme.titleSmall?.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      tilePadding: EdgeInsets.symmetric(horizontal: sectionInset.left),
-      childrenPadding: EdgeInsets.only(
-        left: sectionInset.left,
-        right: sectionInset.right,
-        bottom: spacing.lg,
-      ),
-      expandedCrossAxisAlignment: CrossAxisAlignment.start,
+      title: channelName,
+      emphasizeTitle: true,
+      childrenPadding: EdgeInsets.only(bottom: spacing.lg),
       children: [
         _PercentageInputTile(
           title: context.s.pricingCommissionOverride,
@@ -553,13 +540,11 @@ class _PayoutPreview extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         StyledContainer(
+          // Padding and radius are the card defaults (`sections.contentPadding`
+          // and `sharedLayout.cardRadius`); only the ice fill and its border are
+          // particular to this panel.
           backgroundColor: colors.primaryContainer,
-          borderRadius: const BorderRadius.all(Radius.circular(14)),
           border: Border.all(color: colors.primary.withValues(alpha: 0.2)),
-          padding: EdgeInsets.symmetric(
-            horizontal: spacing.lg + spacing.xs,
-            vertical: spacing.lg + 2,
-          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -675,8 +660,10 @@ class _PayoutRow extends StatelessWidget {
         ? colors.error
         : colors.onPrimaryContainer;
 
+    // Design `.prow2{padding:7px 0}` — 7 is off the 4px scale, so it takes the
+    // neighbouring step.
     final row = Padding(
-      padding: EdgeInsets.symmetric(vertical: spacing.xs + 3),
+      padding: EdgeInsets.symmetric(vertical: spacing.sm),
       child: Row(
         children: [
           Expanded(
@@ -707,8 +694,9 @@ class _PayoutRow extends StatelessWidget {
 
     if (!total) return row;
 
+    // `.prow2.tot{margin-top:6px}`, likewise rounded to the scale.
     return Container(
-      margin: EdgeInsets.only(top: spacing.xs + 2),
+      margin: EdgeInsets.only(top: spacing.xs),
       decoration: BoxDecoration(
         border: Border(
           top: BorderSide(

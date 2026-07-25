@@ -621,9 +621,10 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                                   if (i > 0)
                                     SizedBox(height: context.styledSpacing.xl),
                                   Padding(
-                                    padding: EdgeInsets.only(
-                                      bottom: context.styledSpacing.xs,
-                                    ),
+                                    // Design `.calmonth-hd`.
+                                    padding: Theme.of(
+                                      context,
+                                    ).timelineCalendar.monthHeadingPadding,
                                     child: Text(
                                       DateFormat(
                                         'MMMM yyyy',

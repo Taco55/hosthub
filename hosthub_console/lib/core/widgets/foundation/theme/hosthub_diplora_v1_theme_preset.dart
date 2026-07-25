@@ -199,6 +199,11 @@ abstract final class HosthubThemePreset {
       sharedLayout: (t) => t.copyWith(
         horizontalPadding: 24,
         surfaceRadius: const BorderRadius.all(Radius.circular(10)),
+        // The design draws two radii: 10 on controls (`.btn-sm`, `.seg`,
+        // `.tbtn`, `.inp`) and 14 on the surfaces that hold a block of content
+        // (`.card`, `.chartcard`, `.kpi`, `.tbl-wrap`, `.payout`). Stating the
+        // second here is what stops each component group repeating `14`.
+        cardRadius: const BorderRadius.all(Radius.circular(14)),
         fieldRadius: const BorderRadius.all(Radius.circular(10)),
       ),
       // The design's 4px scale (`--jo-space-*`). Stated explicitly even though
@@ -214,6 +219,10 @@ abstract final class HosthubThemePreset {
       // editor's Hero/Highlights) opt into their own padding per instance.
       sections: (t) => t.copyWith(
         innerPadding: const EdgeInsets.symmetric(horizontal: 16),
+        // Design `.chartcard` / `.payout` / `.card`: a card that holds content
+        // rather than rows is padded on all four sides, 18 vertical / 20
+        // horizontal. Rows keep hugging the card via `innerPadding`.
+        contentPadding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
         topPadding: 24,
         firstTopPadding: 0,
         insetBackgroundColor: Colors.white,
@@ -297,9 +306,22 @@ abstract final class HosthubThemePreset {
         // Was passed per call site by the reservations table only; every table
         // should breathe the same.
         columnGap: 8,
-        // `.tbl-wrap{border-radius:14px}` — larger than the shared 10px surface
-        // radius, which the design reserves for controls.
-        borderRadius: const BorderRadius.all(Radius.circular(14)),
+        // `.dt th` / `.dt td{padding:12px 14px}`. Both console tables are
+        // `dense` (many rows, one screen), so this is what dense has to mean
+        // here — otherwise the library's tighter fallback (12/6 and 12/8)
+        // silently overrides the design from inside the widget.
+        denseHeaderPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
+        denseRowPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
+        // 12 + 12 padding around a 11.5px label. A header that wraps to two
+        // lines grows past this; it is a minimum, not a fixed height, which is
+        // why the revenue table no longer needs its own `headerHeight: 58`.
+        denseHeaderHeight: 40,
         // `.tbl-wrap{background:#fff}` with the header band a shade darker on
         // top of it, which is what makes the band read as chrome.
         backgroundColor: Colors.white,
@@ -345,8 +367,8 @@ abstract final class HosthubThemePreset {
       // surface follows the inset-section card, and the border follows
       // `dividerColor` — all of which are correct in both brightnesses.
       statTiles: (t) => t.copyWith(
-        // `.kpi{border-radius:14px}`
-        borderRadius: const BorderRadius.all(Radius.circular(14)),
+        // `.kpi{border-radius:14px}` comes from `sharedLayout.cardRadius`, so
+        // it is not restated here.
         // `.kpi .kl svg` #b3c2d4 — decorative, which is exactly what
         // `darkGrey` is reserved for, and it reads on light and dark alike.
         iconColor: HosthubDiploraV1Palette.darkGrey,

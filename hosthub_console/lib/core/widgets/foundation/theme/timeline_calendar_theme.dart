@@ -98,6 +98,13 @@ class TimelineCalendarTheme extends ThemeExtension<TimelineCalendarTheme> {
     required this.pastEntryBlendColor,
     required this.pastEntryTextColor,
     required this.pastEntryLeadingOpacity,
+    this.dayCellHorizontalPadding = 8,
+    this.weekdayHeaderPadding =
+        const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+    this.monthHeadingPadding = const EdgeInsets.fromLTRB(2, 14, 2, 6),
+    this.barRadius = 7,
+    this.barPadding = const EdgeInsets.symmetric(horizontal: 7),
+    this.barContentSpacing = 6,
   });
 
   /// Roomy density: day labels on, 30px bars.
@@ -118,6 +125,32 @@ class TimelineCalendarTheme extends ThemeExtension<TimelineCalendarTheme> {
 
   /// Opacity of the channel logo on a past booking's bar.
   final double pastEntryLeadingOpacity;
+
+  /// Design `.cal-day{padding:6px 8px 0}` — the side inset of a day cell,
+  /// applied to the day number and the nightly-rate line.
+  ///
+  /// Only the horizontal half of that rule lives here: the vertical rhythm of a
+  /// cell is [TimelineCalendarDensity.dayNumberHeight] plus
+  /// [TimelineCalendarDensity.barTopPadding], because the booking bars are
+  /// positioned from those same two numbers and would drift away from the day
+  /// numbers if the cell added padding of its own.
+  final double dayCellHorizontalPadding;
+
+  /// Design `.cal-dow div{padding:9px 10px}` — the Mo/Tu/We header strip.
+  final EdgeInsets weekdayHeaderPadding;
+
+  /// Design `.calmonth-hd{padding:14px 2px 6px}` — the month heading above a
+  /// grid in continuous mode.
+  final EdgeInsets monthHeadingPadding;
+
+  /// Design `.cbar{border-radius:7px}` — corner radius of a booking bar.
+  final double barRadius;
+
+  /// Design `.cbar{padding:0 7px}` — inner padding of a booking bar.
+  final EdgeInsets barPadding;
+
+  /// Design `.cbar{gap:6px}` — gap between the channel logo and the label.
+  final double barContentSpacing;
 
   /// The values the reservations page used before they had a home here.
   ///
@@ -155,6 +188,12 @@ class TimelineCalendarTheme extends ThemeExtension<TimelineCalendarTheme> {
     Color? pastEntryBlendColor,
     Color? pastEntryTextColor,
     double? pastEntryLeadingOpacity,
+    double? dayCellHorizontalPadding,
+    EdgeInsets? weekdayHeaderPadding,
+    EdgeInsets? monthHeadingPadding,
+    double? barRadius,
+    EdgeInsets? barPadding,
+    double? barContentSpacing,
   }) {
     return TimelineCalendarTheme(
       comfortable: comfortable ?? this.comfortable,
@@ -164,6 +203,13 @@ class TimelineCalendarTheme extends ThemeExtension<TimelineCalendarTheme> {
       pastEntryTextColor: pastEntryTextColor ?? this.pastEntryTextColor,
       pastEntryLeadingOpacity:
           pastEntryLeadingOpacity ?? this.pastEntryLeadingOpacity,
+      dayCellHorizontalPadding:
+          dayCellHorizontalPadding ?? this.dayCellHorizontalPadding,
+      weekdayHeaderPadding: weekdayHeaderPadding ?? this.weekdayHeaderPadding,
+      monthHeadingPadding: monthHeadingPadding ?? this.monthHeadingPadding,
+      barRadius: barRadius ?? this.barRadius,
+      barPadding: barPadding ?? this.barPadding,
+      barContentSpacing: barContentSpacing ?? this.barContentSpacing,
     );
   }
 
@@ -197,6 +243,29 @@ class TimelineCalendarTheme extends ThemeExtension<TimelineCalendarTheme> {
         other.pastEntryLeadingOpacity,
         t,
       ),
+      dayCellHorizontalPadding: TimelineCalendarDensity.lerpDouble(
+        dayCellHorizontalPadding,
+        other.dayCellHorizontalPadding,
+        t,
+      ),
+      weekdayHeaderPadding:
+          EdgeInsets.lerp(weekdayHeaderPadding, other.weekdayHeaderPadding, t) ??
+          weekdayHeaderPadding,
+      monthHeadingPadding:
+          EdgeInsets.lerp(monthHeadingPadding, other.monthHeadingPadding, t) ??
+          monthHeadingPadding,
+      barRadius: TimelineCalendarDensity.lerpDouble(
+        barRadius,
+        other.barRadius,
+        t,
+      ),
+      barPadding:
+          EdgeInsets.lerp(barPadding, other.barPadding, t) ?? barPadding,
+      barContentSpacing: TimelineCalendarDensity.lerpDouble(
+        barContentSpacing,
+        other.barContentSpacing,
+        t,
+      ),
     );
   }
 
@@ -210,7 +279,13 @@ class TimelineCalendarTheme extends ThemeExtension<TimelineCalendarTheme> {
           pastEntryBlend == other.pastEntryBlend &&
           pastEntryBlendColor == other.pastEntryBlendColor &&
           pastEntryTextColor == other.pastEntryTextColor &&
-          pastEntryLeadingOpacity == other.pastEntryLeadingOpacity;
+          pastEntryLeadingOpacity == other.pastEntryLeadingOpacity &&
+          dayCellHorizontalPadding == other.dayCellHorizontalPadding &&
+          weekdayHeaderPadding == other.weekdayHeaderPadding &&
+          monthHeadingPadding == other.monthHeadingPadding &&
+          barRadius == other.barRadius &&
+          barPadding == other.barPadding &&
+          barContentSpacing == other.barContentSpacing;
 
   @override
   int get hashCode => Object.hash(
@@ -220,6 +295,12 @@ class TimelineCalendarTheme extends ThemeExtension<TimelineCalendarTheme> {
     pastEntryBlendColor,
     pastEntryTextColor,
     pastEntryLeadingOpacity,
+    dayCellHorizontalPadding,
+    weekdayHeaderPadding,
+    monthHeadingPadding,
+    barRadius,
+    barPadding,
+    barContentSpacing,
   );
 }
 

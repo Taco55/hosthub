@@ -309,6 +309,75 @@ void main() {
     expect(themed.extension<_ProbeExtension>()?.value, 1);
     expect(themed.extension<TimelineCalendarTheme>(), isNotNull);
   });
+
+  // Padding audit against `HostHub CMS.dc.html`. Every value below is a CSS
+  // rule from the prototype that used to be a literal at a call site.
+  group('card geometry follows the design', () {
+    test('two radii: 10 on controls, 14 on content cards', () {
+      final styled = styledFor(Brightness.light);
+
+      expect(
+        styled.sharedLayout.surfaceRadius,
+        const BorderRadius.all(Radius.circular(10)),
+      );
+      // `.card` / `.chartcard` / `.kpi` / `.tbl-wrap` / `.payout`
+      expect(
+        styled.sharedLayout.cardRadius,
+        const BorderRadius.all(Radius.circular(14)),
+      );
+      // Sections, tables and stat tiles all read that one value instead of
+      // restating 14 three times.
+      expect(styled.sections.borderRadius, styled.sharedLayout.cardRadius);
+      expect(styled.tables.borderRadius, styled.sharedLayout.cardRadius);
+    });
+
+    test('a content card is padded 18/20, rows keep hugging the card', () {
+      final sections = styledFor(Brightness.light).sections;
+
+      // `.chartcard{padding:18px 20px}` / `.payout{padding:18px 20px}`
+      expect(sections.contentPadding, const EdgeInsets.fromLTRB(20, 18, 20, 18));
+      // `.chan-hd` / `.trow .tc` / `.stile` all inset rows by 16.
+      expect(sections.innerPadding, const EdgeInsets.symmetric(horizontal: 16));
+    });
+
+    test('dense table cells are .dt padding, not the library default', () {
+      final tables = styledFor(Brightness.light).tables;
+
+      // `.dt th` and `.dt td{padding:12px 14px}` — the library's dense
+      // fallback (12/6 and 12/8) would silently override the design.
+      expect(
+        tables.denseHeaderPadding,
+        const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      );
+      expect(
+        tables.denseRowPadding,
+        const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      );
+      expect(tables.denseHeaderHeight, 40);
+    });
+  });
+
+  group('timeline calendar geometry follows the design', () {
+    test('bar, day cell, weekday strip and month heading', () {
+      final calendar = themeFor(Brightness.light).timelineCalendar;
+
+      expect(calendar.barRadius, 7); // `.cbar{border-radius:7px}`
+      expect(
+        calendar.barPadding,
+        const EdgeInsets.symmetric(horizontal: 7),
+      ); // `.cbar{padding:0 7px}`
+      expect(calendar.barContentSpacing, 6); // `.cbar{gap:6px}`
+      expect(calendar.dayCellHorizontalPadding, 8); // `.cal-day{padding:· 8px}`
+      expect(
+        calendar.weekdayHeaderPadding,
+        const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+      ); // `.cal-dow div{padding:9px 10px}`
+      expect(
+        calendar.monthHeadingPadding,
+        const EdgeInsets.fromLTRB(2, 14, 2, 6),
+      ); // `.calmonth-hd{padding:14px 2px 6px}`
+    });
+  });
 }
 
 double _contrastOnWhite(Color color) {

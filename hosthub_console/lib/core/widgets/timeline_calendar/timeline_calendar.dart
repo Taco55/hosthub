@@ -54,6 +54,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
+import 'package:hosthub_console/core/widgets/foundation/theme/timeline_calendar_theme.dart';
+
 import 'timeline_calendar_entry.dart';
 
 // ---------------------------------------------------------------------------
@@ -256,7 +258,7 @@ class TimelineCalendar extends StatelessWidget {
                   )
                 : null,
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: context.styledSpacing.xs),
         ],
 
         if (showWeekdayHeader) ...[
@@ -311,7 +313,8 @@ class _MonthNavigation extends StatelessWidget {
           iconData: Icons.chevron_left_rounded,
           onPressed: canGoBack ? onPrevious : null,
         ),
-        const SizedBox(width: 12),
+        // Design `.pnav{gap:12px}`.
+        SizedBox(width: context.styledSpacing.md),
         Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -322,11 +325,11 @@ class _MonthNavigation extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 2),
+            SizedBox(height: context.styledSpacing.xs),
             Text(rangeLabel, style: theme.textTheme.bodySmall),
           ],
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: context.styledSpacing.md),
         _buildArrowButton(
           context,
           iconData: Icons.chevron_right_rounded,
@@ -336,37 +339,21 @@ class _MonthNavigation extends StatelessWidget {
     );
   }
 
+  /// Design `.pnav .arw`: a white, hairline-bordered, radius-10 square in the
+  /// same control family as `.tbtn`, plus `[data-off]{opacity:.4}` when it
+  /// would move past the edge of the range. Geometry and colour come from the
+  /// toolbar-button group, so this navigator matches the page-level one.
   Widget _buildArrowButton(
     BuildContext context, {
     required IconData iconData,
     required VoidCallback? onPressed,
   }) {
     final enabled = onPressed != null;
-    final colors = Theme.of(context).colorScheme;
-    final iconColor = enabled
-        ? colors.onPrimaryContainer
-        : colors.onSurfaceVariant.withValues(alpha: 0.95);
 
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 180),
       opacity: enabled ? 1 : 0.4,
-      child: StyledButton(
-        titleWidget: Icon(iconData, size: 24, color: iconColor),
-        onPressed: onPressed,
-        enabled: enabled,
-        minWidth: 56,
-        minHeight: 44,
-        horizontalSpacing: 0,
-        padding: EdgeInsets.zero,
-        cornerRadius: 10,
-        borderWidth: 1.2,
-        backgroundColor: colors.primaryContainer,
-        backgroundColorDisabled: colors.surfaceContainerHighest,
-        borderColor: colors.primary.withValues(alpha: 0.45),
-        borderColorDisabled: colors.outline.withValues(alpha: 0.85),
-        enableShadow: false,
-        enableShrinking: enabled,
-      ),
+      child: StyledToolbarButton(iconData: iconData, onPressed: onPressed),
     );
   }
 }
@@ -392,7 +379,7 @@ class _WeekdayHeader extends StatelessWidget {
     );
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: theme.timelineCalendar.weekdayHeaderPadding,
       child: Row(
         children: labels.map((label) {
           return Expanded(
@@ -685,8 +672,10 @@ class _DayCell extends StatelessWidget {
               height: dayNumberHeight,
               child: Padding(
                 padding: EdgeInsets.only(
+                  // Vertical inset stays tied to the density: it is part of the
+                  // day-number band the bars are positioned against.
                   top: dayNumberHeight >= 24 ? 4 : 2,
-                  right: dayNumberHeight >= 24 ? 6 : 4,
+                  right: theme.timelineCalendar.dayCellHorizontalPadding,
                 ),
                 child: isToday
                     ? Container(
@@ -712,7 +701,9 @@ class _DayCell extends StatelessWidget {
               SizedBox(
                 height: dayLabelHeight,
                 child: Padding(
-                  padding: const EdgeInsets.only(right: 4),
+                  padding: EdgeInsets.only(
+                    right: theme.timelineCalendar.dayCellHorizontalPadding,
+                  ),
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerRight,
@@ -759,7 +750,8 @@ class _DefaultBookingBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = Radius.circular(6);
+    final calendarTheme = theme.timelineCalendar;
+    final radius = Radius.circular(calendarTheme.barRadius);
     final outlined = entry.outlined;
     final borderRadius = BorderRadius.only(
       topLeft: isFirstSegment ? radius : Radius.zero,
@@ -783,13 +775,13 @@ class _DefaultBookingBar extends StatelessWidget {
         border: outlined ? Border.all(color: entry.color, width: 1.0) : null,
         borderRadius: borderRadius,
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: calendarTheme.barPadding,
       clipBehavior: Clip.hardEdge,
       child: Row(
         children: [
           if (entry.leading != null) ...[
             entry.leading!,
-            const SizedBox(width: 4),
+            SizedBox(width: calendarTheme.barContentSpacing),
           ],
           Expanded(
             child: Text(
