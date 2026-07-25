@@ -375,8 +375,19 @@ abstract final class HosthubThemePreset {
         // A positive caption is 10.5px text, so it takes the darkened green.
         positiveColor: HosthubDiploraV1Palette.successText,
       ),
+      // Design `.inp{background:#fff;border:1px solid #D5DFEB}`: an editable
+      // field is white with a visible hairline. The library default fills it
+      // with `surfaceContainerHighest`, which in this palette is the same very
+      // light grey read-only surfaces use — so editable and read-only fields
+      // looked alike (README §11e).
       formFields: (t) => t.copyWith(
-        input: t.input.copyWith(contentPadding: const EdgeInsets.all(16)),
+        input: t.input.copyWith(
+          contentPadding: const EdgeInsets.all(16),
+          backgroundColor: Colors.white,
+          backgroundColorDark: HosthubDiploraV1Palette.surfaceContainerDark,
+          borderColor: HosthubDiploraV1Palette.softGrey,
+          borderWidth: 1,
+        ),
       ),
       searchFields: (t) => t.copyWith(
         placeholderColor: HosthubDiploraV1Palette.searchPlaceholder,
