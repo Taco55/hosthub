@@ -475,6 +475,12 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
       }
 
       final isCompact = _timelineDensity == _TimelineDensity.compact;
+      // Density geometry and the past-booking treatment live in the theme, not
+      // here — see TimelineCalendarTheme.
+      final timelineTheme = Theme.of(context).timelineCalendar;
+      final density = isCompact
+          ? timelineTheme.compact
+          : timelineTheme.comfortable;
       final timelineSummary = _monthSummary(_focusedMonth, timelineBookings);
       final locale = Localizations.localeOf(context).toString();
 
@@ -504,21 +510,25 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
               label: label,
               tooltip: tooltipParts.join('\n'),
               color: isPast
-                  ? Color.lerp(baseColor, const Color(0xFFE0E0E0), 0.55)!
+                  ? Color.lerp(
+                      baseColor,
+                      timelineTheme.pastEntryBlendColor,
+                      timelineTheme.pastEntryBlend,
+                    )!
                   : baseColor,
-              textColor: isPast ? const Color(0xFF9E9E9E) : null,
+              textColor: isPast ? timelineTheme.pastEntryTextColor : null,
               outlined: isPast,
               leading: isPast
                   ? Opacity(
-                      opacity: 0.45,
+                      opacity: timelineTheme.pastEntryLeadingOpacity,
                       child: BookingSourceIcon(
                         source: e.source,
-                        size: isCompact ? 14 : 18,
+                        size: density.leadingIconSize,
                       ),
                     )
                   : BookingSourceIcon(
                       source: e.source,
-                      size: isCompact ? 14 : 18,
+                      size: density.leadingIconSize,
                     ),
               data: e,
             );
@@ -660,11 +670,13 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                                     showWeekdayHeader: i == 0,
                                     shrinkWrap: true,
                                     outOfMonthDisplay: OutOfMonthDisplay.hide,
-                                    barHeight: isCompact ? 22.0 : 30.0,
-                                    dayNumberHeight: isCompact ? 18.0 : 24.0,
-                                    barTopPadding: isCompact ? 3.0 : 6.0,
-                                    rowBottomPadding: isCompact ? 4.0 : 10.0,
-                                    dayLabels: isCompact ? null : dayLabels,
+                                    barHeight: density.barHeight,
+                                    dayNumberHeight: density.dayNumberHeight,
+                                    barTopPadding: density.barTopPadding,
+                                    rowBottomPadding: density.rowBottomPadding,
+                                    dayLabels: density.showDayLabels
+                                        ? dayLabels
+                                        : null,
                                     onEntryTap: (entry) {
                                       final lodgifyEntry =
                                           entry.data as Reservation;
@@ -728,12 +740,12 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
               child: TimelineCalendar(
                 focusedMonth: _focusedMonth,
                 outOfMonthDisplay: _outOfMonthDisplay,
-                barHeight: isCompact ? 22.0 : 30.0,
-                dayNumberHeight: isCompact ? 18.0 : 24.0,
-                barTopPadding: isCompact ? 3.0 : 6.0,
-                rowBottomPadding: isCompact ? 4.0 : 10.0,
+                barHeight: density.barHeight,
+                dayNumberHeight: density.dayNumberHeight,
+                barTopPadding: density.barTopPadding,
+                rowBottomPadding: density.rowBottomPadding,
                 entries: timelineEntries,
-                dayLabels: isCompact ? null : dayLabels,
+                dayLabels: density.showDayLabels ? dayLabels : null,
                 rangeStart: state.rangeStart,
                 rangeEnd: state.rangeEnd,
                 onMonthChanged: (month) {
@@ -1556,19 +1568,13 @@ class _ReservationsHeader extends StatelessWidget {
     bool checked, {
     bool enabled = true,
   }) {
+    // The check mark, its size and its three state colours all come from the
+    // menu theme — the call site only says whether the entry is on.
     return StyledMenuOverlayEntry<String>(
       value: value,
       enabled: enabled,
       label: label,
-      leading: Icon(
-        Icons.check_rounded,
-        size: 18,
-        color: enabled
-            ? checked
-                  ? const Color(0xFF1B5E20)
-                  : const Color(0xFFD0D0D0)
-            : const Color(0xFFBDBDBD),
-      ),
+      checked: checked,
     );
   }
 }
