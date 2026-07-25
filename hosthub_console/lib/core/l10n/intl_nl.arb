@@ -1534,6 +1534,8 @@
   "@wePublishDraft": {},
   "wePublishSourceOnly": "Alleen {source} publiceren",
   "@wePublishSourceOnly": { "placeholders": { "source": {} } },
+  "wePublishDraftTranslatesNow": "Nog niet nagekeken \u00b7 wordt nu vertaald",
+  "@wePublishDraftTranslatesNow": {},
   "wePublishCancel": "Annuleren",
   "wePublishConfirm": "{count} talen publiceren",
   "@wePublishConfirm": { "placeholders": { "count": {} } },

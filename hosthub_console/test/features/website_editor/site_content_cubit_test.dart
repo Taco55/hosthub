@@ -252,6 +252,21 @@ void main() {
       expect(cubit.state.isLanguageStale('no'), isTrue);
     });
 
+    test('publish translates the languages nobody opened', () async {
+      // §11a is two halves: on open, *and* on publish for the languages the
+      // owner never opened. Without the second half you can publish a language
+      // that is stale or empty.
+      final cubit = build();
+      cubit.editSourceField('hero.headline', 'Nieuwe titel');
+      expect(cubit.state.staleLanguages, {'en', 'no'});
+      expect(cubit.state.reviewedLanguages, isEmpty);
+
+      await cubit.publishAll();
+
+      expect(cubit.state.staleLanguages, isEmpty);
+      expect(cubit.state.dirty, isFalse);
+    });
+
     test('opening a language that is already current costs nothing', () async {
       final cubit = build();
       expect(cubit.state.isLanguageStale('en'), isFalse);

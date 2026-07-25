@@ -334,26 +334,35 @@ void main() {
     test('a content card is padded 18/20, rows keep hugging the card', () {
       final sections = styledFor(Brightness.light).sections;
 
-      // `.chartcard{padding:18px 20px}` / `.payout{padding:18px 20px}`
-      expect(sections.contentPadding, const EdgeInsets.fromLTRB(20, 18, 20, 18));
+      // `.chartcard{padding:18px 20px}` / `.payout{padding:18px 20px}` — 18 is
+      // off the 4px scale, so the vertical rounds to 16 instead of being
+      // reproduced with an addition at the call site.
+      expect(
+        sections.contentPadding,
+        const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      );
       // `.chan-hd` / `.trow .tc` / `.stile` all inset rows by 16.
       expect(sections.innerPadding, const EdgeInsets.symmetric(horizontal: 16));
     });
 
-    test('dense table cells are .dt padding, not the library default', () {
+    test('dense .dt padding applies to the plain table, not the card one', () {
       final tables = styledFor(Brightness.light).tables;
 
-      // `.dt th` and `.dt td{padding:12px 14px}` — the library's dense
-      // fallback (12/6 and 12/8) would silently override the design.
+      // `.dt th` and `.dt td{padding:12px 14px}` on the design's `.tbl-wrap`
+      // table. The card tables (team, listings) are a different shell and keep
+      // the library's tighter dense — stating this table-wide would have made
+      // them roomier by accident.
       expect(
-        tables.denseHeaderPadding,
+        tables.plain.denseHeaderPadding,
         const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       );
       expect(
-        tables.denseRowPadding,
+        tables.plain.denseRowPadding,
         const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       );
-      expect(tables.denseHeaderHeight, 40);
+      expect(tables.plain.denseHeaderHeight, 40);
+      expect(tables.card.denseRowPadding, isNull);
+      expect(tables.denseRowPadding, isNull);
     });
   });
 

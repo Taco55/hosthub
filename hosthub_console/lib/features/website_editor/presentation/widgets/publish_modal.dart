@@ -142,7 +142,12 @@ class _LanguageRow extends StatelessWidget {
     } else if (isSource) {
       status = s.wePublishReadyNote;
     } else {
-      status = reviewed ? s.wePublishReviewed : s.wePublishDraft;
+      // §11a: a language the owner never opened is translated *at publish*, so
+      // the row has to say both things — it was not reviewed, and it is about
+      // to be written. Shipping unreviewed output stays a visible choice.
+      status = reviewed
+          ? s.wePublishReviewed
+          : s.wePublishDraftTranslatesNow;
     }
 
     return StyledTile(

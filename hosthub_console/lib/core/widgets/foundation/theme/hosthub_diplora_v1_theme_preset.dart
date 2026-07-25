@@ -220,9 +220,14 @@ abstract final class HosthubThemePreset {
       sections: (t) => t.copyWith(
         innerPadding: const EdgeInsets.symmetric(horizontal: 16),
         // Design `.chartcard` / `.payout` / `.card`: a card that holds content
-        // rather than rows is padded on all four sides, 18 vertical / 20
-        // horizontal. Rows keep hugging the card via `innerPadding`.
-        contentPadding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+        // rather than rows is padded on all four sides. The design says 18/20;
+        // 18 is off the 4px scale, so the vertical rounds to 16 rather than
+        // being reproduced with an addition at the call site. Rows keep hugging
+        // the card via `innerPadding`.
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 16,
+        ),
         topPadding: 24,
         firstTopPadding: 0,
         insetBackgroundColor: Colors.white,
@@ -306,22 +311,32 @@ abstract final class HosthubThemePreset {
         // Was passed per call site by the reservations table only; every table
         // should breathe the same.
         columnGap: 8,
-        // `.dt th` / `.dt td{padding:12px 14px}`. Both console tables are
-        // `dense` (many rows, one screen), so this is what dense has to mean
-        // here — otherwise the library's tighter fallback (12/6 and 12/8)
-        // silently overrides the design from inside the widget.
-        denseHeaderPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 12,
+
+        // Design `.tbl-wrap{border:1px solid var(--jo-border)}`: the table is a
+        // bordered panel, not a floating block of rows. Stated on the plain
+        // variant so all four console tables get it at once; the library paints
+        // it in the same hairline the row separators use. The 14 radius comes
+        // from `sharedLayout.cardRadius`, so it is not repeated here.
+        plain: t.plain.copyWith(
+          borderWidth: 1,
+          // `.dt th` / `.dt td{padding:12px 14px}`. Scoped to the plain
+          // variant, which is the design's `.tbl-wrap` table: the card tables
+          // (team, listings) are a different shell and keep the library's
+          // tighter dense. Without this the library's fallback (12/6 and 12/8)
+          // silently overrode the design from inside the widget.
+          denseHeaderPadding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 12,
+          ),
+          denseRowPadding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 12,
+          ),
+          // 12 + 12 around an 11.5px label. A header that wraps to two lines
+          // grows past this — it is a minimum, not a fixed height, which is why
+          // the revenue table no longer needs its own `headerHeight: 58`.
+          denseHeaderHeight: 40,
         ),
-        denseRowPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 12,
-        ),
-        // 12 + 12 padding around a 11.5px label. A header that wraps to two
-        // lines grows past this; it is a minimum, not a fixed height, which is
-        // why the revenue table no longer needs its own `headerHeight: 58`.
-        denseHeaderHeight: 40,
         // `.tbl-wrap{background:#fff}` with the header band a shade darker on
         // top of it, which is what makes the band read as chrome.
         backgroundColor: Colors.white,

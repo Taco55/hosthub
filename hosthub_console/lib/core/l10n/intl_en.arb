@@ -1530,6 +1530,8 @@
   "@wePublishDraft": {},
   "wePublishSourceOnly": "Publish {source} only",
   "@wePublishSourceOnly": { "placeholders": { "source": {} } },
+  "wePublishDraftTranslatesNow": "Not reviewed yet \u00b7 translates now",
+  "@wePublishDraftTranslatesNow": {},
   "wePublishCancel": "Cancel",
   "wePublishConfirm": "Publish {count} languages",
   "@wePublishConfirm": { "placeholders": { "count": {} } },

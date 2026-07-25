@@ -276,7 +276,7 @@ void main() {
     expect(find.text('Dutch · source'), findsOneWidget);
     // The opened language is reviewed; the untouched one is still a draft.
     expect(find.text('Reviewed'), findsOneWidget);
-    expect(find.text('Draft — not reviewed yet'), findsOneWidget);
+    expect(find.text('Not reviewed yet · translates now'), findsOneWidget);
     expect(find.text('Publish 3 languages'), findsOneWidget);
 
     // Unchecking a target says what happens to it and drops the count.

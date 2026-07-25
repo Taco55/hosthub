@@ -2047,6 +2047,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePublishDraft": MessageLookupByLibrary.simpleMessage(
       "Draft — not reviewed yet",
     ),
+    "wePublishDraftTranslatesNow": MessageLookupByLibrary.simpleMessage(
+      "Not reviewed yet · translates now",
+    ),
     "wePublishModalTitle": MessageLookupByLibrary.simpleMessage(
       "What goes live",
     ),

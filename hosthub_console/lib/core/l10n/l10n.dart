@@ -8869,6 +8869,16 @@ class S {
     );
   }
 
+  /// `Not reviewed yet · translates now`
+  String get wePublishDraftTranslatesNow {
+    return Intl.message(
+      'Not reviewed yet · translates now',
+      name: 'wePublishDraftTranslatesNow',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Cancel`
   String get wePublishCancel {
     return Intl.message('Cancel', name: 'wePublishCancel', desc: '', args: []);

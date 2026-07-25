@@ -2145,6 +2145,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePublishDraft": MessageLookupByLibrary.simpleMessage(
       "Concept — nog niet nagekeken",
     ),
+    "wePublishDraftTranslatesNow": MessageLookupByLibrary.simpleMessage(
+      "Nog niet nagekeken · wordt nu vertaald",
+    ),
     "wePublishModalTitle": MessageLookupByLibrary.simpleMessage(
       "Wat gaat live",
     ),
