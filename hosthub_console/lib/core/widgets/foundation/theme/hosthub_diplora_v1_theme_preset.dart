@@ -65,9 +65,11 @@ abstract final class HosthubThemePreset {
       onTertiary: Colors.white,
       tertiaryContainer: HosthubDiploraV1Palette.azureDiplora,
       onTertiaryContainer: Colors.white,
-      surface: isLight
-          ? HosthubDiploraV1Palette.ice
-          : HosthubDiploraV1Palette.surfaceDark,
+      // `--jo-surface` is #FFFFFF: the card and page plane. Ice is
+      // `primaryContainer` — the sidebar and active states — not the surface.
+      // Anything that falls back to `surface` (table rows, stat tiles, plain
+      // containers) was inheriting the sidebar tint while this said ice.
+      surface: isLight ? Colors.white : HosthubDiploraV1Palette.surfaceDark,
       onSurface: isLight ? HosthubDiploraV1Palette.secondary : Colors.white,
       surfaceContainerHighest: isLight
           ? HosthubDiploraV1Palette.backgroundWhite
@@ -256,7 +258,31 @@ abstract final class HosthubThemePreset {
         panePadding: const EdgeInsets.all(24),
         pageBackgroundColor: Colors.white,
         pageBackgroundColorDark: HosthubDiploraV1Palette.surfaceDark,
-        pagePadding: const EdgeInsets.fromLTRB(64, 24, 64, 24),
+        // Design `.set-body{padding:26px 30px 40px}` — the previous 64px sides
+        // were roughly double the design and read as a huge gap next to the
+        // sidebar.
+        pagePadding: const EdgeInsets.fromLTRB(30, 26, 30, 40),
+        // Design `.set-wide{max-width:1040px;margin:0 auto}`: wide pages centre
+        // their content instead of stretching a table across a 27" monitor.
+        contentMaxWidth: 1040,
+      ),
+      // Navigation rail (design §5 + §"Responsieve strategie"): the full menu
+      // from 1100px, the pinned icon rail down to 600px — no hamburger, so
+      // navigation stays visible — and only below that the hamburger drawer.
+      // The design draws the rail at 96px (`.sb2.compact`), but 96 costs the
+      // page content ~24px between 600 and 1100px and only buys empty space
+      // around the 48px rows — a deliberate deviation, reviewed against the
+      // design on 2026-07-24.
+      sideMenu: (t) => t.copyWith(
+        breakpoints: const StyledSideMenuBreakpoints(
+          expandedMin: 1100,
+          railMin: 600,
+        ),
+        expandedWidth: 284,
+        railWidth: 72,
+        // Labels sit beside the icon on the rail (design §"Label-toegang"), not
+        // below it where they would collide with the next row.
+        compactLabels: StyledSideMenuCompactLabels.flyout,
       ),
       // Design `.dt th` / `.dt tfoot td`: a **light** header band with a muted
       // grey label — not white-on-primary. A saturated band would become the
@@ -271,6 +297,9 @@ abstract final class HosthubThemePreset {
       // `.trow .th` at 600 11.5px, which is legible where 10px caps are not.
       tables: (t) => t.copyWith(
         uppercaseColumnHeaderLabels: false,
+        // `.tbl-wrap{border-radius:14px}` — larger than the shared 10px surface
+        // radius, which the design reserves for controls.
+        borderRadius: const BorderRadius.all(Radius.circular(14)),
         headerBackgroundColor: HosthubDiploraV1Palette.backgroundWhite,
         headerBackgroundColorDark: HosthubDiploraV1Palette.surfaceContainerDark,
         columnHeaderTextColorDark: HosthubDiploraV1Palette.onSurfaceVariantDark,
@@ -290,17 +319,18 @@ abstract final class HosthubThemePreset {
       // when the control carries an active filter/toggle (`.tbtn.on`) — the
       // same pairing the sidebar uses, and ice in both brightnesses.
       //
-      // The enabled background, icon and border colours are deliberately left
-      // to resolve from the colour scheme rather than pinned to white/softGrey:
-      // this group has no dark counterparts, so a literal light value would
-      // stay light in dark mode. The resolved fallbacks land within a shade of
-      // the design in light mode and stay correct in dark.
       toolbarButton: (t) => t.copyWith(
         buttonWidth: 40,
         buttonHeight: 36,
         iconSize: 20,
         borderRadius: const BorderRadius.all(Radius.circular(10)),
         borderWidth: 1,
+        backgroundColor: Colors.white,
+        borderColor: HosthubDiploraV1Palette.softGrey,
+        iconColor: HosthubDiploraV1Palette.secondary,
+        backgroundColorDark: HosthubDiploraV1Palette.surfaceContainerDark,
+        borderColorDark: HosthubDiploraV1Palette.outlineDark,
+        iconColorDark: HosthubDiploraV1Palette.onSurfaceDark,
         selectedBackgroundColor: HosthubDiploraV1Palette.ice,
         selectedBorderColor: HosthubDiploraV1Palette.ice,
         selectedIconColor: HosthubDiploraV1Palette.primary,
@@ -311,6 +341,8 @@ abstract final class HosthubThemePreset {
       // surface follows the inset-section card, and the border follows
       // `dividerColor` — all of which are correct in both brightnesses.
       statTiles: (t) => t.copyWith(
+        // `.kpi{border-radius:14px}`
+        borderRadius: const BorderRadius.all(Radius.circular(14)),
         // `.kpi .kl svg` #b3c2d4 — decorative, which is exactly what
         // `darkGrey` is reserved for, and it reads on light and dark alike.
         iconColor: HosthubDiploraV1Palette.darkGrey,

@@ -19,6 +19,9 @@ class PropertyPricingPage extends StatelessWidget {
         if (state.status == PropertyContextStatus.loading ||
             state.status == PropertyContextStatus.initial) {
           return StyledWebPageScaffold(
+            // Design: this wide page has no outer card — the channel
+            // sections are the surfaces.
+            decorateLeftPane: false,
             title: context.s.menuPricing,
             description: context.s.pricingDescription,
             leftChild: const Center(child: CircularProgressIndicator()),
@@ -26,6 +29,9 @@ class PropertyPricingPage extends StatelessWidget {
         }
         if (current == null) {
           return StyledWebPageScaffold(
+            // Design: this wide page has no outer card — the channel
+            // sections are the surfaces.
+            decorateLeftPane: false,
             title: context.s.menuPricing,
             description: context.s.pricingDescription,
             leftChild: Text(context.s.propertyDetailsEmpty),
@@ -44,6 +50,9 @@ class PropertyPricingPage extends StatelessWidget {
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return StyledWebPageScaffold(
+                // Design: this wide page has no outer card — the channel
+                // sections are the surfaces.
+                decorateLeftPane: false,
                 title: context.s.menuPricing,
                 description: context.s.pricingDescription,
                 leftChild: const Center(child: CircularProgressIndicator()),
@@ -51,6 +60,9 @@ class PropertyPricingPage extends StatelessWidget {
             }
             if (snapshot.hasError) {
               return StyledWebPageScaffold(
+                // Design: this wide page has no outer card — the channel
+                // sections are the surfaces.
+                decorateLeftPane: false,
                 title: context.s.menuPricing,
                 description: context.s.pricingDescription,
                 leftChild: Text('Failed to load pricing: ${snapshot.error}'),
@@ -60,6 +72,9 @@ class PropertyPricingPage extends StatelessWidget {
             final data = snapshot.data;
             if (data == null) {
               return StyledWebPageScaffold(
+                // Design: this wide page has no outer card — the channel
+                // sections are the surfaces.
+                decorateLeftPane: false,
                 title: context.s.menuPricing,
                 description: context.s.pricingDescription,
                 leftChild: Text(context.s.propertyDetailsEmpty),
@@ -67,6 +82,9 @@ class PropertyPricingPage extends StatelessWidget {
             }
 
             return StyledWebPageScaffold(
+              // Design: this wide page has no outer card — the channel
+              // sections are the surfaces.
+              decorateLeftPane: false,
               title: context.s.menuPricing,
               description: context.s.pricingDescription,
               leftChild: ListView(

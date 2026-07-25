@@ -168,6 +168,11 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
           final totals = _RevenueTotals.fromRows(revenueRows);
 
           return StyledWebPageScaffold(
+            // Design: these wide pages have no outer card. `.set-body`
+            // holds the KPI tiles and the table, and those are the white
+            // surfaces — a pane card around everything adds a second
+            // border the design does not have.
+            decorateLeftPane: false,
             title: context.s.menuRevenue,
             description: context.s.revenueDescription(propertyName),
             actions: [

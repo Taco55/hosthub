@@ -172,16 +172,8 @@ void main() {
   });
 
   group('stat tiles', () {
-    test('sit on the card surface, not the ice page surface', () {
-      final light = styledFor(Brightness.light);
-      // colorScheme.surface is ice in this app's light theme — a KPI tile must
-      // not inherit the sidebar tint.
-      expect(
-        light.statTiles.backgroundColor,
-        isNot(themeFor(Brightness.light).colorScheme.surface),
-      );
-      expect(light.statTiles.backgroundColor, Colors.white);
-
+    test('sit on the white card surface', () {
+      expect(styledFor(Brightness.light).statTiles.backgroundColor, Colors.white);
       expect(
         styledFor(Brightness.dark).statTiles.backgroundColor,
         HosthubDiploraV1Palette.surfaceContainerDark,
@@ -201,6 +193,62 @@ void main() {
       expect(statTiles.valueTextStyle?.fontWeight, FontWeight.w700);
       expect(statTiles.captionTextStyle?.fontSize, 10.5);
       expect(statTiles.uppercaseLabel, isTrue);
+    });
+  });
+
+  group('surface roles', () {
+    test('light surface is white — ice is primaryContainer, not the surface', () {
+      final light = themeFor(Brightness.light).colorScheme;
+
+      expect(light.surface, Colors.white);
+      expect(light.primaryContainer, HosthubDiploraV1Palette.ice);
+      expect(
+        light.surface,
+        isNot(HosthubDiploraV1Palette.ice),
+        reason: 'anything falling back to surface would inherit the sidebar tint',
+      );
+    });
+
+    test('table rows and stat tiles therefore land on white', () {
+      final tables = styledFor(Brightness.light).tables;
+      expect(tables.card.rowBackgroundColor, Colors.white);
+    });
+
+    test('dark surface stays dark', () {
+      expect(
+        themeFor(Brightness.dark).colorScheme.surface,
+        HosthubDiploraV1Palette.surfaceDark,
+      );
+    });
+  });
+
+  group('page chrome follows the design', () {
+    test('page padding is .set-body, not double it', () {
+      expect(
+        styledFor(Brightness.light).webPageScaffold.pagePadding,
+        const EdgeInsets.fromLTRB(30, 26, 30, 40),
+      );
+    });
+
+    test('wide pages centre at .set-wide max-width', () {
+      expect(styledFor(Brightness.light).webPageScaffold.contentMaxWidth, 1040);
+    });
+  });
+
+  group('toolbar buttons match .tbtn', () {
+    test('white surface, hairline border, dark icon', () {
+      final toolbar = styledFor(Brightness.light).toolbarButton;
+
+      expect(toolbar.backgroundColor, Colors.white);
+      expect(toolbar.borderColor, HosthubDiploraV1Palette.softGrey);
+      expect(toolbar.iconColor, HosthubDiploraV1Palette.secondary);
+    });
+
+    test('and stay readable in dark mode', () {
+      final toolbar = styledFor(Brightness.dark).toolbarButton;
+
+      expect(toolbar.backgroundColor, HosthubDiploraV1Palette.surfaceContainerDark);
+      expect(toolbar.iconColor, HosthubDiploraV1Palette.onSurfaceDark);
     });
   });
 

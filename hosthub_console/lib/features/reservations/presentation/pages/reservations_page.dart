@@ -302,6 +302,11 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                 }).toList();
 
           return StyledWebPageScaffold(
+            // Design: these wide pages have no outer card. `.set-body`
+            // holds the KPI tiles and the table, and those are the white
+            // surfaces — a pane card around everything adds a second
+            // border the design does not have.
+            decorateLeftPane: false,
             title: 'Reserveringen',
             description: 'Boekingen voor $propertyName uit Lodgify.',
             isLoading: state.status == ReservationsStatus.loading,
@@ -549,40 +554,29 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final compact = constraints.maxWidth < 700;
-                        return Wrap(
-                          spacing: compact ? 8 : 12,
-                          runSpacing: compact ? 8 : 12,
-                          children: [
-                            StyledStatTile(
-                              label: 'Boekingen maand',
-                              value: '${summary.bookingCount}',
-                              icon: Icons.book_online_outlined,
-                              dense: compact,
-                            ),
-                            StyledStatTile(
-                              label: 'Aankomsten',
-                              value: '${summary.arrivals}',
-                              icon: Icons.login_outlined,
-                              dense: compact,
-                            ),
-                            StyledStatTile(
-                              label: 'Vertrekken',
-                              value: '${summary.departures}',
-                              icon: Icons.logout_outlined,
-                              dense: compact,
-                            ),
-                            StyledStatTile(
-                              label: 'Nachten bezet',
-                              value: '${summary.occupiedNights}',
-                              icon: Icons.hotel_outlined,
-                              dense: compact,
-                            ),
-                          ],
-                        );
-                      },
+                    _MetricsGrid(
+                      metrics: [
+                        _Metric(
+                          label: 'Boekingen maand',
+                          value: '${summary.bookingCount}',
+                          icon: Icons.book_online_outlined,
+                        ),
+                        _Metric(
+                          label: 'Aankomsten',
+                          value: '${summary.arrivals}',
+                          icon: Icons.login_outlined,
+                        ),
+                        _Metric(
+                          label: 'Vertrekken',
+                          value: '${summary.departures}',
+                          icon: Icons.logout_outlined,
+                        ),
+                        _Metric(
+                          label: 'Nachten bezet',
+                          value: '${summary.occupiedNights}',
+                          icon: Icons.hotel_outlined,
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     _ContinuousMonthNavigation(
@@ -700,40 +694,29 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
             ),
           ] else ...[
             // Single-month mode: metrics use _focusedMonth directly
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final compact = constraints.maxWidth < 700;
-                return Wrap(
-                  spacing: compact ? 8 : 12,
-                  runSpacing: compact ? 8 : 12,
-                  children: [
-                    StyledStatTile(
-                      label: 'Boekingen maand',
-                      value: '${timelineSummary.bookingCount}',
-                      icon: Icons.book_online_outlined,
-                      dense: compact,
-                    ),
-                    StyledStatTile(
-                      label: 'Aankomsten',
-                      value: '${timelineSummary.arrivals}',
-                      icon: Icons.login_outlined,
-                      dense: compact,
-                    ),
-                    StyledStatTile(
-                      label: 'Vertrekken',
-                      value: '${timelineSummary.departures}',
-                      icon: Icons.logout_outlined,
-                      dense: compact,
-                    ),
-                    StyledStatTile(
-                      label: 'Nachten bezet',
-                      value: '${timelineSummary.occupiedNights}',
-                      icon: Icons.hotel_outlined,
-                      dense: compact,
-                    ),
-                  ],
-                );
-              },
+            _MetricsGrid(
+              metrics: [
+                _Metric(
+                  label: 'Boekingen maand',
+                  value: '${timelineSummary.bookingCount}',
+                  icon: Icons.book_online_outlined,
+                ),
+                _Metric(
+                  label: 'Aankomsten',
+                  value: '${timelineSummary.arrivals}',
+                  icon: Icons.login_outlined,
+                ),
+                _Metric(
+                  label: 'Vertrekken',
+                  value: '${timelineSummary.departures}',
+                  icon: Icons.logout_outlined,
+                ),
+                _Metric(
+                  label: 'Nachten bezet',
+                  value: '${timelineSummary.occupiedNights}',
+                  icon: Icons.hotel_outlined,
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             Expanded(
@@ -1757,34 +1740,24 @@ class _ReservationListView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final compact = constraints.maxWidth < 700;
-            return Wrap(
-              spacing: compact ? 8 : 12,
-              runSpacing: compact ? 8 : 12,
-              children: [
-                StyledStatTile(
-                  label: 'Totaal',
-                  value: '${entries.length}',
-                  icon: Icons.receipt_long_outlined,
-                  dense: compact,
-                ),
-                StyledStatTile(
-                  label: 'Komend',
-                  value: '$upcomingCount',
-                  icon: Icons.upcoming_outlined,
-                  dense: compact,
-                ),
-                StyledStatTile(
-                  label: 'Aankomst deze week',
-                  value: '$arrivalsThisWeek',
-                  icon: Icons.login_outlined,
-                  dense: compact,
-                ),
-              ],
-            );
-          },
+        _MetricsGrid(
+          metrics: [
+            _Metric(
+              label: 'Totaal',
+              value: '${entries.length}',
+              icon: Icons.receipt_long_outlined,
+            ),
+            _Metric(
+              label: 'Komend',
+              value: '$upcomingCount',
+              icon: Icons.upcoming_outlined,
+            ),
+            _Metric(
+              label: 'Aankomst deze week',
+              value: '$arrivalsThisWeek',
+              icon: Icons.login_outlined,
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         Expanded(
@@ -2257,6 +2230,60 @@ class _CircularCloseButton extends StatelessWidget {
       iconData: Icons.close,
       tooltip: 'Sluiten',
       onPressed: onPressed,
+    );
+  }
+}
+
+/// One KPI, so the layout can decide the tile's density.
+class _Metric {
+  const _Metric({required this.label, required this.value, required this.icon});
+
+  final String label;
+  final String value;
+  final IconData icon;
+}
+
+/// Design `.kpis`: four equal columns across the full content width.
+///
+/// Below 700px there is no room for the full tile anatomy, so it falls back to
+/// a wrapping row of dense tiles — the same behaviour the page had before, now
+/// in one place instead of three.
+class _MetricsGrid extends StatelessWidget {
+  const _MetricsGrid({required this.metrics});
+
+  final List<_Metric> metrics;
+
+  @override
+  Widget build(BuildContext context) {
+    final gap = context.styledSpacing.sm;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final dense = constraints.maxWidth < 700;
+        final tiles = [
+          for (final metric in metrics)
+            StyledStatTile(
+              label: metric.label,
+              value: metric.value,
+              icon: metric.icon,
+              dense: dense,
+            ),
+        ];
+
+        if (dense) {
+          return Wrap(spacing: gap, runSpacing: gap, children: tiles);
+        }
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (var i = 0; i < tiles.length; i++) ...[
+              if (i > 0) SizedBox(width: gap),
+              Expanded(child: tiles[i]),
+            ],
+          ],
+        );
+      },
     );
   }
 }
