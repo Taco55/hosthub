@@ -6859,6 +6859,76 @@ class S {
     );
   }
 
+  /// `Gross`
+  String get revenueKpiGross {
+    return Intl.message('Gross', name: 'revenueKpiGross', desc: '', args: []);
+  }
+
+  /// `{count} bookings`
+  String revenueKpiGrossCaption(Object count) {
+    return Intl.message(
+      '$count bookings',
+      name: 'revenueKpiGrossCaption',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Net`
+  String get revenueKpiNet {
+    return Intl.message('Net', name: 'revenueKpiNet', desc: '', args: []);
+  }
+
+  /// `after costs`
+  String get revenueKpiNetCaption {
+    return Intl.message(
+      'after costs',
+      name: 'revenueKpiNetCaption',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Avg. nightly rate`
+  String get revenueKpiAdr {
+    return Intl.message(
+      'Avg. nightly rate',
+      name: 'revenueKpiAdr',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `per night`
+  String get revenueKpiAdrCaption {
+    return Intl.message(
+      'per night',
+      name: 'revenueKpiAdrCaption',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Occupancy`
+  String get revenueKpiOccupancy {
+    return Intl.message(
+      'Occupancy',
+      name: 'revenueKpiOccupancy',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{nights} nights`
+  String revenueKpiOccupancyCaption(Object nights) {
+    return Intl.message(
+      '$nights nights',
+      name: 'revenueKpiOccupancyCaption',
+      desc: '',
+      args: [nights],
+    );
+  }
+
   /// `Total bookings`
   String get revenueTotalBookings {
     return Intl.message(

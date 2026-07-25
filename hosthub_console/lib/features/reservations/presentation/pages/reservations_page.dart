@@ -554,7 +554,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _MetricsGrid(metrics: _monthMetrics(summary)),
+                    MetricsGrid(metrics: _monthMetrics(summary)),
                     SizedBox(height: context.styledSpacing.lg),
                     _ContinuousMonthNavigation(
                       focusedMonth: activeMonth,
@@ -674,7 +674,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
             ),
           ] else ...[
             // Single-month mode: metrics use _focusedMonth directly
-            _MetricsGrid(metrics: _monthMetrics(timelineSummary)),
+            MetricsGrid(metrics: _monthMetrics(timelineSummary)),
             SizedBox(height: context.styledSpacing.lg),
             Expanded(
               child: TimelineCalendar(
@@ -729,7 +729,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _MetricsGrid(metrics: _monthMetrics(listSummary)),
+          MetricsGrid(metrics: _monthMetrics(listSummary)),
           SizedBox(height: context.styledSpacing.lg),
           Expanded(
             child: _buildListView(
@@ -2175,102 +2175,39 @@ class _CircularCloseButton extends StatelessWidget {
   }
 }
 
-/// One KPI, so the layout can decide the tile's density.
-class _Metric {
-  const _Metric({
-    required this.label,
-    required this.value,
-    required this.icon,
-    this.caption,
-  });
-
-  final String label;
-  final String value;
-  final IconData icon;
-
-  /// Design `.kpi .kd`: the supporting line under the figure.
-  final String? caption;
-}
-
 /// The four KPIs from the design, scoped to one month: Boekingen, Aankomsten,
 /// Vertrekken, Bezetting.
 ///
 /// One definition, used by both the list and the timeline, so the two can never
 /// show a different set — and all four recompute when a status filter changes,
 /// because they are derived from the same filtered bookings.
-List<_Metric> _monthMetrics(_MonthSummary summary) {
+List<MetricTileData> _monthMetrics(_MonthSummary summary) {
   return [
-    _Metric(
+    MetricTileData(
       label: 'Boekingen',
       value: '${summary.bookingCount}',
       icon: Icons.book_online_outlined,
       caption: 'deze maand',
     ),
-    _Metric(
+    MetricTileData(
       label: 'Aankomsten',
       value: '${summary.arrivals}',
       icon: Icons.login_outlined,
       caption: 'check-in',
     ),
-    _Metric(
+    MetricTileData(
       label: 'Vertrekken',
       value: '${summary.departures}',
       icon: Icons.logout_outlined,
       caption: 'check-out',
     ),
-    _Metric(
+    MetricTileData(
       label: 'Bezetting',
       value: '${summary.occupancyPercentage}%',
       icon: Icons.hotel_outlined,
       caption: '${summary.occupiedNights} nachten',
     ),
   ];
-}
-
-/// Design `.kpis`: four equal columns across the full content width.
-///
-/// Below 700px there is no room for the full tile anatomy, so it falls back to
-/// a wrapping row of dense tiles — the same behaviour the page had before, now
-/// in one place instead of three.
-class _MetricsGrid extends StatelessWidget {
-  const _MetricsGrid({required this.metrics});
-
-  final List<_Metric> metrics;
-
-  @override
-  Widget build(BuildContext context) {
-    final gap = context.styledSpacing.sm;
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final dense = constraints.maxWidth < 700;
-        final tiles = [
-          for (final metric in metrics)
-            StyledStatTile(
-              label: metric.label,
-              value: metric.value,
-              icon: metric.icon,
-              caption: metric.caption,
-              dense: dense,
-            ),
-        ];
-
-        if (dense) {
-          return Wrap(spacing: gap, runSpacing: gap, children: tiles);
-        }
-
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (var i = 0; i < tiles.length; i++) ...[
-              if (i > 0) SizedBox(width: gap),
-              Expanded(child: tiles[i]),
-            ],
-          ],
-        );
-      },
-    );
-  }
 }
 
 class _RevenueData {

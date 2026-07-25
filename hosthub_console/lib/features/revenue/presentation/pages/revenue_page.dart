@@ -238,9 +238,11 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
                   periodRangeLabel: periodRangeLabel,
                 ),
                 SizedBox(height: context.styledSpacing.md),
-                _RevenuePeriodOverviewSection(
-                  periodLabel: periodRangeLabel,
+                _RevenueKpis(
                   totals: totals,
+                  periodDays: periodRange.end
+                      .difference(periodRange.start)
+                      .inDays,
                 ),
                 SizedBox(height: context.styledSpacing.lg),
                 Expanded(
@@ -662,47 +664,48 @@ class _RevenueHeader extends StatelessWidget {
   }
 }
 
-class _RevenuePeriodOverviewSection extends StatelessWidget {
-  const _RevenuePeriodOverviewSection({
-    required this.periodLabel,
-    required this.totals,
-  });
+/// Design: four KPI tiles above the revenue table — Bruto, Netto, gemiddelde
+/// nachtprijs (ADR) and Bezetting for the selected period.
+class _RevenueKpis extends StatelessWidget {
+  const _RevenueKpis({required this.totals, required this.periodDays});
 
-  final String periodLabel;
   final _RevenueTotals totals;
+
+  /// Nights in the selected period, the denominator for occupancy.
+  final int periodDays;
 
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    return StyledSection(
-      isFirstSection: true,
-      headerInsideGroup: true,
-      header: s.revenueOverviewHeader,
-      headerStyle: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600),
-      childMinHeight: 24,
-      subheader: periodLabel,
-      children: [
-        StyledTile(
-          title: s.revenueTotalBookings,
-          value: totals.bookingCount.toString(),
-        ),
-        StyledTile(
-          title: s.revenueTotalRevenue,
+    final occupancy = periodDays <= 0
+        ? 0
+        : ((totals.totalNights / periodDays) * 100).round();
+
+    return MetricsGrid(
+      metrics: [
+        MetricTileData(
+          label: s.revenueKpiGross,
           value: _formatAmount(totals.totalRevenue, totals.currency),
+          icon: Icons.payments_outlined,
+          caption: s.revenueKpiGrossCaption(totals.bookingCount),
         ),
-        StyledTile(
-          title: s.revenueFees,
-          value: _formatAmount(totals.totalFees, totals.currency),
-        ),
-        StyledTile(
-          title: s.revenueServiceCosts,
-          value: _formatAmount(totals.totalServiceCosts, totals.currency),
-        ),
-        StyledTile(
-          title: s.revenueNetRevenue,
+        MetricTileData(
+          label: s.revenueKpiNet,
           value: _formatAmount(totals.totalNetRevenue, totals.currency),
-          titleStyle: const TextStyle(fontWeight: FontWeight.w600),
-          valueStyle: const TextStyle(fontWeight: FontWeight.w700),
+          icon: Icons.account_balance_wallet_outlined,
+          caption: s.revenueKpiNetCaption,
+        ),
+        MetricTileData(
+          label: s.revenueKpiAdr,
+          value: _formatAmount(totals.averageNightlyRate, totals.currency),
+          icon: Icons.trending_up_outlined,
+          caption: s.revenueKpiAdrCaption,
+        ),
+        MetricTileData(
+          label: s.revenueKpiOccupancy,
+          value: '$occupancy%',
+          icon: Icons.hotel_outlined,
+          caption: s.revenueKpiOccupancyCaption(totals.totalNights),
         ),
       ],
     );
@@ -1763,8 +1766,7 @@ double _channelFeePercentageForSource(
   AdminSettings settings,
   PropertySummary? property,
 ) {
-  final channelSettings =
-      property?.channelSettings ?? const ChannelSettings();
+  final channelSettings = property?.channelSettings ?? const ChannelSettings();
   return channelSettings.commissionPercentageForSource(
     source,
     airbnbDefault: settings.airbnbChannelFeePercentage,
