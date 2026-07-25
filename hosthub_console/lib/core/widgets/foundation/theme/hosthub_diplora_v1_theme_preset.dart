@@ -297,6 +297,9 @@ abstract final class HosthubThemePreset {
       // `.trow .th` at 600 11.5px, which is legible where 10px caps are not.
       tables: (t) => t.copyWith(
         uppercaseColumnHeaderLabels: false,
+        // Was passed per call site by the reservations table only; every table
+        // should breathe the same.
+        columnGap: 8,
         // `.tbl-wrap{border-radius:14px}` — larger than the shared 10px surface
         // radius, which the design reserves for controls.
         borderRadius: const BorderRadius.all(Radius.circular(14)),

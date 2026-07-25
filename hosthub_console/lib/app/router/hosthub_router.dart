@@ -6,9 +6,13 @@ import 'package:auth_ui_flutter/auth_ui_flutter.dart'
     as auth_ui
     show AuthPackageVersionInfo;
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:styled_widgets/styled_widgets.dart';
+import 'package:hosthub_console/app/shell/application/sidebar_mode_cubit.dart';
 import 'package:hosthub_console/app/shell/presentation/widgets/menu_item.dart';
-import 'package:hosthub_console/app/shell/presentation/widgets/section_scaffold.dart';
+import 'package:hosthub_console/app/shell/presentation/widgets/property_setup_gate.dart';
+import 'package:hosthub_console/app/shell/presentation/widgets/side_menu.dart';
 import 'package:hosthub_console/core/core.dart';
+import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:hosthub_console/features/auth/auth.dart';
 import 'package:hosthub_console/features/reservations/reservations.dart';
 import 'package:hosthub_console/features/channel_manager/domain/channel_manager_repository.dart';
@@ -134,9 +138,25 @@ class HosthubRouter {
                   ),
                 ),
               ],
-              child: SectionScaffold(
-                selectedItem: item,
-                builder: (_, __) => child,
+              // The shared shell owns the three-band responsive layout (full
+              // menu / pinned icon rail / hamburger drawer) and hands the menu
+              // its placement; the console only supplies the menu, the body and
+              // its pin preference.
+              child: BlocBuilder<SidebarModeCubit, StyledSideMenuMode>(
+                builder: (context, sidebarMode) {
+                  final shell = StyledSideMenuScaffold(
+                    compact: sidebarMode == StyledSideMenuMode.compact,
+                    drawerMenuTooltip: context.s.menuTooltip,
+                    // Nothing from the placement is needed here: the menu and
+                    // its rows read it themselves.
+                    menuBuilder: (context, _) => SideMenu(selectedItem: item),
+                    bodyBuilder: (context, _) =>
+                        PropertySetupGate(selectedItem: item, child: child),
+                  );
+                  // Text selection is a desktop affordance; on the web the
+                  // browser already provides it.
+                  return kIsWeb ? shell : SelectionArea(child: shell);
+                },
               ),
             );
           },

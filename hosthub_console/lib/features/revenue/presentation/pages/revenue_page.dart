@@ -237,12 +237,12 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
                   periodLabel: periodLabel,
                   periodRangeLabel: periodRangeLabel,
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: context.styledSpacing.md),
                 _RevenuePeriodOverviewSection(
                   periodLabel: periodRangeLabel,
                   totals: totals,
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: context.styledSpacing.lg),
                 Expanded(
                   child: _buildContent(
                     context,
@@ -327,7 +327,7 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
     }
 
     return ListView(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.only(bottom: context.styledSpacing.lg),
       children: [
         StyledDataTable(
           variant: StyledTableVariant.card,
@@ -498,7 +498,7 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
         ),
         if (rows.isEmpty)
           Padding(
-            padding: const EdgeInsets.only(top: 12),
+            padding: EdgeInsets.only(top: context.styledSpacing.md),
             child: Text(
               noBookedStaysLabel,
               style: Theme.of(context).textTheme.bodyMedium,
@@ -609,7 +609,7 @@ class _RevenueHeader extends StatelessWidget {
             onPeriodChanged(_RevenuePeriod.values[index]);
           },
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: context.styledSpacing.md),
         Row(
           children: [
             _buildPeriodArrowButton(
@@ -617,7 +617,7 @@ class _RevenueHeader extends StatelessWidget {
               iconData: Icons.chevron_left_rounded,
               onPressed: onPreviousPeriod,
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: context.styledSpacing.md),
             Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -628,11 +628,11 @@ class _RevenueHeader extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 2),
+                SizedBox(height: context.styledSpacing.xs),
                 Text(periodRangeLabel, style: theme.textTheme.bodySmall),
               ],
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: context.styledSpacing.md),
             _buildPeriodArrowButton(
               context,
               iconData: Icons.chevron_right_rounded,
@@ -650,31 +650,14 @@ class _RevenueHeader extends StatelessWidget {
     required VoidCallback? onPressed,
   }) {
     final enabled = onPressed != null;
-    final colors = Theme.of(context).colorScheme;
-    final iconColor = enabled
-        ? colors.onPrimaryContainer
-        : colors.onSurfaceVariant.withValues(alpha: 0.95);
 
+    // Design `.pnav .arw` — same control family as `.tbtn`, so the styling
+    // comes from the toolbar-button group. `[data-off]{opacity:.4}` is the
+    // design's disabled treatment.
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 180),
       opacity: enabled ? 1 : 0.4,
-      child: StyledButton(
-        titleWidget: Icon(iconData, size: 24, color: iconColor),
-        onPressed: onPressed,
-        enabled: enabled,
-        minWidth: 56,
-        minHeight: 44,
-        horizontalSpacing: 0,
-        padding: EdgeInsets.zero,
-        cornerRadius: 10,
-        borderWidth: 1.2,
-        backgroundColor: colors.primaryContainer,
-        backgroundColorDisabled: colors.surfaceContainerHighest,
-        borderColor: colors.primary.withValues(alpha: 0.45),
-        borderColorDisabled: colors.outline.withValues(alpha: 0.85),
-        enableShadow: false,
-        enableShrinking: enabled,
-      ),
+      child: StyledToolbarButton(iconData: iconData, onPressed: onPressed),
     );
   }
 }
@@ -1977,20 +1960,25 @@ class _ReservationDetailsDialog extends StatelessWidget {
 
     return Dialog(
       backgroundColor: dialogBg,
-      insetPadding: const EdgeInsets.all(24),
+      insetPadding: EdgeInsets.all(context.styledSpacing.xl),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 520, maxHeight: 760),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+              padding: EdgeInsets.fromLTRB(
+                context.styledSpacing.lg,
+                context.styledSpacing.md,
+                context.styledSpacing.lg,
+                context.styledSpacing.md,
+              ),
               child: Row(
                 children: [
                   _CircularCloseButton(
                     onPressed: () => Navigator.of(context).pop(),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: context.styledSpacing.md),
                   Expanded(
                     child: Text(
                       guestName,
@@ -2150,10 +2138,12 @@ class _ReservationDetailsDialog extends StatelessWidget {
                       children: [
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.all(12),
+                          padding: EdgeInsets.all(context.styledSpacing.md),
                           decoration: BoxDecoration(
                             color: theme.colorScheme.surface,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: StyledWidgetsTheme.of(
+                              context,
+                            ).sharedLayout.surfaceRadius,
                             border: Border.all(color: theme.dividerColor),
                           ),
                           child: SingleChildScrollView(
@@ -2168,7 +2158,7 @@ class _ReservationDetailsDialog extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: context.styledSpacing.lg),
                   ],
                 ),
               ),

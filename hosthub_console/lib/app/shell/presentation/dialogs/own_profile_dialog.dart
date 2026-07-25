@@ -37,9 +37,11 @@ Future<void> showOwnProfileDialog(
   // Evaluated with the page context: inside the dialog the MediaQuery is
   // narrowed to the dialog width, so the desktop check would always fail. The
   // compact-rail preference only bites where both widths fit.
+  // Same breakpoints the shell uses, so this check can never disagree with the
+  // rail it is about.
   final isDesktopShell =
-      StyledSideMenuBreakpoints.standard.of(context) ==
-      StyledSideMenuForm.expanded;
+      StyledWidgetsTheme.of(context).sideMenu.breakpoints.of(context) ==
+      StyledSideMenuLayout.expanded;
 
   // NOTE: the field controllers are intentionally not disposed after the
   // modal future resolves — that future completes before the dismiss

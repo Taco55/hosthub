@@ -88,7 +88,7 @@ class PropertyPricingPage extends StatelessWidget {
               title: context.s.menuPricing,
               description: context.s.pricingDescription,
               leftChild: ListView(
-                padding: const EdgeInsets.only(top: 16),
+                padding: EdgeInsets.only(top: context.styledSpacing.lg),
                 children: [
                   _BookingSettingsSection(
                     details: data.details,
@@ -256,7 +256,7 @@ class _BookingSettingsSectionState extends State<_BookingSettingsSection> {
       inset: false,
       children: [
         Padding(
-          padding: const EdgeInsets.only(bottom: 12),
+          padding: EdgeInsets.only(bottom: context.styledSpacing.md),
           child: Text(
             '${context.s.pricingCurrencyNote} $currencyCode. '
             '${context.s.pricingCommissionNote}',
@@ -272,7 +272,7 @@ class _BookingSettingsSectionState extends State<_BookingSettingsSection> {
           enabled: !_isSaving,
           initiallyExpanded: true,
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: context.styledSpacing.xs),
         _ChannelExpansionTile(
           channelName: 'Booking.com',
           leading: const BookingSourceIcon(source: 'booking', size: 20),
@@ -281,7 +281,7 @@ class _BookingSettingsSectionState extends State<_BookingSettingsSection> {
           currencyCode: currencyCode,
           enabled: !_isSaving,
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: context.styledSpacing.xs),
         _ChannelExpansionTile(
           channelName: 'Overig / Direct',
           leading: const BookingSourceIcon(source: 'direct', size: 20),
@@ -290,7 +290,7 @@ class _BookingSettingsSectionState extends State<_BookingSettingsSection> {
           currencyCode: currencyCode,
           enabled: !_isSaving,
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: context.styledSpacing.md),
         Align(
           alignment: Alignment.centerLeft,
           child: StyledButton(
@@ -334,6 +334,12 @@ class _ChannelExpansionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final spacing = context.styledSpacing;
+    // The 8 here is why these rows sat narrower than every other card in the
+    // app; sections own the horizontal inset.
+    final sectionInset = StyledWidgetsTheme.of(
+      context,
+    ).sections.innerPadding.resolve(Directionality.of(context));
 
     return ExpansionTile(
       initiallyExpanded: initiallyExpanded,
@@ -344,8 +350,12 @@ class _ChannelExpansionTile extends StatelessWidget {
           fontWeight: FontWeight.w600,
         ),
       ),
-      tilePadding: const EdgeInsets.symmetric(horizontal: 8),
-      childrenPadding: const EdgeInsets.only(left: 8, right: 8, bottom: 12),
+      tilePadding: EdgeInsets.symmetric(horizontal: sectionInset.left),
+      childrenPadding: EdgeInsets.only(
+        left: sectionInset.left,
+        right: sectionInset.right,
+        bottom: spacing.lg,
+      ),
       expandedCrossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _PercentageInputTile(
@@ -468,7 +478,7 @@ class _CostInputRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: StyledWidgetsTheme.of(context).tiles.defaultPadding,
       child: Row(
         children: [
           Expanded(
@@ -487,7 +497,7 @@ class _CostInputRow extends StatelessWidget {
               placeholder: '0',
             ),
           ),
-          const SizedBox(width: 6),
+          SizedBox(width: context.styledSpacing.sm),
           Text(
             currencyCode,
             style: theme.textTheme.labelMedium?.copyWith(
@@ -495,7 +505,7 @@ class _CostInputRow extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: context.styledSpacing.md),
           SizedBox(
             width: 130,
             child: DropdownButton<CostType>(

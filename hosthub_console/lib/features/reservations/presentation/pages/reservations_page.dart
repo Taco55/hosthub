@@ -383,7 +383,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                         )
                       : null,
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: context.styledSpacing.lg),
                 Expanded(
                   child: _buildContent(
                     context,
@@ -578,7 +578,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: context.styledSpacing.lg),
                     _ContinuousMonthNavigation(
                       focusedMonth: activeMonth,
                       locale: locale,
@@ -619,7 +619,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                 );
               },
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: context.styledSpacing.sm),
             Expanded(
               child: Builder(
                 builder: (context) {
@@ -641,9 +641,12 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  if (i > 0) const SizedBox(height: 24),
+                                  if (i > 0)
+                                    SizedBox(height: context.styledSpacing.xl),
                                   Padding(
-                                    padding: const EdgeInsets.only(bottom: 4),
+                                    padding: EdgeInsets.only(
+                                      bottom: context.styledSpacing.xs,
+                                    ),
                                     child: Text(
                                       DateFormat(
                                         'MMMM yyyy',
@@ -718,7 +721,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: context.styledSpacing.lg),
             Expanded(
               child: TimelineCalendar(
                 focusedMonth: _focusedMonth,
@@ -1401,8 +1404,8 @@ class _ReservationsHeader extends StatelessWidget {
       children: [
         Expanded(
           child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: context.styledSpacing.sm,
+            runSpacing: context.styledSpacing.sm,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               StyledSegmentedControl(
@@ -1425,7 +1428,10 @@ class _ReservationsHeader extends StatelessWidget {
             ],
           ),
         ),
-        if (exportMenu != null) ...[const SizedBox(width: 8), exportMenu!],
+        if (exportMenu != null) ...[
+          SizedBox(width: context.styledSpacing.sm),
+          exportMenu!,
+        ],
       ],
     );
   }
@@ -1587,8 +1593,8 @@ class _ContinuousMonthNavigation extends StatelessWidget {
 
     return Row(
       children: [
-        _buildArrowButton(context, Icons.chevron_left_rounded, onPrevious),
-        const SizedBox(width: 12),
+        _buildArrowButton(Icons.chevron_left_rounded, onPrevious),
+        SizedBox(width: context.styledSpacing.md),
         Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1599,36 +1605,21 @@ class _ContinuousMonthNavigation extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 2),
+            SizedBox(height: context.styledSpacing.xs),
             Text(rangeLabel, style: theme.textTheme.bodySmall),
           ],
         ),
-        const SizedBox(width: 12),
-        _buildArrowButton(context, Icons.chevron_right_rounded, onNext),
+        SizedBox(width: context.styledSpacing.md),
+        _buildArrowButton(Icons.chevron_right_rounded, onNext),
       ],
     );
   }
 
-  Widget _buildArrowButton(
-    BuildContext context,
-    IconData iconData,
-    VoidCallback onPressed,
-  ) {
-    final colors = Theme.of(context).colorScheme;
-    return StyledButton(
-      titleWidget: Icon(iconData, size: 24, color: colors.onPrimaryContainer),
-      onPressed: onPressed,
-      minWidth: 56,
-      minHeight: 44,
-      horizontalSpacing: 0,
-      padding: EdgeInsets.zero,
-      cornerRadius: 10,
-      borderWidth: 1.2,
-      backgroundColor: colors.primaryContainer,
-      borderColor: colors.primary.withValues(alpha: 0.45),
-      enableShadow: false,
-      enableShrinking: true,
-    );
+  // Design `.pnav .arw`: a white, hairline-bordered, radius-10 square — the
+  // same control family as `.tbtn`, so it reads from the toolbar-button group
+  // instead of being styled here.
+  Widget _buildArrowButton(IconData iconData, VoidCallback onPressed) {
+    return StyledToolbarButton(iconData: iconData, onPressed: onPressed);
   }
 }
 
@@ -1759,19 +1750,15 @@ class _ReservationListView extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: context.styledSpacing.lg),
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: EdgeInsets.only(bottom: context.styledSpacing.lg),
             children: [
               StyledDataTable(
                 variant: StyledTableVariant.card,
                 dense: true,
                 uppercaseHeaderLabels: false,
-                layout: const StyledTableLayout(
-                  columnGap: 8,
-                  tablePadding: EdgeInsets.fromLTRB(10, 8, 10, 16),
-                ),
                 itemCount: entries.length,
                 columns: safeVisibleColumns
                     .map((column) => _columnFor(column))
@@ -1966,20 +1953,25 @@ class _ReservationDetailsDialogState extends State<_ReservationDetailsDialog> {
 
     return Dialog(
       backgroundColor: dialogBg,
-      insetPadding: const EdgeInsets.all(24),
+      insetPadding: EdgeInsets.all(context.styledSpacing.xl),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 520, maxHeight: 760),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+              padding: EdgeInsets.fromLTRB(
+                context.styledSpacing.lg,
+                context.styledSpacing.md,
+                context.styledSpacing.lg,
+                context.styledSpacing.md,
+              ),
               child: Row(
                 children: [
                   _CircularCloseButton(
                     onPressed: () => Navigator.of(context).pop(),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: context.styledSpacing.md),
                   Expanded(
                     child: Text(
                       _guestDisplayName(entry),
@@ -2123,11 +2115,13 @@ class _ReservationDetailsDialogState extends State<_ReservationDetailsDialog> {
                                 ? 'Voeg een notitie toe...'
                                 : 'Geen reservering-ID — opslaan niet mogelijk',
                             border: const OutlineInputBorder(),
-                            contentPadding: const EdgeInsets.all(12),
+                            contentPadding: EdgeInsets.all(
+                              context.styledSpacing.lg,
+                            ),
                           ),
                           style: theme.textTheme.bodySmall,
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: context.styledSpacing.sm),
                         Row(
                           children: [
                             if (_notesSaved)
@@ -2189,10 +2183,12 @@ class _ReservationDetailsDialogState extends State<_ReservationDetailsDialog> {
                       children: [
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.all(12),
+                          padding: EdgeInsets.all(context.styledSpacing.md),
                           decoration: BoxDecoration(
                             color: theme.colorScheme.surface,
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: StyledWidgetsTheme.of(
+                              context,
+                            ).sharedLayout.surfaceRadius,
                             border: Border.all(color: theme.dividerColor),
                           ),
                           child: SingleChildScrollView(
@@ -2207,7 +2203,7 @@ class _ReservationDetailsDialogState extends State<_ReservationDetailsDialog> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: context.styledSpacing.lg),
                   ],
                 ),
               ),
@@ -3070,7 +3066,7 @@ class _ExportSettingsDialogContentState
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: context.styledSpacing.sm),
         StyledReorderableSection(
           header: context.s.exportColumnsTitle,
           inset: false,
