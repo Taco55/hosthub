@@ -13,6 +13,7 @@ import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/server_settings/data/admin_settings_repository.dart';
 import 'package:hosthub_console/features/server_settings/domain/admin_settings.dart';
 import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
+import 'package:hosthub_console/features/revenue/domain/revenue_breakdown.dart';
 import 'package:hosthub_console/core/l10n/l10n.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
 
@@ -254,6 +255,10 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
                     dateFormatter: dateFormatter,
                     dateTimeFormatter: dateTimeFormatter,
                     rows: revenueRows,
+                    totals: totals,
+                    periodRange: periodRange,
+                    periodLabel: periodLabel,
+                    locale: locale,
                   ),
                 ),
               ],
@@ -272,6 +277,10 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
     required DateFormat dateFormatter,
     required DateFormat dateTimeFormatter,
     required List<_RevenueRow> rows,
+    required _RevenueTotals totals,
+    required _DateRange periodRange,
+    required String periodLabel,
+    required String locale,
   }) {
     if (propertyId == null || propertyId.isEmpty) {
       return Center(
@@ -328,9 +337,36 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
       );
     }
 
+    // Design §8c: the chart answers "when did this property earn?", which a
+    // single month cannot. Below two months it would be one bar, so it is left
+    // out rather than drawn misleadingly.
+    final breakdown = _breakdownEntries(rows);
+    final chartMonths = monthsInRange(periodRange.start, periodRange.end);
+    final channels = channelTotals(
+      breakdown,
+      labelOf: BookingSourceIcon.label,
+    );
+
     return ListView(
       padding: EdgeInsets.only(bottom: context.styledSpacing.lg),
       children: [
+        if (chartMonths.length >= 2) ...[
+          _RevenueMonthChart(
+            months: chartMonths,
+            entries: breakdown,
+            currency: totals.currency,
+            periodLabel: periodLabel,
+            locale: locale,
+          ),
+          SizedBox(height: context.styledSpacing.lg),
+        ],
+        if (channels.isNotEmpty) ...[
+          _RevenueChannelSplit(
+            channels: channels,
+            currency: totals.currency,
+          ),
+          SizedBox(height: context.styledSpacing.lg),
+        ],
         StyledDataTable(
           // Design `.tbl-wrap` + `.dt td{border-bottom}`: one surface with
           // hairline separators, not gapped rounded row cards.
@@ -498,6 +534,35 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
           },
           showTableWhenEmpty: true,
           emptyLabel: noBookedStaysLabel,
+          // Design `.dt tfoot`: nights, gross, costs, commission and net summed
+          // under the columns they belong to. Only drawn when there is
+          // something to sum.
+          footerCells: rows.isEmpty
+              ? null
+              : [
+                  Text(
+                    S.of(context).revenueTotalsRowLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  null,
+                  null,
+                  _totalCell(totals.totalNights.toString()),
+                  null,
+                  _totalCell(
+                    _formatAmount(totals.totalRevenue, totals.currency),
+                  ),
+                  _totalCell(
+                    _formatAmount(totals.totalServiceCosts, totals.currency),
+                  ),
+                  _totalCell(
+                    _formatAmount(totals.totalFees, totals.currency),
+                  ),
+                  _totalCell(
+                    _formatAmount(totals.totalNetRevenue, totals.currency),
+                  ),
+                  null,
+                ],
         ),
         if (rows.isEmpty)
           Padding(
@@ -712,6 +777,176 @@ class _RevenueKpis extends StatelessWidget {
     );
   }
 }
+
+/// One right-aligned totals cell, in the emphasised footer style the table
+/// theme supplies (`tables.footerTextStyle`).
+Widget _totalCell(String value) {
+  return Text(
+    value,
+    maxLines: 1,
+    overflow: TextOverflow.ellipsis,
+    textAlign: TextAlign.right,
+  );
+}
+
+/// The rows as the breakdown functions see them: check-in, gross, net, channel.
+List<RevenueBreakdownEntry> _breakdownEntries(List<_RevenueRow> rows) {
+  return [
+    for (final row in rows)
+      RevenueBreakdownEntry(
+        checkIn: row.checkIn,
+        gross: row.totalRevenue?.toDouble(),
+        net: row.netRevenue?.toDouble(),
+        source: row.source,
+      ),
+  ];
+}
+
+/// Design `.chartcard` — "Omzet per maand": gross bars with the net share
+/// inset at the base, one column per month of the period.
+class _RevenueMonthChart extends StatelessWidget {
+  const _RevenueMonthChart({
+    required this.months,
+    required this.entries,
+    required this.currency,
+    required this.periodLabel,
+    required this.locale,
+  });
+
+  final List<DateTime> months;
+  final List<RevenueBreakdownEntry> entries;
+  final String? currency;
+  final String periodLabel;
+  final String locale;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final s = context.s;
+    final byMonth = monthlyRevenue(entries);
+    final shortMonth = DateFormat('MMM', locale);
+    final longMonth = DateFormat('MMMM', locale);
+
+    return StyledSection(
+      isFirstSection: true,
+      headerInsideGroup: true,
+      header: s.revenueChartTitle,
+      headerAction: Text(
+        periodLabel,
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.outline,
+        ),
+      ),
+      children: [
+        StyledBarChart(
+          data: [
+            for (final month in months)
+              StyledBarDatum(
+                label: shortMonth.format(month),
+                value: byMonth[month]?.gross ?? 0,
+                secondaryValue: byMonth[month]?.net ?? 0,
+              ),
+          ],
+          tooltipBuilder: (datum) {
+            final month = months.firstWhere(
+              (candidate) => shortMonth.format(candidate) == datum.label,
+              orElse: () => months.first,
+            );
+            final revenue = byMonth[month] ?? MonthRevenue.zero;
+            return s.revenueChartTooltip(
+              longMonth.format(month),
+              _formatAmount(revenue.gross, currency),
+              _formatAmount(revenue.net, currency),
+            );
+          },
+          primaryLegendLabel: s.revenueChartLegendGross,
+          secondaryLegendLabel: s.revenueChartLegendNet,
+        ),
+      ],
+    );
+  }
+}
+
+/// Design `.chartcard` + `.split` — "Omzet per kanaal": one meter per channel,
+/// scaled to the largest, in that channel's own brand colour.
+class _RevenueChannelSplit extends StatelessWidget {
+  const _RevenueChannelSplit({required this.channels, required this.currency});
+
+  final List<ChannelRevenue> channels;
+  final String? currency;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final spacing = context.styledSpacing;
+    final largest = channels.fold<double>(
+      0,
+      (previous, channel) => channel.gross > previous ? channel.gross : previous,
+    );
+
+    return StyledSection(
+      isFirstSection: true,
+      headerInsideGroup: true,
+      // Design `.split`: a stack of meters, not a list of rows — no dividers.
+      showDividers: false,
+      header: context.s.revenueChannelSplitTitle,
+      children: [
+        for (final channel in channels)
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: spacing.xs),
+            child: Row(
+              children: [
+                BookingSourceIcon(source: channel.source, size: 18),
+                SizedBox(width: spacing.md),
+                SizedBox(
+                  width: _channelNameWidth,
+                  child: Text(
+                    channel.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                SizedBox(width: spacing.md),
+                Expanded(
+                  child: StyledMeter(
+                    value: largest <= 0 ? 0 : channel.gross / largest,
+                    width: double.infinity,
+                    // `.split .stk{height:9px}` — the bar is thicker than the
+                    // library default because it carries a brand colour.
+                    height: 9,
+                    fillColor: BookingSourceIcon.brandColor(channel.source),
+                    labelPosition: StyledMeterLabelPosition.none,
+                  ),
+                ),
+                SizedBox(width: spacing.md),
+                SizedBox(
+                  width: _channelValueWidth,
+                  child: Text(
+                    _formatAmount(channel.gross, currency),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.right,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// `.split .srow span{min-width:96px}` and `.split .sv{min-width:78px}` — the
+/// two fixed columns that keep the meters starting and ending in line.
+const double _channelNameWidth = 96;
+const double _channelValueWidth = 78;
 
 class _RevenueRow {
   const _RevenueRow({

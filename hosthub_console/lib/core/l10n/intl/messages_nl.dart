@@ -118,66 +118,69 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m43(count) => "${count} nieuw";
 
-  static String m44(propertyName) =>
+  static String m44(month, gross, net) =>
+      "${month}: ${gross} bruto · ${net} netto";
+
+  static String m45(propertyName) =>
       "Opbrengsten voor ${propertyName} uit Lodgify boekingen.";
 
-  static String m45(count) => "${count} boekingen";
+  static String m46(count) => "${count} boekingen";
 
-  static String m46(nights) => "${nights} nachten";
+  static String m47(nights) => "${nights} nachten";
 
-  static String m47(quarter, year) => "Kwartaal ${quarter} ${year}";
+  static String m48(quarter, year) => "Kwartaal ${quarter} ${year}";
 
-  static String m48(error) => "Sites laden mislukt: ${error}";
+  static String m49(error) => "Sites laden mislukt: ${error}";
 
-  static String m49(defaultLocale, locales) =>
+  static String m50(defaultLocale, locales) =>
       "Taal: ${defaultLocale} • Talen: ${locales}";
 
-  static String m50(status) => "Abonnement: ${status}";
+  static String m51(status) => "Abonnement: ${status}";
 
-  static String m51(table) =>
+  static String m52(table) =>
       "Kan de gegevens niet laden omdat Supabase de tabel \"${table}\" niet kan vinden. Voer de nieuwste database-migraties uit en vernieuw de schema-cache.";
 
-  static String m52(siteName) =>
+  static String m53(siteName) =>
       "Nodig iemand uit om samen te werken aan \"${siteName}\".";
 
-  static String m53(name) => "Weet je zeker dat je ${name} wilt verwijderen?";
+  static String m54(name) => "Weet je zeker dat je ${name} wilt verwijderen?";
 
-  static String m54(error) => "Kan adminrechten niet wijzigen: ${error}";
+  static String m55(error) => "Kan adminrechten niet wijzigen: ${error}";
 
-  static String m55(error) => "Kon profiel niet bijwerken: ${error}";
+  static String m56(error) => "Kon profiel niet bijwerken: ${error}";
 
-  static String m56(error) => "Kon gebruiker niet verwijderen: ${error}";
+  static String m57(error) => "Kon gebruiker niet verwijderen: ${error}";
 
-  static String m57(email) => "Verificatiecode verstuurd naar ${email}";
+  static String m58(email) => "Verificatiecode verstuurd naar ${email}";
 
-  static String m58(version) => "v${version}";
+  static String m59(version) => "v${version}";
 
-  static String m59(source) =>
+  static String m60(source) =>
       "Typ over een veld om het te vergrendelen; ongewijzigde velden blijven automatisch en volgen de ${source} bron.";
 
-  static String m60(language) => "De ${language} vertaling bewerken";
+  static String m61(language) => "De ${language} vertaling bewerken";
 
-  static String m61(languages) =>
+  static String m62(languages) =>
       "${languages} worden automatisch bijgewerkt bij publiceren. Vergrendelde velden behouden je tekst.";
 
-  static String m62(language) => "Je schrijft in het ${language}";
+  static String m63(language) => "Je schrijft in het ${language}";
 
-  static String m63(lang) => "Bewerken · ${lang}";
+  static String m64(lang) => "Bewerken · ${lang}";
 
-  static String m64(number) => "Ervaring ${number}";
+  static String m65(number) => "Ervaring ${number}";
 
-  static String m65(number) => "Hoogtepunt ${number}";
+  static String m66(number) => "Hoogtepunt ${number}";
 
-  static String m66(language) => "${language} voorbeeld";
+  static String m67(language) => "${language} voorbeeld";
 
-  static String m67(count) => "${count} talen publiceren";
+  static String m68(count) => "${count} talen publiceren";
 
-  static String m68(language) => "${language} · bron";
+  static String m69(language) => "${language} · bron";
 
-  static String m69(source) =>
+  static String m70(source) =>
       "Je ${source} content publiceert zoals die is. De andere talen worden opnieuw vertaald door AI, met behoud van wat je hebt vergrendeld.";
 
-  static String m70(lang) => "Bron · ${lang}";
+  static String m71(lang) => "Bron · ${lang}";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -1570,6 +1573,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "revenueBreakdownTax": MessageLookupByLibrary.simpleMessage(
       "Belasting / btw",
     ),
+    "revenueChannelSplitTitle": MessageLookupByLibrary.simpleMessage(
+      "Omzet per kanaal",
+    ),
+    "revenueChartLegendGross": MessageLookupByLibrary.simpleMessage("Bruto"),
+    "revenueChartLegendNet": MessageLookupByLibrary.simpleMessage("Netto"),
+    "revenueChartTitle": MessageLookupByLibrary.simpleMessage(
+      "Omzet per maand",
+    ),
+    "revenueChartTooltip": m44,
     "revenueColumnBooker": MessageLookupByLibrary.simpleMessage("Boeker"),
     "revenueColumnChannelFee": MessageLookupByLibrary.simpleMessage(
       "Kanaal\nfee",
@@ -1585,16 +1597,16 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "revenueColumnNights": MessageLookupByLibrary.simpleMessage("Nachten"),
     "revenueColumnTotal": MessageLookupByLibrary.simpleMessage("Totaal"),
-    "revenueDescription": m44,
+    "revenueDescription": m45,
     "revenueFees": MessageLookupByLibrary.simpleMessage("Fees"),
     "revenueKpiAdr": MessageLookupByLibrary.simpleMessage("Gem. nachtprijs"),
     "revenueKpiAdrCaption": MessageLookupByLibrary.simpleMessage("per nacht"),
     "revenueKpiGross": MessageLookupByLibrary.simpleMessage("Bruto"),
-    "revenueKpiGrossCaption": m45,
+    "revenueKpiGrossCaption": m46,
     "revenueKpiNet": MessageLookupByLibrary.simpleMessage("Netto"),
     "revenueKpiNetCaption": MessageLookupByLibrary.simpleMessage("na kosten"),
     "revenueKpiOccupancy": MessageLookupByLibrary.simpleMessage("Bezetting"),
-    "revenueKpiOccupancyCaption": m46,
+    "revenueKpiOccupancyCaption": m47,
     "revenueLoadFailed": MessageLookupByLibrary.simpleMessage(
       "Opbrengsten konden niet worden geladen.",
     ),
@@ -1611,7 +1623,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "revenuePeriodMonth": MessageLookupByLibrary.simpleMessage("Maand"),
     "revenuePeriodQuarter": MessageLookupByLibrary.simpleMessage("Kwartaal"),
     "revenuePeriodYear": MessageLookupByLibrary.simpleMessage("Jaar"),
-    "revenueQuarterLabel": m47,
+    "revenueQuarterLabel": m48,
     "revenueRefreshTooltip": MessageLookupByLibrary.simpleMessage("Vernieuwen"),
     "revenueServiceCosts": MessageLookupByLibrary.simpleMessage(
       "Servicekosten",
@@ -1620,6 +1632,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Totaal boekingen",
     ),
     "revenueTotalRevenue": MessageLookupByLibrary.simpleMessage("Totale omzet"),
+    "revenueTotalsRowLabel": MessageLookupByLibrary.simpleMessage("Totaal"),
     "revenueUnknownBooker": MessageLookupByLibrary.simpleMessage(
       "Onbekende boeker",
     ),
@@ -1754,8 +1767,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "sitesEmpty": MessageLookupByLibrary.simpleMessage(
       "Nog geen sites ingesteld.",
     ),
-    "sitesLoadFailed": m48,
-    "sitesLocaleSummary": m49,
+    "sitesLoadFailed": m49,
+    "sitesLocaleSummary": m50,
     "sitesNameHint": MessageLookupByLibrary.simpleMessage("Trysil Panorama"),
     "sitesNameLabel": MessageLookupByLibrary.simpleMessage("Sitenaam"),
     "sitesNewEntryTitle": MessageLookupByLibrary.simpleMessage("Nieuwe site"),
@@ -1790,14 +1803,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "statistic": MessageLookupByLibrary.simpleMessage("Statistiek"),
     "steak": MessageLookupByLibrary.simpleMessage("Biefstuk"),
     "store": MessageLookupByLibrary.simpleMessage("Winkel"),
-    "subscriptionChipLabel": m50,
+    "subscriptionChipLabel": m51,
     "subscriptionLabel": MessageLookupByLibrary.simpleMessage("Abonnement"),
     "subtract": MessageLookupByLibrary.simpleMessage("Aftrekken"),
     "suitcase": MessageLookupByLibrary.simpleMessage("Koffer"),
     "sum": MessageLookupByLibrary.simpleMessage("Som"),
     "sun": MessageLookupByLibrary.simpleMessage("Zon"),
     "sunlight": MessageLookupByLibrary.simpleMessage("Zonlicht"),
-    "supabaseTableMissing": m51,
+    "supabaseTableMissing": m52,
     "symbol": MessageLookupByLibrary.simpleMessage("Symbool"),
     "systemSetting": MessageLookupByLibrary.simpleMessage("Systeeminstelling"),
     "tShirt": MessageLookupByLibrary.simpleMessage("T-shirt"),
@@ -1824,7 +1837,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "teamInviteMemberTitle": MessageLookupByLibrary.simpleMessage(
       "Lid uitnodigen",
     ),
-    "teamInviteSiteDescription": m52,
+    "teamInviteSiteDescription": m53,
     "teamInviteUserDescription": MessageLookupByLibrary.simpleMessage(
       "Nodig een gebruiker uit om samen je properties te beheren.",
     ),
@@ -1842,7 +1855,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Openstaande uitnodigingen",
     ),
     "teamRemoveMember": MessageLookupByLibrary.simpleMessage("Verwijderen"),
-    "teamRemoveMemberConfirm": m53,
+    "teamRemoveMemberConfirm": m54,
     "teamRemoveMemberTitle": MessageLookupByLibrary.simpleMessage(
       "Lid verwijderen",
     ),
@@ -1863,7 +1876,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "timer": MessageLookupByLibrary.simpleMessage("Timer"),
     "todoList": MessageLookupByLibrary.simpleMessage("Takenlijst"),
     "toggle": MessageLookupByLibrary.simpleMessage("Schakelen"),
-    "toggleAdminFailed": m54,
+    "toggleAdminFailed": m55,
     "tomato": MessageLookupByLibrary.simpleMessage("Tomaat"),
     "tooManyAttempts": MessageLookupByLibrary.simpleMessage("Te veel pogingen"),
     "trash": MessageLookupByLibrary.simpleMessage("Afval"),
@@ -1881,7 +1894,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Kon adminrechten niet bijwerken. Probeer opnieuw.",
     ),
     "updateButton": MessageLookupByLibrary.simpleMessage("Wijzigen"),
-    "updateProfileFailed": m55,
+    "updateProfileFailed": m56,
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "userCreated": MessageLookupByLibrary.simpleMessage(
       "Gebruiker aangemaakt.",
@@ -1889,7 +1902,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "userDeleteFailed": MessageLookupByLibrary.simpleMessage(
       "Kon gebruiker niet verwijderen.",
     ),
-    "userDeleteFailedWithReason": m56,
+    "userDeleteFailedWithReason": m57,
     "userDeleted": MessageLookupByLibrary.simpleMessage(
       "Gebruiker verwijderd.",
     ),
@@ -1916,9 +1929,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "vegetables": MessageLookupByLibrary.simpleMessage("Groenten"),
     "vegetarian": MessageLookupByLibrary.simpleMessage("Vegetarisch"),
     "verificationCode": MessageLookupByLibrary.simpleMessage("Verificatiecode"),
-    "verificationCodeSentText": m57,
+    "verificationCodeSentText": m58,
     "verify": MessageLookupByLibrary.simpleMessage("Verifiëren"),
-    "versionFooter": m58,
+    "versionFooter": m59,
     "verticalLine": MessageLookupByLibrary.simpleMessage("Verticale lijn"),
     "walking": MessageLookupByLibrary.simpleMessage("Lopen"),
     "wallet": MessageLookupByLibrary.simpleMessage("Portemonnee"),
@@ -1930,16 +1943,16 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "weAddPhoto": MessageLookupByLibrary.simpleMessage("Toevoegen"),
     "weAiTranslation": MessageLookupByLibrary.simpleMessage("AI-vertaling"),
-    "weBannerEditingBody": m59,
-    "weBannerEditingTitle": m60,
-    "weBannerUnpublishedBody": m61,
+    "weBannerEditingBody": m60,
+    "weBannerEditingTitle": m61,
+    "weBannerUnpublishedBody": m62,
     "weBannerUnpublishedTitle": MessageLookupByLibrary.simpleMessage(
       "Niet-gepubliceerde wijzigingen",
     ),
     "weBannerWritingBody": MessageLookupByLibrary.simpleMessage(
       "Andere talen vertalen automatisch bij publiceren — behalve velden die je vergrendelt.",
     ),
-    "weBannerWritingTitle": m62,
+    "weBannerWritingTitle": m63,
     "weBreadcrumbWebsite": MessageLookupByLibrary.simpleMessage("Website"),
     "weCardContent": MessageLookupByLibrary.simpleMessage("Pagina-inhoud"),
     "weCardHero": MessageLookupByLibrary.simpleMessage("Hero"),
@@ -1948,7 +1961,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "weChipLocked": MessageLookupByLibrary.simpleMessage("Vergrendeld"),
     "weDeviceMobile": MessageLookupByLibrary.simpleMessage("Mobiel"),
     "weDeviceWeb": MessageLookupByLibrary.simpleMessage("Web"),
-    "weEditingChip": m63,
+    "weEditingChip": m64,
     "weErrorLoadFailed": MessageLookupByLibrary.simpleMessage(
       "Kon de website-inhoud niet laden",
     ),
@@ -1964,10 +1977,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "weErrorTranslateFailed": MessageLookupByLibrary.simpleMessage(
       "Kon de vertaling niet verversen — de laatste goede versie blijft staan",
     ),
-    "weFieldExperience": m64,
+    "weFieldExperience": m65,
     "weFieldHeadline": MessageLookupByLibrary.simpleMessage("Titel"),
     "weFieldHeroPhotos": MessageLookupByLibrary.simpleMessage("Hero-foto\'s"),
-    "weFieldHighlight": m65,
+    "weFieldHighlight": m66,
     "weFieldIntro": MessageLookupByLibrary.simpleMessage("Intro"),
     "weFieldSubtitle": MessageLookupByLibrary.simpleMessage("Ondertitel"),
     "weFieldTitle": MessageLookupByLibrary.simpleMessage("Titel"),
@@ -1986,7 +1999,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePageContact": MessageLookupByLibrary.simpleMessage("Contact"),
     "wePageHome": MessageLookupByLibrary.simpleMessage("Home"),
     "wePagePractical": MessageLookupByLibrary.simpleMessage("Praktisch"),
-    "wePreviewLabel": m66,
+    "wePreviewLabel": m67,
     "wePreviewLatest": MessageLookupByLibrary.simpleMessage(
       "Nieuwste bekijken",
     ),
@@ -1997,7 +2010,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Alle talen publiceren",
     ),
     "wePublishCancel": MessageLookupByLibrary.simpleMessage("Annuleren"),
-    "wePublishConfirm": m67,
+    "wePublishConfirm": m68,
     "wePublishReady": MessageLookupByLibrary.simpleMessage("Klaar"),
     "wePublishReadyNote": MessageLookupByLibrary.simpleMessage(
       "Gepubliceerd zoals geschreven",
@@ -2008,8 +2021,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePublishRetranslateNote": MessageLookupByLibrary.simpleMessage(
       "Verouderd — wordt vernieuwd",
     ),
-    "wePublishSourceRole": m68,
-    "wePublishSubtitle": m69,
+    "wePublishSourceRole": m69,
+    "wePublishSubtitle": m70,
     "wePublishTitle": MessageLookupByLibrary.simpleMessage(
       "Alle talen publiceren",
     ),
@@ -2030,7 +2043,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Foto\'s worden gedeeld over alle talen — bewerk ze in de bron.",
     ),
     "weShowPreview": MessageLookupByLibrary.simpleMessage("Voorbeeld tonen"),
-    "weSourceChip": m70,
+    "weSourceChip": m71,
     "weStaleNotice": MessageLookupByLibrary.simpleMessage(
       "Voorbeeld toont een eerdere bronwijziging.",
     ),

@@ -186,4 +186,170 @@ void main() {
       matchesGoldenFile('goldens/chrome_03_toolbar.png'),
     );
   });
+
+  testWidgets('golden: revenue chart card (.chartcard + .chart)',
+      (tester) async {
+    const gross = [42, 51, 38, 22, 12, 9, 14, 11, 18, 26, 34, 61];
+    const months = [
+      'jan',
+      'feb',
+      'mrt',
+      'apr',
+      'mei',
+      'jun',
+      'jul',
+      'aug',
+      'sep',
+      'okt',
+      'nov',
+      'dec',
+    ];
+
+    await pump(
+      tester,
+      StyledSection(
+        isFirstSection: true,
+        headerInsideGroup: true,
+        header: 'Omzet per maand',
+        headerAction: Text(
+          '2027',
+          style: TextStyle(
+            color: HosthubDiploraV1Palette.outlineGrey,
+            fontSize: 12,
+          ),
+        ),
+        children: [
+          StyledBarChart(
+            data: [
+              for (var i = 0; i < months.length; i++)
+                StyledBarDatum(
+                  label: months[i],
+                  value: gross[i].toDouble(),
+                  secondaryValue: gross[i] * 0.8,
+                ),
+            ],
+            primaryLegendLabel: 'Bruto',
+            secondaryLegendLabel: 'Netto',
+          ),
+        ],
+      ),
+      size: const Size(1040, 300),
+    );
+
+    await expectLater(
+      find.byType(StyledSection),
+      matchesGoldenFile('goldens/chrome_04_chart_card.png'),
+    );
+  });
+
+  testWidgets('golden: channel split (.split) and a totals row (.dt tfoot)',
+      (tester) async {
+    const rows = [
+      ['Dina Simonsen', '5', 'kr 12 000', 'kr 9 400'],
+      ['Thomas Fogt Nielsen', '6', 'kr 15 600', 'kr 12 100'],
+    ];
+
+    await pump(
+      tester,
+      Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          StyledSection(
+            isFirstSection: true,
+            headerInsideGroup: true,
+            showDividers: false,
+            header: 'Omzet per kanaal',
+            children: [
+              for (final channel in const [
+                ('airbnb', 'Airbnb', 1.0, 'kr 15 600'),
+                ('booking', 'Booking.com', 0.77, 'kr 12 000'),
+                ('direct', 'Website', 0.31, 'kr 4 800'),
+              ])
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      BookingSourceIcon(source: channel.$1, size: 18),
+                      const SizedBox(width: 12),
+                      SizedBox(
+                        width: 96,
+                        child: Text(
+                          channel.$2,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: StyledMeter(
+                          value: channel.$3,
+                          width: double.infinity,
+                          height: 9,
+                          fillColor: BookingSourceIcon.brandColor(channel.$1),
+                          labelPosition: StyledMeterLabelPosition.none,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      SizedBox(
+                        width: 78,
+                        child: Text(channel.$4, textAlign: TextAlign.right),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          StyledDataTable(
+            variant: StyledTableVariant.plain,
+            dense: true,
+            uppercaseHeaderLabels: false,
+            itemCount: rows.length,
+            columns: const [
+              StyledDataColumn(
+                columnHeaderLabel: 'Boeker',
+                flex: 2,
+                minWidth: 160,
+              ),
+              StyledDataColumn(
+                columnHeaderLabel: 'Nachten',
+                flex: 0,
+                width: 90,
+                alignment: Alignment.centerRight,
+                headerAlignment: Alignment.centerRight,
+              ),
+              StyledDataColumn(
+                columnHeaderLabel: 'Bruto',
+                flex: 1,
+                alignment: Alignment.centerRight,
+                headerAlignment: Alignment.centerRight,
+              ),
+              StyledDataColumn(
+                columnHeaderLabel: 'Netto',
+                flex: 1,
+                alignment: Alignment.centerRight,
+                headerAlignment: Alignment.centerRight,
+              ),
+            ],
+            rowBuilder: (context, index) => [
+              for (final cell in rows[index])
+                Text(cell, style: Theme.of(context).textTheme.bodySmall),
+            ],
+            footerCells: const [
+              Text('Totaal'),
+              Text('11', textAlign: TextAlign.right),
+              Text('kr 27 600', textAlign: TextAlign.right),
+              Text('kr 21 500', textAlign: TextAlign.right),
+            ],
+          ),
+        ],
+      ),
+      size: const Size(1040, 420),
+    );
+
+    await expectLater(
+      find.byType(Column).first,
+      matchesGoldenFile('goldens/chrome_05_split_and_totals.png'),
+    );
+  });
 }

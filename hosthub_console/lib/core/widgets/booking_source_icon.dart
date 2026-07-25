@@ -66,6 +66,13 @@ class BookingSourceIcon extends StatelessWidget {
     return const Color(0xFFE8E0F0);
   }
 
+  /// The channel's own brand colour — the fallback circle's fill, and the
+  /// colour a chart or meter should use for that channel.
+  ///
+  /// Channel colours are brand data, not theme tokens, so they live here with
+  /// the logos rather than in the palette (`THEME_PRESET.md` §2).
+  static Color brandColor(String? source) => _resolve(source).color;
+
   /// Resolve a human-readable label for a source.
   static String label(String? source) => _resolve(source).name;
 

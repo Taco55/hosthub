@@ -6929,6 +6929,66 @@ class S {
     );
   }
 
+  /// `Revenue per month`
+  String get revenueChartTitle {
+    return Intl.message(
+      'Revenue per month',
+      name: 'revenueChartTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Gross`
+  String get revenueChartLegendGross {
+    return Intl.message(
+      'Gross',
+      name: 'revenueChartLegendGross',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Net`
+  String get revenueChartLegendNet {
+    return Intl.message(
+      'Net',
+      name: 'revenueChartLegendNet',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{month}: {gross} gross · {net} net`
+  String revenueChartTooltip(Object month, Object gross, Object net) {
+    return Intl.message(
+      '$month: $gross gross · $net net',
+      name: 'revenueChartTooltip',
+      desc: '',
+      args: [month, gross, net],
+    );
+  }
+
+  /// `Revenue per channel`
+  String get revenueChannelSplitTitle {
+    return Intl.message(
+      'Revenue per channel',
+      name: 'revenueChannelSplitTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Total`
+  String get revenueTotalsRowLabel {
+    return Intl.message(
+      'Total',
+      name: 'revenueTotalsRowLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Total bookings`
   String get revenueTotalBookings {
     return Intl.message(
