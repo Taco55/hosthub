@@ -1701,7 +1701,9 @@ class _ReservationListView extends StatelessWidget {
             padding: EdgeInsets.only(bottom: context.styledSpacing.lg),
             children: [
               StyledDataTable(
-                variant: StyledTableVariant.card,
+                // Design `.tbl-wrap` + `.dt td{border-bottom}`: one surface with
+                // hairline separators, not gapped rounded row cards.
+                variant: StyledTableVariant.plain,
                 dense: true,
                 uppercaseHeaderLabels: false,
                 itemCount: entries.length,
