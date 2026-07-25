@@ -9,7 +9,8 @@ import 'package:auth_ui_flutter/auth_ui_flutter.dart';
 import 'package:hosthub_console/app/shell/application/sidebar_mode_cubit.dart';
 import 'package:hosthub_console/app/shell/navigation/navigation_guard_controller.dart';
 import 'package:hosthub_console/app/shell/presentation/widgets/menu_item.dart';
-import 'package:hosthub_console/app/shell/presentation/widgets/section_scaffold.dart';
+import 'package:hosthub_console/app/shell/presentation/widgets/property_setup_gate.dart';
+import 'package:hosthub_console/app/shell/presentation/widgets/side_menu.dart';
 import 'package:hosthub_console/core/l10n/l10n.dart';
 import 'package:hosthub_console/core/models/models.dart';
 import 'package:hosthub_console/core/widgets/foundation/foundation.dart';
@@ -17,8 +18,8 @@ import 'package:hosthub_console/features/profile/profile.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 
 /// Shared harness for the shell tests: watch-only stand-ins for the blocs the
-/// [SectionScaffold] reads, plus a pump that pins the surface size (the
-/// responsive breakpoints read `MediaQuery`).
+/// menu reads, plus a pump that pins the surface size (the responsive
+/// breakpoints read `MediaQuery`).
 class _FakeAuthBloc extends Bloc<AuthEvent, AuthState> implements AuthBloc {
   _FakeAuthBloc() : super(const AuthState(status: AuthStatus.authenticated));
 
@@ -53,6 +54,19 @@ class _FakePropertyContextCubit extends Cubit<PropertyContextState>
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+final ThemeData _lightTheme = HosthubThemePreset.applyMaterialTheme(
+  baseTheme: ThemeData.light(),
+  brightness: Brightness.light,
+);
+
+final StyledWidgetsThemeData _styledTheme = HosthubThemePreset.styledTheme(
+  lightMaterialTheme: _lightTheme,
+);
+
+/// The rail geometry and breakpoints under test, straight from the preset —
+/// the same source the shell reads at runtime.
+StyledSideMenuThemeData get sidebarTokens => _styledTheme.sideMenu;
+
 Future<SidebarModeCubit> pumpShell(
   WidgetTester tester, {
   required Size surface,
@@ -77,14 +91,6 @@ Future<SidebarModeCubit> pumpShell(
   addTearDown(sidebarModeCubit.close);
   addTearDown(guard.dispose);
 
-  final lightTheme = HosthubThemePreset.applyMaterialTheme(
-    baseTheme: ThemeData.light(),
-    brightness: Brightness.light,
-  );
-  final styledTheme = HosthubThemePreset.styledTheme(
-    lightMaterialTheme: lightTheme,
-  );
-
   await tester.pumpWidget(
     MultiProvider(
       providers: [
@@ -95,17 +101,26 @@ Future<SidebarModeCubit> pumpShell(
         ChangeNotifierProvider<NavigationGuardController>.value(value: guard),
       ],
       child: MaterialApp(
-        theme: lightTheme,
+        theme: _lightTheme,
         locale: const Locale('en'),
         localizationsDelegates: const [S.delegate],
         supportedLocales: S.delegate.supportedLocales,
         builder: (context, child) => StyledWidgetsTheme(
-          styledThemeData: styledTheme,
+          styledThemeData: _styledTheme,
           child: child ?? const SizedBox.shrink(),
         ),
-        home: SectionScaffold(
-          selectedItem: MenuItem.sites,
-          builder: (context, isPinned) => const Text('body'),
+        // Mirrors the shell composition in HosthubRouter's ShellRoute.
+        home: BlocBuilder<SidebarModeCubit, StyledSideMenuMode>(
+          builder: (context, sidebarMode) => StyledSideMenuScaffold(
+            compact: sidebarMode == StyledSideMenuMode.compact,
+            drawerMenuTooltip: context.s.menuTooltip,
+            menuBuilder: (context, placement) =>
+                const SideMenu(selectedItem: MenuItem.sites),
+            bodyBuilder: (context, layout) => const PropertySetupGate(
+              selectedItem: MenuItem.sites,
+              child: Text('body'),
+            ),
+          ),
         ),
       ),
     ),
@@ -114,4 +129,3 @@ Future<SidebarModeCubit> pumpShell(
 
   return sidebarModeCubit;
 }
-

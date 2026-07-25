@@ -124,6 +124,10 @@ Future<_PricingData> _loadPricingData(
   );
 }
 
+/// Design `.price-grid`: single column, two columns from 1180px.
+const double _pricingTwoColumnBreakpoint = 1180;
+const double _pricingPreviewWidth = 340;
+
 class _PricingData {
   const _PricingData({required this.details, required this.adminSettings});
 
@@ -160,6 +164,10 @@ class _BookingSettingsSectionState extends State<_BookingSettingsSection> {
 
   late ChannelSettings _initial;
   bool _isSaving = false;
+
+  /// Which channel the payout preview illustrates. Follows the channel the user
+  /// last opened, per the design's "open a channel to preview that one".
+  int _previewChannel = 0;
 
   @override
   void initState() {
@@ -250,6 +258,58 @@ class _BookingSettingsSectionState extends State<_BookingSettingsSection> {
     final currencyCode = widget.details.currencyCode;
     final canSave = !_isSaving && _hasChanges;
 
+    // Design `.price-grid`: one column, two from 1180px.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final sideBySide = constraints.maxWidth >= _pricingTwoColumnBreakpoint;
+        final channels = _buildChannelSettings(context, currencyCode, canSave);
+        final preview = _PayoutPreview(
+          channelName: _previewChannelName,
+          draft: _previewDraft,
+          defaultCommission: _previewDefaultCommission,
+          currencyCode: currencyCode,
+        );
+
+        if (!sideBySide) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              channels,
+              SizedBox(height: context.styledSpacing.xl),
+              preview,
+            ],
+          );
+        }
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: channels),
+            SizedBox(width: context.styledSpacing.xl),
+            SizedBox(width: _pricingPreviewWidth, child: preview),
+          ],
+        );
+      },
+    );
+  }
+
+  String get _previewChannelName =>
+      const ['Airbnb', 'Booking.com', 'Overig / Direct'][_previewChannel];
+
+  _ChannelDraft get _previewDraft =>
+      [_airbnb, _booking, _other][_previewChannel];
+
+  double get _previewDefaultCommission => [
+    widget.adminDefaults.airbnbChannelFeePercentage,
+    widget.adminDefaults.bookingChannelFeePercentage,
+    widget.adminDefaults.otherChannelFeePercentage,
+  ][_previewChannel];
+
+  Widget _buildChannelSettings(
+    BuildContext context,
+    String currencyCode,
+    bool canSave,
+  ) {
     return StyledSection(
       isFirstSection: true,
       header: context.s.pricingChannelSettingsHeader,
@@ -265,6 +325,7 @@ class _BookingSettingsSectionState extends State<_BookingSettingsSection> {
         ),
         _ChannelExpansionTile(
           channelName: 'Airbnb',
+          onExpanded: () => setState(() => _previewChannel = 0),
           leading: const BookingSourceIcon(source: 'airbnb', size: 20),
           draft: _airbnb,
           defaultCommission: widget.adminDefaults.airbnbChannelFeePercentage,
@@ -275,6 +336,7 @@ class _BookingSettingsSectionState extends State<_BookingSettingsSection> {
         SizedBox(height: context.styledSpacing.xs),
         _ChannelExpansionTile(
           channelName: 'Booking.com',
+          onExpanded: () => setState(() => _previewChannel = 1),
           leading: const BookingSourceIcon(source: 'booking', size: 20),
           draft: _booking,
           defaultCommission: widget.adminDefaults.bookingChannelFeePercentage,
@@ -284,6 +346,7 @@ class _BookingSettingsSectionState extends State<_BookingSettingsSection> {
         SizedBox(height: context.styledSpacing.xs),
         _ChannelExpansionTile(
           channelName: 'Overig / Direct',
+          onExpanded: () => setState(() => _previewChannel = 2),
           leading: const BookingSourceIcon(source: 'direct', size: 20),
           draft: _other,
           defaultCommission: widget.adminDefaults.otherChannelFeePercentage,
@@ -320,6 +383,7 @@ class _ChannelExpansionTile extends StatelessWidget {
     required this.defaultCommission,
     required this.currencyCode,
     required this.enabled,
+    required this.onExpanded,
     this.initiallyExpanded = false,
   });
 
@@ -329,6 +393,9 @@ class _ChannelExpansionTile extends StatelessWidget {
   final double defaultCommission;
   final String currencyCode;
   final bool enabled;
+
+  /// Fired when this channel is opened, so the payout preview can follow it.
+  final VoidCallback onExpanded;
   final bool initiallyExpanded;
 
   @override
@@ -343,6 +410,9 @@ class _ChannelExpansionTile extends StatelessWidget {
 
     return ExpansionTile(
       initiallyExpanded: initiallyExpanded,
+      onExpansionChanged: (expanded) {
+        if (expanded) onExpanded();
+      },
       leading: leading,
       title: Text(
         channelName,
@@ -407,6 +477,261 @@ class _ChannelExpansionTile extends StatelessWidget {
           enabled: enabled,
         ),
       ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Payout preview
+// ---------------------------------------------------------------------------
+
+/// The stay the preview illustrates. A fixed, readable scenario — the point is
+/// to show how the fields on the left combine, not to model a real booking.
+const int _previewNights = 7;
+const int _previewGuests = 4;
+const double _previewBaseRate = 3200;
+
+/// Design `.payout`: what the host keeps for one example stay, recalculated
+/// live from the fields beside it.
+///
+/// Every number comes from [ChannelConfig.settle] — the same domain function the
+/// Revenue table settles with — so the preview cannot drift from the reported
+/// figures.
+class _PayoutPreview extends StatelessWidget {
+  const _PayoutPreview({
+    required this.channelName,
+    required this.draft,
+    required this.defaultCommission,
+    required this.currencyCode,
+  });
+
+  final String channelName;
+  final _ChannelDraft draft;
+  final double defaultCommission;
+  final String currencyCode;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final spacing = context.styledSpacing;
+    final s = context.s;
+
+    final config = draft.toConfig();
+    final commissionPercentage =
+        config.commissionPercentage ?? defaultCommission;
+    final settlement = config.settle(
+      baseRate: _previewBaseRate,
+      nights: _previewNights,
+      guests: _previewGuests,
+      commissionPercentage: commissionPercentage,
+    );
+
+    // Cleaning + linen are shown together, service and other on their own
+    // lines, matching the design's row breakdown.
+    final cleaningAndLinen =
+        config.cleaningCost.resolve(
+          guests: _previewGuests,
+          nights: _previewNights,
+        ) +
+        config.linenCost.resolve(
+          guests: _previewGuests,
+          nights: _previewNights,
+        );
+    final service = config.serviceCost.resolve(
+      guests: _previewGuests,
+      nights: _previewNights,
+    );
+    final other = config.otherCost.resolve(
+      guests: _previewGuests,
+      nights: _previewNights,
+    );
+
+    String money(double value) => '$currencyCode ${_formatMoney(value)}';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        StyledContainer(
+          backgroundColor: colors.primaryContainer,
+          borderRadius: const BorderRadius.all(Radius.circular(14)),
+          border: Border.all(color: colors.primary.withValues(alpha: 0.2)),
+          padding: EdgeInsets.symmetric(
+            horizontal: spacing.lg + spacing.xs,
+            vertical: spacing.lg + 2,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                s.pricingPayoutHeader,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: colors.onPrimaryContainer,
+                ),
+              ),
+              SizedBox(height: spacing.xs),
+              Text(
+                s.pricingPayoutSubtitle(
+                  _previewNights,
+                  _previewGuests,
+                  money(_previewBaseRate),
+                  channelName,
+                ),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colors.onPrimaryContainer.withValues(alpha: 0.8),
+                ),
+              ),
+              SizedBox(height: spacing.md),
+              _PayoutRow(
+                label: s.pricingPayoutGross(
+                  _previewNights,
+                  money(_previewBaseRate),
+                ),
+                value: money(settlement.gross),
+              ),
+              if (settlement.markup != 0)
+                _PayoutRow(
+                  label: s.pricingPayoutMarkup(
+                    _formatDecimal(config.rateMarkupPercentage ?? 0),
+                  ),
+                  value: money(settlement.markup),
+                ),
+              _PayoutDivider(),
+              if (settlement.commission != 0)
+                _PayoutRow(
+                  label: s.pricingPayoutCommission(
+                    _formatDecimal(commissionPercentage),
+                  ),
+                  value: money(settlement.commission),
+                  negative: true,
+                ),
+              if (cleaningAndLinen != 0)
+                _PayoutRow(
+                  label: s.pricingPayoutFixedCosts,
+                  value: money(cleaningAndLinen),
+                  negative: true,
+                ),
+              if (service != 0)
+                _PayoutRow(
+                  label: s.pricingPayoutService(_previewGuests),
+                  value: money(service),
+                  negative: true,
+                ),
+              if (other != 0)
+                _PayoutRow(
+                  label: s.pricingPayoutOther,
+                  value: money(other),
+                  negative: true,
+                ),
+              _PayoutRow(
+                label: s.pricingPayoutNet,
+                value: money(settlement.net),
+                total: true,
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: spacing.md),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: spacing.xs),
+          child: Text(
+            s.pricingPayoutNote,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: colors.outline,
+              height: 1.5,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Design `.prow2`: label left, tabular amount right. `.neg` prefixes a minus
+/// and turns red; `.tot` gets a rule above it and the emphasised primary total.
+class _PayoutRow extends StatelessWidget {
+  const _PayoutRow({
+    required this.label,
+    required this.value,
+    this.negative = false,
+    this.total = false,
+  });
+
+  final String label;
+  final String value;
+  final bool negative;
+  final bool total;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final spacing = context.styledSpacing;
+
+    final valueColor = total
+        ? colors.primary
+        : negative
+        ? colors.error
+        : colors.onPrimaryContainer;
+
+    final row = Padding(
+      padding: EdgeInsets.symmetric(vertical: spacing.xs + 3),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colors.onPrimaryContainer.withValues(alpha: 0.85),
+                fontWeight: total ? FontWeight.w700 : null,
+              ),
+            ),
+          ),
+          SizedBox(width: spacing.sm),
+          Text(
+            negative ? '\u2212$value' : value,
+            style:
+                (total
+                        ? theme.textTheme.titleMedium
+                        : theme.textTheme.bodySmall)
+                    ?.copyWith(
+                      color: valueColor,
+                      fontWeight: total ? FontWeight.w700 : FontWeight.w600,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+          ),
+        ],
+      ),
+    );
+
+    if (!total) return row;
+
+    return Container(
+      margin: EdgeInsets.only(top: spacing.xs + 2),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(
+            color: colors.onPrimaryContainer.withValues(alpha: 0.16),
+          ),
+        ),
+      ),
+      child: row,
+    );
+  }
+}
+
+class _PayoutDivider extends StatelessWidget {
+  const _PayoutDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Divider(
+      height: 1,
+      thickness: 1,
+      color: Theme.of(
+        context,
+      ).colorScheme.onPrimaryContainer.withValues(alpha: 0.12),
     );
   }
 }
@@ -672,6 +997,19 @@ class _ChannelDraft {
 String _formatOptionalDecimal(double? value) {
   if (value == null) return '';
   return _formatDecimal(value);
+}
+
+/// Thousands-separated, no decimals — the preview deals in whole currency
+/// units, and the design shows `kr 3.200`.
+String _formatMoney(double value) {
+  final rounded = value.round().abs();
+  final digits = rounded.toString();
+  final buffer = StringBuffer();
+  for (var i = 0; i < digits.length; i++) {
+    if (i > 0 && (digits.length - i) % 3 == 0) buffer.write('.');
+    buffer.write(digits[i]);
+  }
+  return buffer.toString();
 }
 
 String _formatDecimal(double value) {

@@ -6334,6 +6334,111 @@ class S {
     );
   }
 
+  /// `Example payout`
+  String get pricingPayoutHeader {
+    return Intl.message(
+      'Example payout',
+      name: 'pricingPayoutHeader',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{nights}-night stay · {guests} guests · base rate {rate}/night via {channel}`
+  String pricingPayoutSubtitle(
+    Object nights,
+    Object guests,
+    Object rate,
+    Object channel,
+  ) {
+    return Intl.message(
+      '$nights-night stay · $guests guests · base rate $rate/night via $channel',
+      name: 'pricingPayoutSubtitle',
+      desc: '',
+      args: [nights, guests, rate, channel],
+    );
+  }
+
+  /// `Gross ({nights} × {rate})`
+  String pricingPayoutGross(Object nights, Object rate) {
+    return Intl.message(
+      'Gross ($nights × $rate)',
+      name: 'pricingPayoutGross',
+      desc: '',
+      args: [nights, rate],
+    );
+  }
+
+  /// `Rate markup {percentage}%`
+  String pricingPayoutMarkup(Object percentage) {
+    return Intl.message(
+      'Rate markup $percentage%',
+      name: 'pricingPayoutMarkup',
+      desc: '',
+      args: [percentage],
+    );
+  }
+
+  /// `Commission {percentage}%`
+  String pricingPayoutCommission(Object percentage) {
+    return Intl.message(
+      'Commission $percentage%',
+      name: 'pricingPayoutCommission',
+      desc: '',
+      args: [percentage],
+    );
+  }
+
+  /// `Cleaning + linen`
+  String get pricingPayoutFixedCosts {
+    return Intl.message(
+      'Cleaning + linen',
+      name: 'pricingPayoutFixedCosts',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Service ({guests} guests)`
+  String pricingPayoutService(Object guests) {
+    return Intl.message(
+      'Service ($guests guests)',
+      name: 'pricingPayoutService',
+      desc: '',
+      args: [guests],
+    );
+  }
+
+  /// `Other costs`
+  String get pricingPayoutOther {
+    return Intl.message(
+      'Other costs',
+      name: 'pricingPayoutOther',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Net payout`
+  String get pricingPayoutNet {
+    return Intl.message(
+      'Net payout',
+      name: 'pricingPayoutNet',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The calculation follows the fields on the left. Open a channel to preview that one.`
+  String get pricingPayoutNote {
+    return Intl.message(
+      'The calculation follows the fields on the left. Open a channel to preview that one.',
+      name: 'pricingPayoutNote',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Pricing`
   String get menuPricing {
     return Intl.message('Pricing', name: 'menuPricing', desc: '', args: []);

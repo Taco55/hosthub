@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
-import 'package:hosthub_console/app/shell/presentation/widgets/side_menu.dart';
-
-import 'section_scaffold_harness.dart';
+import 'shell_harness.dart';
 
 double _menuWidth(WidgetTester tester) => tester
     .widget<AnimatedContainer>(find.byKey(const ValueKey('styledSideMenu')))
@@ -17,7 +15,7 @@ void main() {
   ) async {
     await pumpShell(tester, surface: const Size(1400, 900));
 
-    expect(_menuWidth(tester), kSidebarExpandedWidth);
+    expect(_menuWidth(tester), sidebarTokens.expandedWidth);
     expect(find.text('Reservations'), findsOneWidget);
     // No hamburger: the menu is pinned.
     expect(find.byIcon(Icons.menu), findsNothing);
@@ -29,7 +27,7 @@ void main() {
     await pumpShell(tester, surface: const Size(900, 800));
 
     // The rail, not the drawer, and not the expanded menu.
-    expect(_menuWidth(tester), kSidebarCompactWidth);
+    expect(_menuWidth(tester), sidebarTokens.railWidth);
     expect(find.byIcon(Icons.menu), findsNothing);
     expect(find.text('Reservations'), findsNothing);
     // Icons remain reachable.
@@ -37,7 +35,7 @@ void main() {
     // Icon centred in the 72px rail, the same x as in the expanded menu.
     expect(
       tester.getCenter(find.byIcon(Icons.calendar_today)).dx,
-      kSidebarCompactWidth / 2,
+      sidebarTokens.railWidth / 2,
     );
   });
 
@@ -54,7 +52,7 @@ void main() {
 
     // The preference only applies from 1100px up; here the rail is the only
     // form that fits.
-    expect(_menuWidth(tester), kSidebarCompactWidth);
+    expect(_menuWidth(tester), sidebarTokens.railWidth);
   });
 
   testWidgets('600–1100px: tapping the rail header expands it over the content',
@@ -62,7 +60,9 @@ void main() {
     await pumpShell(tester, surface: const Size(900, 800));
 
     // Touch has no hover, so the header is the explicit way to the labels.
-    await tester.tap(find.byTooltip('Show menu labels'));
+    // The header is the explicit way to the labels on touch; its own label
+    // is a rail flyout, so target the brand mark itself.
+    await tester.tap(find.byIcon(Icons.holiday_village_outlined));
     await tester.pumpAndSettle();
 
     expect(find.text('Reservations'), findsOneWidget);
@@ -73,7 +73,7 @@ void main() {
             find.byKey(const ValueKey('styledSideMenu')),
           )
           .map((c) => c.constraints!.maxWidth),
-      containsAll(<double>[kSidebarCompactWidth, kSidebarExpandedWidth]),
+      containsAll(<double>[sidebarTokens.railWidth, sidebarTokens.expandedWidth]),
     );
 
     // A tap outside puts the rail back.
@@ -92,7 +92,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.menu));
     await tester.pumpAndSettle();
 
-    expect(_menuWidth(tester), kSidebarExpandedWidth);
+    expect(_menuWidth(tester), sidebarTokens.expandedWidth);
     expect(find.text('Reservations'), findsOneWidget);
   });
 }

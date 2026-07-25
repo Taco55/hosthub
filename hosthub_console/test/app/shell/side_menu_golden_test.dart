@@ -2,7 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'section_scaffold_harness.dart';
+import 'shell_harness.dart';
 
 /// Golden baselines for the responsive navigation strategy (design handoff
 /// `design_handoff_hosthub_nav`): expanded ≥1100, the pinned 72px icon rail
@@ -49,7 +49,9 @@ void main() {
   testWidgets('golden: rail expanded by tapping the header', (tester) async {
     await pumpShell(tester, surface: const Size(900, 800));
 
-    await tester.tap(find.byTooltip('Show menu labels'));
+    // The header is the explicit way to the labels on touch; its own label
+    // is a rail flyout, so target the brand mark itself.
+    await tester.tap(find.byIcon(Icons.holiday_village_outlined));
     await tester.pumpAndSettle();
 
     await expectLater(
