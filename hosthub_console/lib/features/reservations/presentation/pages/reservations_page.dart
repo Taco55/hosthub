@@ -268,7 +268,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
               .watch<PropertyContextCubit>()
               .state
               .currentProperty;
-          final propertyName = property?.name ?? 'Onbekende accommodatie';
+          final propertyName = property?.name ?? context.s.revenueUnknownProperty;
           final propertyId = property?.lodgifyId?.trim() ?? '';
           final locale = Localizations.localeOf(context).toString();
           final dateFormatter = DateFormat('d MMM yyyy', locale);
@@ -308,8 +308,8 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
             // surfaces — a pane card around everything adds a second
             // border the design does not have.
             decorateLeftPane: false,
-            title: 'Reserveringen',
-            description: 'Boekingen voor $propertyName uit Lodgify.',
+            title: context.s.reservationsPageTitle,
+            description: context.s.reservationsPageDescription(propertyName),
             isLoading: state.status == ReservationsStatus.loading,
             leftChild: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -411,10 +411,12 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     required DateFormat dateFormatter,
     required DateFormat dateTimeFormatter,
   }) {
+    final l10n = context.s;
+
     if (propertyId == null || propertyId.isEmpty) {
       return Center(
         child: Text(
-          'Koppel een Lodgify ID aan deze accommodatie om boekingen te laden.',
+          l10n.reservationsNoLodgifyId,
           style: Theme.of(context).textTheme.bodyMedium,
           textAlign: TextAlign.center,
         ),
@@ -424,7 +426,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     if (state.status == ReservationsStatus.error) {
       return Center(
         child: Text(
-          'Boekingen konden niet worden geladen.',
+          context.s.reservationsLoadFailed,
           style: Theme.of(context).textTheme.bodyMedium,
           textAlign: TextAlign.center,
         ),
@@ -452,7 +454,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
       final dayLabels = <DateTime, String>{};
       for (final e in state.entries) {
         if (e.startDate == null || e.endDate == null) continue;
-        final rev = _extractRevenue(e);
+        final rev = _extractRevenue(e, l10n: l10n);
         num? rate = rev.nightlyRate;
         if (rate == null && rev.total != null) {
           final nights = _dateOnly(
@@ -498,17 +500,18 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                 _dateOnly(e.endDate!).isAtSameMomentAs(today);
             final baseColor = BookingSourceIcon.barColor(e.source);
             final guestInfo = _guestBreakdown(e, unknownLabel: '');
-            final name = e.guestName ?? 'Onbekende boeker';
+            final name = e.guestName ?? l10n.revenueUnknownBooker;
             final label = guestInfo.isNotEmpty ? '$name ($guestInfo)' : name;
             final nights = _stayNights(e.startDate, e.endDate);
             final tooltipParts = <String>[
               name,
               '${dateFormatter.format(e.startDate!.toLocal())} → ${dateFormatter.format(e.endDate!.toLocal())}',
-              if (nights != null) '$nights nachten',
-              if (guestInfo.isNotEmpty) 'Gasten: $guestInfo',
-              if (e.source != null && e.source!.isNotEmpty) 'Bron: ${e.source}',
+              if (nights != null) l10n.reservationsBarNights(nights),
+              if (guestInfo.isNotEmpty) l10n.reservationsBarGuests(guestInfo),
+              if (e.source != null && e.source!.isNotEmpty)
+                l10n.reservationsBarSource(e.source!),
               if (e.status != null && e.status!.isNotEmpty)
-                'Status: ${e.status}',
+                l10n.reservationsBarStatus(e.status!),
             ];
             return TimelineCalendarEntry(
               start: e.startDate!,
@@ -555,7 +558,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    MetricsGrid(metrics: _monthMetrics(summary)),
+                    MetricsGrid(metrics: _monthMetrics(summary, l10n: l10n)),
                     SizedBox(height: context.styledSpacing.lg),
                     _ContinuousMonthNavigation(
                       focusedMonth: activeMonth,
@@ -676,7 +679,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
             ),
           ] else ...[
             // Single-month mode: metrics use _focusedMonth directly
-            MetricsGrid(metrics: _monthMetrics(timelineSummary)),
+            MetricsGrid(metrics: _monthMetrics(timelineSummary, l10n: l10n)),
             SizedBox(height: context.styledSpacing.lg),
             Expanded(
               child: TimelineCalendar(
@@ -718,7 +721,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     if (entries.isEmpty) {
       return Center(
         child: Text(
-          'Geen reserveringen gevonden voor deze periode.',
+          context.s.reservationsEmptyPeriod,
           style: Theme.of(context).textTheme.bodyMedium,
         ),
       );
@@ -731,7 +734,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          MetricsGrid(metrics: _monthMetrics(listSummary)),
+          MetricsGrid(metrics: _monthMetrics(listSummary, l10n: l10n)),
           SizedBox(height: context.styledSpacing.lg),
           Expanded(
             child: _buildListView(
@@ -783,7 +786,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     required DateFormat dateTimeFormatter,
   }) {
     final rateCurrency = context.read<NightlyRatesCubit>().state.rateCurrency;
-    final revenue = _extractRevenue(entry);
+    final revenue = _extractRevenue(entry, l10n: context.s);
     final cubit = context.read<ReservationsCubit>();
 
     return showReservationDetailsDialog(
@@ -900,22 +903,24 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
 
     return StyledToolbarButton.menu<String>(
       iconData: Icons.ios_share,
-      tooltip: 'Delen & exporteren',
+      tooltip: context.s.reservationsExportTooltip,
       verticalOffset: 8,
       showDividers: true,
       entries: [
         StyledMenuOverlayEntry(
           value: 'pdf',
-          label: labeledWithNew('PDF downloaden'),
+          label: labeledWithNew(context.s.reservationsExportPdfDownload),
           leading: const Icon(Icons.picture_as_pdf_outlined),
         ),
         StyledMenuOverlayEntry(
           value: 'pdf_share',
-          label: labeledWithNew('PDF delen'),
+          label: labeledWithNew(context.s.reservationsExportPdfShare),
           leading: const Icon(Icons.mail_outlined),
         ),
         StyledMenuOverlayEntry(
           value: 'excel',
+          // 'Excel' and 'CSV' below are file-format names, not prose: they
+          // read the same in every language this console speaks.
           label: labeledWithNew('Excel'),
           leading: const Icon(Icons.table_chart_outlined),
         ),
@@ -924,10 +929,10 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
           label: 'CSV',
           leading: Icon(Icons.download_outlined),
         ),
-        const StyledMenuOverlayEntry(
+        StyledMenuOverlayEntry(
           value: 'settings',
-          label: 'Instellingen',
-          leading: Icon(Icons.settings_outlined),
+          label: context.s.reservationsExportSettings,
+          leading: const Icon(Icons.settings_outlined),
         ),
       ],
       onSelected: (value) async {
@@ -1401,7 +1406,10 @@ class _ReservationsHeader extends StatelessWidget {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               StyledSegmentedControl(
-                labels: const ['Lijst', 'Tijdlijn'],
+                labels: [
+                  context.s.reservationsViewList,
+                  context.s.reservationsViewTimeline,
+                ],
                 selectedIndex: switch (viewMode) {
                   _ReservationsViewMode.list => 0,
                   _ReservationsViewMode.timeline => 1,
@@ -1432,11 +1440,15 @@ class _ReservationsHeader extends StatelessWidget {
     return StyledToolbarButton.menu<String>(
       iconData: Icons.filter_list_rounded,
       isSelected: hasActiveFilter,
-      tooltip: 'Filter',
+      tooltip: context.s.reservationsFilterTooltip,
       verticalOffset: 8,
       showDividers: allStatuses.isNotEmpty,
       entries: [
-        _checkEntry('_historical', 'Historische boekingen', showHistorical),
+        _checkEntry(
+          '_historical',
+          context.s.reservationsFilterHistorical,
+          showHistorical,
+        ),
         ...allStatuses.map(
           (status) =>
               _checkEntry(status, status, !hiddenStatuses.contains(status)),
@@ -1459,7 +1471,7 @@ class _ReservationsHeader extends StatelessWidget {
     return StyledToolbarButton.menu<String>(
       iconData: Icons.view_column_outlined,
       isSelected: hasActiveColumnToggles,
-      tooltip: 'Kolommen',
+      tooltip: context.s.reservationsColumnsTooltip,
       verticalOffset: 8,
       entries: [
         for (final key in _ReservationListColumn.all)
@@ -1487,32 +1499,42 @@ class _ReservationsHeader extends StatelessWidget {
     final entries = <StyledMenuOverlayEntry<String>>[];
     if (density != null) {
       entries.add(
-        _checkEntry('compact', 'Compact', density == _TimelineDensity.compact),
+        _checkEntry(
+          'compact',
+          context.s.reservationsDensityCompact,
+          density == _TimelineDensity.compact,
+        ),
       );
       entries.add(
         _checkEntry(
           'comfortable',
-          'Gedetailleerd',
+          context.s.reservationsDensityDetailed,
           density == _TimelineDensity.comfortable,
         ),
       );
     }
     if (continuous != null) {
       entries.add(_checkEntry('single', '1 maand', !continuous));
-      entries.add(_checkEntry('continuous', 'Doorlopend', continuous));
+      entries.add(
+        _checkEntry(
+          'continuous',
+          context.s.reservationsMonthsContinuous,
+          continuous,
+        ),
+      );
     }
     if (outOfMonth != null && continuous == false) {
       entries.add(
         _checkEntry(
           'outOfMonth_hide',
-          'Buiten maand verbergen',
+          context.s.reservationsOutOfMonthHide,
           outOfMonth == OutOfMonthDisplay.hide,
         ),
       );
       entries.add(
         _checkEntry(
           'outOfMonth_bookedOnly',
-          'Alleen geboekte dagen',
+          context.s.reservationsOutOfMonthBookedOnly,
           outOfMonth == OutOfMonthDisplay.bookedOnly,
         ),
       );
@@ -1520,7 +1542,7 @@ class _ReservationsHeader extends StatelessWidget {
 
     return StyledToolbarButton.menu<String>(
       iconData: Icons.tune,
-      tooltip: 'Weergave',
+      tooltip: context.s.reservationsViewTooltip,
       verticalOffset: 8,
       showDividers: true,
       entries: entries,
@@ -1651,51 +1673,51 @@ class _ReservationListView extends StatelessWidget {
           flex: 0,
           width: 28,
         ),
-        _ReservationListColumn.guestName => const StyledDataColumn(
-          columnHeaderLabel: 'Boeker',
+        _ReservationListColumn.guestName => StyledDataColumn(
+          columnHeaderLabel: l10n.reservationSectionBooker,
           flex: 2,
           minWidth: 128,
         ),
-        _ReservationListColumn.checkIn => const StyledDataColumn(
-          columnHeaderLabel: 'Check-in',
+        _ReservationListColumn.checkIn => StyledDataColumn(
+          columnHeaderLabel: l10n.reservationCheckIn,
           flex: 1,
           minWidth: 96,
         ),
-        _ReservationListColumn.checkOut => const StyledDataColumn(
-          columnHeaderLabel: 'Check-out',
+        _ReservationListColumn.checkOut => StyledDataColumn(
+          columnHeaderLabel: l10n.reservationCheckOut,
           flex: 1,
           minWidth: 96,
         ),
-        _ReservationListColumn.nights => const StyledDataColumn(
-          columnHeaderLabel: 'Nachten',
+        _ReservationListColumn.nights => StyledDataColumn(
+          columnHeaderLabel: l10n.reservationNights,
           flex: 0,
           width: 66,
           alignment: Alignment.centerLeft,
         ),
-        _ReservationListColumn.guests => const StyledDataColumn(
-          columnHeaderLabel: 'Gasten',
+        _ReservationListColumn.guests => StyledDataColumn(
+          columnHeaderLabel: l10n.reservationsColumnGuests,
           flex: 0,
           width: 66,
           alignment: Alignment.centerLeft,
         ),
-        _ReservationListColumn.babyBed => const StyledDataColumn(
-          columnHeaderLabel: 'Baby\'s',
+        _ReservationListColumn.babyBed => StyledDataColumn(
+          columnHeaderLabel: l10n.reservationInfants,
           flex: 0,
           width: 52,
           alignment: Alignment.centerLeft,
         ),
-        _ReservationListColumn.status => const StyledDataColumn(
-          columnHeaderLabel: 'Status',
+        _ReservationListColumn.status => StyledDataColumn(
+          columnHeaderLabel: l10n.reservationStatus,
           flex: 1,
           minWidth: 78,
         ),
-        _ReservationListColumn.booked => const StyledDataColumn(
-          columnHeaderLabel: 'Geboekt',
+        _ReservationListColumn.booked => StyledDataColumn(
+          columnHeaderLabel: l10n.reservationListColumnBooked,
           flex: 2,
           minWidth: 132,
         ),
-        _ReservationListColumn.isNew => const StyledDataColumn(
-          columnHeaderLabel: 'Nieuw',
+        _ReservationListColumn.isNew => StyledDataColumn(
+          columnHeaderLabel: l10n.reservationListColumnNew,
           flex: 0,
           width: 44,
           alignment: Alignment.center,
@@ -1810,7 +1832,7 @@ class _ReservationListView extends StatelessWidget {
                       .toList();
                 },
                 onRowTap: (tableContext, index) => onEntryTap(entries[index]),
-                emptyLabel: 'Geen reserveringen gevonden.',
+                emptyLabel: context.s.reservationsEmptyList,
                 showTableWhenEmpty: true,
               ),
             ],
@@ -1827,31 +1849,31 @@ class _ReservationListView extends StatelessWidget {
 /// One definition, used by both the list and the timeline, so the two can never
 /// show a different set — and all four recompute when a status filter changes,
 /// because they are derived from the same filtered bookings.
-List<MetricTileData> _monthMetrics(_MonthSummary summary) {
+List<MetricTileData> _monthMetrics(_MonthSummary summary, {required S l10n}) {
   return [
     MetricTileData(
-      label: 'Boekingen',
+      label: l10n.reservationsKpiBookings,
       value: '${summary.bookingCount}',
       icon: Icons.book_online_outlined,
-      caption: 'deze maand',
+      caption: l10n.reservationsKpiBookingsCaption,
     ),
     MetricTileData(
-      label: 'Aankomsten',
+      label: l10n.reservationsKpiArrivals,
       value: '${summary.arrivals}',
       icon: Icons.login_outlined,
-      caption: 'check-in',
+      caption: l10n.reservationsKpiArrivalsCaption,
     ),
     MetricTileData(
-      label: 'Vertrekken',
+      label: l10n.reservationsKpiDepartures,
       value: '${summary.departures}',
       icon: Icons.logout_outlined,
-      caption: 'check-out',
+      caption: l10n.reservationsKpiDeparturesCaption,
     ),
     MetricTileData(
-      label: 'Bezetting',
+      label: l10n.reservationsKpiOccupancy,
       value: '${summary.occupancyPercentage}%',
       icon: Icons.hotel_outlined,
-      caption: '${summary.occupiedNights} nachten',
+      caption: l10n.reservationsBarNights(summary.occupiedNights),
     ),
   ];
 }
@@ -2008,9 +2030,9 @@ int? _stayNights(DateTime? start, DateTime? end) {
   return nights <= 0 ? 1 : nights;
 }
 
-String _guestDisplayName(Reservation entry) {
+String _guestDisplayName(Reservation entry, {String fallback = '-'}) {
   final name = entry.guestName?.trim();
-  if (name == null || name.isEmpty) return 'Onbekende boeker';
+  if (name == null || name.isEmpty) return fallback;
   return name;
 }
 
@@ -2019,7 +2041,7 @@ String? _formatDateTime(DateFormat formatter, DateTime? date) {
   return formatter.format(date.toLocal());
 }
 
-_RevenueData _extractRevenue(Reservation entry) {
+_RevenueData _extractRevenue(Reservation entry, {required S l10n}) {
   final raw = entry.raw;
   final currency =
       _readFirstStringFromMap(raw, const [
@@ -2121,7 +2143,7 @@ _RevenueData _extractRevenue(Reservation entry) {
   final breakdown = <_RevenueBreakdownItem>[];
   _addBreakdownItem(
     breakdown,
-    'Huur / nachttarief',
+    l10n.revenueBreakdownRent,
     _readFirstNumFromMap(raw, const [
       ['rent'],
       ['rentAmount'],
@@ -2137,7 +2159,7 @@ _RevenueData _extractRevenue(Reservation entry) {
   );
   _addBreakdownItem(
     breakdown,
-    'Schoonmaakkosten',
+    l10n.revenueBreakdownCleaning,
     _readFirstNumFromMap(raw, const [
           ['cleaningFee'],
           ['cleaning_fee'],
@@ -2153,7 +2175,7 @@ _RevenueData _extractRevenue(Reservation entry) {
   );
   _addBreakdownItem(
     breakdown,
-    'Linnen / bedlinnen',
+    l10n.revenueBreakdownLinen,
     _readFirstNumFromMap(raw, const [
           ['linenFee'],
           ['linen_fee'],
@@ -2187,7 +2209,7 @@ _RevenueData _extractRevenue(Reservation entry) {
   );
   _addBreakdownItem(
     breakdown,
-    'Servicekosten',
+    l10n.revenueBreakdownServiceCosts,
     _readFirstNumFromMap(raw, const [
       ['serviceFee'],
       ['service_fee'],
@@ -2199,7 +2221,7 @@ _RevenueData _extractRevenue(Reservation entry) {
   );
   _addBreakdownItem(
     breakdown,
-    'Belasting / btw',
+    l10n.revenueBreakdownTax,
     _readFirstNumFromMap(raw, const [
       ['tax'],
       ['taxes'],
@@ -2213,7 +2235,7 @@ _RevenueData _extractRevenue(Reservation entry) {
   );
   _addBreakdownItem(
     breakdown,
-    'Commissie / kanaalkosten',
+    l10n.revenueBreakdownChannelFee,
     _readFirstNumFromMap(raw, const [
       ['commission'],
       ['commissionFee'],
@@ -2228,7 +2250,7 @@ _RevenueData _extractRevenue(Reservation entry) {
   );
   _addBreakdownItem(
     breakdown,
-    'Kortingen',
+    l10n.revenueBreakdownDiscounts,
     _readFirstNumFromMap(raw, const [
       ['discount'],
       ['discountAmount'],
@@ -2239,7 +2261,7 @@ _RevenueData _extractRevenue(Reservation entry) {
   );
   _addBreakdownItem(
     breakdown,
-    'Borg',
+    l10n.revenueBreakdownDeposit,
     _readFirstNumFromMap(raw, const [
       ['deposit'],
       ['securityDeposit'],
@@ -2250,7 +2272,7 @@ _RevenueData _extractRevenue(Reservation entry) {
   );
   _addBreakdownItem(
     breakdown,
-    'Extra kosten',
+    l10n.revenueBreakdownExtraCharges,
     _readFirstNumFromMap(raw, const [
       ['extras'],
       ['extraFees'],

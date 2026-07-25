@@ -7159,6 +7159,366 @@ class S {
     );
   }
 
+  /// `Reservations`
+  String get reservationsPageTitle {
+    return Intl.message(
+      'Reservations',
+      name: 'reservationsPageTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Bookings for {property} from Lodgify.`
+  String reservationsPageDescription(Object property) {
+    return Intl.message(
+      'Bookings for $property from Lodgify.',
+      name: 'reservationsPageDescription',
+      desc: '',
+      args: [property],
+    );
+  }
+
+  /// `Link a Lodgify ID to this property to load bookings.`
+  String get reservationsNoLodgifyId {
+    return Intl.message(
+      'Link a Lodgify ID to this property to load bookings.',
+      name: 'reservationsNoLodgifyId',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Bookings could not be loaded.`
+  String get reservationsLoadFailed {
+    return Intl.message(
+      'Bookings could not be loaded.',
+      name: 'reservationsLoadFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No reservations found for this period.`
+  String get reservationsEmptyPeriod {
+    return Intl.message(
+      'No reservations found for this period.',
+      name: 'reservationsEmptyPeriod',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No reservations found.`
+  String get reservationsEmptyList {
+    return Intl.message(
+      'No reservations found.',
+      name: 'reservationsEmptyList',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Share & export`
+  String get reservationsExportTooltip {
+    return Intl.message(
+      'Share & export',
+      name: 'reservationsExportTooltip',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Download PDF`
+  String get reservationsExportPdfDownload {
+    return Intl.message(
+      'Download PDF',
+      name: 'reservationsExportPdfDownload',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Share PDF`
+  String get reservationsExportPdfShare {
+    return Intl.message(
+      'Share PDF',
+      name: 'reservationsExportPdfShare',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Settings`
+  String get reservationsExportSettings {
+    return Intl.message(
+      'Settings',
+      name: 'reservationsExportSettings',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `List`
+  String get reservationsViewList {
+    return Intl.message(
+      'List',
+      name: 'reservationsViewList',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Timeline`
+  String get reservationsViewTimeline {
+    return Intl.message(
+      'Timeline',
+      name: 'reservationsViewTimeline',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Filter`
+  String get reservationsFilterTooltip {
+    return Intl.message(
+      'Filter',
+      name: 'reservationsFilterTooltip',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Past bookings`
+  String get reservationsFilterHistorical {
+    return Intl.message(
+      'Past bookings',
+      name: 'reservationsFilterHistorical',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Columns`
+  String get reservationsColumnsTooltip {
+    return Intl.message(
+      'Columns',
+      name: 'reservationsColumnsTooltip',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `View`
+  String get reservationsViewTooltip {
+    return Intl.message(
+      'View',
+      name: 'reservationsViewTooltip',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Compact`
+  String get reservationsDensityCompact {
+    return Intl.message(
+      'Compact',
+      name: 'reservationsDensityCompact',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Detailed`
+  String get reservationsDensityDetailed {
+    return Intl.message(
+      'Detailed',
+      name: 'reservationsDensityDetailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Continuous`
+  String get reservationsMonthsContinuous {
+    return Intl.message(
+      'Continuous',
+      name: 'reservationsMonthsContinuous',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Hide days outside the month`
+  String get reservationsOutOfMonthHide {
+    return Intl.message(
+      'Hide days outside the month',
+      name: 'reservationsOutOfMonthHide',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Booked days only`
+  String get reservationsOutOfMonthBookedOnly {
+    return Intl.message(
+      'Booked days only',
+      name: 'reservationsOutOfMonthBookedOnly',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Guests`
+  String get reservationsColumnGuests {
+    return Intl.message(
+      'Guests',
+      name: 'reservationsColumnGuests',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{nights} nights`
+  String reservationsBarNights(Object nights) {
+    return Intl.message(
+      '$nights nights',
+      name: 'reservationsBarNights',
+      desc: '',
+      args: [nights],
+    );
+  }
+
+  /// `Guests: {guests}`
+  String reservationsBarGuests(Object guests) {
+    return Intl.message(
+      'Guests: $guests',
+      name: 'reservationsBarGuests',
+      desc: '',
+      args: [guests],
+    );
+  }
+
+  /// `Source: {source}`
+  String reservationsBarSource(Object source) {
+    return Intl.message(
+      'Source: $source',
+      name: 'reservationsBarSource',
+      desc: '',
+      args: [source],
+    );
+  }
+
+  /// `Status: {status}`
+  String reservationsBarStatus(Object status) {
+    return Intl.message(
+      'Status: $status',
+      name: 'reservationsBarStatus',
+      desc: '',
+      args: [status],
+    );
+  }
+
+  /// `Bookings`
+  String get reservationsKpiBookings {
+    return Intl.message(
+      'Bookings',
+      name: 'reservationsKpiBookings',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `this month`
+  String get reservationsKpiBookingsCaption {
+    return Intl.message(
+      'this month',
+      name: 'reservationsKpiBookingsCaption',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Arrivals`
+  String get reservationsKpiArrivals {
+    return Intl.message(
+      'Arrivals',
+      name: 'reservationsKpiArrivals',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `check-in`
+  String get reservationsKpiArrivalsCaption {
+    return Intl.message(
+      'check-in',
+      name: 'reservationsKpiArrivalsCaption',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Departures`
+  String get reservationsKpiDepartures {
+    return Intl.message(
+      'Departures',
+      name: 'reservationsKpiDepartures',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `check-out`
+  String get reservationsKpiDeparturesCaption {
+    return Intl.message(
+      'check-out',
+      name: 'reservationsKpiDeparturesCaption',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Occupancy`
+  String get reservationsKpiOccupancy {
+    return Intl.message(
+      'Occupancy',
+      name: 'reservationsKpiOccupancy',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Discounts`
+  String get revenueBreakdownDiscounts {
+    return Intl.message(
+      'Discounts',
+      name: 'revenueBreakdownDiscounts',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Deposit`
+  String get revenueBreakdownDeposit {
+    return Intl.message(
+      'Deposit',
+      name: 'revenueBreakdownDeposit',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Extra charges`
+  String get revenueBreakdownExtraCharges {
+    return Intl.message(
+      'Extra charges',
+      name: 'revenueBreakdownExtraCharges',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Booker`
   String get reservationSectionBooker {
     return Intl.message(
