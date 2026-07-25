@@ -7219,6 +7219,16 @@ class S {
     );
   }
 
+  /// `Export`
+  String get reservationsExportLabel {
+    return Intl.message(
+      'Export',
+      name: 'reservationsExportLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Share & export`
   String get reservationsExportTooltip {
     return Intl.message(
@@ -8587,6 +8597,111 @@ class S {
       desc: 'Badge on the source language in the editor\'s locale switcher',
       args: [],
     );
+  }
+
+  /// `{locked} of {total} fields yours`
+  String weLockedCounter(Object locked, Object total) {
+    return Intl.message(
+      '$locked of $total fields yours',
+      name: 'weLockedCounter',
+      desc: '',
+      args: [locked, total],
+    );
+  }
+
+  /// `Following the source — click to keep your own wording`
+  String get weChipTooltipAuto {
+    return Intl.message(
+      'Following the source — click to keep your own wording',
+      name: 'weChipTooltipAuto',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Your wording — click to follow the source again`
+  String get weChipTooltipLocked {
+    return Intl.message(
+      'Your wording — click to follow the source again',
+      name: 'weChipTooltipLocked',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Now following the {source} source.`
+  String weUndoSwitchNotice(Object source) {
+    return Intl.message(
+      'Now following the $source source.',
+      name: 'weUndoSwitchNotice',
+      desc: '',
+      args: [source],
+    );
+  }
+
+  /// `Undo`
+  String get weUndo {
+    return Intl.message('Undo', name: 'weUndo', desc: '', args: []);
+  }
+
+  /// `Saving…`
+  String get weSavingIndicator {
+    return Intl.message(
+      'Saving…',
+      name: 'weSavingIndicator',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Saved`
+  String get weSavedIndicator {
+    return Intl.message('Saved', name: 'weSavedIndicator', desc: '', args: []);
+  }
+
+  /// `Unpublished changes`
+  String get weStatusDirtyTitle {
+    return Intl.message(
+      'Unpublished changes',
+      name: 'weStatusDirtyTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{languages} translate when you open them, or on publish`
+  String weStatusDirtyBody(Object languages) {
+    return Intl.message(
+      '$languages translate when you open them, or on publish',
+      name: 'weStatusDirtyBody',
+      desc: '',
+      args: [languages],
+    );
+  }
+
+  /// `Everything published`
+  String get weStatusCleanTitle {
+    return Intl.message(
+      'Everything published',
+      name: 'weStatusCleanTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{source} + {count} translations are live`
+  String weStatusCleanBody(Object source, Object count) {
+    return Intl.message(
+      '$source + $count translations are live',
+      name: 'weStatusCleanBody',
+      desc: '',
+      args: [source, count],
+    );
+  }
+
+  /// `Publish`
+  String get wePublish {
+    return Intl.message('Publish', name: 'wePublish', desc: '', args: []);
   }
 
   /// `Web`

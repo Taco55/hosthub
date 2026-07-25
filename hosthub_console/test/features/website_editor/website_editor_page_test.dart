@@ -106,7 +106,7 @@ void main() {
     },
   );
 
-  testWidgets('typing in an auto field flips it to Locked with Reset to AI', (
+  testWidgets('typing in an auto field flips its chip to Locked', (
     tester,
   ) async {
     final cubit = await pumpEditor(tester);
@@ -123,31 +123,70 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Locked'), findsOneWidget);
-    expect(find.text('Reset to AI'), findsOneWidget);
     expect(
       cubit.state.translatedField('en', 'hero.headline')!.status,
       FieldTranslationStatus.locked,
     );
   });
 
-  testWidgets('Reset to AI restores the source-derived auto value', (
-    tester,
-  ) async {
+  testWidgets('the chip is the switch, both ways, and the switch back is '
+      'undoable', (tester) async {
     final cubit = await pumpEditor(tester);
     cubit.setPreviewLanguage('en');
     await tester.pumpAndSettle();
 
     cubit.editTranslationField('en', 'hero.headline', 'Manual override');
     await tester.pumpAndSettle();
-    expect(find.text('Reset to AI'), findsOneWidget);
+    expect(find.text('Locked'), findsOneWidget);
 
-    await tester.tap(find.text('Reset to AI'));
+    // Clicking the chip switches back to automatic — no separate link.
+    await tester.tap(find.text('Locked'));
     await tester.pumpAndSettle();
 
-    final field = cubit.state.translatedField('en', 'hero.headline')!;
+    var field = cubit.state.translatedField('en', 'hero.headline')!;
     expect(field.status, FieldTranslationStatus.auto);
     expect(field.value, 'Your mountain home in Trysil');
     expect(find.text('Locked'), findsNothing);
+
+    // The owner's wording is one click away for the rest of the session.
+    expect(find.text('Undo'), findsOneWidget);
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle();
+
+    field = cubit.state.translatedField('en', 'hero.headline')!;
+    expect(field.status, FieldTranslationStatus.locked);
+    expect(field.value, 'Manual override');
+
+    // And the chip switches forward again from Auto.
+    await tester.tap(find.text('Locked'));
+    await tester.pumpAndSettle();
+    expect(
+      cubit.state.translatedField('en', 'hero.headline')!.status,
+      FieldTranslationStatus.auto,
+    );
+  });
+
+  testWidgets('the lane header counts the fields the owner took over', (
+    tester,
+  ) async {
+    final cubit = await pumpEditor(tester);
+    cubit.setPreviewLanguage('en');
+    await tester.pumpAndSettle();
+
+    // No coverage percentage — that figure can only ever read 100%.
+    expect(find.textContaining('%'), findsNothing);
+    expect(find.textContaining('fields yours'), findsOneWidget);
+    final before = tester
+        .widget<Text>(find.textContaining('fields yours'))
+        .data!;
+    expect(before, startsWith('0 of '));
+
+    cubit.editTranslationField('en', 'hero.headline', 'Mine');
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<Text>(find.textContaining('fields yours')).data,
+      startsWith('1 of '),
+    );
   });
 
   testWidgets('preview binds to the selected language and device toggles', (

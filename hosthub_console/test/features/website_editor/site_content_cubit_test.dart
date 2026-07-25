@@ -16,7 +16,7 @@ void main() {
       expect(s.dirty, isFalse);
       expect(s.staleLanguages, isEmpty);
       expect(s.valueFor('en', 'hero.headline'), 'Your mountain home in Trysil');
-      expect(s.coverage('en'), 1.0);
+      expect(s.lockedFieldCount('en'), 0);
     });
 
     test('editing source marks dependent auto fields stale, leaves locked', () {
@@ -190,14 +190,62 @@ void main() {
       expect(cubit.state.dirty, isTrue);
     });
 
-    test('coverage drops when a field goes stale', () {
+    test('the locked counter is what the lane header reports', () {
+      // §11g: "% translated" can only read 100% once translation is automatic,
+      // so the lane counts the fields the owner took over instead.
       final cubit = build();
-      expect(cubit.state.coverage('en'), 1.0);
+      expect(cubit.state.lockedFieldCount('en'), 0);
+      expect(cubit.state.translatableFieldCount, greaterThan(0));
 
-      cubit.editSourceField('hero.headline', 'Nieuwe titel');
+      cubit.editTranslationField('en', 'hero.headline', 'Mine');
+      expect(cubit.state.lockedFieldCount('en'), 1);
 
-      // One of four fields is now stale.
-      expect(cubit.state.coverage('en'), closeTo(0.75, 0.0001));
+      // Editing the source makes a field stale; it does not make it "not
+      // yours" — the counter is about ownership, not freshness.
+      cubit.editSourceField('hero.subtitle', 'Nieuwe ondertitel');
+      expect(cubit.state.lockedFieldCount('en'), 1);
+      expect(cubit.state.isLanguageStale('en'), isTrue);
+    });
+
+    test('switching a field back to automatic is undoable, once', () async {
+      final cubit = build();
+      cubit.editTranslationField('en', 'hero.headline', 'Manual override');
+      expect(cubit.state.pendingAutoSwitch, isNull);
+
+      await cubit.resetFieldToAi('en', 'hero.headline');
+      expect(cubit.state.pendingAutoSwitch?.previousValue, 'Manual override');
+      expect(
+        cubit.state.translatedField('en', 'hero.headline')!.status,
+        FieldTranslationStatus.auto,
+      );
+
+      cubit.undoAutoSwitch();
+      final restored = cubit.state.translatedField('en', 'hero.headline')!;
+      expect(restored.value, 'Manual override');
+      expect(restored.status, FieldTranslationStatus.locked);
+      // One undo only: it is spent, not a history.
+      expect(cubit.state.pendingAutoSwitch, isNull);
+    });
+
+    test('the undo does not survive leaving the field behind', () async {
+      final cubit = build();
+      cubit.editTranslationField('en', 'hero.headline', 'Manual override');
+      await cubit.resetFieldToAi('en', 'hero.headline');
+      expect(cubit.state.pendingAutoSwitch, isNotNull);
+
+      cubit.setPreviewLanguage('nl');
+      expect(cubit.state.pendingAutoSwitch, isNull);
+    });
+
+    test('locking keeps the text and stops re-translation touching it', () {
+      final cubit = build();
+      final before = cubit.state.valueFor('en', 'hero.subtitle');
+
+      cubit.lockField('en', 'hero.subtitle');
+
+      final field = cubit.state.translatedField('en', 'hero.subtitle')!;
+      expect(field.status, FieldTranslationStatus.locked);
+      expect(field.value, before);
     });
   });
 }

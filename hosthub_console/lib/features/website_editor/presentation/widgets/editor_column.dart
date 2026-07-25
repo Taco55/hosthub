@@ -173,77 +173,42 @@ class _Banner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cubit = context.read<SiteContentCubit>();
     final s = context.s;
     final sourceName = languageName(context, state.sourceLanguage);
 
     if (state.isSourceMode) {
-      if (!state.dirty) {
-        return StyledNotice(
-          icon: Icons.edit_note,
-          child: _bannerBody(
-            context,
-            s.weBannerWritingTitle(sourceName),
-            s.weBannerWritingBody,
-          ),
-        );
-      }
-      final staleList = state.targetLanguages
-          .map((l) => languageName(context, l))
-          .join(' & ');
-      return StyledNotice(
-        icon: Icons.edit_note,
-        trailing: StyledButton(
-          title: s.wePreviewTranslation,
-          showLeftIcon: true,
-          leftIconData: Icons.auto_awesome,
-          onPressed: () => cubit.translateNow(state.targetLanguages),
-        ),
-        child: _bannerBody(
+      // §11c: the "Unpublished changes" banner repeated the status line word
+      // for word and its action duplicated the locale switcher — deleted, not
+      // restyled. What is left is one line saying which language you write in.
+      return Text(
+        s.weBannerWritingTitle(sourceName),
+        style: Theme.of(
           context,
-          s.weBannerUnpublishedTitle,
-          s.weBannerUnpublishedBody(staleList),
-        ),
+        ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.outline),
       );
     }
 
+    // §11g: one line — `Editing the <language> translation` plus the one
+    // figure that varies per language. A "% translated" meter can only read
+    // 100% once translation is automatic, so it told the owner nothing.
     final lang = languageName(context, state.previewLanguage);
+    final locked = state.lockedFieldCount(state.previewLanguage);
     return StyledNotice(
       icon: Icons.translate,
-      trailing: StyledMeter(
-        value: state.coverage(state.previewLanguage),
-        label: '${(state.coverage(state.previewLanguage) * 100).round()}%',
+      trailing: StyledChip(
+        label: s.weLockedCounter(locked, state.translatableFieldCount),
+        size: StyledChipSize.display,
       ),
-      child: _bannerBody(
-        context,
+      child: Text(
         s.weBannerEditingTitle(lang),
-        s.weBannerEditingBody(sourceName),
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          fontWeight: FontWeight.w600,
+          color: Theme.of(context).colorScheme.primary,
+        ),
       ),
     );
   }
 
-  Widget _bannerBody(BuildContext context, String title, String body) {
-    final scheme = Theme.of(context).colorScheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: scheme.primary,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          body,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: scheme.primary),
-        ),
-      ],
-    );
-  }
 }
 
 class _TranslationStatusToolbar extends StatelessWidget {
@@ -259,29 +224,28 @@ class _TranslationStatusToolbar extends StatelessWidget {
     final tokens = stale
         ? WebsiteStatusColors.auto(brightness)
         : WebsiteStatusColors.locked(brightness);
+    // §11g: only the exception is worth a line. "Fresh draft, matches your
+    // latest source" was true almost always, so it carried no information.
+    if (!stale) return const SizedBox.shrink();
+
     return Row(
       children: [
-        Icon(
-          stale ? Icons.schedule : Icons.check_circle,
-          size: 16,
-          color: tokens.foreground,
-        ),
+        Icon(Icons.schedule, size: 16, color: tokens.foreground),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
-            stale ? context.s.weStaleNotice : context.s.weFreshNotice,
+            context.s.weStaleNotice,
             style: Theme.of(
               context,
             ).textTheme.bodySmall?.copyWith(color: tokens.foreground),
           ),
         ),
-        if (stale)
-          StyledButton(
-            title: context.s.wePreviewLatest,
-            showLeftIcon: true,
-            leftIconData: Icons.auto_awesome,
-            onPressed: () => cubit.previewTranslation(lang),
-          ),
+        StyledButton(
+          title: context.s.wePreviewLatest,
+          showLeftIcon: true,
+          leftIconData: Icons.auto_awesome,
+          onPressed: () => cubit.previewTranslation(lang),
+        ),
       ],
     );
   }

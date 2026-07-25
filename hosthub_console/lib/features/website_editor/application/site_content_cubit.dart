@@ -29,6 +29,8 @@ class SiteContentState extends Equatable {
     this.errorMessage,
     this.previewDomain,
     this.lastSavedAt,
+    this.saving = false,
+    this.pendingAutoSwitch,
   });
 
   final String propertyName;
@@ -63,6 +65,16 @@ class SiteContentState extends Equatable {
   /// Bumped after a successful autosave/publish so the embedded live preview
   /// reloads and shows the fresh draft.
   final DateTime? lastSavedAt;
+
+  /// Whether an autosave is in flight, for the save indicator (§11h: the mode
+  /// is editorial metadata and saves immediately — the user has to be able to
+  /// see that happen).
+  final bool saving;
+
+  /// The one in-session undo for switching a field back to automatic — the
+  /// only genuinely destructive action on this screen (§11g). Holds the
+  /// owner's previous wording until they navigate away or publish.
+  final PendingAutoSwitch? pendingAutoSwitch;
 
   bool get isSourceMode => previewLanguage == sourceLanguage;
 
@@ -109,13 +121,15 @@ class SiteContentState extends Equatable {
   Set<String> get staleLanguages =>
       targetLanguages.where(isLanguageStale).toSet();
 
-  /// Fraction (0..1) of a target language's fields that are up to date
-  /// (locked, or fresh auto). Used for the coverage meter.
-  double coverage(String language) {
-    if (fields.isEmpty) return 1;
-    final upToDate = fields.where((f) => !isFieldStale(language, f.key)).length;
-    return upToDate / fields.length;
-  }
+  /// How many of this page's fields the owner has taken over (§11g). This is
+  /// the figure that actually varies per language — a "% translated" meter can
+  /// only ever read 100% once translation is automatic.
+  int lockedFieldCount(String language) => fields
+      .where((f) => translations[language]?[f.key]?.isLocked ?? false)
+      .length;
+
+  /// Translatable fields on this page — the denominator of that counter.
+  int get translatableFieldCount => fields.length;
 
   SiteContentState copyWith({
     String? sourceLanguage,
@@ -132,6 +146,9 @@ class SiteContentState extends Equatable {
     String? errorMessage,
     String? previewDomain,
     DateTime? lastSavedAt,
+    bool? saving,
+    PendingAutoSwitch? pendingAutoSwitch,
+    bool clearPendingAutoSwitch = false,
     bool clearError = false,
   }) {
     return SiteContentState(
@@ -150,6 +167,10 @@ class SiteContentState extends Equatable {
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       previewDomain: previewDomain ?? this.previewDomain,
       lastSavedAt: lastSavedAt ?? this.lastSavedAt,
+      saving: saving ?? this.saving,
+      pendingAutoSwitch: clearPendingAutoSwitch
+          ? null
+          : (pendingAutoSwitch ?? this.pendingAutoSwitch),
     );
   }
 
@@ -170,7 +191,27 @@ class SiteContentState extends Equatable {
     errorMessage,
     previewDomain,
     lastSavedAt,
+    saving,
+    pendingAutoSwitch,
   ];
+}
+
+/// A field that just switched from the owner's wording back to automatic, kept
+/// in memory so one misclick is undoable. No persistence, no history — the
+/// problem being solved is a misclick.
+class PendingAutoSwitch extends Equatable {
+  const PendingAutoSwitch({
+    required this.language,
+    required this.fieldKey,
+    required this.previousValue,
+  });
+
+  final String language;
+  final String fieldKey;
+  final String previousValue;
+
+  @override
+  List<Object?> get props => [language, fieldKey, previousValue];
 }
 
 /// Drives the website editor: the source-language + auto/locked translation
@@ -253,8 +294,10 @@ class SiteContentCubit extends Cubit<SiteContentState> {
     if (!_persistent) return;
     final saveSource = _sourceDirty;
     final fields = List.of(_dirtyTranslationFields);
+    if (!saveSource && fields.isEmpty) return;
     _sourceDirty = false;
     _dirtyTranslationFields.clear();
+    if (!isClosed) emit(state.copyWith(saving: true));
     try {
       if (saveSource) {
         await _repository!.saveSourceDraft(
@@ -273,12 +316,14 @@ class SiteContentCubit extends Cubit<SiteContentState> {
           field: field,
         );
       }
-      if ((saveSource || fields.isNotEmpty) && !isClosed) {
+      if (!isClosed) {
         // Nudge the embedded live preview to reload the fresh draft.
-        emit(state.copyWith(lastSavedAt: DateTime.now()));
+        emit(state.copyWith(lastSavedAt: DateTime.now(), saving: false));
       }
     } catch (_) {
-      if (!isClosed) emit(state.copyWith(errorMessage: 'save_failed'));
+      if (!isClosed) {
+        emit(state.copyWith(errorMessage: 'save_failed', saving: false));
+      }
     }
   }
 
@@ -319,10 +364,12 @@ class SiteContentCubit extends Cubit<SiteContentState> {
     );
   }
 
-  void selectPage(String pageKey) => emit(state.copyWith(pageKey: pageKey));
+  void selectPage(String pageKey) =>
+      emit(state.copyWith(pageKey: pageKey, clearPendingAutoSwitch: true));
 
-  void setPreviewLanguage(String language) =>
-      emit(state.copyWith(previewLanguage: language));
+  void setPreviewLanguage(String language) => emit(
+    state.copyWith(previewLanguage: language, clearPendingAutoSwitch: true),
+  );
 
   void setPreviewDevice(PreviewDevice device) =>
       emit(state.copyWith(previewDevice: device));
@@ -358,9 +405,55 @@ class SiteContentCubit extends Cubit<SiteContentState> {
     _scheduleAutosave();
   }
 
+  /// Takes the field over: keeps the text as it stands and stops future
+  /// re-translations from overwriting it.
+  void lockField(String language, String key) {
+    if (language == state.sourceLanguage) return;
+    final updated = _cloneTranslations();
+    final langMap = updated.putIfAbsent(language, () => {});
+    langMap[key] = TranslatedField(
+      value: state.valueFor(language, key),
+      status: FieldTranslationStatus.locked,
+    );
+    emit(
+      state.copyWith(
+        translations: updated,
+        dirty: true,
+        clearPendingAutoSwitch: true,
+      ),
+    );
+    _dirtyTranslationFields.add((language, key));
+    _scheduleAutosave();
+  }
+
+  /// Puts the owner's wording back after switching a field to automatic.
+  void undoAutoSwitch() {
+    final pending = state.pendingAutoSwitch;
+    if (pending == null) return;
+    final updated = _cloneTranslations();
+    final langMap = updated.putIfAbsent(pending.language, () => {});
+    langMap[pending.fieldKey] = TranslatedField(
+      value: pending.previousValue,
+      status: FieldTranslationStatus.locked,
+    );
+    emit(
+      state.copyWith(
+        translations: updated,
+        dirty: true,
+        clearPendingAutoSwitch: true,
+      ),
+    );
+    _dirtyTranslationFields.add((pending.language, pending.fieldKey));
+    _scheduleAutosave();
+  }
+
   /// Reverts a locked field back to auto and regenerates it from the source.
+  ///
+  /// The previous wording is held for one in-session undo: this is the only
+  /// action on the screen that destroys something the owner typed.
   Future<void> resetFieldToAi(String language, String key) async {
     if (language == state.sourceLanguage) return;
+    final previousValue = state.valueFor(language, key);
     try {
       final translated = await _translationService.translateFields(
         sourceLanguage: state.sourceLanguage,
@@ -375,7 +468,16 @@ class SiteContentCubit extends Cubit<SiteContentState> {
         sourceHash: state.currentSourceHash(key),
       );
       emit(
-        state.copyWith(translations: updated, dirty: true, clearError: true),
+        state.copyWith(
+          translations: updated,
+          dirty: true,
+          clearError: true,
+          pendingAutoSwitch: PendingAutoSwitch(
+            language: language,
+            fieldKey: key,
+            previousValue: previousValue,
+          ),
+        ),
       );
       _dirtyTranslationFields.add((language, key));
       _scheduleAutosave();
