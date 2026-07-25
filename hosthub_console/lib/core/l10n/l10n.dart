@@ -8579,6 +8579,16 @@ class S {
     );
   }
 
+  /// `source`
+  String get weLocaleSourceBadge {
+    return Intl.message(
+      'source',
+      name: 'weLocaleSourceBadge',
+      desc: 'Badge on the source language in the editor\'s locale switcher',
+      args: [],
+    );
+  }
+
   /// `Web`
   String get weDeviceWeb {
     return Intl.message('Web', name: 'weDeviceWeb', desc: '', args: []);

@@ -2101,6 +2101,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "weLangEnglish": MessageLookupByLibrary.simpleMessage("Engels"),
     "weLangNorwegian": MessageLookupByLibrary.simpleMessage("Noors"),
     "weLivePreview": MessageLookupByLibrary.simpleMessage("Live voorbeeld"),
+    "weLocaleSourceBadge": MessageLookupByLibrary.simpleMessage("bron"),
     "wePageArea": MessageLookupByLibrary.simpleMessage("Omgeving"),
     "wePageChalet": MessageLookupByLibrary.simpleMessage("Het chalet"),
     "wePageContact": MessageLookupByLibrary.simpleMessage("Contact"),

@@ -8,7 +8,6 @@ import 'package:hosthub_console/core/config/app_config.dart';
 
 import '../../application/site_content_cubit.dart';
 import '../website_editor_status_colors.dart';
-import '../website_editor_strings.dart';
 import 'live_site_frame.dart';
 import 'site_preview_frame.dart';
 
@@ -108,42 +107,13 @@ class _PreviewToolbar extends StatelessWidget {
   Widget build(BuildContext context) {
     final cubit = context.read<SiteContentCubit>();
     final scheme = Theme.of(context).colorScheme;
-    final brightness = Theme.of(context).brightness;
     final s = context.s;
-    final isSource = state.isSourceMode;
-    final autoTokens = WebsiteStatusColors.auto(brightness);
 
-    final statusPill = StyledChip(
-      label: isSource ? s.weLivePreview : s.weAiTranslation,
-      size: StyledChipSize.display,
-      leading: Icon(
-        isSource ? Icons.visibility_outlined : Icons.auto_awesome,
-        size: 13,
-        color: isSource ? scheme.primary : autoTokens.foreground,
-      ),
-      backgroundColor: isSource
-          ? scheme.primaryContainer
-          : autoTokens.background,
-      labelColor: isSource ? scheme.primary : autoTokens.foreground,
-    );
-
-    final locales = state.orderedLocales;
-    final localeSwitcher = StyledSegmentedControl.compact(
-      segments: [
-        for (final code in locales)
-          StyledSegment(
-            label: languageShort(code),
-            badge: code == state.sourceLanguage ? null : 'AI',
-            statusDotColor:
-                code != state.sourceLanguage && state.isLanguageStale(code)
-                ? autoTokens.foreground
-                : null,
-          ),
-      ],
-      selectedIndex: locales.indexOf(state.previewLanguage),
-      onChanged: (i) => cubit.setPreviewLanguage(locales[i]),
-    );
-
+    // §11g: the preview header keeps `Live preview` and the Web/Mobile
+    // toggle. The AI pill, the `<Language> preview` caption and the locale
+    // switcher all moved out — the switcher to the editor header, the other
+    // two because they restate what the switcher and the per-field chips
+    // already say (and the pill was false for a hand-corrected language).
     final deviceToggle = StyledSegmentedControl.compact(
       segments: [
         StyledSegment(
@@ -163,15 +133,14 @@ class _PreviewToolbar extends StatelessWidget {
       runSpacing: 8,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        statusPill,
         Text(
-          s.wePreviewLabel(languageName(context, state.previewLanguage)),
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+          s.weLivePreview,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: scheme.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         deviceToggle,
-        localeSwitcher,
       ],
     );
   }

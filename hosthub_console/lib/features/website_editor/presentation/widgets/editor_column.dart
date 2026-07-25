@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
 import 'package:hosthub_console/core/widgets/foundation/foundation.dart';
@@ -74,8 +73,10 @@ class _TopBar extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // §11f: the tab row already says which page you are on, so
+                // the breadcrumb drops the page segment.
                 Text(
-                  '${context.s.weBreadcrumbWebsite} · ${pageName(context, state.pageKey)}',
+                  context.s.weBreadcrumbWebsite,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: scheme.outline,
                   ),
@@ -90,6 +91,14 @@ class _TopBar extends StatelessWidget {
               ],
             ),
           ),
+          // §11g: the switcher picks the language you *edit*, so it belongs
+          // above the form. In the preview header it read as "what am I
+          // looking at" and disappeared entirely with the preview hidden.
+          _LocaleSwitcher(state: state),
+          const SizedBox(width: 8),
+          // §11d: a page-scoped toolbar holds page-scoped controls. Team is
+          // property-scoped and the gear duplicated the sidebar's Settings;
+          // both were removed. The preview toggle stays.
           StyledToolbarButton(
             iconData: Icons.vertical_split_outlined,
             isSelected: state.previewVisible,
@@ -98,53 +107,36 @@ class _TopBar extends StatelessWidget {
                 : context.s.weShowPreview,
             onPressed: () => context.read<SiteContentCubit>().togglePreview(),
           ),
-          const SizedBox(width: 8),
-          if (siteId != null) ...[
-            StyledToolbarButton(
-              iconData: Icons.settings_outlined,
-              tooltip: context.s.siteSettingsTitle,
-              onPressed: () => context.go('/sites/$siteId/settings'),
-            ),
-            const SizedBox(width: 8),
-            StyledToolbarButton(
-              iconData: Icons.group_outlined,
-              tooltip: context.s.teamTitle,
-              onPressed: () => context.go('/sites/$siteId/team'),
-            ),
-            const SizedBox(width: 8),
-          ],
-          _ModeChip(state: state),
         ],
       ),
     );
   }
 }
 
-class _ModeChip extends StatelessWidget {
-  const _ModeChip({required this.state});
+/// Design §11g: one segment per locale, the source labelled `source` and the
+/// targets carrying nothing — a translation is not "AI" once the owner has
+/// locked fields, and provenance is already stated per field.
+class _LocaleSwitcher extends StatelessWidget {
+  const _LocaleSwitcher({required this.state});
   final SiteContentState state;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final short = languageShort(state.previewLanguage);
-    if (state.isSourceMode) {
-      return StyledChip(
-        label: context.s.weSourceChip(short),
-        size: StyledChipSize.display,
-        leading: Icon(Icons.auto_awesome, size: 13, color: scheme.primary),
-        backgroundColor: scheme.surface,
-        borderColor: scheme.primary.withValues(alpha: 0.35),
-        labelColor: scheme.primary,
-      );
-    }
-    final tokens = WebsiteStatusColors.locked(Theme.of(context).brightness);
-    return StyledChip(
-      label: context.s.weEditingChip(short),
-      size: StyledChipSize.display,
-      leading: Icon(Icons.edit_outlined, size: 13, color: tokens.foreground),
-      backgroundColor: tokens.background,
-      labelColor: tokens.foreground,
+    final cubit = context.read<SiteContentCubit>();
+    final locales = state.orderedLocales;
+
+    return StyledSegmentedControl.compact(
+      segments: [
+        for (final code in locales)
+          StyledSegment(
+            label: languageShort(code),
+            badge: code == state.sourceLanguage
+                ? context.s.weLocaleSourceBadge
+                : null,
+          ),
+      ],
+      selectedIndex: locales.indexOf(state.previewLanguage),
+      onChanged: (i) => cubit.setPreviewLanguage(locales[i]),
     );
   }
 }

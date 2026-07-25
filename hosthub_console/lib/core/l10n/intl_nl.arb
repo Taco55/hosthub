@@ -1479,6 +1479,8 @@
   "weAiTranslation": "AI-vertaling",
   "wePreviewLabel": "{language} voorbeeld",
   "@wePreviewLabel": { "placeholders": { "language": {} } },
+  "weLocaleSourceBadge": "bron",
+  "@weLocaleSourceBadge": { "description": "Badge on the source language in the editor's locale switcher" },
   "weDeviceWeb": "Web",
   "weDeviceMobile": "Mobiel",
   "weShowPreview": "Voorbeeld tonen",

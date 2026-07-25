@@ -67,12 +67,16 @@ Future<SiteContentCubit> pumpEditor(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('source mode shows the Source chip and the source content', (
+  testWidgets('source mode marks NL as the source and shows its content', (
     tester,
   ) async {
     await pumpEditor(tester);
 
-    expect(find.text('Source · NL'), findsOneWidget);
+    // §11g: the editor header's locale switcher labels the source language and
+    // says nothing about the targets.
+    expect(find.text('NL'), findsOneWidget);
+    expect(find.text('source'), findsOneWidget);
+    expect(find.text('AI'), findsNothing);
     // Headline field holds the Dutch source text.
     expect(find.text('Jouw bergwoning in Trysil'), findsWidgets);
     // No per-field status chips in source mode.
@@ -88,7 +92,9 @@ void main() {
       cubit.setPreviewLanguage('en');
       await tester.pumpAndSettle();
 
-      expect(find.text('Editing · EN'), findsOneWidget);
+      // The switcher's selection is what says which language you're editing;
+      // the separate mode chip it used to duplicate is gone.
+      expect(find.text('EN'), findsOneWidget);
       // Fields are editable and hold the English values.
       expect(find.text('Your mountain home in Trysil'), findsWidgets);
       // Visible fields carry an Auto chip (the editor list is lazy, so only

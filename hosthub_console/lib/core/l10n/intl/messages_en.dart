@@ -2007,6 +2007,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "weLangEnglish": MessageLookupByLibrary.simpleMessage("English"),
     "weLangNorwegian": MessageLookupByLibrary.simpleMessage("Norwegian"),
     "weLivePreview": MessageLookupByLibrary.simpleMessage("Live preview"),
+    "weLocaleSourceBadge": MessageLookupByLibrary.simpleMessage("source"),
     "wePageArea": MessageLookupByLibrary.simpleMessage("Area"),
     "wePageChalet": MessageLookupByLibrary.simpleMessage("The chalet"),
     "wePageContact": MessageLookupByLibrary.simpleMessage("Contact"),

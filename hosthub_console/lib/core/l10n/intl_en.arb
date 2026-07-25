@@ -1475,6 +1475,8 @@
   "weAiTranslation": "AI translation",
   "wePreviewLabel": "{language} preview",
   "@wePreviewLabel": { "placeholders": { "language": {} } },
+  "weLocaleSourceBadge": "source",
+  "@weLocaleSourceBadge": { "description": "Badge on the source language in the editor's locale switcher" },
   "weDeviceWeb": "Web",
   "weDeviceMobile": "Mobile",
   "weShowPreview": "Show preview",
