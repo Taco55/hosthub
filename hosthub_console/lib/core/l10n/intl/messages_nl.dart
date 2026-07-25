@@ -187,20 +187,22 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m74(count) => "${count} talen publiceren";
 
-  static String m75(language) => "${language} · bron";
+  static String m75(source) => "Alleen ${source} publiceren";
 
-  static String m76(source) =>
+  static String m76(language) => "${language} · bron";
+
+  static String m77(source) =>
       "Je ${source} content publiceert zoals die is. De andere talen worden opnieuw vertaald door AI, met behoud van wat je hebt vergrendeld.";
 
-  static String m77(lang) => "Bron · ${lang}";
+  static String m78(lang) => "Bron · ${lang}";
 
-  static String m78(source, count) =>
+  static String m79(source, count) =>
       "${source} + ${count} vertalingen staan live";
 
-  static String m79(languages) =>
+  static String m80(languages) =>
       "${languages} vertalen zodra je ze opent, of bij publiceren";
 
-  static String m80(source) => "Volgt nu de ${source} bron.";
+  static String m81(source) => "Volgt nu de ${source} bron.";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -2140,6 +2142,12 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "wePublishCancel": MessageLookupByLibrary.simpleMessage("Annuleren"),
     "wePublishConfirm": m74,
+    "wePublishDraft": MessageLookupByLibrary.simpleMessage(
+      "Concept — nog niet nagekeken",
+    ),
+    "wePublishModalTitle": MessageLookupByLibrary.simpleMessage(
+      "Wat gaat live",
+    ),
     "wePublishReady": MessageLookupByLibrary.simpleMessage("Klaar"),
     "wePublishReadyNote": MessageLookupByLibrary.simpleMessage(
       "Gepubliceerd zoals geschreven",
@@ -2150,8 +2158,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePublishRetranslateNote": MessageLookupByLibrary.simpleMessage(
       "Verouderd — wordt vernieuwd",
     ),
-    "wePublishSourceRole": m75,
-    "wePublishSubtitle": m76,
+    "wePublishReviewed": MessageLookupByLibrary.simpleMessage("Nagekeken"),
+    "wePublishSkipped": MessageLookupByLibrary.simpleMessage(
+      "Overgeslagen · blijft zoals het nu live staat",
+    ),
+    "wePublishSourceOnly": m75,
+    "wePublishSourceRole": m76,
+    "wePublishSubtitle": m77,
     "wePublishTitle": MessageLookupByLibrary.simpleMessage(
       "Alle talen publiceren",
     ),
@@ -2174,20 +2187,20 @@ class MessageLookup extends MessageLookupByLibrary {
       "Foto\'s worden gedeeld over alle talen — bewerk ze in de bron.",
     ),
     "weShowPreview": MessageLookupByLibrary.simpleMessage("Voorbeeld tonen"),
-    "weSourceChip": m77,
+    "weSourceChip": m78,
     "weStaleNotice": MessageLookupByLibrary.simpleMessage(
       "Voorbeeld toont een eerdere bronwijziging.",
     ),
-    "weStatusCleanBody": m78,
+    "weStatusCleanBody": m79,
     "weStatusCleanTitle": MessageLookupByLibrary.simpleMessage(
       "Alles gepubliceerd",
     ),
-    "weStatusDirtyBody": m79,
+    "weStatusDirtyBody": m80,
     "weStatusDirtyTitle": MessageLookupByLibrary.simpleMessage(
       "Niet-gepubliceerde wijzigingen",
     ),
     "weUndo": MessageLookupByLibrary.simpleMessage("Ongedaan maken"),
-    "weUndoSwitchNotice": m80,
+    "weUndoSwitchNotice": m81,
     "wealth": MessageLookupByLibrary.simpleMessage("Welvaart"),
     "websiteLanguagesFooter": MessageLookupByLibrary.simpleMessage(
       "De talen die je publieke website aan gasten aanbiedt. Voeg talen toe of verwijder ze.",

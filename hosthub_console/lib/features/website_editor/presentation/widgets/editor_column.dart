@@ -513,46 +513,96 @@ class _SaveBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<SiteContentCubit>();
-    final scheme = Theme.of(context).colorScheme;
-    final brightness = Theme.of(context).brightness;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final spacing = context.styledSpacing;
+    final s = context.s;
+    final brightness = theme.brightness;
+
+    // §11b: the status line says what *is*, the button says what *happens*.
+    // The old bar could read "Published · all languages" while the banner above
+    // said there were unpublished changes; one of them was lying.
     final dotColor = state.dirty
         ? WebsiteStatusColors.auto(brightness).foreground
         : WebsiteStatusColors.locked(brightness).foreground;
-    final statusText = state.dirty
-        ? context.s.weSaveDirty
-        : context.s.weSavePublished;
+    final targets = state.targetLanguages
+        .map((l) => languageName(context, l))
+        .join(' & ');
+    final title = state.dirty ? s.weStatusDirtyTitle : s.weStatusCleanTitle;
+    final body = state.dirty
+        ? s.weStatusDirtyBody(targets)
+        : s.weStatusCleanBody(
+            languageName(context, state.sourceLanguage),
+            state.targetLanguages.length,
+          );
+
     return DecoratedBox(
       decoration: BoxDecoration(
         border: Border(top: BorderSide(color: scheme.outlineVariant)),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+        padding: EdgeInsets.symmetric(
+          horizontal: 22,
+          vertical: spacing.md,
+        ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: dotColor,
-                shape: BoxShape.circle,
+            Padding(
+              padding: EdgeInsets.only(top: spacing.xs + 1),
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: dotColor,
+                  shape: BoxShape.circle,
+                ),
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: spacing.sm),
             Expanded(
-              child: Text(
-                statusText,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: scheme.onSurface,
+                    ),
+                  ),
+                  Text(
+                    body,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: scheme.outline,
+                    ),
+                  ),
+                ],
               ),
             ),
+            // §11h: the lock/auto mode is editorial metadata that saves with
+            // the page's autosave, not at publish — so the bar has to show
+            // save state, which it previously didn't at all.
+            if (state.saving || state.lastSavedAt != null) ...[
+              Text(
+                state.saving ? s.weSavingIndicator : s.weSavedIndicator,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: scheme.outline,
+                ),
+              ),
+              SizedBox(width: spacing.md),
+            ],
             StyledButton(
-              title: context.s.wePublishAll,
+              // §11a: one button. A split button forced the reader to parse
+              // the difference between two options, and the difference is what
+              // *doesn't* happen — the hardest thing to put in a label.
+              title: s.wePublish,
               showLeftIcon: true,
               leftIconData: Icons.publish_outlined,
-              minHeight: 40,
               onPressed: cubit.openPublish,
             ),
           ],

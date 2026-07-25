@@ -8819,6 +8819,56 @@ class S {
     );
   }
 
+  /// `What goes live`
+  String get wePublishModalTitle {
+    return Intl.message(
+      'What goes live',
+      name: 'wePublishModalTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Skipped · stays as it is live now`
+  String get wePublishSkipped {
+    return Intl.message(
+      'Skipped · stays as it is live now',
+      name: 'wePublishSkipped',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Reviewed`
+  String get wePublishReviewed {
+    return Intl.message(
+      'Reviewed',
+      name: 'wePublishReviewed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Draft — not reviewed yet`
+  String get wePublishDraft {
+    return Intl.message(
+      'Draft — not reviewed yet',
+      name: 'wePublishDraft',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Publish {source} only`
+  String wePublishSourceOnly(Object source) {
+    return Intl.message(
+      'Publish $source only',
+      name: 'wePublishSourceOnly',
+      desc: '',
+      args: [source],
+    );
+  }
+
   /// `Cancel`
   String get wePublishCancel {
     return Intl.message('Cancel', name: 'wePublishCancel', desc: '', args: []);

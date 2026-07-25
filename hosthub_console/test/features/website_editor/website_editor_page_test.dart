@@ -233,11 +233,14 @@ void main() {
     expect(find.text('Preview latest'), findsWidgets);
   });
 
-  testWidgets('publish modal lists all languages with correct status chips', (
+  testWidgets('the publish dialog is the last checkpoint, per language', (
     tester,
   ) async {
     final cubit = await pumpEditor(tester);
     cubit.editSourceField('hero.headline', 'Nieuwe titel');
+    // Opening a language is what reviewing it means.
+    cubit.setPreviewLanguage('en');
+    cubit.setPreviewLanguage('nl');
     await tester.pumpAndSettle();
 
     // Open via the state (the page listener owns the modal in the app; here we
@@ -246,11 +249,37 @@ void main() {
     showPublishModal(context, state: cubit.state);
     await tester.pumpAndSettle();
 
-    expect(find.text('Publish all languages'), findsWidgets);
+    expect(find.text('What goes live'), findsWidgets);
     expect(find.text('Dutch · source'), findsOneWidget);
-    expect(find.text('Ready'), findsOneWidget);
-    expect(find.text('Re-translate'), findsNWidgets(2));
+    // The opened language is reviewed; the untouched one is still a draft.
+    expect(find.text('Reviewed'), findsOneWidget);
+    expect(find.text('Draft — not reviewed yet'), findsOneWidget);
     expect(find.text('Publish 3 languages'), findsOneWidget);
+
+    // Unchecking a target says what happens to it and drops the count.
+    await tester.tap(find.byType(StyledCheckbox).first);
+    await tester.pumpAndSettle();
+    expect(find.text('Skipped · stays as it is live now'), findsOneWidget);
+    expect(find.text('Publish 2 languages'), findsOneWidget);
+
+    // With every target skipped the label names the source instead of
+    // rendering "Publish 1 languages".
+    await tester.tap(find.byType(StyledCheckbox).last);
+    await tester.pumpAndSettle();
+    expect(find.text('Publish Dutch only'), findsOneWidget);
+  });
+
+  testWidgets('a skipped language is not published', (tester) async {
+    final cubit = await pumpEditor(tester);
+    cubit.editSourceField('hero.headline', 'Nieuwe titel');
+    await tester.pumpAndSettle();
+
+    await cubit.publishAll(skipLanguages: {'no'});
+    await tester.pumpAndSettle();
+
+    // EN was translated and shipped; NO kept whatever is live.
+    expect(cubit.state.isLanguageStale('en'), isFalse);
+    expect(cubit.state.isLanguageStale('no'), isTrue);
   });
 
   testWidgets('confirm publish clears dirty + stale', (tester) async {
@@ -265,6 +294,8 @@ void main() {
 
     expect(cubit.state.dirty, isFalse);
     expect(cubit.state.staleLanguages, isEmpty);
-    expect(find.text('Published · all languages'), findsOneWidget);
+    // §11b: the status line says what is — never "published" while dirty.
+    expect(find.text('Everything published'), findsOneWidget);
+    expect(find.text('Dutch + 2 translations are live'), findsOneWidget);
   });
 }

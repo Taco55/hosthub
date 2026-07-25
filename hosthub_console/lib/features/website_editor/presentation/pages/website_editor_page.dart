@@ -67,7 +67,8 @@ class _WebsiteEditorView extends StatelessWidget {
         final confirmed = await showPublishModal(
           context,
           state: state,
-          onConfirm: cubit.publishAll,
+          onConfirm: (skipLanguages) =>
+              cubit.publishAll(skipLanguages: skipLanguages),
         );
         if (confirmed != true) cubit.closePublish();
       },

@@ -30,6 +30,7 @@ class SiteContentState extends Equatable {
     this.previewDomain,
     this.lastSavedAt,
     this.saving = false,
+    this.reviewedLanguages = const {},
     this.pendingAutoSwitch,
   });
 
@@ -70,6 +71,11 @@ class SiteContentState extends Equatable {
   /// is editorial metadata and saves immediately — the user has to be able to
   /// see that happen).
   final bool saving;
+
+  /// Target languages the owner opened this session. Opening a language *is*
+  /// reviewing it (§11a), so this is what the publish dialog reports as
+  /// `Reviewed` rather than a separate flag nobody sets.
+  final Set<String> reviewedLanguages;
 
   /// The one in-session undo for switching a field back to automatic — the
   /// only genuinely destructive action on this screen (§11g). Holds the
@@ -147,6 +153,7 @@ class SiteContentState extends Equatable {
     String? previewDomain,
     DateTime? lastSavedAt,
     bool? saving,
+    Set<String>? reviewedLanguages,
     PendingAutoSwitch? pendingAutoSwitch,
     bool clearPendingAutoSwitch = false,
     bool clearError = false,
@@ -168,6 +175,7 @@ class SiteContentState extends Equatable {
       previewDomain: previewDomain ?? this.previewDomain,
       lastSavedAt: lastSavedAt ?? this.lastSavedAt,
       saving: saving ?? this.saving,
+      reviewedLanguages: reviewedLanguages ?? this.reviewedLanguages,
       pendingAutoSwitch: clearPendingAutoSwitch
           ? null
           : (pendingAutoSwitch ?? this.pendingAutoSwitch),
@@ -192,6 +200,7 @@ class SiteContentState extends Equatable {
     previewDomain,
     lastSavedAt,
     saving,
+    reviewedLanguages,
     pendingAutoSwitch,
   ];
 }
@@ -367,9 +376,17 @@ class SiteContentCubit extends Cubit<SiteContentState> {
   void selectPage(String pageKey) =>
       emit(state.copyWith(pageKey: pageKey, clearPendingAutoSwitch: true));
 
-  void setPreviewLanguage(String language) => emit(
-    state.copyWith(previewLanguage: language, clearPendingAutoSwitch: true),
-  );
+  void setPreviewLanguage(String language) {
+    emit(
+      state.copyWith(
+        previewLanguage: language,
+        reviewedLanguages: language == state.sourceLanguage
+            ? state.reviewedLanguages
+            : {...state.reviewedLanguages, language},
+        clearPendingAutoSwitch: true,
+      ),
+    );
+  }
 
   void setPreviewDevice(PreviewDevice device) =>
       emit(state.copyWith(previewDevice: device));
@@ -626,8 +643,14 @@ class SiteContentCubit extends Cubit<SiteContentState> {
   /// every target language (clearing stale), persists everything into the
   /// site's documents, then clears the dirty flag. Persistence failures keep
   /// the dirty state so publish can be retried.
-  Future<void> publishAll() async {
-    await translateNow(state.targetLanguages);
+  /// Publishes the source plus every target language that wasn't unchecked in
+  /// the dialog (§11a). A skipped language keeps whatever is live now — it is
+  /// not translated and not written.
+  Future<void> publishAll({Set<String> skipLanguages = const {}}) async {
+    final targets = state.targetLanguages
+        .where((language) => !skipLanguages.contains(language))
+        .toList();
+    await translateNow(targets);
     if (_persistent) {
       try {
         await _flushPendingSaves();
@@ -635,7 +658,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
           siteId: _siteId!,
           valuesByLocale: {
             state.sourceLanguage: Map<String, String>.from(state.source),
-            for (final language in state.targetLanguages)
+            for (final language in targets)
               language: {
                 for (final field in state.allFields)
                   field.key: state.valueFor(language, field.key),
@@ -652,6 +675,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
         dirty: false,
         publishOpen: false,
         lastSavedAt: DateTime.now(),
+        clearPendingAutoSwitch: true,
         clearError: true,
       ),
     );

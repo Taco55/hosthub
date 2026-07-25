@@ -187,20 +187,22 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m74(count) => "Publish ${count} languages";
 
-  static String m75(language) => "${language} · source";
+  static String m75(source) => "Publish ${source} only";
 
-  static String m76(source) =>
+  static String m76(language) => "${language} · source";
+
+  static String m77(source) =>
       "Your ${source} content publishes as-is. The other languages are re-translated by AI, keeping anything you\'ve locked.";
 
-  static String m77(lang) => "Source · ${lang}";
+  static String m78(lang) => "Source · ${lang}";
 
-  static String m78(source, count) =>
+  static String m79(source, count) =>
       "${source} + ${count} translations are live";
 
-  static String m79(languages) =>
+  static String m80(languages) =>
       "${languages} translate when you open them, or on publish";
 
-  static String m80(source) => "Now following the ${source} source.";
+  static String m81(source) => "Now following the ${source} source.";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -2042,6 +2044,12 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "wePublishCancel": MessageLookupByLibrary.simpleMessage("Cancel"),
     "wePublishConfirm": m74,
+    "wePublishDraft": MessageLookupByLibrary.simpleMessage(
+      "Draft — not reviewed yet",
+    ),
+    "wePublishModalTitle": MessageLookupByLibrary.simpleMessage(
+      "What goes live",
+    ),
     "wePublishReady": MessageLookupByLibrary.simpleMessage("Ready"),
     "wePublishReadyNote": MessageLookupByLibrary.simpleMessage(
       "Published as written",
@@ -2052,8 +2060,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePublishRetranslateNote": MessageLookupByLibrary.simpleMessage(
       "Out of date — will refresh",
     ),
-    "wePublishSourceRole": m75,
-    "wePublishSubtitle": m76,
+    "wePublishReviewed": MessageLookupByLibrary.simpleMessage("Reviewed"),
+    "wePublishSkipped": MessageLookupByLibrary.simpleMessage(
+      "Skipped · stays as it is live now",
+    ),
+    "wePublishSourceOnly": m75,
+    "wePublishSourceRole": m76,
+    "wePublishSubtitle": m77,
     "wePublishTitle": MessageLookupByLibrary.simpleMessage(
       "Publish all languages",
     ),
@@ -2076,20 +2089,20 @@ class MessageLookup extends MessageLookupByLibrary {
       "Photos are shared across all languages — edit them in the source.",
     ),
     "weShowPreview": MessageLookupByLibrary.simpleMessage("Show preview"),
-    "weSourceChip": m77,
+    "weSourceChip": m78,
     "weStaleNotice": MessageLookupByLibrary.simpleMessage(
       "Preview reflects an earlier source edit.",
     ),
-    "weStatusCleanBody": m78,
+    "weStatusCleanBody": m79,
     "weStatusCleanTitle": MessageLookupByLibrary.simpleMessage(
       "Everything published",
     ),
-    "weStatusDirtyBody": m79,
+    "weStatusDirtyBody": m80,
     "weStatusDirtyTitle": MessageLookupByLibrary.simpleMessage(
       "Unpublished changes",
     ),
     "weUndo": MessageLookupByLibrary.simpleMessage("Undo"),
-    "weUndoSwitchNotice": m80,
+    "weUndoSwitchNotice": m81,
     "wealth": MessageLookupByLibrary.simpleMessage("Wealth"),
     "websiteLanguagesFooter": MessageLookupByLibrary.simpleMessage(
       "The languages your public website offers to guests. Add or remove any language.",
