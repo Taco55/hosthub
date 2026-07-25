@@ -554,30 +554,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _MetricsGrid(
-                      metrics: [
-                        _Metric(
-                          label: 'Boekingen maand',
-                          value: '${summary.bookingCount}',
-                          icon: Icons.book_online_outlined,
-                        ),
-                        _Metric(
-                          label: 'Aankomsten',
-                          value: '${summary.arrivals}',
-                          icon: Icons.login_outlined,
-                        ),
-                        _Metric(
-                          label: 'Vertrekken',
-                          value: '${summary.departures}',
-                          icon: Icons.logout_outlined,
-                        ),
-                        _Metric(
-                          label: 'Nachten bezet',
-                          value: '${summary.occupiedNights}',
-                          icon: Icons.hotel_outlined,
-                        ),
-                      ],
-                    ),
+                    _MetricsGrid(metrics: _monthMetrics(summary)),
                     SizedBox(height: context.styledSpacing.lg),
                     _ContinuousMonthNavigation(
                       focusedMonth: activeMonth,
@@ -697,30 +674,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
             ),
           ] else ...[
             // Single-month mode: metrics use _focusedMonth directly
-            _MetricsGrid(
-              metrics: [
-                _Metric(
-                  label: 'Boekingen maand',
-                  value: '${timelineSummary.bookingCount}',
-                  icon: Icons.book_online_outlined,
-                ),
-                _Metric(
-                  label: 'Aankomsten',
-                  value: '${timelineSummary.arrivals}',
-                  icon: Icons.login_outlined,
-                ),
-                _Metric(
-                  label: 'Vertrekken',
-                  value: '${timelineSummary.departures}',
-                  icon: Icons.logout_outlined,
-                ),
-                _Metric(
-                  label: 'Nachten bezet',
-                  value: '${timelineSummary.occupiedNights}',
-                  icon: Icons.hotel_outlined,
-                ),
-              ],
-            ),
+            _MetricsGrid(metrics: _monthMetrics(timelineSummary)),
             SizedBox(height: context.styledSpacing.lg),
             Expanded(
               child: TimelineCalendar(
@@ -769,32 +723,55 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     }
 
     if (_viewMode == _ReservationsViewMode.list) {
-      return _ReservationListView(
-        entries: entries,
-        dateFormatter: dateFormatter,
-        dateTimeFormatter: dateTimeFormatter,
-        markedAsNew: _markedAsNew,
-        hiddenColumns: _hiddenListColumns,
-        onToggleNew: (id) {
-          setState(() {
-            if (_markedAsNew.contains(id)) {
-              _markedAsNew.remove(id);
-            } else {
-              _markedAsNew.add(id);
-            }
-          });
-        },
-        onEntryTap: (entry) => _showReservationDetails(
-          context,
-          entry,
-          dateFormatter: dateFormatter,
-          dateTimeFormatter: dateTimeFormatter,
-        ),
+      // Design: the same four KPIs sit above both views, scoped to the focused
+      // month, and move together with the status filter.
+      final listSummary = _monthSummary(_focusedMonth, entries);
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _MetricsGrid(metrics: _monthMetrics(listSummary)),
+          SizedBox(height: context.styledSpacing.lg),
+          Expanded(
+            child: _buildListView(
+              entries: entries,
+              dateFormatter: dateFormatter,
+              dateTimeFormatter: dateTimeFormatter,
+            ),
+          ),
+        ],
       );
     }
 
-    // Unreachable – only list and timeline modes exist.
     return const SizedBox.shrink();
+  }
+
+  Widget _buildListView({
+    required List<Reservation> entries,
+    required DateFormat dateFormatter,
+    required DateFormat dateTimeFormatter,
+  }) {
+    return _ReservationListView(
+      entries: entries,
+      dateFormatter: dateFormatter,
+      dateTimeFormatter: dateTimeFormatter,
+      markedAsNew: _markedAsNew,
+      hiddenColumns: _hiddenListColumns,
+      onToggleNew: (id) {
+        setState(() {
+          if (_markedAsNew.contains(id)) {
+            _markedAsNew.remove(id);
+          } else {
+            _markedAsNew.add(id);
+          }
+        });
+      },
+      onEntryTap: (entry) => _showReservationDetails(
+        context,
+        entry,
+        dateFormatter: dateFormatter,
+        dateTimeFormatter: dateTimeFormatter,
+      ),
+    );
   }
 
   Future<void> _showReservationDetails(
@@ -1645,18 +1622,6 @@ class _ReservationListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = S.of(context);
-    final now = DateTime.now();
-    final upcomingCount = entries
-        .where((entry) => !_bookingEnded(entry, _dateOnly(now)))
-        .length;
-    final arrivalsThisWeek = entries.where((entry) {
-      final start = entry.startDate;
-      if (start == null) return false;
-      final date = _dateOnly(start);
-      final today = _dateOnly(now);
-      final weekAhead = today.add(const Duration(days: 7));
-      return !date.isBefore(today) && !date.isAfter(weekAhead);
-    }).length;
     final visibleColumns = _ReservationListColumn.all
         .where((column) => !hiddenColumns.contains(column))
         .toList();
@@ -1731,26 +1696,6 @@ class _ReservationListView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _MetricsGrid(
-          metrics: [
-            _Metric(
-              label: 'Totaal',
-              value: '${entries.length}',
-              icon: Icons.receipt_long_outlined,
-            ),
-            _Metric(
-              label: 'Komend',
-              value: '$upcomingCount',
-              icon: Icons.upcoming_outlined,
-            ),
-            _Metric(
-              label: 'Aankomst deze week',
-              value: '$arrivalsThisWeek',
-              icon: Icons.login_outlined,
-            ),
-          ],
-        ),
-        SizedBox(height: context.styledSpacing.lg),
         Expanded(
           child: ListView(
             padding: EdgeInsets.only(bottom: context.styledSpacing.lg),
@@ -2232,11 +2177,54 @@ class _CircularCloseButton extends StatelessWidget {
 
 /// One KPI, so the layout can decide the tile's density.
 class _Metric {
-  const _Metric({required this.label, required this.value, required this.icon});
+  const _Metric({
+    required this.label,
+    required this.value,
+    required this.icon,
+    this.caption,
+  });
 
   final String label;
   final String value;
   final IconData icon;
+
+  /// Design `.kpi .kd`: the supporting line under the figure.
+  final String? caption;
+}
+
+/// The four KPIs from the design, scoped to one month: Boekingen, Aankomsten,
+/// Vertrekken, Bezetting.
+///
+/// One definition, used by both the list and the timeline, so the two can never
+/// show a different set — and all four recompute when a status filter changes,
+/// because they are derived from the same filtered bookings.
+List<_Metric> _monthMetrics(_MonthSummary summary) {
+  return [
+    _Metric(
+      label: 'Boekingen',
+      value: '${summary.bookingCount}',
+      icon: Icons.book_online_outlined,
+      caption: 'deze maand',
+    ),
+    _Metric(
+      label: 'Aankomsten',
+      value: '${summary.arrivals}',
+      icon: Icons.login_outlined,
+      caption: 'check-in',
+    ),
+    _Metric(
+      label: 'Vertrekken',
+      value: '${summary.departures}',
+      icon: Icons.logout_outlined,
+      caption: 'check-out',
+    ),
+    _Metric(
+      label: 'Bezetting',
+      value: '${summary.occupancyPercentage}%',
+      icon: Icons.hotel_outlined,
+      caption: '${summary.occupiedNights} nachten',
+    ),
+  ];
 }
 
 /// Design `.kpis`: four equal columns across the full content width.
@@ -2262,6 +2250,7 @@ class _MetricsGrid extends StatelessWidget {
               label: metric.label,
               value: metric.value,
               icon: metric.icon,
+              caption: metric.caption,
               dense: dense,
             ),
         ];
@@ -2329,12 +2318,23 @@ class _MonthSummary {
     required this.arrivals,
     required this.departures,
     required this.occupiedNights,
+    required this.daysInMonth,
   });
 
   final int bookingCount;
   final int arrivals;
   final int departures;
+
+  /// Nights occupied within this month, clipped to the month — a stay that
+  /// straddles the boundary counts only its nights inside it.
   final int occupiedNights;
+  final int daysInMonth;
+
+  /// Occupancy as a whole percentage, `0` for a month with no nights.
+  int get occupancyPercentage {
+    if (daysInMonth <= 0) return 0;
+    return ((occupiedNights / daysInMonth) * 100).round();
+  }
 }
 
 List<Reservation> _sortedBookings(List<Reservation> entries) {
@@ -2403,6 +2403,7 @@ _MonthSummary _monthSummary(DateTime month, List<Reservation> entries) {
     arrivals: arrivals,
     departures: departures,
     occupiedNights: occupiedNights,
+    daysInMonth: monthEnd.difference(monthStart).inDays,
   );
 }
 
