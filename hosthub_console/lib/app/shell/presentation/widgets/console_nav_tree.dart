@@ -83,6 +83,9 @@ List<StyledNavGroup> buildConsoleNavGroups({
         // The group label is the property's name: with one property, a heading
         // reading "Properties · 1" would head a list of one.
         label: onlyProperty.name,
+        // A proper name, so it keeps its own case — the micro-label treatment is
+        // for headings like PORTFOLIO, not for "Trysil Panorama".
+        uppercaseLabel: false,
         // Its four screens sit flat at the top level and are always there —
         // nothing to expand, so nothing that could be collapsed.
         entries: _propertySections(

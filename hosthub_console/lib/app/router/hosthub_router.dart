@@ -151,6 +151,10 @@ class HosthubRouter {
                 builder: (context, sidebarMode) {
                   final shell = StyledSideMenuScaffold(
                     compact: sidebarMode == StyledSideMenuMode.compact,
+                    // §7: the rail expands on hover after 0.35s. Long enough
+                    // that crossing the left edge on the way somewhere else does
+                    // not slide a panel over the page.
+                    hoverIntentDelay: kSidebarHoverIntentDelay,
                     drawerMenuTooltip: context.s.menuTooltip,
                     // Nothing from the placement is needed here: the menu and
                     // its rows read it themselves.

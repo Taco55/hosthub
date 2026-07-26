@@ -28,9 +28,9 @@ void main() {
       properties: account,
     );
 
-    expect(find.text('Portfolio'), findsOneWidget);
-    expect(find.text('Properties'), findsOneWidget);
-    expect(find.text('Account'), findsOneWidget);
+    expect(find.text('PORTFOLIO'), findsOneWidget);
+    expect(find.text('PROPERTIES'), findsOneWidget);
+    expect(find.text('ACCOUNT'), findsOneWidget);
     for (final property in account) {
       expect(find.text(property.name), findsOneWidget);
     }

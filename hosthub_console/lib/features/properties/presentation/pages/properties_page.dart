@@ -96,6 +96,7 @@ class PropertiesPage extends StatelessWidget {
                         leading: PropertyChip(
                           abbreviation: abbreviations[property.id] ?? '??',
                           size: 32,
+                          borderRadius: 8,
                         ),
                         title: property.name,
                         subtitle: _subtitleFor(

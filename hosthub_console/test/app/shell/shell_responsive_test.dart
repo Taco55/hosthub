@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
+import 'package:hosthub_console/app/shell/presentation/widgets/side_menu.dart';
+
 import 'shell_harness.dart';
 
 double _menuWidth(WidgetTester tester) => tester
@@ -32,10 +34,12 @@ void main() {
     expect(find.text('Bookings'), findsNothing);
     // Icons remain reachable.
     expect(find.byIcon(Icons.calendar_month_outlined), findsOneWidget);
-    // Icon centred in the 72px rail, the same x as in the expanded menu.
+    // The same x as in the expanded menu: §7's 12px nav inset plus half of the
+    // fixed 44px icon box. Not the rail's centre — the design puts the axis at
+    // 34, and `rail_geometry_test.dart` holds it to that in both states.
     expect(
       tester.getCenter(find.byIcon(Icons.calendar_month_outlined)).dx,
-      sidebarTokens.railWidth / 2,
+      kSidebarSideInset + kSidebarIconBox / 2,
     );
   });
 

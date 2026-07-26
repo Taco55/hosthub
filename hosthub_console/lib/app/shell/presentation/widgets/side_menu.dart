@@ -59,6 +59,7 @@ class SideMenu extends StatelessWidget {
     return BlocBuilder<PropertyContextCubit, PropertyContextState>(
       builder: (context, propertyState) {
         final properties = propertyState.properties;
+        final isSingleProperty = properties.length == 1;
         final channelSettings = ChannelSettingsResolver(
           accountDefaults: AccountChannelDefaults.fromCommissionPercentages(
             booking: adminSettings.bookingChannelFeePercentage,
@@ -72,7 +73,25 @@ class SideMenu extends StatelessWidget {
         );
 
         return StyledSideMenu(
+          // §7's rail geometry. The icon box is fixed and the side inset is the
+          // nav's own padding, which together put every icon centre at
+          // `kSidebarSideInset + kSidebarIconBox / 2` = 34px from the rail's
+          // left edge — in both states, because neither value changes with the
+          // width.
           iconBox: kSidebarIconBox,
+          sideInset: kSidebarSideInset,
+          tileHeight: kSidebarTopLevelRowHeight,
+          branchTileHeight: kSidebarPropertyRowHeight,
+          // A one-property account renders its property's sections flat at the
+          // top level (§5), so they take the top-level icon box and no indent —
+          // still the child row's own height and radius.
+          childTileHeight: isSingleProperty
+              ? kSidebarFlatSubItemRowHeight
+              : kSidebarSubItemRowHeight,
+          childIconBox: isSingleProperty
+              ? kSidebarIconBox
+              : kSidebarSubItemIconBox,
+          childIndent: isSingleProperty ? 0 : kSidebarSubItemIndent,
           headerHeight: kSidebarHeaderHeight,
           onModeChanged: (mode) =>
               context.read<SidebarModeCubit>().setMode(mode),
@@ -149,8 +168,36 @@ class SideMenu extends StatelessWidget {
   };
 }
 
-/// Leading icon-box width shared by every row.
-const double kSidebarIconBox = 48;
+/// Leading icon-box width shared by every row (§7: a fixed 44px box).
+///
+/// Fixed is the point: the box does not change with the rail's width, so an icon
+/// lands on the same x whether the rail is 72 or 284 wide.
+const double kSidebarIconBox = 44;
+
+/// The nav's own horizontal padding (§7: `6px 12px`).
+///
+/// With [kSidebarIconBox] this is what puts every icon centre at 34px from the
+/// rail's left edge. Derived from the rail width instead, it would drift the
+/// moment either width changed.
+const double kSidebarSideInset = 12;
+
+/// How long the pointer rests on the collapsed rail before it expands (§7).
+const Duration kSidebarHoverIntentDelay = Duration(milliseconds: 350);
+
+/// Row heights (§7): a top-level destination, a property, a sub-item.
+const double kSidebarTopLevelRowHeight = 48;
+const double kSidebarPropertyRowHeight = 42;
+const double kSidebarSubItemRowHeight = 36;
+
+/// A sub-item rendered flat at the top level, in a one-property account.
+const double kSidebarFlatSubItemRowHeight = 44;
+
+/// Sub-item indent and icon box (§7: 16 + 32).
+///
+/// The two are chosen together: `12 + 16 + 32 = 60` stays inside the 72px
+/// collapsed rail, so an active sub-item's background cannot spill onto the page.
+const double kSidebarSubItemIndent = 16;
+const double kSidebarSubItemIconBox = 32;
 
 /// Header block height, identical in both states (design: 72px).
 const double kSidebarHeaderHeight = 72;
@@ -239,18 +286,30 @@ class _MenuLogo extends StatelessWidget {
       ),
     );
 
-    if (!expanded) return Center(child: mark);
+    // The same icon column the nav rows use, so the mark sits on the one
+    // vertical axis the design asks for — and, because the column and the inset
+    // are the same in both states, it does not move when the rail collapses.
+    //
+    // It used to centre itself across the compact rail instead. That happened to
+    // land on the same centre while the inset was half the leftover width; §7's
+    // 12px inset made it 2px off, which the rail geometry test caught.
+    final iconColumn = SizedBox(
+      width: scope?.iconBox ?? kSidebarIconBox,
+      child: Center(child: mark),
+    );
+
+    if (!expanded) {
+      // The compact header is full-bleed, so the row supplies the inset the
+      // expanded header would have given it.
+      return Padding(
+        padding: EdgeInsets.only(left: scope?.sideInset ?? kSidebarSideInset),
+        child: Align(alignment: Alignment.centerLeft, child: iconColumn),
+      );
+    }
 
     return Row(
       children: [
-        // The same icon column the nav rows use, so the mark keeps its centre
-        // when the menu expands instead of sliding left, and lands on the one
-        // vertical axis the design asks for. Centring it across the rail (the
-        // compact case above) works out to the same centre.
-        SizedBox(
-          width: StyledSideMenuScope.maybeOf(context)?.iconBox ?? 44,
-          child: Center(child: mark),
-        ),
+        iconColumn,
         Expanded(
           child: Text(
             context.s.appTitle,

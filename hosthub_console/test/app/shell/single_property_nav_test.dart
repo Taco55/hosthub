@@ -29,8 +29,8 @@ void main() {
         properties: single,
       );
 
-      expect(find.text('Rental'), findsOneWidget);
-      expect(find.text('Portfolio'), findsNothing);
+      expect(find.text('RENTAL'), findsOneWidget);
+      expect(find.text('PORTFOLIO'), findsNothing);
     });
 
     testWidgets('the second group is the property\'s own name', (tester) async {
@@ -41,7 +41,7 @@ void main() {
       );
 
       // Not "Properties · 1" — that would head a list of one.
-      expect(find.text('Properties'), findsNothing);
+      expect(find.text('PROPERTIES'), findsNothing);
       expect(find.text('Trysil Panorama'), findsOneWidget);
     });
 
@@ -62,7 +62,7 @@ void main() {
         properties: single,
       );
 
-      expect(find.text('Account'), findsOneWidget);
+      expect(find.text('ACCOUNT'), findsOneWidget);
       expect(find.text('Account settings'), findsOneWidget);
     });
   });
@@ -224,11 +224,11 @@ void main() {
     testWidgets('groups, node, count and chips all return', (tester) async {
       await pumpShell(tester, surface: const Size(1400, 900), properties: four);
 
-      expect(find.text('Portfolio'), findsOneWidget);
-      expect(find.text('Properties'), findsOneWidget);
+      expect(find.text('PORTFOLIO'), findsOneWidget);
+      expect(find.text('PROPERTIES'), findsOneWidget);
       expect(find.text('4'), findsOneWidget);
       expect(find.text('TP'), findsOneWidget);
-      expect(find.text('Rental'), findsNothing);
+      expect(find.text('RENTAL'), findsNothing);
 
       final branches = tiles(
         tester,

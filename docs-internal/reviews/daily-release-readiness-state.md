@@ -107,7 +107,7 @@ onder run 5 over een engine-mix geldt niet meer.
 | M3 | Routing + sidebar-boom (expansie uit de route, deeplinks) | console (+lib) | done | zie M3-bewijs |
 | M4 | Property-filter op Boekingen + Omzet (per pagina per user, nooit leeg) | console (+lib+supabase) | done | zie M4-bewijs |
 | M5 | Single-property-collapse (§5) als configuratie, geen fork | console | done | zie M5-bewijs |
-| M6 | Railgeometrie (§7) incl. no-movement-eis | console (+lib) | todo | |
+| M6 | Railgeometrie (§7) incl. no-movement-eis | console (+lib) | done | zie M6-bewijs |
 
 **M1-bewijs.** Twee tiers, één merge:
 - `properties/domain/booking_channel.dart` — `BookingChannel` + `bookingChannelForSource`: de
@@ -263,6 +263,49 @@ analyze op de 2 bekende infos. Rail-goldens hergenereerd — de harness rendert 
 goldens *zijn* nu het visuele bewijs van de ingeklapte vorm (structuur nagekeken: 7-letter label,
 2 rijen, naamlabel, 4 platte rijen zonder indent, Account-groep).
 
+**M6-bewijs.** Eerst de referentie **gemeten** i.p.v. de spec overgetypt: prototype in de
+browser-pane, `.sb2` met en zonder `.compact`, alle rijen en labels uitgelezen. Uitkomst: rail
+72 / menu 284, `.sb2-nav` padding `6px 12px`, icoonbox 44 → **icooncentrum 34px** in *beide* standen,
+`.nav2` 48, `.nav3` 42 (**óók collapsed 42, niet 46**), `.nav4` 36 met `margin-left:16` en `ib3` 32,
+`.navtree.flat .nav4` 44 met `ib3` 44 en geen indent, `.navgrp` 32 hoog met padding `12px 22px 4px`,
+`600 10px`, ls .7, uppercase, `#7f97ae`; count-pil 11.5/600; badge 10/700; hover-expand met
+`transition-delay .35s`.
+
+Console-tokens nu letterlijk §7 (`side_menu.dart`): `kSidebarIconBox` 48 → **44**,
+`kSidebarSideInset` **12** (expliciet, niet meer afgeleid uit de railbreedte), rijhoogtes 48/42/36,
+sub-item indent 16 + icoonbox 32, platte sub-items 44/44 bij één property,
+`kSidebarHoverIntentDelay` 350ms. Chip 26×26 radius 7 expliciet (`kPropertyChipSize/Radius`), met
+meegeschaalde radius op de kleinere tabelchips.
+
+Lib (sw@160d8be): groepslabels worden door het menu **uppercase** gezet (micro-label is een
+treatment; de host levert zijn eigen vertalingen in natuurlijke case, en `uppercaseLabel: false` voor
+een eigennaam zoals de propertynaam bij één property). Hover-intent-delay was een private constante
+en is nu een parameter — het is een designbesluit over hoe lang een paneel wacht voordat het over je
+werk schuift.
+
+**De no-movement-eis als regressietest** (`rail_geometry_test.dart`, 12 checks): meet elk icoon, elke
+chip en het logo in beide standen en eist identieke rects — bij vier properties met één open, na
+heen-en-terug schakelen, en in het single-property-account; plus groepslabels houden hun hoogte, geen
+rij komt buiten de 72px, de drie rijhoogtes, chipmaat/radius, de gevulde chip van de open property,
+en de 34px-as.
+
+**Die test vond direct een echte bug:** het merkteken in de header centreerde zichzelf over de
+compacte rail (36) i.p.v. in de icoonkolom (34), dus het schoof 2px bij inklappen. Dat viel niet op
+zolang de inset de helft van de restbreedte was ((72-44)/2 = 14 → ook 36); §7's inset van 12 maakte
+het zichtbaar. Nu gebruikt het logo dezelfde icoonkolom en inset als de navrijen, in beide standen.
+
+**Twee bewuste afwijkingen, zelf besloten (memory: bij conflict zelf kiezen):**
+1. §7 zegt "property row 42 px (46 px collapsed)", maar diezelfde paragraaf stelt "**nothing may
+   move**" als hard requirement — en een rij die 4px hoger wordt schuift alles eronder. De
+   referentie zelf houdt 42 in beide standen (gemeten). Wij ook.
+2. De oude test eiste "icoon gecentreerd in de 72px rail" (36). §7 noemt 34 twee keer expliciet
+   (12 + 44/2), dus de as ligt 2px links van het railmidden. Test bijgewerkt met die reden erin.
+
+**Niet aangeraakt:** rijafstand (design `gap:4`, lib `vertical:4`-padding → 8) en icoongrootte
+(design 24/18, console 22/18). §7 specificeert de icoon*box* en de rijhoogtes, niet deze twee; ze
+raken de no-movement-eis niet. 369 tests groen, analyze op de 2 bekende infos, rail-goldens
+hergenereerd en visueel nagekeken (72px, alles op één as, niets buiten de rail).
+
 **Nog open in M4-gebied:** de nachttarieven op de tijdlijn zijn per property; bij meerdere
 geselecteerde properties toont de tijdlijn nog één kalender. Het design zegt niets over de tijdlijn
 bij N properties — bewust niet zelf verzonnen.
@@ -289,8 +332,10 @@ nul. Zodra Accountinstellingen (§4) die velden echt moet bewerken is een per-ac
 "geen UI" is.
 
 ## next_lens
-RUN 6 loopt: M1–M5 done, wacht op review. Daarna M6 (railgeometrie §7 + de no-movement-eis) —
-de laatste stap.
+RUN 6 KLAAR: M1–M6 done (2026-07-26), elk met review-stop. Open, user-gated: visuele verificatie in
+de app (vraagt een ingelogde sessie, zelfde blokkade als E3) en de `portfolio_scope`-migratie naar
+prd. Niet gebouwd omdat het buiten de zes stappen viel: de Accountinstellingen-editor voor
+account-defaults + propertylijst met override-counts (§4b), en de tijdlijn bij N properties.
 RUN 5: E1 + E2 done. E3 (visuele verificatie) is user-gated — vraagt een ingelogde sessie.
 
 **Nog open uit §11, met reden:** de kostenbeheersing (hash-cache, één request per taal, locked

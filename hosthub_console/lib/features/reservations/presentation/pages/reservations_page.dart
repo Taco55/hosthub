@@ -2509,7 +2509,11 @@ class _PropertyCell extends StatelessWidget {
     final property = this.property;
     if (property == null) return const SizedBox.shrink();
 
-    final chip = PropertyChip(abbreviation: property.abbreviation, size: 22);
+    final chip = PropertyChip(
+      abbreviation: property.abbreviation,
+      size: 22,
+      borderRadius: 6,
+    );
     if (!showName) return Align(alignment: Alignment.centerLeft, child: chip);
 
     return Row(

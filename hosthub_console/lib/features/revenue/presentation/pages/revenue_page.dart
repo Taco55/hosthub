@@ -1487,7 +1487,11 @@ class _RevenuePropertyCell extends StatelessWidget {
     if (abbreviation == null) return const SizedBox.shrink();
     return Align(
       alignment: Alignment.centerLeft,
-      child: PropertyChip(abbreviation: abbreviation, size: 22),
+      child: PropertyChip(
+        abbreviation: abbreviation,
+        size: 22,
+        borderRadius: 6,
+      ),
     );
   }
 }
