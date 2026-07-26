@@ -89,8 +89,10 @@ class _SiteSettingsPageState extends State<SiteSettingsPage> {
       builder: (context, state) {
         final loading = state.status == CmsStatus.loading && !_initialized;
         return StyledWebPageScaffold(
+          // Design `.top`: `Settings` over `Site settings` — the section this
+          // page hangs under, then what it is. No sentence underneath.
+          overline: context.s.adminSettingsTitle,
           title: context.s.siteSettingsTitle,
-          description: context.s.siteSettingsSubtitle,
           primaryAction: StyledWebPageAction(
             label: context.s.saveButton,
             icon: Icons.save_outlined,

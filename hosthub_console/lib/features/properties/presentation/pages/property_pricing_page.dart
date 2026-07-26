@@ -22,8 +22,8 @@ class PropertyPricingPage extends StatelessWidget {
             // Design: this wide page has no outer card — the channel
             // sections are the surfaces.
             decorateLeftPane: false,
-            title: context.s.menuPricing,
-            description: context.s.pricingDescription,
+            overline: context.s.menuPricing,
+            title: context.s.pricingPageHeading,
             leftChild: const Center(child: CircularProgressIndicator()),
           );
         }
@@ -32,8 +32,8 @@ class PropertyPricingPage extends StatelessWidget {
             // Design: this wide page has no outer card — the channel
             // sections are the surfaces.
             decorateLeftPane: false,
-            title: context.s.menuPricing,
-            description: context.s.pricingDescription,
+            overline: context.s.menuPricing,
+            title: context.s.pricingPageHeading,
             leftChild: Text(context.s.propertyDetailsEmpty),
           );
         }
@@ -53,8 +53,8 @@ class PropertyPricingPage extends StatelessWidget {
                 // Design: this wide page has no outer card — the channel
                 // sections are the surfaces.
                 decorateLeftPane: false,
-                title: context.s.menuPricing,
-                description: context.s.pricingDescription,
+                overline: context.s.menuPricing,
+                title: context.s.pricingPageHeading,
                 leftChild: const Center(child: CircularProgressIndicator()),
               );
             }
@@ -63,8 +63,8 @@ class PropertyPricingPage extends StatelessWidget {
                 // Design: this wide page has no outer card — the channel
                 // sections are the surfaces.
                 decorateLeftPane: false,
-                title: context.s.menuPricing,
-                description: context.s.pricingDescription,
+                overline: context.s.menuPricing,
+                title: context.s.pricingPageHeading,
                 leftChild: Text('Failed to load pricing: ${snapshot.error}'),
               );
             }
@@ -75,8 +75,8 @@ class PropertyPricingPage extends StatelessWidget {
                 // Design: this wide page has no outer card — the channel
                 // sections are the surfaces.
                 decorateLeftPane: false,
-                title: context.s.menuPricing,
-                description: context.s.pricingDescription,
+                overline: context.s.menuPricing,
+                title: context.s.pricingPageHeading,
                 leftChild: Text(context.s.propertyDetailsEmpty),
               );
             }
@@ -85,20 +85,33 @@ class PropertyPricingPage extends StatelessWidget {
               // Design: this wide page has no outer card — the channel
               // sections are the surfaces.
               decorateLeftPane: false,
-              title: context.s.menuPricing,
-              description: context.s.pricingDescription,
-              leftChild: ListView(
-                padding: EdgeInsets.only(top: context.styledSpacing.lg),
-                children: [
-                  _BookingSettingsSection(
-                    details: data.details,
-                    adminDefaults: data.adminSettings,
-                    repository: propertyRepository,
-                    onSaved: () {
-                      context.read<PropertyContextCubit>().loadProperties();
-                    },
+              // Design `.top`: crumb over the page's own title.
+              overline: context.s.menuPricing,
+              title: context.s.pricingPageHeading,
+              // A Builder so the list reads the scaffold's scope: this closure
+              // runs while the scaffold is still being constructed, so the
+              // outer context sits above it.
+              leftChild: Builder(
+                builder: (context) => ListView(
+                  // Bottom: the page padding, spent at the end of the list, so
+                  // the last card no longer sits against the window edge.
+                  padding: EdgeInsets.only(
+                    top: context.styledSpacing.lg,
+                    bottom: StyledWebPageScaffoldScope.of(
+                      context,
+                    ).contentBottomInset,
                   ),
-                ],
+                  children: [
+                    _BookingSettingsSection(
+                      details: data.details,
+                      adminDefaults: data.adminSettings,
+                      repository: propertyRepository,
+                      onSaved: () {
+                        context.read<PropertyContextCubit>().loadProperties();
+                      },
+                    ),
+                  ],
+                ),
               ),
             );
           },

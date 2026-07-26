@@ -57,7 +57,11 @@ class WebsiteFieldRow extends StatelessWidget {
     );
   }
 
-  Widget _statusChip(BuildContext context, SiteContentCubit cubit, bool locked) {
+  Widget _statusChip(
+    BuildContext context,
+    SiteContentCubit cubit,
+    bool locked,
+  ) {
     final brightness = Theme.of(context).brightness;
     final tokens = locked
         ? WebsiteStatusColors.locked(brightness)

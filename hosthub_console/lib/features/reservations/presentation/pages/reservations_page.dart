@@ -174,6 +174,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
   final Set<String> _markedAsNew = {};
   final Set<String> _hiddenListColumns = {};
   bool _statusFilterInitialized = false;
+  bool _timelineFocusInitialized = false;
 
   GlobalKey _keyForMonth(DateTime month) {
     final key = '${month.year}-${month.month}';
@@ -209,7 +210,11 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
               current.currentProperty?.lodgifyId,
           listener: (context, state) {
             final now = DateTime(DateTime.now().year, DateTime.now().month);
-            setState(() => _focusedMonth = now);
+            setState(() {
+              _focusedMonth = now;
+              // Another property has another first booking.
+              _timelineFocusInitialized = false;
+            });
             _continuousActiveMonth.value = now;
             _loadReservationsForProperty(state.currentProperty);
           },
@@ -270,7 +275,8 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
               .watch<PropertyContextCubit>()
               .state
               .currentProperty;
-          final propertyName = property?.name ?? context.s.revenueUnknownProperty;
+          final propertyName =
+              property?.name ?? context.s.revenueUnknownProperty;
           final propertyId = property?.lodgifyId?.trim() ?? '';
           final locale = Localizations.localeOf(context).toString();
           final dateFormatter = DateFormat('d MMM yyyy', locale);
@@ -310,12 +316,22 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
             // surfaces — a pane card around everything adds a second
             // border the design does not have.
             decorateLeftPane: false,
-            title: context.s.reservationsPageTitle,
-            description: context.s.reservationsPageDescription(propertyName),
+            // Design `.top`: crumb over a title that names the property.
+            overline: context.s.reservationsPageTitle,
+            title: context.s.reservationsPageHeading(propertyName),
             isLoading: state.status == ReservationsStatus.loading,
             leftChild: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Design order inside `.set-wide`: `.kpis`, then `.ptools`,
+                // then the table/calendar. The KPIs summarise the month the
+                // toolbar is filtering, so they read as page context above the
+                // controls, not as a caption under them. Nothing to summarise
+                // when the page is showing a message instead of data.
+                if (_hasReservationData(state, propertyId)) ...[
+                  _buildMetrics(context, state: state, entries: bookings),
+                  SizedBox(height: context.styledSpacing.lg),
+                ],
                 _ReservationsHeader(
                   viewMode: _viewMode,
                   showHistorical: _showHistorical,
@@ -326,7 +342,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                       ? _timelineDensity
                       : null,
                   onViewChanged: (value) {
-                    setState(() => _viewMode = value);
+                    _changeViewMode(value, listBookings: bookings);
                   },
                   onShowHistoricalChanged: (value) {
                     setState(() => _showHistorical = value);
@@ -405,6 +421,110 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     );
   }
 
+  /// Whether the body is showing reservations rather than one of the three
+  /// message states `_buildContent` short-circuits to.
+  bool _hasReservationData(ReservationsState state, String propertyId) {
+    if (propertyId.isEmpty) return false;
+    if (state.status == ReservationsStatus.error) return false;
+    return !(state.status == ReservationsStatus.loading &&
+        state.entries.isEmpty);
+  }
+
+  /// The four KPIs, above the toolbar for both views.
+  ///
+  /// [entries] is the list view's filtered set; the timeline scopes its own
+  /// because it always includes historical bookings. Either way the numbers
+  /// describe the month the user is looking at, so switching view or month
+  /// moves them.
+  Widget _buildMetrics(
+    BuildContext context, {
+    required ReservationsState state,
+    required List<Reservation> entries,
+  }) {
+    final l10n = context.s;
+
+    if (_viewMode == _ReservationsViewMode.list) {
+      return MetricsGrid(
+        metrics: _monthMetrics(
+          _monthSummary(_focusedMonth, entries),
+          l10n: l10n,
+        ),
+      );
+    }
+
+    final timelineBookings = _timelineBookings(state);
+    if (!_continuousMonths) {
+      return MetricsGrid(
+        metrics: _monthMetrics(
+          _monthSummary(_focusedMonth, timelineBookings),
+          l10n: l10n,
+        ),
+      );
+    }
+
+    // Continuous scroll: only the tiles rebuild as the active month changes,
+    // not the 24+ calendar grids below them.
+    return ValueListenableBuilder<DateTime>(
+      valueListenable: _continuousActiveMonth,
+      builder: (context, activeMonth, _) => MetricsGrid(
+        metrics: _monthMetrics(
+          _monthSummary(activeMonth, timelineBookings),
+          l10n: l10n,
+        ),
+      ),
+    );
+  }
+
+  /// Timeline bookings: always including historical, status filter applied.
+  List<Reservation> _timelineBookings(ReservationsState state) {
+    final all = _sortedBookings(state.entries);
+    if (_hiddenStatuses.isEmpty) return all;
+    return all.where((e) {
+      final s = e.status?.trim().toLowerCase() ?? '';
+      return s.isEmpty || !_hiddenStatuses.contains(s);
+    }).toList();
+  }
+
+  /// Switches list/timeline, and on the first switch to the timeline focuses
+  /// the month of the first booking in the list instead of today's month — a
+  /// property whose next stay is months out would otherwise open on an empty
+  /// calendar and have to be scrolled to.
+  void _changeViewMode(
+    _ReservationsViewMode value, {
+    required List<Reservation> listBookings,
+  }) {
+    final isFirstTimelineOpen =
+        value == _ReservationsViewMode.timeline && !_timelineFocusInitialized;
+    final firstStart = isFirstTimelineOpen
+        ? listBookings.map((e) => e.startDate).whereType<DateTime>().firstOrNull
+        : null;
+
+    setState(() {
+      _viewMode = value;
+      if (isFirstTimelineOpen) _timelineFocusInitialized = true;
+      if (firstStart != null) {
+        _focusedMonth = DateTime(firstStart.year, firstStart.month);
+      }
+    });
+
+    if (firstStart == null) return;
+
+    final month = DateTime(firstStart.year, firstStart.month);
+    _continuousActiveMonth.value = month;
+    final propertyId = _lastPropertyId;
+    if (propertyId != null && propertyId.isNotEmpty) {
+      context.read<NightlyRatesCubit>().loadRates(
+        propertyId: propertyId,
+        focusedMonth: month,
+      );
+    }
+    if (_continuousMonths) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _scrollToMonth(month),
+      );
+    }
+  }
+
   Widget _buildContent(
     BuildContext context, {
     required ReservationsState state,
@@ -442,13 +562,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     // Timeline always includes historical; handle before empty check.
     if (_viewMode == _ReservationsViewMode.timeline) {
       // Timeline always shows historical bookings; only apply status filter.
-      final allBookings = _sortedBookings(state.entries);
-      final timelineBookings = _hiddenStatuses.isEmpty
-          ? allBookings
-          : allBookings.where((e) {
-              final s = e.status?.trim().toLowerCase() ?? '';
-              return s.isEmpty || !_hiddenStatuses.contains(s);
-            }).toList();
+      final timelineBookings = _timelineBookings(state);
       final today = _dateOnly(DateTime.now());
 
       // Build nightly-rate labels per day from ALL entries (including
@@ -491,7 +605,6 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
       final density = isCompact
           ? timelineTheme.compact
           : timelineTheme.comfortable;
-      final timelineSummary = _monthSummary(_focusedMonth, timelineBookings);
       final locale = Localizations.localeOf(context).toString();
 
       final timelineEntries = timelineBookings
@@ -550,18 +663,15 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (_continuousMonths) ...[
-            // Metrics + navigation listen to ValueNotifier — only these
-            // rebuild when the active month changes during scroll, NOT the
-            // 24+ TimelineCalendar grids below.
+            // The month navigation listens to the ValueNotifier — only it (and
+            // the KPI tiles above the toolbar) rebuilds when the active month
+            // changes during scroll, NOT the 24+ TimelineCalendar grids below.
             ValueListenableBuilder<DateTime>(
               valueListenable: _continuousActiveMonth,
               builder: (context, activeMonth, _) {
-                final summary = _monthSummary(activeMonth, timelineBookings);
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    MetricsGrid(metrics: _monthMetrics(summary, l10n: l10n)),
-                    SizedBox(height: context.styledSpacing.lg),
                     _ContinuousMonthNavigation(
                       focusedMonth: activeMonth,
                       locale: locale,
@@ -680,9 +790,6 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
               ),
             ),
           ] else ...[
-            // Single-month mode: metrics use _focusedMonth directly
-            MetricsGrid(metrics: _monthMetrics(timelineSummary, l10n: l10n)),
-            SizedBox(height: context.styledSpacing.lg),
             Expanded(
               child: TimelineCalendar(
                 focusedMonth: _focusedMonth,
@@ -730,22 +837,10 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     }
 
     if (_viewMode == _ReservationsViewMode.list) {
-      // Design: the same four KPIs sit above both views, scoped to the focused
-      // month, and move together with the status filter.
-      final listSummary = _monthSummary(_focusedMonth, entries);
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          MetricsGrid(metrics: _monthMetrics(listSummary, l10n: l10n)),
-          SizedBox(height: context.styledSpacing.lg),
-          Expanded(
-            child: _buildListView(
-              entries: entries,
-              dateFormatter: dateFormatter,
-              dateTimeFormatter: dateTimeFormatter,
-            ),
-          ),
-        ],
+      return _buildListView(
+        entries: entries,
+        dateFormatter: dateFormatter,
+        dateTimeFormatter: dateTimeFormatter,
       );
     }
 
@@ -906,11 +1001,25 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
       };
     }
 
-    return StyledToolbarButton.menu<String>(
-      iconData: Icons.ios_share,
+    // Design `.ptools > .btn.btn-line.btn-sm`: the one labelled control in the
+    // toolbar. "Exporteren" is the whole point of the button, and an icon-only
+    // control next to three other icon-only controls does not say that.
+    return StyledMenuOverlay<String>(
       tooltip: context.s.reservationsExportTooltip,
       verticalOffset: 8,
       showDividers: true,
+      anchorBuilder: (anchorContext, isOpen, toggle) => StyledButton(
+        variant: StyledButtonVariant.secondary,
+        title: l10n.reservationsExportLabel,
+        showLeftIcon: true,
+        leftIconData: Icons.file_upload_outlined,
+        iconSize: 16,
+        fontSize: 12.5,
+        // Matches `.tbtn` next to it: 36 high, radius 10.
+        minHeight: 36,
+        cornerRadius: 10,
+        onPressed: toggle,
+      ),
       entries: [
         StyledMenuOverlayEntry(
           value: 'pdf',
@@ -1059,7 +1168,9 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
         _ExportColumn.departure: e.endDate != null
             ? dateFormatter.format(e.endDate!.toLocal())
             : '',
-        _ExportColumn.guestName: _escapeHtml(guestDisplayName(e, fallback: l10n.revenueUnknownBooker)),
+        _ExportColumn.guestName: _escapeHtml(
+          guestDisplayName(e, fallback: l10n.revenueUnknownBooker),
+        ),
         _ExportColumn.guests: _escapeHtml(guestBreakdown(e, unknownLabel: '')),
         _ExportColumn.babyBed: _formatBabyExportValue(
           e.infantCount,
@@ -1116,7 +1227,10 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
       final departure = e.endDate != null
           ? dateFormatter.format(e.endDate!.toLocal())
           : '';
-      final guestName = guestDisplayName(e, fallback: l10n.revenueUnknownBooker);
+      final guestName = guestDisplayName(
+        e,
+        fallback: l10n.revenueUnknownBooker,
+      );
       final guests = guestBreakdown(e, unknownLabel: '');
       final babyBed = _formatBabyExportValue(e.infantCount, l10n: l10n);
       final notes = (e.notes ?? '').replaceAll(RegExp(r'[\t\r\n]+'), ' ');
@@ -1170,7 +1284,10 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
         _ExportColumn.departure: entry.endDate != null
             ? dateFormatter.format(entry.endDate!.toLocal())
             : '',
-        _ExportColumn.guestName: guestDisplayName(entry, fallback: l10n.revenueUnknownBooker),
+        _ExportColumn.guestName: guestDisplayName(
+          entry,
+          fallback: l10n.revenueUnknownBooker,
+        ),
         _ExportColumn.guests: guestBreakdown(entry, unknownLabel: ''),
         _ExportColumn.babyBed: _formatBabyExportValue(
           entry.infantCount,
@@ -1714,7 +1831,8 @@ class _ReservationListView extends StatelessWidget {
         _ReservationListColumn.status => StyledDataColumn(
           columnHeaderLabel: l10n.reservationStatus,
           flex: 1,
-          minWidth: 78,
+          // The chip carries 9px of padding either side of the label.
+          minWidth: 98,
         ),
         _ReservationListColumn.booked => StyledDataColumn(
           columnHeaderLabel: l10n.reservationListColumnBooked,
@@ -1740,7 +1858,11 @@ class _ReservationListView extends StatelessWidget {
       children: [
         Expanded(
           child: ListView(
-            padding: EdgeInsets.only(bottom: context.styledSpacing.lg),
+            // Page bottom padding at the end of the list — see
+            // `bottomPaddingInsideContent`.
+            padding: EdgeInsets.only(
+              bottom: StyledWebPageScaffoldScope.of(context).contentBottomInset,
+            ),
             children: [
               StyledDataTable(
                 // Design `.tbl-wrap` + `.dt td{border-bottom}`: one surface with
@@ -1786,7 +1908,10 @@ class _ReservationListView extends StatelessWidget {
                         ),
                       ),
                       _ReservationListColumn.guestName => textCell(
-                        guestDisplayName(entry, fallback: l10n.revenueUnknownBooker),
+                        guestDisplayName(
+                          entry,
+                          fallback: l10n.revenueUnknownBooker,
+                        ),
                         fontWeight: FontWeight.w600,
                       ),
                       _ReservationListColumn.checkIn => textCell(
@@ -1811,7 +1936,10 @@ class _ReservationListView extends StatelessWidget {
                             : l10n.no,
                         textAlign: TextAlign.left,
                       ),
-                      _ReservationListColumn.status => textCell(entry.status),
+                      _ReservationListColumn.status => Align(
+                        alignment: Alignment.centerLeft,
+                        child: _StatusChip(status: entry.status),
+                      ),
                       _ReservationListColumn.booked => textCell(
                         formatDateTime(entry.createdAt, dateTimeFormatter),
                       ),
@@ -1848,6 +1976,41 @@ class _ReservationListView extends StatelessWidget {
   }
 }
 
+/// Design `.stat`: the booking status as a tinted pill, not a word in the row.
+///
+/// The label is Lodgify's own status string — the console does not own that
+/// vocabulary, and the filter menu lists the same raw values — but the tone is
+/// ours, so a cancellation is visible without reading the column.
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({required this.status});
+
+  final String? status;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = status?.trim();
+    if (label == null || label.isEmpty) return const SizedBox.shrink();
+
+    // Lodgify's vocabulary, mapped onto the console's four tones. The pill
+    // itself is shared with every other state pill in the app.
+    final tone = switch (label.toLowerCase()) {
+      final s when s.contains('cancel') || s.contains('declin') =>
+        StatusPillTone.negative,
+      final s
+          when s.contains('tentative') ||
+              s.contains('pending') ||
+              s.contains('option') ||
+              s.contains('hold') =>
+        StatusPillTone.caution,
+      final s when s.contains('book') || s.contains('confirm') =>
+        StatusPillTone.positive,
+      _ => StatusPillTone.neutral,
+    };
+
+    return StatusPill(label: label, tone: tone);
+  }
+}
+
 /// The four KPIs from the design, scoped to one month: Boekingen, Aankomsten,
 /// Vertrekken, Bezetting.
 ///
@@ -1859,7 +2022,10 @@ List<MetricTileData> _monthMetrics(_MonthSummary summary, {required S l10n}) {
     MetricTileData(
       label: l10n.reservationsKpiBookings,
       value: '${summary.bookingCount}',
-      icon: Icons.book_online_outlined,
+      // Design `.kpi .kl svg`: a calendar, a check-in arrow, a check-out arrow
+      // and a suitcase — the four glyphs read as one set, which a ticket icon
+      // and a bed do not.
+      icon: Icons.calendar_month_outlined,
       caption: l10n.reservationsKpiBookingsCaption,
     ),
     MetricTileData(
@@ -1877,7 +2043,7 @@ List<MetricTileData> _monthMetrics(_MonthSummary summary, {required S l10n}) {
     MetricTileData(
       label: l10n.reservationsKpiOccupancy,
       value: '${summary.occupancyPercentage}%',
-      icon: Icons.hotel_outlined,
+      icon: Icons.work_outline,
       caption: l10n.reservationsBarNights(summary.occupiedNights),
     ),
   ];

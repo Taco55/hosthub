@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:hosthub_console/features/channel_manager/domain/channel_manager_repository.dart';
 import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
 import 'package:hosthub_console/features/channel_manager/infrastructure/lodgify/dto/lodgify_calendar_dto.dart';
+import 'package:hosthub_console/features/channel_manager/infrastructure/lodgify/dto/lodgify_property_details_dto.dart';
 import 'package:hosthub_console/features/channel_manager/infrastructure/lodgify/dto/lodgify_property_dto.dart';
 import 'package:hosthub_console/core/services/lodgify_service.dart';
 
@@ -24,6 +25,12 @@ class LodgifyChannelManagerRepository implements ChannelManagerRepository {
               LodgifyPropertyDto(id: p.id, name: p.name, raw: p.raw).toDomain(),
         )
         .toList();
+  }
+
+  @override
+  Future<ChannelPropertyDetails> fetchPropertyDetails(String propertyId) async {
+    final details = await _lodgifyService.fetchPropertyDetails(propertyId);
+    return LodgifyPropertyDetailsDto.fromMap(details.raw).toDomain();
   }
 
   @override

@@ -7,14 +7,17 @@ class MetricTileData {
   const MetricTileData({
     required this.label,
     required this.value,
-    required this.icon,
+    this.icon,
     this.caption,
     this.tone = StyledStatTone.neutral,
   });
 
   final String label;
   final String value;
-  final IconData icon;
+
+  /// Design `.kpi .kl`: the reservations tiles carry an icon, the revenue
+  /// tiles do not — so this is optional, not a per-page decoration choice.
+  final IconData? icon;
 
   /// Design `.kpi .kd`: the supporting line under the figure.
   final String? caption;

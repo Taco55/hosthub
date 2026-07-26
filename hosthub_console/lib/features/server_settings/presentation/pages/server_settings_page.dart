@@ -74,8 +74,9 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
         final canSave = _canSave(state) && !isMutating;
 
         return StyledWebPageScaffold(
+          // Design `.top`: the section crumb over the page's own subject.
+          overline: context.s.adminSettingsTitle,
           title: context.s.serverSettingsTitle,
-          description: context.s.serverSettingsSubtitle,
           intrinsicPaneHeight: true,
           primaryAction: StyledWebPageAction(
             label: context.s.saveButton,

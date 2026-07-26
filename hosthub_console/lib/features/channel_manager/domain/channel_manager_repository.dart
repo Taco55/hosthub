@@ -8,6 +8,13 @@ abstract class ChannelManagerRepository {
   /// Fetch all properties from the channel manager.
   Future<List<ChannelProperty>> fetchProperties();
 
+  /// Fetch the full record of one property from the channel manager.
+  ///
+  /// [fetchProperties] only carries what property discovery needs (id + name);
+  /// this is the call that returns the fields the console mirrors onto its own
+  /// property row.
+  Future<ChannelPropertyDetails> fetchPropertyDetails(String propertyId);
+
   /// Fetch reservations/calendar entries for a specific property.
   Future<List<Reservation>> fetchReservations(
     String propertyId, {

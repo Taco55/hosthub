@@ -223,15 +223,45 @@ void main() {
   });
 
   group('page chrome follows the design', () {
-    test('page padding is .set-body, not double it', () {
+    test('page body shares its left edge with the page header', () {
+      // `.top{padding:16px 22px}`: the scaffold spends this once, on the
+      // column that holds the header *and* the content, so title, toolbar and
+      // content cannot land on different left edges. Vertically `lg` / `xxl`
+      // off the spacing scale — the bottom keeps the last card off the
+      // viewport edge.
+      final spacing = styledFor(Brightness.light).spacing;
       expect(
         styledFor(Brightness.light).webPageScaffold.pagePadding,
-        const EdgeInsets.fromLTRB(30, 26, 30, 40),
+        EdgeInsets.fromLTRB(22, spacing.lg, 22, spacing.xxl),
       );
     });
 
-    test('wide pages centre at .set-wide max-width', () {
+    test('wide pages cap at .set-wide max-width', () {
       expect(styledFor(Brightness.light).webPageScaffold.contentMaxWidth, 1040);
+    });
+
+    test('the page title is the design 19/700 crumb-and-title, not a headline',
+        () {
+      final header = styledFor(Brightness.light).webPageScaffold;
+
+      // `.top h1{font-size:19px;font-weight:700;letter-spacing:-.3px}` over
+      // `.crumb{font-size:12px}`. Stated in the preset so pages pass strings.
+      expect(header.titleTextStyle?.fontSize, 19);
+      expect(header.titleTextStyle?.letterSpacing, -0.3);
+      expect(header.overlineTextStyle?.fontSize, 12);
+    });
+
+    test('the title band closes with the design hairline', () {
+      // `.top{border-bottom:1px solid var(--jo-border)}` — the same grey as
+      // every card border, and dark mode swaps it rather than dropping it.
+      expect(
+        styledFor(Brightness.light).webPageScaffold.headerDividerColor,
+        HosthubDiploraV1Palette.softGrey,
+      );
+      expect(
+        styledFor(Brightness.dark).webPageScaffold.headerDividerColor,
+        HosthubDiploraV1Palette.outlineDark,
+      );
     });
   });
 
@@ -385,6 +415,40 @@ void main() {
         calendar.monthHeadingPadding,
         const EdgeInsets.fromLTRB(2, 14, 2, 6),
       ); // `.calmonth-hd{padding:14px 2px 6px}`
+    });
+  });
+
+  group('decision: the outlined button is a hairline, not a second blue CTA', () {
+    test('light: design .btn-line — white, card-border hairline, slate label', () {
+      final buttons = styledFor(Brightness.light).buttons;
+
+      expect(buttons.secondaryBackgroundColor, Colors.white);
+      expect(buttons.secondaryBorderColor, HosthubDiploraV1Palette.softGrey);
+      expect(
+        buttons.secondaryLabelColor,
+        HosthubDiploraV1Palette.outlineButtonLabel,
+      );
+    });
+
+    test('the outlined label is never `primary` — that is the filled button', () {
+      for (final brightness in Brightness.values) {
+        expect(
+          styledFor(brightness).buttons.secondaryLabelColor,
+          isNot(themeFor(brightness).colorScheme.primary),
+          reason: 'outlined button label in $brightness',
+        );
+      }
+    });
+
+    test('dark: the same button on the dark surfaces, not white-on-white', () {
+      final buttons = styledFor(Brightness.dark).buttons;
+
+      expect(
+        buttons.secondaryBackgroundColor,
+        HosthubDiploraV1Palette.surfaceContainerDark,
+      );
+      expect(buttons.secondaryBorderColor, HosthubDiploraV1Palette.outlineDark);
+      expect(buttons.secondaryLabelColor, HosthubDiploraV1Palette.onSurfaceDark);
     });
   });
 }

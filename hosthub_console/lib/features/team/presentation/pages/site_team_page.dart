@@ -35,8 +35,8 @@ class SiteTeamPage extends StatelessWidget {
       builder: (context, state) {
         if (state.isLoading && state.members.isEmpty) {
           return StyledWebPageScaffold(
+            overline: siteName,
             title: s.teamTitle,
-            description: siteName,
             onBack: () async {
               context.pop();
               return false;
@@ -46,8 +46,10 @@ class SiteTeamPage extends StatelessWidget {
         }
 
         return StyledWebPageScaffold(
+          // Design `.top`: the site this team belongs to as the crumb, the
+          // page's own subject as the title — not a name as a subtitle.
+          overline: siteName,
           title: s.teamTitle,
-          description: siteName,
           onBack: () async {
             context.pop();
             return false;

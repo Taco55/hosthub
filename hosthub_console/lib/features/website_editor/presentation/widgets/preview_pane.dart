@@ -128,10 +128,17 @@ class _PreviewToolbar extends StatelessWidget {
       ),
     );
 
+    // The caption sits left, the toggle right — flush with the preview toggle
+    // in the editor header above it. Side by side they read as one group, and
+    // the caption looks like the first (unstyled) tab of the switcher.
+    // `spaceBetween` on a Wrap, not a Row: when the pane is too narrow for
+    // both, the toggle drops to its own line instead of squeezing the caption
+    // out of existence.
     return Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
       spacing: 12,
       runSpacing: 8,
-      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Text(
           s.weLivePreview,

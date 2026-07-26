@@ -31,10 +31,10 @@ void main() {
     expect(find.byIcon(Icons.menu), findsNothing);
     expect(find.text('Reservations'), findsNothing);
     // Icons remain reachable.
-    expect(find.byIcon(Icons.calendar_today), findsOneWidget);
+    expect(find.byIcon(Icons.calendar_month_outlined), findsOneWidget);
     // Icon centred in the 72px rail, the same x as in the expanded menu.
     expect(
-      tester.getCenter(find.byIcon(Icons.calendar_today)).dx,
+      tester.getCenter(find.byIcon(Icons.calendar_month_outlined)).dx,
       sidebarTokens.railWidth / 2,
     );
   });

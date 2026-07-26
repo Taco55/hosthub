@@ -97,7 +97,6 @@ class PropertySetupPage extends StatelessWidget {
               settingsState.status == SettingsStatus.loading) {
             return StyledWebPageScaffold(
               title: context.s.propertySetupTitle,
-              description: context.s.propertySetupDescription,
               leftChild: const Center(child: CircularProgressIndicator()),
             );
           }
@@ -106,8 +105,9 @@ class PropertySetupPage extends StatelessWidget {
               settingsState.settings?.lodgifyConnected ?? false;
 
           return StyledWebPageScaffold(
+            // Design `.top` carries no sentence under the title; the setup
+            // guidance is the body's job (`propertySetupConnectBody`).
             title: context.s.propertySetupTitle,
-            description: context.s.propertySetupDescription,
             leftChild: SingleChildScrollView(
               padding: EdgeInsets.zero,
               child: Column(

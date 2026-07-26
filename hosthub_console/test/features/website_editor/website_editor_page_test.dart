@@ -72,6 +72,23 @@ Future<SiteContentCubit> pumpEditor(WidgetTester tester) async {
 }
 
 void main() {
+  testWidgets('the title bar names the property, not the open page', (
+    tester,
+  ) async {
+    await pumpEditor(tester);
+
+    // Regression: the bar showed the page name, so the title flipped from the
+    // property to "Home" as soon as content loaded. The page you are on is the
+    // selected tab right below the title.
+    expect(find.text('Trysil Panorama'), findsOneWidget);
+    expect(find.text('Website'), findsOneWidget);
+    final tabs = find.descendant(
+      of: find.byType(StyledSegmentedControl),
+      matching: find.text('Home'),
+    );
+    expect(tabs, findsOneWidget, reason: 'Home is a tab, not the title');
+  });
+
   testWidgets('source mode marks NL as the source and shows its content', (
     tester,
   ) async {

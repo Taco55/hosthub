@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict f8UDwJy5COdfFHJuitwCWEtRzUM7wBGGuVcdpUWOfwvQnzdg35UB7ErLpHW2uE8
+\restrict ufNQ8IXQexrGaHgvs3rbB1qQAqdYmKq0m0IIfhsXwBiGdkCWE118mlubEF1v8zO
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -692,11 +692,19 @@ CREATE TABLE public.properties (
     service_cost_fixed numeric DEFAULT 0 NOT NULL,
     other_cost_fixed numeric DEFAULT 0 NOT NULL,
     channel_settings jsonb,
-    owner_profile_id uuid DEFAULT public.account_owner_for(auth.uid())
+    owner_profile_id uuid DEFAULT public.account_owner_for(auth.uid()),
+    lodgify_synced_at timestamp with time zone
 );
 
 
 ALTER TABLE public.properties OWNER TO postgres;
+
+--
+-- Name: COLUMN properties.lodgify_synced_at; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.properties.lodgify_synced_at IS 'When this row''s Lodgify-owned columns (address, rooms, prices, …) were last written from the Lodgify API. Null means never synced: those columns hold defaults, not Lodgify data.';
+
 
 --
 -- Name: properties_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -1998,5 +2006,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON T
 -- PostgreSQL database dump complete
 --
 
-\unrestrict f8UDwJy5COdfFHJuitwCWEtRzUM7wBGGuVcdpUWOfwvQnzdg35UB7ErLpHW2uE8
+\unrestrict ufNQ8IXQexrGaHgvs3rbB1qQAqdYmKq0m0IIfhsXwBiGdkCWE118mlubEF1v8zO
 

@@ -125,7 +125,6 @@ class _SitesPageState extends State<SitesPage> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return StyledWebPageScaffold(
               title: context.s.sitesTitle,
-              description: context.s.sitesDescription,
               leftChild: const Center(child: CircularProgressIndicator()),
             );
           }
@@ -133,7 +132,6 @@ class _SitesPageState extends State<SitesPage> {
           if (snapshot.hasError) {
             return StyledWebPageScaffold(
               title: context.s.sitesTitle,
-              description: context.s.sitesDescription,
               leftChild: Center(
                 child: Text(
                   context.s.sitesLoadFailed(snapshot.error.toString()),
@@ -157,7 +155,6 @@ class _SitesPageState extends State<SitesPage> {
             });
             return StyledWebPageScaffold(
               title: context.s.sitesTitle,
-              description: context.s.sitesDescription,
               leftChild: const Center(child: CircularProgressIndicator()),
             );
           }
@@ -165,7 +162,6 @@ class _SitesPageState extends State<SitesPage> {
           // No sites – show create button
           return StyledWebPageScaffold(
             title: context.s.sitesTitle,
-            description: context.s.sitesDescription,
             leftChild: Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,

@@ -115,16 +115,16 @@ class _SiteContentBody extends StatelessWidget {
           if (state.status == CmsStatus.initial ||
               state.status == CmsStatus.loading) {
             return StyledWebPageScaffold(
+              overline: context.s.sitesTitle,
               title: pageTitle,
-              description: context.s.cmsContentDescription,
               leftChild: const Center(child: CircularProgressIndicator()),
             );
           }
 
           if (state.status == CmsStatus.error) {
             return StyledWebPageScaffold(
+              overline: context.s.sitesTitle,
               title: pageTitle,
-              description: context.s.cmsContentDescription,
               leftChild: Center(
                 child: Text(
                   context.s.cmsLoadFailed(state.error?.message ?? ''),
@@ -164,8 +164,9 @@ class _SiteContentBody extends StatelessWidget {
           final showVersionPane = state.versionHistoryDocId != null;
 
           return StyledWebPageScaffold(
+            // Design `.top`: the section crumb over the site's own name.
+            overline: context.s.sitesTitle,
             title: pageTitle,
-            description: context.s.cmsContentDescription,
             primaryAction: StyledWebPageAction(
               label: state.isDirty || state.isSaving
                   ? context.s.cmsSaveDraftButton

@@ -23,6 +23,12 @@ abstract final class HosthubDiploraV1Palette {
   static const Color textVariant = Color(0xFF44474E);
   static const Color outlineGrey = Color(0xFF74777F);
   static const Color searchPlaceholder = Color(0xFF7794A7);
+
+  /// Design `.btn-line{color:#33506f}`: the label on an outlined button. A
+  /// slate between [secondary] and [outlineGrey] — a secondary action reads as
+  /// text on a hairline, not as a second blue call to action next to the
+  /// primary button.
+  static const Color outlineButtonLabel = Color(0xFF33506F);
   static const Color success = Color(0xFF099773);
   static const Color warning = Color(0xFFF68F46);
   static const Color error = Color(0xFFEB5757);
@@ -272,13 +278,43 @@ abstract final class HosthubThemePreset {
         panePadding: const EdgeInsets.all(24),
         pageBackgroundColor: Colors.white,
         pageBackgroundColorDark: HosthubDiploraV1Palette.surfaceDark,
-        // Design `.set-body{padding:26px 30px 40px}` — the previous 64px sides
-        // were roughly double the design and read as a huge gap next to the
-        // sidebar.
-        pagePadding: const EdgeInsets.fromLTRB(30, 26, 30, 40),
-        // Design `.set-wide{max-width:1040px;margin:0 auto}`: wide pages centre
-        // their content instead of stretching a table across a 27" monitor.
+        // Design `.top{padding:16px 22px}`. The scaffold spends this once, on
+        // the column that holds the header *and* the content, so title,
+        // toolbar and content cannot end up on different left edges. The
+        // design's own `.set-body{padding:26px 30px 40px}` sets the body 8px
+        // further in than the header it belongs to; 22px sides (as in
+        // `.body`) is the alignment the mock actually intends. Vertically:
+        // `lg` on top, `xxl` at the bottom so the last card clears the
+        // viewport edge when you scroll to it.
+        pagePadding: const EdgeInsets.fromLTRB(22, 16, 22, 32),
+        // Design `.set-wide{max-width:1040px}`: wide pages cap their content
+        // instead of stretching a table across a 27" monitor. The design's
+        // `margin:0 auto` is dropped on purpose — the cap applies to the whole
+        // page column, header included, and that column stays flush left.
         contentMaxWidth: 1040,
+        // Design `.top`: crumb at 12px in the outline grey over a 19/700 title
+        // — not a Material headline. Stated here so a page passes strings and
+        // nothing else; the colours come from the scaffold's defaults
+        // (`outline` = `--jo-fg-outline`, `secondary` = the heading blue).
+        overlineTextStyle: const TextStyle(fontSize: 12, height: 1.3),
+        titleTextStyle: const TextStyle(fontSize: 19, letterSpacing: -0.3),
+        // The design's page headers carry no sentence under the title — a page
+        // that still passes one gets the muted footnote size, not body copy.
+        descriptionTextStyle: const TextStyle(fontSize: 12.5),
+        // Design `.top{border-bottom:1px solid var(--jo-border)}`: the title
+        // band closes with a hairline that runs the full page width — chrome
+        // under the toolbar, not a line drawn around the content. Same
+        // hairline as every card border, so there is one grey.
+        headerDividerColor: HosthubDiploraV1Palette.softGrey,
+        headerDividerColorDark: HosthubDiploraV1Palette.outlineDark,
+        // `.set-body{padding:20px 22px 32px}` — the gap under the rule. Like
+        // the 22px sides it is the design's own number and off the named
+        // spacing steps; the band above the rule takes `pagePadding.top`, so
+        // the title sits centred in its own band.
+        headerBottomSpacing: 20,
+        // The 32px page bottom is spent *inside* the scrolling pane, so a list
+        // runs to the window edge and only pads once you reach its end.
+        bottomPaddingInsideContent: true,
       ),
       // Navigation rail (design §5 + §"Responsieve strategie"): the full menu
       // from 1100px, the pinned icon rail down to 600px — no hamburger, so
@@ -397,7 +433,12 @@ abstract final class HosthubThemePreset {
       // looked alike (README §11e).
       formFields: (t) => t.copyWith(
         input: t.input.copyWith(
-          contentPadding: const EdgeInsets.all(16),
+          // `.inp{padding:11px 13px}` — `all(16)` made every field ~10px
+          // taller than the design and stretched each card with it.
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 13,
+            vertical: 11,
+          ),
           backgroundColor: Colors.white,
           backgroundColorDark: HosthubDiploraV1Palette.surfaceContainerDark,
           borderColor: HosthubDiploraV1Palette.softGrey,
@@ -427,6 +468,18 @@ abstract final class HosthubThemePreset {
       ),
       buttons: (t) => t.copyWith(
         cornerRadius: 12,
+        // Design `.btn-line`: white, a hairline in the card-border grey, and a
+        // slate label. The library's default outlined button is
+        // `primary`-on-`outline`, which puts a second blue call to action in
+        // every toolbar and draws the eye away from the page. Stated here so
+        // all of them change together — never per call site.
+        secondaryBackgroundColor: Colors.white,
+        secondaryBorderColor: HosthubDiploraV1Palette.softGrey,
+        secondaryLabelColor: HosthubDiploraV1Palette.outlineButtonLabel,
+        secondaryBackgroundColorDark:
+            HosthubDiploraV1Palette.surfaceContainerDark,
+        secondaryBorderColorDark: HosthubDiploraV1Palette.outlineDark,
+        secondaryLabelColorDark: HosthubDiploraV1Palette.onSurfaceDark,
         destructiveBackgroundColor: HosthubDiploraV1Palette.errorSoft,
         destructiveBorderColor: HosthubDiploraV1Palette.error,
         destructiveLabelColor: HosthubDiploraV1Palette.error,

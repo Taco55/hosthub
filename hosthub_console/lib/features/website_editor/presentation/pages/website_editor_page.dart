@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hosthub_console/app/shell/application/site_context_cubit.dart';
 import 'package:hosthub_console/core/core.dart';
 import 'package:hosthub_console/core/widgets/foundation/foundation.dart';
+import 'package:hosthub_console/features/properties/properties.dart';
 
 import '../../application/site_content_cubit.dart';
 import '../../data/edge_function_translation_service.dart';
@@ -92,7 +93,17 @@ class _WebsiteEditorView extends StatelessWidget {
           // centres its content — a form line does not become more readable by
           // being 1600px wide.
           contentMaxWidth: state.previewVisible ? null : 760,
-          leftChild: EditorColumn(state: state, siteId: siteId),
+          leftChild: EditorColumn(
+            state: state,
+            siteId: siteId,
+            // The editor's title names the property, and that comes from the
+            // app's property context — not from the content seed.
+            propertyName: context
+                .watch<PropertyContextCubit>()
+                .state
+                .currentProperty
+                ?.name,
+          ),
           rightChild: PreviewPane(state: state),
           showRightPane: state.previewVisible,
         );

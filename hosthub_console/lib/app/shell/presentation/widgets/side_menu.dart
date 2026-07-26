@@ -72,13 +72,16 @@ class SideMenu extends StatelessWidget {
                 onTap: () => _select(context, MenuItem.sites),
               ),
               StyledNavItem(
-                icon: Icons.calendar_today,
+                // Design nav glyphs: a month calendar for reservations and a
+                // bar chart for revenue. The bare `show_chart` line was the one
+                // icon in the rail that did not match its page.
+                icon: Icons.calendar_month_outlined,
                 label: s.reservations,
                 selected: selectedItem == MenuItem.reservations,
                 onTap: () => _select(context, MenuItem.reservations),
               ),
               StyledNavItem(
-                icon: Icons.show_chart,
+                icon: Icons.bar_chart,
                 label: s.menuRevenue,
                 selected: selectedItem == MenuItem.revenue,
                 onTap: () => _select(context, MenuItem.revenue),
@@ -120,9 +123,8 @@ class SideMenu extends StatelessWidget {
                 icon: Icons.logout,
                 label: s.logoutLabel,
                 onTap: authState.status == AuthStatus.authenticated
-                    ? () => context.read<AuthBloc>().add(
-                        const AuthEvent.logout(),
-                      )
+                    ? () =>
+                          context.read<AuthBloc>().add(const AuthEvent.logout())
                     : null,
               ),
             ],

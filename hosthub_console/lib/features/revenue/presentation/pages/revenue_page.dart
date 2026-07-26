@@ -175,9 +175,32 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
             // surfaces — a pane card around everything adds a second
             // border the design does not have.
             decorateLeftPane: false,
-            title: context.s.menuRevenue,
-            description: context.s.revenueDescription(propertyName),
+            // Design `.top`: a small section crumb over a title that names
+            // the property — not a title with a sentence under it.
+            overline: context.s.menuRevenue,
+            title: context.s.revenueHeading(propertyName),
             actions: [
+              // Design `.top`: the period `.seg` sits in the header band beside
+              // the title, not on top of the body.
+              StyledSegmentedControl(
+                labels: [
+                  s.revenuePeriodMonth,
+                  s.revenuePeriodQuarter,
+                  s.revenuePeriodYear,
+                ],
+                selectedIndex: _period.index,
+                onChanged: (index) {
+                  final value = _RevenuePeriod.values[index];
+                  setState(() {
+                    _period = value;
+                    _periodAnchor = _startOfPeriod(value, DateTime.now());
+                  });
+                  _loadForProperty(property, force: true);
+                },
+              ),
+              const SizedBox(width: 8),
+              // Not in the mock, which has no way to reload: the page reads a
+              // live Lodgify feed, so it keeps a refresh affordance.
               StyledToolbarButton(
                 iconData: Icons.refresh,
                 tooltip: context.s.revenueRefreshTooltip,
@@ -190,15 +213,7 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
             leftChild: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _RevenueHeader(
-                  period: _period,
-                  onPeriodChanged: (value) {
-                    setState(() {
-                      _period = value;
-                      _periodAnchor = _startOfPeriod(value, DateTime.now());
-                    });
-                    _loadForProperty(property, force: true);
-                  },
+                _RevenuePeriodNav(
                   onPreviousPeriod: () {
                     setState(() {
                       final currentStart = _startOfPeriod(
@@ -239,7 +254,9 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
                   periodLabel: periodLabel,
                   periodRangeLabel: periodRangeLabel,
                 ),
-                SizedBox(height: context.styledSpacing.md),
+                // Design `.pnav`/`.kpis{margin-bottom:18px}` — 18 is off the
+                // 4px scale, so both gaps round to `lg`.
+                SizedBox(height: context.styledSpacing.lg),
                 _RevenueKpis(
                   totals: totals,
                   periodDays: periodRange.end
@@ -343,237 +360,230 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
     // out rather than drawn misleadingly.
     final breakdown = _breakdownEntries(rows);
     final chartMonths = monthsInRange(periodRange.start, periodRange.end);
-    final channels = channelTotals(
-      breakdown,
-      labelOf: BookingSourceIcon.label,
-    );
+    final channels = channelTotals(breakdown, labelOf: BookingSourceIcon.label);
 
-    return ListView(
-      padding: EdgeInsets.only(bottom: context.styledSpacing.lg),
-      children: [
-        if (chartMonths.length >= 2) ...[
-          _RevenueMonthChart(
-            months: chartMonths,
-            entries: breakdown,
-            currency: totals.currency,
-            periodLabel: periodLabel,
-            locale: locale,
-          ),
-          SizedBox(height: context.styledSpacing.lg),
-        ],
-        if (channels.isNotEmpty) ...[
-          _RevenueChannelSplit(
-            channels: channels,
-            currency: totals.currency,
-          ),
-          SizedBox(height: context.styledSpacing.lg),
-        ],
-        StyledDataTable(
-          // Design `.tbl-wrap` + `.dt td{border-bottom}`: one surface with
-          // hairline separators, not gapped rounded row cards.
-          variant: StyledTableVariant.plain,
-          dense: true,
-          uppercaseHeaderLabels: false,
-          columns: [
-            StyledDataColumn(
-              columnHeader: Text(
-                S.of(context).revenueColumnBooker,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              flex: 3,
-              minWidth: 180,
-            ),
-            StyledDataColumn(
-              columnHeader: Text(
-                S.of(context).revenueColumnCheckIn,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              flex: 2,
-              minWidth: 120,
-            ),
-            StyledDataColumn(
-              columnHeader: Text(
-                S.of(context).revenueColumnCheckOut,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              flex: 2,
-              minWidth: 120,
-            ),
-            StyledDataColumn(
-              columnHeader: Text(
-                S.of(context).revenueColumnNights,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.right,
-              ),
-              flex: 1,
-              minWidth: 80,
-              alignment: Alignment.centerRight,
-              headerAlignment: Alignment.centerRight,
-            ),
-            StyledDataColumn(
-              columnHeader: Text(
-                S.of(context).revenueColumnNightlyRate,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.right,
-              ),
-              flex: 2,
-              minWidth: 128,
-              alignment: Alignment.centerRight,
-              headerAlignment: Alignment.centerRight,
-            ),
-            StyledDataColumn(
-              columnHeader: Text(
-                S.of(context).revenueColumnTotal,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.right,
-              ),
-              flex: 2,
-              minWidth: 128,
-              alignment: Alignment.centerRight,
-              headerAlignment: Alignment.centerRight,
-            ),
-            StyledDataColumn(
-              columnHeader: Text(
-                S.of(context).revenueColumnFixedCosts,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.right,
-              ),
-              flex: 2,
-              minWidth: 128,
-              alignment: Alignment.centerRight,
-              headerAlignment: Alignment.centerRight,
-            ),
-            StyledDataColumn(
-              columnHeader: Text(
-                S.of(context).revenueColumnChannelFee,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.right,
-              ),
-              flex: 2,
-              minWidth: 128,
-              alignment: Alignment.centerRight,
-              headerAlignment: Alignment.centerRight,
-            ),
-            StyledDataColumn(
-              columnHeader: Text(
-                S.of(context).revenueColumnNet,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.right,
-              ),
-              flex: 2,
-              minWidth: 128,
-              alignment: Alignment.centerRight,
-              headerAlignment: Alignment.centerRight,
-            ),
-            const StyledDataColumn(
-              columnHeader: Icon(Icons.hub_outlined, size: 16),
-              flex: 1,
-              width: 56,
-              alignment: Alignment.center,
-              headerAlignment: Alignment.center,
-            ),
-          ],
-          itemCount: rows.length,
-          rowBuilder: (tableContext, index) {
-            final row = rows[index];
-            return [
-              textCell(tableContext, row.booker, fontWeight: FontWeight.w600),
-              textCell(tableContext, formatDateTime(row.checkIn, dateFormatter)),
-              textCell(tableContext, formatDateTime(row.checkOut, dateFormatter)),
-              textCell(
-                tableContext,
-                row.nights.toString(),
-                textAlign: TextAlign.right,
-              ),
-              textCell(
-                tableContext,
-                formatAmount(row.nightlyRate, row.currency),
-                textAlign: TextAlign.right,
-              ),
-              textCell(
-                tableContext,
-                formatAmount(row.totalRevenue, row.currency),
-                textAlign: TextAlign.right,
-              ),
-              textCell(
-                tableContext,
-                formatAmount(row.serviceCosts, row.currency),
-                textAlign: TextAlign.right,
-              ),
-              textCell(
-                tableContext,
-                formatAmount(row.fees, row.currency),
-                textAlign: TextAlign.right,
-              ),
-              textCell(
-                tableContext,
-                formatAmount(row.netRevenue, row.currency),
-                textAlign: TextAlign.right,
-                fontWeight: FontWeight.w600,
-              ),
-              sourceCell(tableContext, row.source),
-            ];
-          },
-          onRowTap: (_, index) {
-            _showReservationDetails(
-              context,
-              rows[index].entry,
-              dateFormatter: dateFormatter,
-              dateTimeFormatter: dateTimeFormatter,
-              settings: _adminSettings,
-              property: property,
-            );
-          },
-          showTableWhenEmpty: true,
-          emptyLabel: noBookedStaysLabel,
-          // Design `.dt tfoot`: nights, gross, costs, commission and net summed
-          // under the columns they belong to. Only drawn when there is
-          // something to sum.
-          footerCells: rows.isEmpty
-              ? null
-              : [
-                  Text(
-                    S.of(context).revenueTotalsRowLabel,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  null,
-                  null,
-                  _totalCell(totals.totalNights.toString()),
-                  null,
-                  _totalCell(
-                    formatAmount(totals.totalRevenue, totals.currency),
-                  ),
-                  _totalCell(
-                    formatAmount(totals.totalServiceCosts, totals.currency),
-                  ),
-                  _totalCell(
-                    formatAmount(totals.totalFees, totals.currency),
-                  ),
-                  _totalCell(
-                    formatAmount(totals.totalNetRevenue, totals.currency),
-                  ),
-                  null,
-                ],
+    // A Builder so the list reads the scaffold's scope: this method runs while
+    // the scaffold is still being constructed, so `context` here is above it.
+    return Builder(
+      builder: (context) => ListView(
+        // The page's bottom padding lives here, at the end of the list, so the
+        // table scrolls all the way to the window edge instead of stopping
+        // above a dead band (`bottomPaddingInsideContent`).
+        padding: EdgeInsets.only(
+          bottom: StyledWebPageScaffoldScope.of(context).contentBottomInset,
         ),
-        if (rows.isEmpty)
-          Padding(
-            padding: EdgeInsets.only(top: context.styledSpacing.md),
-            child: Text(
-              noBookedStaysLabel,
-              style: Theme.of(context).textTheme.bodyMedium,
+        children: [
+          if (chartMonths.length >= 2) ...[
+            _RevenueMonthChart(
+              months: chartMonths,
+              entries: breakdown,
+              currency: totals.currency,
+              periodLabel: periodLabel,
+              locale: locale,
             ),
+            SizedBox(height: context.styledSpacing.lg),
+          ],
+          if (channels.isNotEmpty) ...[
+            _RevenueChannelSplit(channels: channels, currency: totals.currency),
+            SizedBox(height: context.styledSpacing.lg),
+          ],
+          StyledDataTable(
+            // Design `.tbl-wrap` + `.dt td{border-bottom}`: one surface with
+            // hairline separators, not gapped rounded row cards.
+            variant: StyledTableVariant.plain,
+            dense: true,
+            uppercaseHeaderLabels: false,
+            columns: [
+              StyledDataColumn(
+                columnHeader: Text(
+                  S.of(context).revenueColumnBooker,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                flex: 3,
+                minWidth: 168,
+              ),
+              StyledDataColumn(
+                columnHeader: Text(
+                  S.of(context).revenueColumnCheckIn,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                flex: 2,
+                minWidth: 112,
+              ),
+              StyledDataColumn(
+                columnHeader: Text(
+                  S.of(context).revenueColumnNights,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
+                ),
+                flex: 1,
+                minWidth: 72,
+                alignment: Alignment.centerRight,
+                headerAlignment: Alignment.centerRight,
+              ),
+              StyledDataColumn(
+                columnHeader: Text(
+                  S.of(context).revenueColumnNightlyRate,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
+                ),
+                flex: 2,
+                minWidth: 112,
+                alignment: Alignment.centerRight,
+                headerAlignment: Alignment.centerRight,
+              ),
+              StyledDataColumn(
+                columnHeader: Text(
+                  S.of(context).revenueColumnGross,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
+                ),
+                flex: 2,
+                minWidth: 112,
+                alignment: Alignment.centerRight,
+                headerAlignment: Alignment.centerRight,
+              ),
+              StyledDataColumn(
+                columnHeader: Text(
+                  S.of(context).revenueColumnCosts,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
+                ),
+                flex: 2,
+                minWidth: 112,
+                alignment: Alignment.centerRight,
+                headerAlignment: Alignment.centerRight,
+              ),
+              StyledDataColumn(
+                columnHeader: Text(
+                  S.of(context).revenueColumnCommission,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
+                ),
+                flex: 2,
+                minWidth: 112,
+                alignment: Alignment.centerRight,
+                headerAlignment: Alignment.centerRight,
+              ),
+              StyledDataColumn(
+                columnHeader: Text(
+                  S.of(context).revenueColumnNet,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
+                ),
+                flex: 2,
+                minWidth: 112,
+                alignment: Alignment.centerRight,
+                headerAlignment: Alignment.centerRight,
+              ),
+              const StyledDataColumn(
+                columnHeader: Icon(Icons.hub_outlined, size: 16),
+                flex: 1,
+                width: 56,
+                alignment: Alignment.center,
+                headerAlignment: Alignment.center,
+              ),
+            ],
+            itemCount: rows.length,
+            rowBuilder: (tableContext, index) {
+              final row = rows[index];
+              return [
+                textCell(tableContext, row.booker, fontWeight: FontWeight.w600),
+                textCell(
+                  tableContext,
+                  formatDateTime(row.checkIn, dateFormatter),
+                ),
+                textCell(
+                  tableContext,
+                  row.nights.toString(),
+                  textAlign: TextAlign.right,
+                ),
+                textCell(
+                  tableContext,
+                  formatAmount(row.nightlyRate, row.currency),
+                  textAlign: TextAlign.right,
+                ),
+                textCell(
+                  tableContext,
+                  formatAmount(row.totalRevenue, row.currency),
+                  textAlign: TextAlign.right,
+                ),
+                textCell(
+                  tableContext,
+                  formatAmount(row.serviceCosts, row.currency),
+                  textAlign: TextAlign.right,
+                ),
+                textCell(
+                  tableContext,
+                  formatAmount(row.fees, row.currency),
+                  textAlign: TextAlign.right,
+                ),
+                textCell(
+                  tableContext,
+                  formatAmount(row.netRevenue, row.currency),
+                  textAlign: TextAlign.right,
+                  fontWeight: FontWeight.w600,
+                ),
+                sourceCell(tableContext, row.source),
+              ];
+            },
+            onRowTap: (_, index) {
+              _showReservationDetails(
+                context,
+                rows[index].entry,
+                dateFormatter: dateFormatter,
+                dateTimeFormatter: dateTimeFormatter,
+                settings: _adminSettings,
+                property: property,
+              );
+            },
+            showTableWhenEmpty: true,
+            emptyLabel: noBookedStaysLabel,
+            // Design `.dt tfoot`: nights, gross, costs, commission and net summed
+            // under the columns they belong to. Only drawn when there is
+            // something to sum.
+            footerCells: rows.isEmpty
+                ? null
+                : [
+                    Text(
+                      S.of(context).revenueTotalsRowLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    null,
+                    _totalCell(totals.totalNights.toString()),
+                    null,
+                    _totalCell(
+                      formatAmount(totals.totalRevenue, totals.currency),
+                    ),
+                    _totalCell(
+                      formatAmount(totals.totalServiceCosts, totals.currency),
+                    ),
+                    _totalCell(formatAmount(totals.totalFees, totals.currency)),
+                    _totalCell(
+                      formatAmount(totals.totalNetRevenue, totals.currency),
+                    ),
+                    null,
+                  ],
           ),
-      ],
+          if (rows.isEmpty)
+            Padding(
+              padding: EdgeInsets.only(top: context.styledSpacing.md),
+              child: Text(
+                noBookedStaysLabel,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -656,18 +666,16 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
   }
 }
 
-class _RevenueHeader extends StatelessWidget {
-  const _RevenueHeader({
-    required this.period,
-    required this.onPeriodChanged,
+/// Design `.pnav`: previous/next arrows around the selected period and its
+/// date range. The period *choice* itself lives in the header band (`.top`).
+class _RevenuePeriodNav extends StatelessWidget {
+  const _RevenuePeriodNav({
     required this.onPreviousPeriod,
     required this.onNextPeriod,
     required this.periodLabel,
     required this.periodRangeLabel,
   });
 
-  final _RevenuePeriod period;
-  final ValueChanged<_RevenuePeriod> onPeriodChanged;
   final VoidCallback? onPreviousPeriod;
   final VoidCallback? onNextPeriod;
   final String periodLabel;
@@ -676,51 +684,33 @@ class _RevenueHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final s = context.s;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Row(
       children: [
-        StyledSegmentedControl(
-          labels: [
-            s.revenuePeriodMonth,
-            s.revenuePeriodQuarter,
-            s.revenuePeriodYear,
-          ],
-          selectedIndex: period.index,
-          onChanged: (index) {
-            onPeriodChanged(_RevenuePeriod.values[index]);
-          },
+        _buildPeriodArrowButton(
+          context,
+          iconData: Icons.chevron_left_rounded,
+          onPressed: onPreviousPeriod,
         ),
-        SizedBox(height: context.styledSpacing.md),
-        Row(
+        SizedBox(width: context.styledSpacing.md),
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildPeriodArrowButton(
-              context,
-              iconData: Icons.chevron_left_rounded,
-              onPressed: onPreviousPeriod,
+            Text(
+              periodLabel,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
-            SizedBox(width: context.styledSpacing.md),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  periodLabel,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                SizedBox(height: context.styledSpacing.xs),
-                Text(periodRangeLabel, style: theme.textTheme.bodySmall),
-              ],
-            ),
-            SizedBox(width: context.styledSpacing.md),
-            _buildPeriodArrowButton(
-              context,
-              iconData: Icons.chevron_right_rounded,
-              onPressed: onNextPeriod,
-            ),
+            SizedBox(height: context.styledSpacing.xs),
+            Text(periodRangeLabel, style: theme.textTheme.bodySmall),
           ],
+        ),
+        SizedBox(width: context.styledSpacing.md),
+        _buildPeriodArrowButton(
+          context,
+          iconData: Icons.chevron_right_rounded,
+          onPressed: onNextPeriod,
         ),
       ],
     );
@@ -761,31 +751,29 @@ class _RevenueKpis extends StatelessWidget {
         ? 0
         : ((totals.totalNights / periodDays) * 100).round();
 
+    // Design: the revenue `.kpi .kl` is a plain label — no icon, unlike the
+    // reservations tiles.
     return MetricsGrid(
       metrics: [
         MetricTileData(
           label: s.revenueKpiGross,
           value: formatAmount(totals.totalRevenue, totals.currency),
-          icon: Icons.payments_outlined,
           caption: s.revenueKpiGrossCaption(totals.bookingCount),
         ),
         MetricTileData(
           label: s.revenueKpiNet,
           value: formatAmount(totals.totalNetRevenue, totals.currency),
-          icon: Icons.account_balance_wallet_outlined,
           caption: s.revenueKpiNetCaption,
         ),
         MetricTileData(
           label: s.revenueKpiAdr,
           value: formatAmount(totals.averageNightlyRate, totals.currency),
-          icon: Icons.trending_up_outlined,
-          caption: s.revenueKpiAdrCaption,
+          caption: s.revenueKpiAdrCaption(totals.totalNights),
         ),
         MetricTileData(
           label: s.revenueKpiOccupancy,
           value: '$occupancy%',
-          icon: Icons.hotel_outlined,
-          caption: s.revenueKpiOccupancyCaption(totals.totalNights),
+          caption: s.revenueKpiOccupancyCaption,
         ),
       ],
     );
@@ -844,6 +832,10 @@ class _RevenueMonthChart extends StatelessWidget {
     return StyledSection(
       isFirstSection: true,
       headerInsideGroup: true,
+      // The page pane already pads its content; the section's own 24 would
+      // indent the chart card past the period control, the KPI tiles and the
+      // table, which all sit flush against the pane.
+      horizontalPadding: 0,
       header: s.revenueChartTitle,
       headerAction: Text(
         periodLabel,
@@ -895,7 +887,8 @@ class _RevenueChannelSplit extends StatelessWidget {
     final spacing = context.styledSpacing;
     final largest = channels.fold<double>(
       0,
-      (previous, channel) => channel.gross > previous ? channel.gross : previous,
+      (previous, channel) =>
+          channel.gross > previous ? channel.gross : previous,
     );
 
     return StyledSection(
@@ -903,6 +896,8 @@ class _RevenueChannelSplit extends StatelessWidget {
       headerInsideGroup: true,
       // Design `.split`: a stack of meters, not a list of rows — no dividers.
       showDividers: false,
+      // Flush with the rest of the page — see the chart card.
+      horizontalPadding: 0,
       header: context.s.revenueChannelSplitTitle,
       children: [
         for (final channel in channels)

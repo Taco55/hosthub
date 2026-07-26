@@ -2,6 +2,7 @@ import 'package:app_errors/app_errors.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:hosthub_console/features/auth/infrastructure/supabase/supabase_repository.dart';
+import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
 import 'package:hosthub_console/features/properties/domain/channel_settings.dart';
 
 class PropertySummary {
@@ -66,6 +67,7 @@ class PropertyDetails {
     this.inOut,
     this.currency,
     this.subscriptionPlans,
+    this.lodgifySyncedAt,
     this.channelSettings = const ChannelSettings(),
   });
 
@@ -93,6 +95,14 @@ class PropertyDetails {
   final Object? inOut;
   final Object? currency;
   final List<String>? subscriptionPlans;
+
+  /// When the Lodgify-owned columns above were last written from Lodgify.
+  ///
+  /// Null means never: they hold their defaults, not Lodgify's answer. This is
+  /// per property, unlike `UserSettings.lodgifyLastSyncedAt`, which only records
+  /// when the account last looked for *new* properties.
+  final DateTime? lodgifySyncedAt;
+
   final ChannelSettings channelSettings;
 
   /// Resolved currency code from the Lodgify currency field.
@@ -146,6 +156,7 @@ class PropertyDetails {
       inOut: map['in_out'],
       currency: map['currency'],
       subscriptionPlans: _toStringList(map['subscription_plans']),
+      lodgifySyncedAt: _toDateTime(map['lodgify_synced_at']),
       channelSettings: ChannelSettings.fromMap(
         map['channel_settings'] as Map<String, dynamic>?,
       ),
@@ -159,7 +170,7 @@ const _propertyDetailsColumns =
     'has_agreement, agreement_text, agreement_url, owner_spoken_languages, '
     'rating, price_unit_in_days, min_price, original_min_price, max_price, '
     'original_max_price, rooms, in_out_max_date, in_out, currency, '
-    'subscription_plans, channel_settings';
+    'subscription_plans, lodgify_synced_at, channel_settings';
 
 class PropertyRepository extends SupabaseRepository {
   PropertyRepository({required SupabaseClient supabase}) : super(supabase);
@@ -235,6 +246,74 @@ class PropertyRepository extends SupabaseRepository {
         stack,
         reason: DomainErrorReason.cannotLoadData,
         context: {'op': 'fetchPropertyDetails', 'property_id': id},
+      );
+    }
+  }
+
+  /// Mirror a channel manager's property record onto the local property row.
+  ///
+  /// This is the write that makes the record page show anything: creating a
+  /// property only stores its name and channel id, so every other column keeps
+  /// its default until a sync fills it in.
+  ///
+  /// A mirror, not a merge — the channel's record is the truth, so a field the
+  /// channel does not report is cleared here too. The exceptions are the columns
+  /// that cannot take a null: [ChannelPropertyDetails.name] and the two presence
+  /// flags are only written when the channel actually reported them.
+  Future<PropertyDetails> saveChannelDetails({
+    required int propertyId,
+    required ChannelPropertyDetails details,
+    DateTime? syncedAt,
+  }) async {
+    try {
+      final payload = <String, dynamic>{
+        'address': details.address,
+        'zip': details.zip,
+        'city': details.city,
+        'country': details.country,
+        'image_url': details.imageUrl,
+        'agreement_text': details.agreementText,
+        'agreement_url': details.agreementUrl,
+        'owner_spoken_languages': details.ownerSpokenLanguages,
+        'rating': details.rating,
+        'price_unit_in_days': details.priceUnitInDays,
+        'min_price': details.minPrice,
+        'original_min_price': details.originalMinPrice,
+        'max_price': details.maxPrice,
+        'original_max_price': details.originalMaxPrice,
+        'rooms': details.rooms,
+        'in_out_max_date': details.inOutMaxDate?.toUtc().toIso8601String(),
+        'in_out': details.inOut,
+        'currency': details.currency,
+        'subscription_plans': details.subscriptionPlans,
+        'lodgify_synced_at': (syncedAt ?? DateTime.now())
+            .toUtc()
+            .toIso8601String(),
+        // `properties` carries no updated_at trigger, so the row's own stamp has
+        // to be set by whoever writes it.
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      };
+
+      final name = details.name?.trim();
+      if (name != null && name.isNotEmpty) payload['name'] = name;
+      if (details.hasAddons != null) payload['has_addons'] = details.hasAddons;
+      if (details.hasAgreement != null) {
+        payload['has_agreement'] = details.hasAgreement;
+      }
+
+      final response = await supabase
+          .from('properties')
+          .update(payload)
+          .eq('id', propertyId)
+          .select(_propertyDetailsColumns)
+          .single();
+      return PropertyDetails.fromMap(response);
+    } catch (error, stack) {
+      throw mapError(
+        error,
+        stack,
+        reason: DomainErrorReason.cannotSaveData,
+        context: {'op': 'saveChannelDetails', 'property_id': propertyId},
       );
     }
   }

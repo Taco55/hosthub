@@ -74,16 +74,6 @@ class S {
     );
   }
 
-  /// `Admin settings that apply to all users.`
-  String get serverSettingsSubtitle {
-    return Intl.message(
-      'Admin settings that apply to all users.',
-      name: 'serverSettingsSubtitle',
-      desc: '',
-      args: [],
-    );
-  }
-
   /// `Settings`
   String get adminSettingsTitle {
     return Intl.message(
@@ -514,16 +504,6 @@ class S {
     return Intl.message(
       'Property details',
       name: 'propertyDetailsTitle',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Read-only overview of the selected property.`
-  String get propertyDetailsDescription {
-    return Intl.message(
-      'Read-only overview of the selected property.',
-      name: 'propertyDetailsDescription',
       desc: '',
       args: [],
     );
@@ -5409,16 +5389,6 @@ class S {
     );
   }
 
-  /// `Connect Lodgify or create a property manually to get started.`
-  String get propertySetupDescription {
-    return Intl.message(
-      'Connect Lodgify or create a property manually to get started.',
-      name: 'propertySetupDescription',
-      desc: '',
-      args: [],
-    );
-  }
-
   /// `Connect Lodgify to import your properties.`
   String get propertySetupConnectDescription {
     return Intl.message(
@@ -5504,16 +5474,6 @@ class S {
     return Intl.message(
       'Property website',
       name: 'sitesTitle',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Each website is scoped to a workspace with locales and domains.`
-  String get sitesDescription {
-    return Intl.message(
-      'Each website is scoped to a workspace with locales and domains.',
-      name: 'sitesDescription',
       desc: '',
       args: [],
     );
@@ -6144,6 +6104,384 @@ class S {
     );
   }
 
+  /// `Property`
+  String get propertyDetailsOverline {
+    return Intl.message(
+      'Property',
+      name: 'propertyDetailsOverline',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Refresh data`
+  String get propertyDetailsRefresh {
+    return Intl.message(
+      'Refresh data',
+      name: 'propertyDetailsRefresh',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Try again`
+  String get propertyDetailsRefreshRetry {
+    return Intl.message(
+      'Try again',
+      name: 'propertyDetailsRefreshRetry',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Reads this property again. Link a Lodgify property to be able to sync its data.`
+  String get propertyDetailsRefreshTooltip {
+    return Intl.message(
+      'Reads this property again. Link a Lodgify property to be able to sync its data.',
+      name: 'propertyDetailsRefreshTooltip',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Last sync with Lodgify: {lastSync}. Fetches the data again now.`
+  String propertyDetailsRefreshTooltipSynced(String lastSync) {
+    return Intl.message(
+      'Last sync with Lodgify: $lastSync. Fetches the data again now.',
+      name: 'propertyDetailsRefreshTooltipSynced',
+      desc:
+          'Sync tooltip on the property record, answering how old the data is.',
+      args: [lastSync],
+    );
+  }
+
+  /// `Sync now`
+  String get propertyDetailsSync {
+    return Intl.message(
+      'Sync now',
+      name: 'propertyDetailsSync',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Fetches this property from Lodgify now. Never synced before.`
+  String get propertyDetailsSyncTooltip {
+    return Intl.message(
+      'Fetches this property from Lodgify now. Never synced before.',
+      name: 'propertyDetailsSyncTooltip',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Data from Lodgify updated.`
+  String get propertyDetailsSyncDone {
+    return Intl.message(
+      'Data from Lodgify updated.',
+      name: 'propertyDetailsSyncDone',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Linked · ID {lodgifyId} · last sync {lastSync}`
+  String propertyDetailsConnectionSummary(String lodgifyId, String lastSync) {
+    return Intl.message(
+      'Linked · ID $lodgifyId · last sync $lastSync',
+      name: 'propertyDetailsConnectionSummary',
+      desc: 'Subtitle of the Lodgify connection row on the property record.',
+      args: [lodgifyId, lastSync],
+    );
+  }
+
+  /// `Linked · ID {lodgifyId} · never synced`
+  String propertyDetailsConnectionSummaryNoSync(String lodgifyId) {
+    return Intl.message(
+      'Linked · ID $lodgifyId · never synced',
+      name: 'propertyDetailsConnectionSummaryNoSync',
+      desc:
+          'Lodgify connection subtitle before the first sync, when the fields below are still empty.',
+      args: [lodgifyId],
+    );
+  }
+
+  /// `No Lodgify property is linked to this property.`
+  String get propertyDetailsConnectionMissing {
+    return Intl.message(
+      'No Lodgify property is linked to this property.',
+      name: 'propertyDetailsConnectionMissing',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Active`
+  String get propertyDetailsConnectionActive {
+    return Intl.message(
+      'Active',
+      name: 'propertyDetailsConnectionActive',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This data comes from Lodgify and is managed there. Change it in Lodgify and sync to update it here.`
+  String get propertyDetailsSourceNote {
+    return Intl.message(
+      'This data comes from Lodgify and is managed there. Change it in Lodgify and sync to update it here.',
+      name: 'propertyDetailsSourceNote',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Address`
+  String get propertyDetailsAddressCard {
+    return Intl.message(
+      'Address',
+      name: 'propertyDetailsAddressCard',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Street`
+  String get propertyDetailsStreet {
+    return Intl.message(
+      'Street',
+      name: 'propertyDetailsStreet',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Postal code`
+  String get propertyDetailsZip {
+    return Intl.message(
+      'Postal code',
+      name: 'propertyDetailsZip',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `City`
+  String get propertyDetailsCity {
+    return Intl.message(
+      'City',
+      name: 'propertyDetailsCity',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Country`
+  String get propertyDetailsCountry {
+    return Intl.message(
+      'Country',
+      name: 'propertyDetailsCountry',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Rental`
+  String get propertyDetailsRentalCard {
+    return Intl.message(
+      'Rental',
+      name: 'propertyDetailsRentalCard',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Rooms`
+  String get propertyDetailsRooms {
+    return Intl.message(
+      'Rooms',
+      name: 'propertyDetailsRooms',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count, plural, =1{1 room} other{{count} rooms}}`
+  String propertyDetailsRoomsCount(int count) {
+    return Intl.plural(
+      count,
+      one: '1 room',
+      other: '$count rooms',
+      name: 'propertyDetailsRoomsCount',
+      desc: 'Number of rooms Lodgify reports for the property.',
+      args: [count],
+    );
+  }
+
+  /// `{count, plural, =1{1 guest} other{{count} guests}}`
+  String propertyDetailsGuestsCount(int count) {
+    return Intl.plural(
+      count,
+      one: '1 guest',
+      other: '$count guests',
+      name: 'propertyDetailsGuestsCount',
+      desc: 'Guest capacity summed over the property\'s rooms.',
+      args: [count],
+    );
+  }
+
+  /// `Rating`
+  String get propertyDetailsRating {
+    return Intl.message(
+      'Rating',
+      name: 'propertyDetailsRating',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{rating} out of 5`
+  String propertyDetailsRatingValue(String rating) {
+    return Intl.message(
+      '$rating out of 5',
+      name: 'propertyDetailsRatingValue',
+      desc: 'Guest rating on a five-point scale.',
+      args: [rating],
+    );
+  }
+
+  /// `Price range`
+  String get propertyDetailsPriceRange {
+    return Intl.message(
+      'Price range',
+      name: 'propertyDetailsPriceRange',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Price unit`
+  String get propertyDetailsPriceUnit {
+    return Intl.message(
+      'Price unit',
+      name: 'propertyDetailsPriceUnit',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{days, plural, =1{Per night} other{Per {days} nights}}`
+  String propertyDetailsPriceUnitValue(int days) {
+    return Intl.plural(
+      days,
+      one: 'Per night',
+      other: 'Per $days nights',
+      name: 'propertyDetailsPriceUnitValue',
+      desc: 'The period a Lodgify price applies to.',
+      args: [days],
+    );
+  }
+
+  /// `Owner languages`
+  String get propertyDetailsOwnerLanguages {
+    return Intl.message(
+      'Owner languages',
+      name: 'propertyDetailsOwnerLanguages',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Extras`
+  String get propertyDetailsAddons {
+    return Intl.message(
+      'Extras',
+      name: 'propertyDetailsAddons',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Rental agreement`
+  String get propertyDetailsAgreement {
+    return Intl.message(
+      'Rental agreement',
+      name: 'propertyDetailsAgreement',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Available`
+  String get propertyDetailsPresent {
+    return Intl.message(
+      'Available',
+      name: 'propertyDetailsPresent',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `None`
+  String get propertyDetailsAbsent {
+    return Intl.message(
+      'None',
+      name: 'propertyDetailsAbsent',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Raw data from Lodgify`
+  String get propertyDetailsRawTitle {
+    return Intl.message(
+      'Raw data from Lodgify',
+      name: 'propertyDetailsRawTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Check-in/out rules, rooms, subscriptions`
+  String get propertyDetailsRawSummary {
+    return Intl.message(
+      'Check-in/out rules, rooms, subscriptions',
+      name: 'propertyDetailsRawSummary',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Check-in/out rules`
+  String get propertyDetailsRawInOut {
+    return Intl.message(
+      'Check-in/out rules',
+      name: 'propertyDetailsRawInOut',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Subscriptions`
+  String get propertyDetailsRawSubscriptions {
+    return Intl.message(
+      'Subscriptions',
+      name: 'propertyDetailsRawSubscriptions',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Lodgify has not sent any raw data for this property yet.`
+  String get propertyDetailsRawEmpty {
+    return Intl.message(
+      'Lodgify has not sent any raw data for this property yet.',
+      name: 'propertyDetailsRawEmpty',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Create manually`
   String get propertySetupManualTitle {
     return Intl.message(
@@ -6204,11 +6542,11 @@ class S {
     );
   }
 
-  /// `Per-property channel pricing settings.`
-  String get pricingDescription {
+  /// `Channels & costs`
+  String get pricingPageHeading {
     return Intl.message(
-      'Per-property channel pricing settings.',
-      name: 'pricingDescription',
+      'Channels & costs',
+      name: 'pricingPageHeading',
       desc: '',
       args: [],
     );
@@ -6474,16 +6812,6 @@ class S {
     return Intl.message(
       'Website Content',
       name: 'cmsContentTitle',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `View and manage all website content for this site.`
-  String get cmsContentDescription {
-    return Intl.message(
-      'View and manage all website content for this site.',
-      name: 'cmsContentDescription',
       desc: '',
       args: [],
     );
@@ -6794,11 +7122,11 @@ class S {
     );
   }
 
-  /// `Revenue for {propertyName} from Lodgify bookings.`
-  String revenueDescription(Object propertyName) {
+  /// `Revenue · {propertyName}`
+  String revenueHeading(Object propertyName) {
     return Intl.message(
-      'Revenue for $propertyName from Lodgify bookings.',
-      name: 'revenueDescription',
+      'Revenue · $propertyName',
+      name: 'revenueHeading',
       desc: '',
       args: [propertyName],
     );
@@ -6859,9 +7187,14 @@ class S {
     );
   }
 
-  /// `Gross`
+  /// `Gross revenue`
   String get revenueKpiGross {
-    return Intl.message('Gross', name: 'revenueKpiGross', desc: '', args: []);
+    return Intl.message(
+      'Gross revenue',
+      name: 'revenueKpiGross',
+      desc: '',
+      args: [],
+    );
   }
 
   /// `{count} bookings`
@@ -6874,9 +7207,14 @@ class S {
     );
   }
 
-  /// `Net`
+  /// `Net revenue`
   String get revenueKpiNet {
-    return Intl.message('Net', name: 'revenueKpiNet', desc: '', args: []);
+    return Intl.message(
+      'Net revenue',
+      name: 'revenueKpiNet',
+      desc: '',
+      args: [],
+    );
   }
 
   /// `after costs`
@@ -6899,13 +7237,13 @@ class S {
     );
   }
 
-  /// `per night`
-  String get revenueKpiAdrCaption {
+  /// `{nights} nights`
+  String revenueKpiAdrCaption(Object nights) {
     return Intl.message(
-      'per night',
+      '$nights nights',
       name: 'revenueKpiAdrCaption',
       desc: '',
-      args: [],
+      args: [nights],
     );
   }
 
@@ -6919,13 +7257,13 @@ class S {
     );
   }
 
-  /// `{nights} nights`
-  String revenueKpiOccupancyCaption(Object nights) {
+  /// `of the period`
+  String get revenueKpiOccupancyCaption {
     return Intl.message(
-      '$nights nights',
+      'of the period',
       name: 'revenueKpiOccupancyCaption',
       desc: '',
-      args: [nights],
+      args: [],
     );
   }
 
@@ -7054,16 +7392,6 @@ class S {
     );
   }
 
-  /// `Check-out`
-  String get revenueColumnCheckOut {
-    return Intl.message(
-      'Check-out',
-      name: 'revenueColumnCheckOut',
-      desc: '',
-      args: [],
-    );
-  }
-
   /// `Nights`
   String get revenueColumnNights {
     return Intl.message(
@@ -7074,41 +7402,41 @@ class S {
     );
   }
 
-  /// `Nightly\nrate`
+  /// `Nightly rate`
   String get revenueColumnNightlyRate {
     return Intl.message(
-      'Nightly\nrate',
+      'Nightly rate',
       name: 'revenueColumnNightlyRate',
       desc: '',
       args: [],
     );
   }
 
-  /// `Total`
-  String get revenueColumnTotal {
+  /// `Gross`
+  String get revenueColumnGross {
     return Intl.message(
-      'Total',
-      name: 'revenueColumnTotal',
+      'Gross',
+      name: 'revenueColumnGross',
       desc: '',
       args: [],
     );
   }
 
-  /// `Fixed\ncosts`
-  String get revenueColumnFixedCosts {
+  /// `Costs`
+  String get revenueColumnCosts {
     return Intl.message(
-      'Fixed\ncosts',
-      name: 'revenueColumnFixedCosts',
+      'Costs',
+      name: 'revenueColumnCosts',
       desc: '',
       args: [],
     );
   }
 
-  /// `Channel\nfee`
-  String get revenueColumnChannelFee {
+  /// `Commission`
+  String get revenueColumnCommission {
     return Intl.message(
-      'Channel\nfee',
-      name: 'revenueColumnChannelFee',
+      'Commission',
+      name: 'revenueColumnCommission',
       desc: '',
       args: [],
     );
@@ -7169,11 +7497,11 @@ class S {
     );
   }
 
-  /// `Bookings for {property} from Lodgify.`
-  String reservationsPageDescription(Object property) {
+  /// `Bookings · {property}`
+  String reservationsPageHeading(Object property) {
     return Intl.message(
-      'Bookings for $property from Lodgify.',
-      name: 'reservationsPageDescription',
+      'Bookings · $property',
+      name: 'reservationsPageHeading',
       desc: '',
       args: [property],
     );
@@ -8159,16 +8487,6 @@ class S {
     return Intl.message(
       'Website settings',
       name: 'siteSettingsTitle',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Per-site contact and booking configuration.`
-  String get siteSettingsSubtitle {
-    return Intl.message(
-      'Per-site contact and booking configuration.',
-      name: 'siteSettingsSubtitle',
       desc: '',
       args: [],
     );

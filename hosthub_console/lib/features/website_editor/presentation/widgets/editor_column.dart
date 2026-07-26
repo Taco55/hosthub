@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
 import 'package:hosthub_console/core/widgets/foundation/foundation.dart';
+import 'package:hosthub_console/core/widgets/layout/layout.dart';
 
 import '../../application/site_content_cubit.dart';
 import '../../domain/website_content.dart';
@@ -14,12 +15,22 @@ import 'website_field_row.dart';
 /// content cards (Hero, Highlights) and the save bar. Renders source mode
 /// (mode A) and translation mode (mode B) from the same form.
 class EditorColumn extends StatelessWidget {
-  const EditorColumn({super.key, required this.state, this.siteId});
+  const EditorColumn({
+    super.key,
+    required this.state,
+    this.siteId,
+    this.propertyName,
+  });
 
   final SiteContentState state;
 
   /// When editing a real site, enables the settings/team shortcuts.
   final String? siteId;
+
+  /// The property being edited, for the title bar. `null` falls back to the
+  /// name the content state carries, so the widget stays usable without the
+  /// app's property context.
+  final String? propertyName;
 
   @override
   Widget build(BuildContext context) {
@@ -27,12 +38,13 @@ class EditorColumn extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _TopBar(state: state, siteId: siteId),
+        _TopBar(state: state, siteId: siteId, propertyName: propertyName),
         _PageTabs(state: state),
         Divider(height: 1, thickness: 1, color: scheme.outlineVariant),
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(22, 18, 22, 18),
+            // Design `.body{padding:20px 22px 30px}`.
+            padding: const EdgeInsets.fromLTRB(22, 20, 22, 30),
             children: [
               _Banner(state: state),
               if (!state.isSourceMode) ...[
@@ -45,7 +57,7 @@ class EditorColumn extends StatelessWidget {
                 const SizedBox(height: 16),
                 _HighlightsCard(state: state),
               ] else
-                _ContentCard(state: state),
+                _GenericFieldsCard(state: state),
             ],
           ),
         ),
@@ -56,14 +68,38 @@ class EditorColumn extends StatelessWidget {
 }
 
 class _TopBar extends StatelessWidget {
-  const _TopBar({required this.state, this.siteId});
+  const _TopBar({required this.state, this.siteId, this.propertyName});
   final SiteContentState state;
   final String? siteId;
+  final String? propertyName;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    // This bar lives inside the editor column (design `.editcol .top`), not in
+    // the page scaffold's header band, so it composes the same title/overline
+    // type the scaffold does rather than inventing its own.
+    final scaffoldTheme = StyledWidgetsTheme.of(context).webPageScaffold;
+    final overlineStyle = (theme.textTheme.bodySmall ?? const TextStyle())
+        .copyWith(color: scheme.outline)
+        .merge(scaffoldTheme.overlineTextStyle);
+    final titleStyle = (theme.textTheme.headlineLarge ?? const TextStyle())
+        .copyWith(
+          fontWeight: FontWeight.w700,
+          height: 1.0,
+          letterSpacing: 0,
+          color: scheme.secondary,
+        )
+        .merge(scaffoldTheme.titleTextStyle);
+    // The title names what you are editing — the property — the way every
+    // other page titles its subject. The page you are on ("Home") is already
+    // the selected tab right below, so it is not the title.
+    final resolvedName = (propertyName ?? state.propertyName).trim();
+    final title = resolvedName.isEmpty
+        ? pageName(context, state.pageKey)
+        : resolvedName;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
       child: Row(
@@ -75,18 +111,13 @@ class _TopBar extends StatelessWidget {
               children: [
                 // §11f: the tab row already says which page you are on, so
                 // the breadcrumb drops the page segment.
+                Text(context.s.weBreadcrumbWebsite, style: overlineStyle),
+                SizedBox(height: scaffoldTheme.overlineSpacing),
                 Text(
-                  context.s.weBreadcrumbWebsite,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: scheme.outline,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  pageName(context, state.pageKey),
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: titleStyle,
                 ),
               ],
             ),
@@ -133,6 +164,11 @@ class _LocaleSwitcher extends StatelessWidget {
             badge: code == state.sourceLanguage
                 ? context.s.weLocaleSourceBadge
                 : null,
+            // Which locale is the source is a fixed property of the site, not
+            // something the switcher changes. A filled pill made it the
+            // loudest thing in the control and read louder than the selected
+            // segment, so the badge is quiet text instead.
+            badgeStyle: StyledSegmentBadgeStyle.quiet,
           ),
       ],
       selectedIndex: locales.indexOf(state.previewLanguage),
@@ -182,9 +218,9 @@ class _Banner extends StatelessWidget {
       // restyled. What is left is one line saying which language you write in.
       return Text(
         s.weBannerWritingTitle(sourceName),
-        style: Theme.of(
-          context,
-        ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.outline),
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: Theme.of(context).colorScheme.outline,
+        ),
       );
     }
 
@@ -208,7 +244,6 @@ class _Banner extends StatelessWidget {
       ),
     );
   }
-
 }
 
 class _TranslationStatusToolbar extends StatelessWidget {
@@ -251,48 +286,6 @@ class _TranslationStatusToolbar extends StatelessWidget {
   }
 }
 
-class _CardShell extends StatelessWidget {
-  const _CardShell({
-    required this.icon,
-    required this.title,
-    required this.children,
-  });
-  final IconData icon;
-  final String title;
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    // A content card (design `.card`): header inside the bordered surface
-    // with the card's own 18px padding — unlike the theme's default
-    // tile-group sections, which hug their rows.
-    // horizontalPadding: 0 keeps the card flush with the column's own 22px
-    // gutter (top bar, tabs, banner, save bar) instead of adding the theme's
-    // 24px section inset on top of it.
-    return StyledSection(
-      inset: true,
-      horizontalPadding: 0,
-      headerInsideGroup: true,
-      innerPadding: const EdgeInsets.all(18),
-      headerInsidePadding: const EdgeInsets.only(bottom: 14),
-      header: Row(
-        children: [
-          StyledIconBadge(icon: icon, size: 34),
-          const SizedBox(width: 12),
-          Text(
-            title,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-          ),
-        ],
-      ),
-      showDividers: false,
-      children: children,
-    );
-  }
-}
-
 class _HeroCard extends StatelessWidget {
   const _HeroCard({required this.state});
   final SiteContentState state;
@@ -303,7 +296,7 @@ class _HeroCard extends StatelessWidget {
     final heroFields = state.fields
         .where((f) => f.card == EditorCard.hero)
         .toList();
-    return _CardShell(
+    return ContentCard(
       icon: Icons.auto_awesome,
       title: s.weCardHero,
       children: [
@@ -421,7 +414,7 @@ class _HighlightsCard extends StatelessWidget {
     // translation mode the rows are fixed and carry their status chips.
     final canReorder = state.isSourceMode && highlightFields.length > 1;
 
-    return _CardShell(
+    return ContentCard(
       icon: Icons.star_outline,
       title: s.weCardHighlights,
       children: [
@@ -485,13 +478,13 @@ class _HighlightsCard extends StatelessWidget {
 
 /// Generic card for pages without a bespoke design (chalet, practical, area,
 /// contact): all of the page's fields in one StyledSection.
-class _ContentCard extends StatelessWidget {
-  const _ContentCard({required this.state});
+class _GenericFieldsCard extends StatelessWidget {
+  const _GenericFieldsCard({required this.state});
   final SiteContentState state;
 
   @override
   Widget build(BuildContext context) {
-    return _CardShell(
+    return ContentCard(
       icon: Icons.notes_outlined,
       title: context.s.weCardContent,
       children: [
@@ -543,10 +536,7 @@ class _SaveBar extends StatelessWidget {
         border: Border(top: BorderSide(color: scheme.outlineVariant)),
       ),
       child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: 22,
-          vertical: spacing.md,
-        ),
+        padding: EdgeInsets.symmetric(horizontal: 22, vertical: spacing.md),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
