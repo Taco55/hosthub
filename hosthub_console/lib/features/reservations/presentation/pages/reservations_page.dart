@@ -19,6 +19,7 @@ import 'package:hosthub_console/features/reservations/application/reservations_c
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
 import 'package:hosthub_console/features/portfolio/domain/portfolio_aggregation.dart';
+import 'package:hosthub_console/features/portfolio/domain/portfolio_chrome.dart';
 import 'package:hosthub_console/features/portfolio/domain/portfolio_page.dart';
 import 'package:hosthub_console/features/portfolio/domain/portfolio_refs.dart';
 import 'package:hosthub_console/features/portfolio/presentation/widgets/property_filter_button.dart';
@@ -290,8 +291,14 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
           final dateFormatter = DateFormat('d MMM yyyy', locale);
           final dateTimeFormatter = DateFormat('d MMM yyyy HH:mm', locale);
           final selection = _selectionFor(state);
-          final filterOptions = portfolioFilterOptions(
-            context.watch<PropertyContextCubit>().state.properties,
+          final accountProperties = context
+              .watch<PropertyContextCubit>()
+              .state
+              .properties;
+          final filterOptions = portfolioFilterOptions(accountProperties);
+          // §5: a one-property account does not pay for the portfolio chrome.
+          final chrome = PortfolioChrome(
+            propertyCount: accountProperties.length,
           );
           final allBookings = _sortedBookings(
             bookingsForSelection(state.entries, selection),
@@ -333,15 +340,19 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
             // Design `.top`: the crumb says which part of the console this is,
             // the title is the screen. A portfolio screen does not name one
             // property — the filter beside it says what the scope is.
-            overline: context.s.navGroupPortfolio,
+            overline: chrome.isSingleProperty
+                ? context.s.navGroupSingleProperty
+                : context.s.navGroupPortfolio,
             title: context.s.navBookings,
             actions: [
               // §3: one control in the page header — which properties count.
-              PropertyFilterButton(
-                selection: selection,
-                options: filterOptions,
-                onChanged: _persistSelection,
-              ),
+              // Absent for one property: nothing to choose between.
+              if (chrome.showsPropertyFilter)
+                PropertyFilterButton(
+                  selection: selection,
+                  options: filterOptions,
+                  onChanged: _persistSelection,
+                ),
             ],
             isLoading: state.status == ReservationsStatus.loading,
             leftChild: Column(

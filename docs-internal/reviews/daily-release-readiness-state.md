@@ -106,7 +106,7 @@ onder run 5 over een engine-mix geldt niet meer.
 | M2 | Aggregatie: gefilterde set, kosten per eigen property, bezetting ÷ `dagen × selectie` | console | done | zie M2-bewijs |
 | M3 | Routing + sidebar-boom (expansie uit de route, deeplinks) | console (+lib) | done | zie M3-bewijs |
 | M4 | Property-filter op Boekingen + Omzet (per pagina per user, nooit leeg) | console (+lib+supabase) | done | zie M4-bewijs |
-| M5 | Single-property-collapse (§5) als configuratie, geen fork | console | todo | |
+| M5 | Single-property-collapse (§5) als configuratie, geen fork | console | done | zie M5-bewijs |
 | M6 | Railgeometrie (§7) incl. no-movement-eis | console (+lib) | todo | |
 
 **M1-bewijs.** Twee tiers, één merge:
@@ -234,6 +234,35 @@ enige schrijver van die rij (`changePortfolioScope`, stil — een filter is geen
   verbreden, alles selecteren, laatste uitvinken = no-op). 334 tests groen, analyze op de 2 bekende
   infos. Rail-goldens hergenereerd (chip is nu de gedeelde widget).
 
+**M5-bewijs.** `portfolio/domain/portfolio_chrome.dart` — `PortfolioChrome` ís de tabel uit §5,
+regel voor regel: `isSingleProperty`, `showsPropertyFilter`, `showsPropertyNode`,
+`showsPropertyCount`, `showsPropertiesList`. Één plek die zegt wát er inklapt, gelezen door de rail,
+beide portfolio-schermen en de propertylijst — zodat ze niet los van elkaar kunnen beslissen hoe een
+account met één property eruitziet. De count is die van het *account*, niet van de selectie: vier
+properties gefilterd naar één houdt zijn filter.
+
+Wat er verandert bij één property:
+- Eerste groepslabel `Verhuur` i.p.v. `Portfolio` — óók de crumb van Boekingen, Omzet en de
+  propertylijst (het prototype gebruikt daar hetzelfde `ptGroupLabel`).
+- Tweede groepslabel = de propertynaam; geen count-pil, geen link naar de lijst.
+- Geen property-node: geen chip-rij, geen caret. De vier secties staan **plat op topniveau en zijn
+  altijd zichtbaar** (prototype: `expanded: isSingle || …`), op dezelfde as als Boekingen.
+- Geen property-filter in de kop van Boekingen/Omzet.
+- Geen property-kolom (volgde al uit `selection.isSingle`).
+- `/properties` blijft als route bestaan, maar de nav leidt er niet meer naartoe.
+
+**Geen fork:** één `buildConsoleNavGroups`, dezelfde `StyledNavItem`s met dezelfde handlers en
+dezelfde routes; alleen wáár ze gerenderd worden verschilt. `_propertySections` is de gedeelde lijst
+die zowel onder een branch als plat gebruikt wordt. Een test vergelijkt de widgettypes van beide
+vormen en eist dat ze gelijk zijn.
+
+Tests: `portfolio_chrome_test.dart` (8, §5 regel voor regel), `single_property_nav_test.dart` (15:
+labels, geen node/chip/caret, platte secties op de Boekingen-as, altijd zichtbaar, routes en badge
+intact, niets disabled, geen fork, en een tweede property brengt alles terug). 357 tests groen,
+analyze op de 2 bekende infos. Rail-goldens hergenereerd — de harness rendert één property, dus die
+goldens *zijn* nu het visuele bewijs van de ingeklapte vorm (structuur nagekeken: 7-letter label,
+2 rijen, naamlabel, 4 platte rijen zonder indent, Account-groep).
+
 **Nog open in M4-gebied:** de nachttarieven op de tijdlijn zijn per property; bij meerdere
 geselecteerde properties toont de tijdlijn nog één kalender. Het design zegt niets over de tijdlijn
 bij N properties — bewust niet zelf verzonnen.
@@ -260,8 +289,8 @@ nul. Zodra Accountinstellingen (§4) die velden echt moet bewerken is een per-ac
 "geen UI" is.
 
 ## next_lens
-RUN 6 loopt: M1–M4 done, wacht op review. Daarna M5 (single-property-collapse §5 als configuratie
-van dezelfde schermen) en M6 (railgeometrie §7 + de no-movement-eis).
+RUN 6 loopt: M1–M5 done, wacht op review. Daarna M6 (railgeometrie §7 + de no-movement-eis) —
+de laatste stap.
 RUN 5: E1 + E2 done. E3 (visuele verificatie) is user-gated — vraagt een ingelogde sessie.
 
 **Nog open uit §11, met reden:** de kostenbeheersing (hash-cache, één request per taal, locked

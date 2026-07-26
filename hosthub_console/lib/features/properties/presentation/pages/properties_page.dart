@@ -6,6 +6,7 @@ import 'package:styled_widgets/styled_widgets.dart';
 import 'package:hosthub_console/app/navigation/console_route.dart';
 import 'package:hosthub_console/core/l10n/l10n.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
+import 'package:hosthub_console/features/portfolio/domain/portfolio_chrome.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/reservations/application/reservations_cubit.dart';
 import 'package:hosthub_console/features/server_settings/application/server_settings_cubit.dart';
@@ -58,9 +59,15 @@ class PropertiesPage extends StatelessWidget {
           );
         }
 
+        // §5: the route stays reachable by link, so the page keeps working for a
+        // one-property account — its crumb just stops claiming a portfolio.
+        final chrome = PortfolioChrome(propertyCount: properties.length);
+
         return StyledWebPageScaffold(
           decorateLeftPane: false,
-          overline: s.navGroupProperties,
+          overline: chrome.isSingleProperty
+              ? s.navGroupSingleProperty
+              : s.navGroupProperties,
           title: s.propertiesListHeading,
           leftChild: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -6,6 +6,7 @@ import 'package:styled_widgets/styled_widgets.dart';
 
 import 'package:hosthub_console/features/channel_manager/infrastructure/lodgify/lodgify_error_utils.dart';
 import 'package:hosthub_console/features/portfolio/domain/portfolio_aggregation.dart';
+import 'package:hosthub_console/features/portfolio/domain/portfolio_chrome.dart';
 import 'package:hosthub_console/features/portfolio/domain/portfolio_page.dart';
 import 'package:hosthub_console/features/portfolio/domain/portfolio_refs.dart';
 import 'package:hosthub_console/features/portfolio/presentation/widgets/property_filter_button.dart';
@@ -174,8 +175,14 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
                 .settings
                 ?.portfolioScope,
           );
-          final filterOptions = portfolioFilterOptions(
-            context.watch<PropertyContextCubit>().state.properties,
+          final accountProperties = context
+              .watch<PropertyContextCubit>()
+              .state
+              .properties;
+          final filterOptions = portfolioFilterOptions(accountProperties);
+          // §5: a one-property account does not pay for the portfolio chrome.
+          final chrome = PortfolioChrome(
+            propertyCount: accountProperties.length,
           );
           final bookedEntries = _entriesForRevenue(
             bookingsForSelection(state.entries, selection),
@@ -211,16 +218,21 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
             // Design `.top`: the crumb says which part of the console this is;
             // the title is the screen. A portfolio screen does not name one
             // property — the filter beside it says what the scope is.
-            overline: context.s.navGroupPortfolio,
+            overline: chrome.isSingleProperty
+                ? context.s.navGroupSingleProperty
+                : context.s.navGroupPortfolio,
             title: context.s.menuRevenue,
             actions: [
               // §3: one control in the page header — which properties count.
-              PropertyFilterButton(
-                selection: selection,
-                options: filterOptions,
-                onChanged: (updated) => _persistSelection(context, updated),
-              ),
-              SizedBox(width: context.styledSpacing.sm),
+              // Absent for one property: nothing to choose between.
+              if (chrome.showsPropertyFilter) ...[
+                PropertyFilterButton(
+                  selection: selection,
+                  options: filterOptions,
+                  onChanged: (updated) => _persistSelection(context, updated),
+                ),
+                SizedBox(width: context.styledSpacing.sm),
+              ],
               // Design `.top`: the period `.seg` sits in the header band beside
               // the title, not on top of the body.
               StyledSegmentedControl(

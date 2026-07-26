@@ -4,6 +4,7 @@ import 'package:styled_widgets/styled_widgets.dart';
 import 'package:hosthub_console/app/navigation/console_route.dart';
 import 'package:hosthub_console/core/l10n/l10n.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
+import 'package:hosthub_console/features/portfolio/domain/portfolio_chrome.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 
 /// One property as the tree renders it.
@@ -40,6 +41,11 @@ class ConsoleNavProperty {
 /// Two rules the design states outright, and this builder keeps:
 /// the portfolio entries stay visible and tappable while a property is open, and
 /// nothing is ever disabled. Every destination is always reachable.
+///
+/// A one-property account gets the collapsed shape from §5 — read off
+/// [PortfolioChrome], and still from this one builder: the group labels change,
+/// the property node goes away and its sections move up a level, but the
+/// entries, their handlers and their routes are the same ones.
 List<StyledNavGroup> buildConsoleNavGroups({
   required S s,
   required ConsoleRoute route,
@@ -47,10 +53,16 @@ List<StyledNavGroup> buildConsoleNavGroups({
   required void Function(String path) onNavigate,
 }) {
   final openPropertyId = route.propertyId;
+  final chrome = PortfolioChrome(propertyCount: properties.length);
+  final onlyProperty = chrome.isSingleProperty ? properties.single : null;
 
   return [
     StyledNavGroup(
-      label: s.navGroupPortfolio,
+      // "Verhuur" for one property: there is no portfolio to speak of, and
+      // calling it one would promise a scope the account does not have.
+      label: chrome.isSingleProperty
+          ? s.navGroupSingleProperty
+          : s.navGroupPortfolio,
       entries: [
         StyledNavItem(
           icon: Icons.calendar_month_outlined,
@@ -66,24 +78,39 @@ List<StyledNavGroup> buildConsoleNavGroups({
         ),
       ],
     ),
-    StyledNavGroup(
-      label: s.navGroupProperties,
-      count: properties.length.toString(),
-      // The group label is a destination of its own: a plain list of the
-      // properties. A convenience, never a step you must pass through.
-      onLabelTap: () => onNavigate(ConsoleRoute.propertiesPath),
-      labelSelected: route.isPropertiesList,
-      entries: [
-        for (final property in properties)
-          _propertyBranch(
-            s: s,
-            property: property,
-            route: route,
-            isOpen: property.id == openPropertyId,
-            onNavigate: onNavigate,
-          ),
-      ],
-    ),
+    if (onlyProperty != null)
+      StyledNavGroup(
+        // The group label is the property's name: with one property, a heading
+        // reading "Properties · 1" would head a list of one.
+        label: onlyProperty.name,
+        // Its four screens sit flat at the top level and are always there —
+        // nothing to expand, so nothing that could be collapsed.
+        entries: _propertySections(
+          s: s,
+          property: onlyProperty,
+          route: route,
+          onNavigate: onNavigate,
+        ),
+      )
+    else
+      StyledNavGroup(
+        label: s.navGroupProperties,
+        count: properties.length.toString(),
+        // The group label is a destination of its own: a plain list of the
+        // properties. A convenience, never a step you must pass through.
+        onLabelTap: () => onNavigate(ConsoleRoute.propertiesPath),
+        labelSelected: route.isPropertiesList,
+        entries: [
+          for (final property in properties)
+            _propertyBranch(
+              s: s,
+              property: property,
+              route: route,
+              isOpen: property.id == openPropertyId,
+              onNavigate: onNavigate,
+            ),
+        ],
+      ),
     StyledNavGroup(
       label: s.navGroupAccount,
       entries: [
@@ -94,6 +121,61 @@ List<StyledNavGroup> buildConsoleNavGroups({
           onTap: () => onNavigate(ConsoleRoute.accountPath),
         ),
       ],
+    ),
+  ];
+}
+
+/// The four screens of one property, in the order the design lists them.
+///
+/// The same entries whether they hang under a property node or sit flat in a
+/// one-property account — only where they are rendered differs.
+List<StyledNavItem> _propertySections({
+  required S s,
+  required ConsoleNavProperty property,
+  required ConsoleRoute route,
+  required void Function(String path) onNavigate,
+}) {
+  return [
+    _propertySection(
+      s: s,
+      property: property,
+      route: route,
+      section: PropertySection.overview,
+      icon: Icons.home_work_outlined,
+      label: s.navPropertyOverview,
+      onNavigate: onNavigate,
+    ),
+    _propertySection(
+      s: s,
+      property: property,
+      route: route,
+      section: PropertySection.website,
+      icon: Icons.language,
+      label: s.navPropertyWebsite,
+      onNavigate: onNavigate,
+    ),
+    _propertySection(
+      s: s,
+      property: property,
+      route: route,
+      section: PropertySection.pricing,
+      icon: Icons.sell_outlined,
+      label: s.menuPricing,
+      onNavigate: onNavigate,
+      // Absent at zero rather than a `0`: the badge exists to point out the
+      // properties that deviate.
+      badge: property.overriddenFieldCount > 0
+          ? property.overriddenFieldCount.toString()
+          : null,
+    ),
+    _propertySection(
+      s: s,
+      property: property,
+      route: route,
+      section: PropertySection.settings,
+      icon: Icons.settings_outlined,
+      label: s.navPropertySiteSettings,
+      onNavigate: onNavigate,
     ),
   ];
 }
@@ -121,49 +203,12 @@ StyledNavBranch _propertyBranch({
           ? ConsoleRoute.propertiesPath
           : ConsoleRoute.propertyRootPath(property.id),
     ),
-    children: [
-      _propertySection(
-        s: s,
-        property: property,
-        route: route,
-        section: PropertySection.overview,
-        icon: Icons.home_work_outlined,
-        label: s.navPropertyOverview,
-        onNavigate: onNavigate,
-      ),
-      _propertySection(
-        s: s,
-        property: property,
-        route: route,
-        section: PropertySection.website,
-        icon: Icons.language,
-        label: s.navPropertyWebsite,
-        onNavigate: onNavigate,
-      ),
-      _propertySection(
-        s: s,
-        property: property,
-        route: route,
-        section: PropertySection.pricing,
-        icon: Icons.sell_outlined,
-        label: s.menuPricing,
-        onNavigate: onNavigate,
-        // Absent at zero rather than a `0`: the badge exists to point out the
-        // properties that deviate.
-        badge: property.overriddenFieldCount > 0
-            ? property.overriddenFieldCount.toString()
-            : null,
-      ),
-      _propertySection(
-        s: s,
-        property: property,
-        route: route,
-        section: PropertySection.settings,
-        icon: Icons.settings_outlined,
-        label: s.navPropertySiteSettings,
-        onNavigate: onNavigate,
-      ),
-    ],
+    children: _propertySections(
+      s: s,
+      property: property,
+      route: route,
+      onNavigate: onNavigate,
+    ),
   );
 }
 
