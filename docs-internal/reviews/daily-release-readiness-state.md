@@ -360,6 +360,24 @@ lege-periode-melding te geven, geen spinner. Extra test toegevoegd voor de CONFO
 = som van die twee alleen" in **geld** (die had ik alleen voor nachten en per boeking).
 374 tests groen, analyze op de 2 bekende infos.
 
+**prd-migratie toegepast (2026-07-26).** `20260726150000_add_user_settings_portfolio_scope.sql` staat
+op prd. Aanpak en waarom:
+- **Niet** via `make apply-migrations ENV=prd`: die target replayt *alle* migraties, inclusief de
+  baseline (de remote-variant heeft géén baseline-skip zoals de lokale). Met `ON_ERROR_STOP=1` zou hij
+  op de baseline afbreken — en in het slechtste geval iets anders doen. Alleen dit ene bestand via
+  `psql` toegepast, zoals eerder bij `site_translations`.
+- `SUPABASE_DB_URL` staat in `hosthub-prd-server.env` (server-secret), niet in `hosthub-prd.env`.
+- Vóóraf read-only gecontroleerd: prd had 0 `portfolio_scope`-kolommen, 1 `user_settings`-rij en
+  **1 property**. (Prd is dus het single-property-geval uit §5 — de ingeklapte rail is wat Trysil
+  straks ziet.)
+- Na de DDL `NOTIFY pgrst, 'reload schema'` — anders geeft de API PGRST202 op de nieuwe kolom
+  (bekende gotcha). Geverifieerd: kolom is `jsonb`, nullable; REST-call op `select=portfolio_scope`
+  geeft `http=200` (leeg door RLS met de anon-key, dus precies goed).
+- `latest_prd.sql` opnieuw gedumpt; diff is exact deze kolom + comment.
+- **De console-app zelf staat nog niet op prd.** De kolom is additief en nullable, en er staat geen
+  `disallowUnrecognizedKeys` in het project, dus de nu draaiende console negeert het extra veld; zijn
+  upsert stuurt de kolom niet mee en kan hem dus ook niet leegmaken. Geen risico voor de live app.
+
 **Niet verifieerbaar zonder ingelogde sessie** (user-gated, zelfde blokkade als E3): de vier
 behavioural checks die een echte klik vragen (klik-om-te-openen/dichtklappen, filter na reload,
 verwijderde open property in de UI, nieuwe property in beide filtermenu's) — de logica erachter is
@@ -367,8 +385,8 @@ wel unit-getest.
 
 ## next_lens
 RUN 6 KLAAR: M1–M7 done (2026-07-26), elk met review-stop. Open, user-gated: visuele verificatie in
-de app (vraagt een ingelogde sessie, zelfde blokkade als E3) en de `portfolio_scope`-migratie naar
-prd. Niet gebouwd omdat het buiten de zes stappen viel: de Accountinstellingen-editor voor
+de app (vraagt een ingelogde sessie, zelfde blokkade als E3) en de **console-deploy naar prd** —
+de migratie staat er wel op (zie M7). Niet gebouwd omdat het buiten de zes stappen viel: de Accountinstellingen-editor voor
 account-defaults + propertylijst met override-counts (§4b), en de tijdlijn bij N properties.
 RUN 5: E1 + E2 done. E3 (visuele verificatie) is user-gated — vraagt een ingelogde sessie.
 

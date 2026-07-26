@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict LkVxRDk4tcbIB551dimcWjatj9x2GTbu90w33odGhlDy6oppfPesL4FmbDS0vFk
+\restrict B7CjmR1khe5faR6GGJC00tn3bTZcUAJBVfBeTT6V0qKXSsNGcibvDk0NKfCLjxD
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -871,11 +871,19 @@ CREATE TABLE public.user_settings (
     export_columns jsonb,
     export_pdf_orientation text DEFAULT 'portrait'::text NOT NULL,
     lodgify_api_key_last4 text,
+    portfolio_scope jsonb,
     CONSTRAINT user_settings_export_pdf_orientation_check CHECK ((export_pdf_orientation = ANY (ARRAY['portrait'::text, 'landscape'::text])))
 );
 
 
 ALTER TABLE public.user_settings OWNER TO postgres;
+
+--
+-- Name: COLUMN user_settings.portfolio_scope; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.user_settings.portfolio_scope IS 'Per-page property filter for the portfolio screens: {"<page>": [property_id, ...]}. Absent page = all properties.';
+
 
 --
 -- Name: admin_settings admin_settings_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
@@ -2003,5 +2011,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON T
 -- PostgreSQL database dump complete
 --
 
-\unrestrict LkVxRDk4tcbIB551dimcWjatj9x2GTbu90w33odGhlDy6oppfPesL4FmbDS0vFk
+\unrestrict B7CjmR1khe5faR6GGJC00tn3bTZcUAJBVfBeTT6V0qKXSsNGcibvDk0NKfCLjxD
 
