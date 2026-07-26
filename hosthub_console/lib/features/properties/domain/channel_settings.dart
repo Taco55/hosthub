@@ -1,3 +1,5 @@
+import 'package:hosthub_console/features/properties/domain/booking_channel.dart';
+
 /// How a cost is calculated per booking.
 enum CostType {
   /// Flat amount per reservation.
@@ -32,17 +34,6 @@ String _costTypeToString(CostType type) {
   }
 }
 
-String costTypeLabel(CostType type) {
-  switch (type) {
-    case CostType.perBooking:
-      return 'per boeking';
-    case CostType.perPerson:
-      return 'per persoon';
-    case CostType.perNight:
-      return 'per nacht';
-  }
-}
-
 /// A single cost entry with an amount and calculation type.
 class CostEntry {
   const CostEntry({this.amount = 0, this.type = CostType.perBooking});
@@ -53,7 +44,22 @@ class CostEntry {
   factory CostEntry.fromMap(Map<String, dynamic>? map) {
     if (map == null) return const CostEntry();
     return CostEntry(
-      amount: _toDouble(map['amount']) ?? 0,
+      amount: parseChannelDouble(map['amount']) ?? 0,
+      type: _costTypeFromString(map['type'] as String?),
+    );
+  }
+
+  /// The entry as stored, or null when [map] states no amount at all.
+  ///
+  /// A cost that carries no amount is not a cost of zero — it is a field the
+  /// property does not speak about, which is what
+  /// [ChannelOverride] needs to stay sparse.
+  static CostEntry? fromMapOrNull(Map<String, dynamic>? map) {
+    if (map == null) return null;
+    final amount = parseChannelDouble(map['amount']);
+    if (amount == null) return null;
+    return CostEntry(
+      amount: amount,
       type: _costTypeFromString(map['type'] as String?),
     );
   }
@@ -76,25 +82,30 @@ class CostEntry {
   }
 
   bool equals(CostEntry other) =>
-      _close(amount, other.amount) && type == other.type;
+      channelDoublesClose(amount, other.amount) && type == other.type;
 }
 
-/// Settings for a single booking channel (e.g. Airbnb, Booking.com, Other).
+/// One channel's settings, fully resolved.
+///
+/// Every field carries a value: this is the answer for a specific property, not
+/// a tier that can defer to another one. Only
+/// [ChannelSettingsResolver.effectiveChannelSettings] produces it for a
+/// property, so the arithmetic below can never run on half-merged input.
 class ChannelConfig {
   const ChannelConfig({
-    this.commissionPercentage,
-    this.rateMarkupPercentage,
+    this.commissionPercentage = 0,
+    this.rateMarkupPercentage = 0,
     this.cleaningCost = const CostEntry(),
     this.linenCost = const CostEntry(),
     this.serviceCost = const CostEntry(),
     this.otherCost = const CostEntry(),
   });
 
-  /// Channel commission percentage. Null means use admin default.
-  final double? commissionPercentage;
+  /// What the channel withholds, as a percentage of gross.
+  final double commissionPercentage;
 
   /// Rate markup percentage applied to the base nightly price for this channel.
-  final double? rateMarkupPercentage;
+  final double rateMarkupPercentage;
 
   final CostEntry cleaningCost;
   final CostEntry linenCost;
@@ -103,10 +114,12 @@ class ChannelConfig {
 
   factory ChannelConfig.fromMap(Map<String, dynamic>? map) {
     if (map == null) return const ChannelConfig();
-    final costs = map['costs'] as Map<String, dynamic>? ?? {};
+    final costs = map['costs'] as Map<String, dynamic>? ?? const {};
     return ChannelConfig(
-      commissionPercentage: _toDouble(map['commission_percentage']),
-      rateMarkupPercentage: _toDouble(map['rate_markup_percentage']),
+      commissionPercentage:
+          parseChannelDouble(map['commission_percentage']) ?? 0,
+      rateMarkupPercentage:
+          parseChannelDouble(map['rate_markup_percentage']) ?? 0,
       cleaningCost: CostEntry.fromMap(
         costs['cleaning'] as Map<String, dynamic>?,
       ),
@@ -131,10 +144,10 @@ class ChannelConfig {
   ///
   /// `net = (base + markup) − commission − (cleaning + linen + service + other)`
   ///
-  /// [commissionPercentage] is the already-resolved percentage: pass
-  /// [ChannelSettings.commissionPercentageForSource] so a per-channel override
-  /// wins over the admin default. Passing it in keeps this free of any
-  /// dependency on where those defaults are stored.
+  /// The commission is this config's own, which is only correct because the
+  /// config is already resolved for the booking's property — see
+  /// [ChannelSettingsResolver]. Passing a percentage in is what allowed a
+  /// portfolio view to cost every booking with one property's rates.
   ///
   /// This is the only place the payout arithmetic lives — the Revenue table and
   /// the Pricing preview both call it, so a change lands in both at once.
@@ -142,12 +155,11 @@ class ChannelConfig {
     required double baseRate,
     required int nights,
     required int guests,
-    required double commissionPercentage,
   }) {
     final safeNights = nights < 0 ? 0 : nights;
     final safeGuests = guests < 1 ? 1 : guests;
 
-    final markupPerNight = baseRate * ((rateMarkupPercentage ?? 0) / 100);
+    final markupPerNight = baseRate * (rateMarkupPercentage / 100);
     final markup = markupPerNight * safeNights;
     final gross = (baseRate + markupPerNight) * safeNights;
     final commission = gross * (commissionPercentage / 100);
@@ -172,28 +184,24 @@ class ChannelConfig {
   }
 
   bool equals(ChannelConfig other) =>
-      _close(commissionPercentage, other.commissionPercentage) &&
-      _close(rateMarkupPercentage, other.rateMarkupPercentage) &&
+      channelDoublesClose(commissionPercentage, other.commissionPercentage) &&
+      channelDoublesClose(rateMarkupPercentage, other.rateMarkupPercentage) &&
       cleaningCost.equals(other.cleaningCost) &&
       linenCost.equals(other.linenCost) &&
       serviceCost.equals(other.serviceCost) &&
       otherCost.equals(other.otherCost);
 
   ChannelConfig copyWith({
-    double? Function()? commissionPercentage,
-    double? Function()? rateMarkupPercentage,
+    double? commissionPercentage,
+    double? rateMarkupPercentage,
     CostEntry? cleaningCost,
     CostEntry? linenCost,
     CostEntry? serviceCost,
     CostEntry? otherCost,
   }) {
     return ChannelConfig(
-      commissionPercentage: commissionPercentage != null
-          ? commissionPercentage()
-          : this.commissionPercentage,
-      rateMarkupPercentage: rateMarkupPercentage != null
-          ? rateMarkupPercentage()
-          : this.rateMarkupPercentage,
+      commissionPercentage: commissionPercentage ?? this.commissionPercentage,
+      rateMarkupPercentage: rateMarkupPercentage ?? this.rateMarkupPercentage,
       cleaningCost: cleaningCost ?? this.cleaningCost,
       linenCost: linenCost ?? this.linenCost,
       serviceCost: serviceCost ?? this.serviceCost,
@@ -243,61 +251,40 @@ class ChannelSettlement {
   double get payout => gross - commission;
 }
 
-/// Container for all channel settings on a property.
-class ChannelSettings {
-  const ChannelSettings({
-    this.booking = const ChannelConfig(),
-    this.airbnb = const ChannelConfig(),
-    this.other = const ChannelConfig(),
+/// Every channel's settings for one property, fully resolved.
+///
+/// Produced only by [ChannelSettingsResolver.effectiveChannelSettings], for a
+/// property id. A screen that holds one of these holds the answer for exactly
+/// one property and cannot accidentally apply it to another.
+class EffectiveChannelSettings {
+  const EffectiveChannelSettings({
+    required this.propertyId,
+    required this.booking,
+    required this.airbnb,
+    required this.other,
   });
+
+  /// The property these settings were resolved for.
+  final int propertyId;
 
   final ChannelConfig booking;
   final ChannelConfig airbnb;
   final ChannelConfig other;
 
-  factory ChannelSettings.fromMap(Map<String, dynamic>? map) {
-    if (map == null) return const ChannelSettings();
-    return ChannelSettings(
-      booking: ChannelConfig.fromMap(map['booking'] as Map<String, dynamic>?),
-      airbnb: ChannelConfig.fromMap(map['airbnb'] as Map<String, dynamic>?),
-      other: ChannelConfig.fromMap(map['other'] as Map<String, dynamic>?),
-    );
+  ChannelConfig forChannel(BookingChannel channel) {
+    switch (channel) {
+      case BookingChannel.booking:
+        return booking;
+      case BookingChannel.airbnb:
+        return airbnb;
+      case BookingChannel.other:
+        return other;
+    }
   }
 
-  Map<String, dynamic> toMap() => {
-    'booking': booking.toMap(),
-    'airbnb': airbnb.toMap(),
-    'other': other.toMap(),
-  };
-
-  /// Resolve the channel config for a given source string.
-  ChannelConfig configForSource(String? source) {
-    final normalized = source?.trim().toLowerCase() ?? '';
-    if (normalized.contains('booking')) return booking;
-    if (normalized.contains('airbnb')) return airbnb;
-    return other;
-  }
-
-  /// The commission percentage that applies to [source]: a per-channel override
-  /// when the property sets one, otherwise the account default for that channel.
-  ///
-  /// The defaults are passed in rather than read from `AdminSettings`, so this
-  /// rule can live in the domain without reaching into another feature.
-  double commissionPercentageForSource(
-    String? source, {
-    required double airbnbDefault,
-    required double bookingDefault,
-    required double otherDefault,
-  }) {
-    final config = configForSource(source);
-    final override = config.commissionPercentage;
-    if (override != null) return override;
-
-    final normalized = source?.trim().toLowerCase() ?? '';
-    if (normalized.contains('booking')) return bookingDefault;
-    if (normalized.contains('airbnb')) return airbnbDefault;
-    return otherDefault;
-  }
+  /// The config for a provider's source string.
+  ChannelConfig forSource(String? source) =>
+      forChannel(bookingChannelForSource(source));
 
   /// Settle a stay booked through [source] against that channel's rules.
   ChannelSettlement settleForSource(
@@ -305,48 +292,25 @@ class ChannelSettings {
     required double baseRate,
     required int nights,
     required int guests,
-    required double airbnbDefaultCommission,
-    required double bookingDefaultCommission,
-    required double otherDefaultCommission,
   }) {
-    return configForSource(source).settle(
-      baseRate: baseRate,
-      nights: nights,
-      guests: guests,
-      commissionPercentage: commissionPercentageForSource(
-        source,
-        airbnbDefault: airbnbDefaultCommission,
-        bookingDefault: bookingDefaultCommission,
-        otherDefault: otherDefaultCommission,
-      ),
-    );
-  }
-
-  bool equals(ChannelSettings other) =>
-      booking.equals(other.booking) &&
-      airbnb.equals(other.airbnb) &&
-      this.other.equals(other.other);
-
-  ChannelSettings copyWith({
-    ChannelConfig? booking,
-    ChannelConfig? airbnb,
-    ChannelConfig? other,
-  }) {
-    return ChannelSettings(
-      booking: booking ?? this.booking,
-      airbnb: airbnb ?? this.airbnb,
-      other: other ?? this.other,
-    );
+    return forSource(
+      source,
+    ).settle(baseRate: baseRate, nights: nights, guests: guests);
   }
 }
 
-bool _close(double? a, double? b) {
+/// Whether two channel amounts are the same money.
+///
+/// Percentages and costs arrive as text and as JSON numbers, so an exact
+/// comparison reports a change the user did not make.
+bool channelDoublesClose(double? a, double? b) {
   if (a == null && b == null) return true;
   if (a == null || b == null) return false;
   return (a - b).abs() < 0.001;
 }
 
-double? _toDouble(Object? value) {
+/// A channel amount from JSON or from a text field, or null when absent.
+double? parseChannelDouble(Object? value) {
   if (value == null) return null;
   if (value is num) return value.toDouble();
   if (value is String) {

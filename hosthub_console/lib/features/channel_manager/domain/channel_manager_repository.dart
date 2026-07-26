@@ -16,8 +16,15 @@ abstract class ChannelManagerRepository {
   Future<ChannelPropertyDetails> fetchPropertyDetails(String propertyId);
 
   /// Fetch reservations/calendar entries for a specific property.
-  Future<List<Reservation>> fetchReservations(
-    String propertyId, {
+  ///
+  /// Both ids are required and they are not interchangeable:
+  /// [channelPropertyId] addresses the channel manager, [propertyId] is the
+  /// console's own `properties.id` that every returned booking is tagged with.
+  /// Naming them apart is deliberate — the two used to share the name
+  /// `propertyId`, and the channel's id reached code that filtered on ours.
+  Future<List<Reservation>> fetchReservations({
+    required int propertyId,
+    required String channelPropertyId,
     DateTime? start,
     DateTime? end,
   });

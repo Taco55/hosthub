@@ -1,6 +1,10 @@
 export 'application/property_context_cubit.dart';
 export 'data/property_repository.dart';
+export 'domain/account_channel_defaults.dart';
+export 'domain/booking_channel.dart';
+export 'domain/channel_overrides.dart';
 export 'domain/channel_settings.dart';
+export 'domain/channel_settings_resolver.dart';
 export 'presentation/dialogs/switch_property_dialog.dart';
 export 'presentation/pages/property_details_page.dart';
 export 'presentation/pages/property_pricing_page.dart';

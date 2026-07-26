@@ -7,6 +7,7 @@ part of 'reservation.dart';
 // **************************************************************************
 
 _Reservation _$ReservationFromJson(Map<String, dynamic> json) => _Reservation(
+  propertyId: (json['property_id'] as num).toInt(),
   reservationId: json['reservation_id'] as String?,
   startDate: json['start_date'] == null
       ? null
@@ -36,6 +37,7 @@ _Reservation _$ReservationFromJson(Map<String, dynamic> json) => _Reservation(
 
 Map<String, dynamic> _$ReservationToJson(_Reservation instance) =>
     <String, dynamic>{
+      'property_id': instance.propertyId,
       'reservation_id': instance.reservationId,
       'start_date': instance.startDate?.toIso8601String(),
       'end_date': instance.endDate?.toIso8601String(),

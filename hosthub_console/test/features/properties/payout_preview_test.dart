@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:hosthub_console/features/properties/domain/channel_overrides.dart';
 import 'package:hosthub_console/features/properties/domain/channel_settings.dart';
 
 /// The Pricing payout preview shows one fixed example stay: 7 nights, 4 guests,
@@ -11,13 +12,8 @@ void main() {
   const guests = 4;
   const baseRate = 3200.0;
 
-  ChannelSettlement settle(ChannelConfig config, {double? commission}) {
-    return config.settle(
-      baseRate: baseRate,
-      nights: nights,
-      guests: guests,
-      commissionPercentage: commission ?? config.commissionPercentage ?? 0,
-    );
+  ChannelSettlement settle(ChannelConfig config) {
+    return config.settle(baseRate: baseRate, nights: nights, guests: guests);
   }
 
   test('the example stay matches the figures in the design', () {
@@ -46,14 +42,25 @@ void main() {
     expect(netBefore - netAfter, closeTo(672, 0.001));
   });
 
-  test('a commission override replaces the account default', () {
-    const withOverride = ChannelConfig(commissionPercentage: 20);
-    const withoutOverride = ChannelConfig();
+  test(
+    'the preview settles the resolved commission, whichever tier set it',
+    () {
+      // The panel previews `override.applyTo(accountDefault)`, so by the time a
+      // config reaches settle() the two tiers are already merged.
+      const accountDefault = ChannelConfig(commissionPercentage: 3);
+      const overridden = ChannelOverride(commissionPercentage: 20);
+      const inherited = ChannelOverride();
 
-    expect(settle(withOverride, commission: 20).commission, closeTo(4480, 0.001));
-    // Falls back to whatever default the page passes in.
-    expect(settle(withoutOverride, commission: 3).commission, closeTo(672, 0.001));
-  });
+      expect(
+        settle(overridden.applyTo(accountDefault)).commission,
+        closeTo(4480, 0.001),
+      );
+      expect(
+        settle(inherited.applyTo(accountDefault)).commission,
+        closeTo(672, 0.001),
+      );
+    },
+  );
 
   test('markup raises gross, and the commission rides along', () {
     const config = ChannelConfig(
@@ -98,16 +105,18 @@ void main() {
     expect(result.net, 22400);
   });
 
-  test('costs beyond the revenue make the net negative rather than clamping',
-      () {
-    const config = ChannelConfig(
-      commissionPercentage: 50,
-      cleaningCost: CostEntry(amount: 20000),
-    );
+  test(
+    'costs beyond the revenue make the net negative rather than clamping',
+    () {
+      const config = ChannelConfig(
+        commissionPercentage: 50,
+        cleaningCost: CostEntry(amount: 20000),
+      );
 
-    final result = settle(config);
+      final result = settle(config);
 
-    expect(result.net, lessThan(0));
-    expect(result.net, closeTo(22400 - 11200 - 20000, 0.001));
-  });
+      expect(result.net, lessThan(0));
+      expect(result.net, closeTo(22400 - 11200 - 20000, 0.001));
+    },
+  );
 }

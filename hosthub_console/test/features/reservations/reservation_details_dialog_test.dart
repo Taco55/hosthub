@@ -18,6 +18,7 @@ void main() {
   setUpAll(() => initializeDateFormatting('nl'));
 
   final entry = Reservation(
+    propertyId: 1,
     reservationId: 'B-1001',
     startDate: DateTime(2027, 2, 7),
     endDate: DateTime(2027, 2, 12),
@@ -90,8 +91,9 @@ void main() {
     expect(find.text('6 (4 + 2)'), findsOneWidget);
   });
 
-  testWidgets('the revenue section is driven by what the screen passes in',
-      (tester) async {
+  testWidgets('the revenue section is driven by what the screen passes in', (
+    tester,
+  ) async {
     await pumpDialog(tester);
     expect(find.text('Opbrengsten'), findsNothing);
 
@@ -124,8 +126,9 @@ void main() {
     expect(find.text('Opslaan in Lodgify'), findsNothing);
   });
 
-  testWidgets('with a save callback the note becomes an editor',
-      (tester) async {
+  testWidgets('with a save callback the note becomes an editor', (
+    tester,
+  ) async {
     final saved = <(String, String)>[];
     await pumpDialog(
       tester,
@@ -145,8 +148,9 @@ void main() {
     expect(find.text('Opgeslagen'), findsOneWidget);
   });
 
-  testWidgets('a failed save stops the spinner and keeps the text',
-      (tester) async {
+  testWidgets('a failed save stops the spinner and keeps the text', (
+    tester,
+  ) async {
     await pumpDialog(
       tester,
       onSaveNotes: (id, notes) async => throw Exception('offline'),

@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/reservations/presentation/reservation_display.dart';
-import 'package:hosthub_console/features/server_settings/domain/admin_settings.dart';
 
 /// Reading money out of a channel payload.
 ///
@@ -765,25 +764,30 @@ num? normalizeMoney(num? value) {
   return value;
 }
 
-num? fallbackFixedCostsFromProperty(
-  PropertySummary? property,
+/// Fixed costs from the channel configuration, for a booking whose payload
+/// states none.
+///
+/// [channelSettings] must be the settings of *this booking's own* property —
+/// `resolver.effectiveChannelSettings(booking.propertyId)`. A portfolio view
+/// mixes properties with different rates, so costing every booking with one
+/// property's configuration is silently wrong.
+num? fallbackFixedCosts(
+  EffectiveChannelSettings channelSettings,
   String? source, {
   int guests = 1,
   int nights = 1,
 }) {
-  if (property == null) return null;
-  final config = property.channelSettings.configForSource(source);
+  final config = channelSettings.forSource(source);
   final total = config.totalCosts(guests: guests, nights: nights);
   return total > 0 ? normalizeMoney(total) : null;
 }
 
 num? channelCostFallback(
-  PropertySummary? property,
+  EffectiveChannelSettings channelSettings,
   Reservation entry,
   CostEntry Function(ChannelConfig) selector,
 ) {
-  if (property == null) return null;
-  final config = property.channelSettings.configForSource(entry.source);
+  final config = channelSettings.forSource(entry.source);
   final cost = selector(config);
   if (cost.amount <= 0) return null;
   final nights = stayNights(entry.startDate, entry.endDate) ?? 1;
@@ -791,40 +795,22 @@ num? channelCostFallback(
   return resolved > 0 ? normalizeMoney(resolved) : null;
 }
 
+/// The commission a channel withholds, when the payload does not state it.
+///
+/// The percentage is this booking's own property's — see [fallbackFixedCosts].
 num? fallbackChannelFeeFromRules(
   Reservation entry,
   num? totalRevenue,
-  AdminSettings settings,
-  PropertySummary? property,
+  EffectiveChannelSettings channelSettings,
 ) {
   final total = normalizeMoney(totalRevenue);
   if (total == null || total <= 0) return null;
 
-  final percentage = channelFeePercentageForSource(
-    entry.source,
-    settings,
-    property,
-  );
+  final percentage = channelSettings
+      .forSource(entry.source)
+      .commissionPercentage;
   if (percentage <= 0) return null;
   return normalizeMoney(total * (percentage / 100));
-}
-
-/// The commission rule itself lives in the domain
-/// ([ChannelSettings.commissionPercentageForSource]); this only supplies the
-/// account defaults, so Revenue and the Pricing preview can never resolve a
-/// different percentage for the same booking.
-double channelFeePercentageForSource(
-  String? source,
-  AdminSettings settings,
-  PropertySummary? property,
-) {
-  final channelSettings = property?.channelSettings ?? const ChannelSettings();
-  return channelSettings.commissionPercentageForSource(
-    source,
-    airbnbDefault: settings.airbnbChannelFeePercentage,
-    bookingDefault: settings.bookingChannelFeePercentage,
-    otherDefault: settings.otherChannelFeePercentage,
-  );
 }
 
 void _addLine(
@@ -839,16 +825,24 @@ void _addLine(
 
 /// Reads what one booking earned, straight from its payload.
 ///
-/// [settings] and [property] are optional: with them, costs and commission the
-/// payload leaves out are filled in from the channel configuration (what the
-/// revenue screen does); without them the result is payload-only (what the
-/// reservations screen did before both screens shared this function).
+/// [channelSettings] is optional: with it, costs and commission the payload
+/// leaves out are filled in from the channel configuration (what the revenue
+/// screen does); without it the result is payload-only (what the reservations
+/// screen did before both screens shared this function). When passed, it must be
+/// the settings of `entry.propertyId` — see [fallbackFixedCosts].
 BookingPayloadRevenue readBookingPayloadRevenue(
   Reservation entry, {
-  AdminSettings? settings,
-  PropertySummary? property,
+  EffectiveChannelSettings? channelSettings,
 }) {
   final raw = entry.raw;
+
+  /// A cost the payload does not state, taken from the channel configuration —
+  /// or nothing at all when the caller asked for a payload-only read.
+  num? costFallback(CostEntry Function(ChannelConfig config) selector) {
+    if (channelSettings == null) return null;
+    return channelCostFallback(channelSettings, entry, selector);
+  }
+
   final currency =
       readFirstString(raw, const [
         ['currency'],
@@ -1000,7 +994,7 @@ BookingPayloadRevenue readBookingPayloadRevenue(
           final l = label.toLowerCase();
           return l.contains('clean') || l.contains('schoon');
         }) ??
-        channelCostFallback(property, entry, (c) => c.cleaningCost),
+        costFallback((config) => config.cleaningCost),
   );
   _addLine(
     lines,
@@ -1035,7 +1029,7 @@ BookingPayloadRevenue readBookingPayloadRevenue(
               l.contains('bedlinen') ||
               l.contains('bed linen');
         }) ??
-        channelCostFallback(property, entry, (c) => c.linenCost),
+        costFallback((config) => config.linenCost),
   );
   _addLine(
     lines,
@@ -1048,21 +1042,21 @@ BookingPayloadRevenue readBookingPayloadRevenue(
           ['pricing', 'service_fee'],
           ['financials', 'service'],
         ]) ??
-        channelCostFallback(property, entry, (c) => c.serviceCost),
+        costFallback((config) => config.serviceCost),
   );
   _addLine(
     lines,
     BookingRevenueLineKind.otherCosts,
-    channelCostFallback(property, entry, (c) => c.otherCost),
+    costFallback((config) => config.otherCost),
   );
   _addLine(
     lines,
     BookingRevenueLineKind.channelFee,
     _sanitizeChannelFee(
       _extractDirectChannelFee(raw) ??
-          (settings == null
+          (channelSettings == null
               ? null
-              : fallbackChannelFeeFromRules(entry, total, settings, property)),
+              : fallbackChannelFeeFromRules(entry, total, channelSettings)),
       total,
     ),
   );

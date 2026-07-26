@@ -6602,6 +6602,36 @@ class S {
     );
   }
 
+  /// `per booking`
+  String get pricingCostTypePerBooking {
+    return Intl.message(
+      'per booking',
+      name: 'pricingCostTypePerBooking',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `per person`
+  String get pricingCostTypePerPerson {
+    return Intl.message(
+      'per person',
+      name: 'pricingCostTypePerPerson',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `per night`
+  String get pricingCostTypePerNight {
+    return Intl.message(
+      'per night',
+      name: 'pricingCostTypePerNight',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Rate markup on base price`
   String get pricingRateMarkup {
     return Intl.message(

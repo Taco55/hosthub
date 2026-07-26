@@ -14,6 +14,7 @@ class ReservationsState extends Equatable {
     required this.rangeStart,
     required this.rangeEnd,
     this.propertyId,
+    this.channelPropertyId,
     this.lastUpdated,
     this.error,
   });
@@ -24,6 +25,7 @@ class ReservationsState extends Equatable {
       rangeStart = null,
       rangeEnd = null,
       propertyId = null,
+      channelPropertyId = null,
       lastUpdated = null,
       error = null;
 
@@ -31,7 +33,14 @@ class ReservationsState extends Equatable {
   final List<Reservation> entries;
   final DateTime? rangeStart;
   final DateTime? rangeEnd;
-  final String? propertyId;
+
+  /// The console's own property id these entries were loaded for.
+  final int? propertyId;
+
+  /// The channel manager's id the request was addressed to. Only the loader
+  /// cares about it; everything downstream filters on [propertyId].
+  final String? channelPropertyId;
+
   final DateTime? lastUpdated;
   final DomainError? error;
 
@@ -40,7 +49,8 @@ class ReservationsState extends Equatable {
     List<Reservation>? entries,
     DateTime? rangeStart,
     DateTime? rangeEnd,
-    String? propertyId,
+    int? propertyId,
+    String? channelPropertyId,
     DateTime? lastUpdated,
     DomainError? error,
   }) {
@@ -50,6 +60,7 @@ class ReservationsState extends Equatable {
       rangeStart: rangeStart ?? this.rangeStart,
       rangeEnd: rangeEnd ?? this.rangeEnd,
       propertyId: propertyId ?? this.propertyId,
+      channelPropertyId: channelPropertyId ?? this.channelPropertyId,
       lastUpdated: lastUpdated ?? this.lastUpdated,
       error: error,
     );
@@ -62,6 +73,7 @@ class ReservationsState extends Equatable {
     rangeStart,
     rangeEnd,
     propertyId,
+    channelPropertyId,
     lastUpdated,
     error,
   ];
@@ -107,6 +119,7 @@ class ReservationsState extends Equatable {
         'statusCounts={$statusSummary}, '
         'range=${_dateOnly(rangeStart) ?? '-'}..${_dateOnly(rangeEnd) ?? '-'}, '
         'propertyId=${propertyId ?? '-'}, '
+        'channelPropertyId=${channelPropertyId ?? '-'}, '
         'lastUpdated=${lastUpdated?.toIso8601String() ?? '-'}, '
         'hasError=${error != null}'
         '${sample.isNotEmpty ? ', sample=[$sample]' : ''})';
@@ -130,7 +143,8 @@ class ReservationsCubit extends Cubit<ReservationsState> {
   final ChannelManagerRepository _channelManagerRepository;
 
   Future<void> loadReservations({
-    required String propertyId,
+    required int propertyId,
+    required String channelPropertyId,
     DateTime? start,
     DateTime? end,
   }) async {
@@ -152,6 +166,7 @@ class ReservationsCubit extends Cubit<ReservationsState> {
         state.copyWith(
           status: ReservationsStatus.loading,
           propertyId: propertyId,
+          channelPropertyId: channelPropertyId,
           rangeStart: rangeStart,
           rangeEnd: rangeEnd,
           error: null,
@@ -161,7 +176,8 @@ class ReservationsCubit extends Cubit<ReservationsState> {
 
     try {
       final entries = await _channelManagerRepository.fetchReservations(
-        propertyId,
+        propertyId: propertyId,
+        channelPropertyId: channelPropertyId,
         start: rangeStart,
         end: rangeEnd,
       );

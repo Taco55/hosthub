@@ -9,6 +9,13 @@ sealed class Reservation with _$Reservation {
 
   @JsonSerializable(fieldRename: FieldRename.snake)
   const factory Reservation({
+    /// The property this booking belongs to — the console's own
+    /// `properties.id`, never the channel manager's id.
+    ///
+    /// Required, because every aggregate is `property_id IN (:selection)` rather
+    /// than "the current property": a booking that cannot say which property it
+    /// is for cannot be costed, counted or filtered.
+    required int propertyId,
     String? reservationId,
     DateTime? startDate,
     DateTime? endDate,

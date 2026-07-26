@@ -34,8 +34,9 @@ class LodgifyChannelManagerRepository implements ChannelManagerRepository {
   }
 
   @override
-  Future<List<Reservation>> fetchReservations(
-    String propertyId, {
+  Future<List<Reservation>> fetchReservations({
+    required int propertyId,
+    required String channelPropertyId,
     DateTime? start,
     DateTime? end,
   }) async {
@@ -43,13 +44,17 @@ class LodgifyChannelManagerRepository implements ChannelManagerRepository {
     // (it uses stayFilter=All to return all bookings).  We therefore fetch
     // everything and narrow by [start]/[end] client-side.
     final lodgifyEntries = await _lodgifyService.fetchCalendar(
-      propertyId,
+      channelPropertyId,
       start: start,
       end: end,
     );
 
     var reservations = lodgifyEntries
-        .map((e) => LodgifyCalendarDto.fromMap(e.raw).toDomain())
+        .map(
+          (e) => LodgifyCalendarDto.fromMap(
+            e.raw,
+          ).toDomain(propertyId: propertyId),
+        )
         .toList();
 
     if (start != null || end != null) {

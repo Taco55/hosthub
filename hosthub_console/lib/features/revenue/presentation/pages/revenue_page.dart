@@ -91,14 +91,14 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
               previous.status != current.status &&
               current.status == ReservationsStatus.loaded,
           listener: (context, state) {
-            final propertyId = state.propertyId;
-            if (propertyId == null || propertyId.isEmpty) return;
+            final channelPropertyId = state.channelPropertyId;
+            if (channelPropertyId == null || channelPropertyId.isEmpty) return;
             final range = _rangeForPeriod(_period, _periodAnchor);
             final midpoint = range.start.add(
               range.end.difference(range.start) ~/ 2,
             );
             context.read<NightlyRatesCubit>().loadRates(
-              propertyId: propertyId,
+              propertyId: channelPropertyId,
               focusedMonth: DateTime(midpoint.year, midpoint.month),
             );
           },
@@ -157,12 +157,16 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
             start: periodRange.start,
             end: periodRange.end,
           );
+          final channelSettings = _channelSettingsResolver(property);
           final revenueRows = periodEntries
               .map(
                 (entry) => _RevenueRow.fromEntry(
                   entry,
-                  settings: _adminSettings,
-                  property: property,
+                  // Per booking, for the booking's own property — the resolver
+                  // answers for any property, not for "the current one".
+                  channelSettings: channelSettings.effectiveChannelSettings(
+                    entry.propertyId,
+                  ),
                   unknownBookerLabel: s.revenueUnknownBooker,
                 ),
               )
@@ -269,6 +273,7 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
                     context,
                     state: state,
                     property: property,
+                    channelSettings: channelSettings,
                     propertyId: propertyId.isEmpty ? null : propertyId,
                     dateFormatter: dateFormatter,
                     dateTimeFormatter: dateTimeFormatter,
@@ -291,6 +296,7 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
     BuildContext context, {
     required ReservationsState state,
     required PropertySummary? property,
+    required ChannelSettingsResolver channelSettings,
     required String? propertyId,
     required DateFormat dateFormatter,
     required DateFormat dateTimeFormatter,
@@ -536,13 +542,15 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
               ];
             },
             onRowTap: (_, index) {
+              final entry = rows[index].entry;
               _showReservationDetails(
                 context,
-                rows[index].entry,
+                entry,
                 dateFormatter: dateFormatter,
                 dateTimeFormatter: dateTimeFormatter,
-                settings: _adminSettings,
-                property: property,
+                channelSettings: channelSettings.effectiveChannelSettings(
+                  entry.propertyId,
+                ),
               );
             },
             showTableWhenEmpty: true,
@@ -592,13 +600,11 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
     Reservation entry, {
     required DateFormat dateFormatter,
     required DateFormat dateTimeFormatter,
-    required AdminSettings settings,
-    required PropertySummary? property,
+    required EffectiveChannelSettings channelSettings,
   }) {
     final revenue = readBookingPayloadRevenue(
       entry,
-      settings: settings,
-      property: property,
+      channelSettings: channelSettings,
     );
 
     return showReservationDetailsDialog(
@@ -632,8 +638,30 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
     }
   }
 
+  /// The two settings tiers, ready to answer for any property.
+  ///
+  /// `admin_settings` holds the account-wide commission per channel; the
+  /// property row holds only its own deviations. Only
+  /// [ChannelSettingsResolver] puts the two together.
+  ChannelSettingsResolver _channelSettingsResolver(PropertySummary? property) {
+    return ChannelSettingsResolver(
+      accountDefaults: AccountChannelDefaults.fromCommissionPercentages(
+        booking: _adminSettings.bookingChannelFeePercentage,
+        airbnb: _adminSettings.airbnbChannelFeePercentage,
+        other: _adminSettings.otherChannelFeePercentage,
+      ),
+      overridesByPropertyId: {
+        if (property != null) property.id: property.channelOverrides,
+      },
+    );
+  }
+
   void _loadForProperty(PropertySummary? property, {bool force = false}) {
-    final lodgifyId = property?.lodgifyId?.trim();
+    if (property == null) {
+      _lastRequestKey = null;
+      return;
+    }
+    final lodgifyId = property.lodgifyId?.trim();
     if (lodgifyId == null || lodgifyId.isEmpty) {
       _lastRequestKey = null;
       return;
@@ -645,7 +673,7 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
 
     final calendarState = context.read<ReservationsCubit>().state;
     final hasSameCalendarRequest =
-        calendarState.propertyId == lodgifyId &&
+        calendarState.channelPropertyId == lodgifyId &&
         calendarState.rangeStart == range.start &&
         calendarState.rangeEnd == range.end &&
         (calendarState.status == ReservationsStatus.loading ||
@@ -658,7 +686,8 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
     _lastRequestKey = requestKey;
 
     context.read<ReservationsCubit>().loadReservations(
-      propertyId: lodgifyId,
+      propertyId: property.id,
+      channelPropertyId: lodgifyId,
       start: range.start,
       end: range.end,
     );
@@ -988,8 +1017,7 @@ class _RevenueRow {
 
   factory _RevenueRow.fromEntry(
     Reservation entry, {
-    required AdminSettings settings,
-    required PropertySummary? property,
+    required EffectiveChannelSettings channelSettings,
     required String unknownBookerLabel,
   }) {
     final revenue = readBookingRowRevenue(entry);
@@ -997,8 +1025,8 @@ class _RevenueRow {
     final totalRevenue = normalizeMoney(revenue.total ?? entry.totalAmount);
     final serviceCosts = normalizeMoney(
       revenue.fixedCosts ??
-          fallbackFixedCostsFromProperty(
-            property,
+          fallbackFixedCosts(
+            channelSettings,
             entry.source,
             guests: entry.guestCount ?? 1,
             nights: nights,
@@ -1007,7 +1035,7 @@ class _RevenueRow {
     final fees = normalizeMoney(
       revenue.channelFees ??
           revenue.fees ??
-          fallbackChannelFeeFromRules(entry, totalRevenue, settings, property),
+          fallbackChannelFeeFromRules(entry, totalRevenue, channelSettings),
     );
 
     final netRevenue = normalizeMoney(

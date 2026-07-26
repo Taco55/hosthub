@@ -1366,6 +1366,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "pricingCommissionOverride": MessageLookupByLibrary.simpleMessage(
       "Commissie override",
     ),
+    "pricingCostTypePerBooking": MessageLookupByLibrary.simpleMessage(
+      "per boeking",
+    ),
+    "pricingCostTypePerNight": MessageLookupByLibrary.simpleMessage(
+      "per nacht",
+    ),
+    "pricingCostTypePerPerson": MessageLookupByLibrary.simpleMessage(
+      "per persoon",
+    ),
     "pricingCurrencyNote": MessageLookupByLibrary.simpleMessage(
       "Alle bedragen in",
     ),

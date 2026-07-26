@@ -444,8 +444,14 @@ class LodgifyCalendarDto {
     );
   }
 
-  Reservation toDomain() {
+  /// The domain booking, tagged with the console's own property id.
+  ///
+  /// Lodgify only knows its own id, so the caller — which fetched this payload
+  /// *for* a property — supplies the one the rest of the app filters and costs
+  /// on. That is the only moment the two ids meet.
+  Reservation toDomain({required int propertyId}) {
     return Reservation(
+      propertyId: propertyId,
       reservationId: reservationId,
       startDate: startDate,
       endDate: endDate,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
+import 'package:hosthub_console/core/l10n/l10n.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/server_settings/data/admin_settings_repository.dart';
 import 'package:hosthub_console/features/server_settings/domain/admin_settings.dart';
@@ -175,7 +176,7 @@ class _BookingSettingsSectionState extends State<_BookingSettingsSection> {
   late _ChannelDraft _booking;
   late _ChannelDraft _other;
 
-  late ChannelSettings _initial;
+  late ChannelOverrides _initial;
   bool _isSaving = false;
 
   /// Which channel the payout preview illustrates. Follows the channel the user
@@ -209,12 +210,20 @@ class _BookingSettingsSectionState extends State<_BookingSettingsSection> {
     _other.dispose();
   }
 
+  /// The account tier this property's fields fall back to.
+  AccountChannelDefaults get _accountDefaults =>
+      AccountChannelDefaults.fromCommissionPercentages(
+        booking: widget.adminDefaults.bookingChannelFeePercentage,
+        airbnb: widget.adminDefaults.airbnbChannelFeePercentage,
+        other: widget.adminDefaults.otherChannelFeePercentage,
+      );
+
   void _applyDetails(PropertyDetails details) {
-    final cs = details.channelSettings;
-    _airbnb = _ChannelDraft.from(cs.airbnb, _onChanged);
-    _booking = _ChannelDraft.from(cs.booking, _onChanged);
-    _other = _ChannelDraft.from(cs.other, _onChanged);
-    _initial = cs;
+    final overrides = details.channelOverrides;
+    _airbnb = _ChannelDraft.from(overrides.airbnb, _onChanged);
+    _booking = _ChannelDraft.from(overrides.booking, _onChanged);
+    _other = _ChannelDraft.from(overrides.other, _onChanged);
+    _initial = overrides;
   }
 
   void _onChanged() {
@@ -222,24 +231,24 @@ class _BookingSettingsSectionState extends State<_BookingSettingsSection> {
     setState(() {});
   }
 
-  ChannelSettings _currentSettings() {
-    return ChannelSettings(
-      airbnb: _airbnb.toConfig(),
-      booking: _booking.toConfig(),
-      other: _other.toConfig(),
+  ChannelOverrides _currentOverrides() {
+    return ChannelOverrides(
+      airbnb: _airbnb.toOverride(),
+      booking: _booking.toOverride(),
+      other: _other.toOverride(),
     );
   }
 
-  bool get _hasChanges => !_initial.equals(_currentSettings());
+  bool get _hasChanges => !_initial.equals(_currentOverrides());
 
   Future<void> _save() async {
-    final settings = _currentSettings();
+    final overrides = _currentOverrides();
     setState(() => _isSaving = true);
 
     try {
-      final saved = await widget.repository.updateChannelSettings(
+      final saved = await widget.repository.updateChannelOverrides(
         propertyId: widget.details.id,
-        channelSettings: settings,
+        channelOverrides: overrides,
       );
 
       if (!mounted) return;
@@ -279,7 +288,7 @@ class _BookingSettingsSectionState extends State<_BookingSettingsSection> {
         final preview = _PayoutPreview(
           channelName: _previewChannelName,
           draft: _previewDraft,
-          defaultCommission: _previewDefaultCommission,
+          accountDefault: _previewAccountDefault,
           currencyCode: currencyCode,
         );
 
@@ -312,10 +321,10 @@ class _BookingSettingsSectionState extends State<_BookingSettingsSection> {
   _ChannelDraft get _previewDraft =>
       [_airbnb, _booking, _other][_previewChannel];
 
-  double get _previewDefaultCommission => [
-    widget.adminDefaults.airbnbChannelFeePercentage,
-    widget.adminDefaults.bookingChannelFeePercentage,
-    widget.adminDefaults.otherChannelFeePercentage,
+  ChannelConfig get _previewAccountDefault => [
+    _accountDefaults.airbnb,
+    _accountDefaults.booking,
+    _accountDefaults.other,
   ][_previewChannel];
 
   Widget _buildChannelSettings(
@@ -341,7 +350,7 @@ class _BookingSettingsSectionState extends State<_BookingSettingsSection> {
           onExpanded: () => setState(() => _previewChannel = 0),
           leading: const BookingSourceIcon(source: 'airbnb', size: 20),
           draft: _airbnb,
-          defaultCommission: widget.adminDefaults.airbnbChannelFeePercentage,
+          defaultCommission: _accountDefaults.airbnb.commissionPercentage,
           currencyCode: currencyCode,
           enabled: !_isSaving,
           initiallyExpanded: true,
@@ -352,7 +361,7 @@ class _BookingSettingsSectionState extends State<_BookingSettingsSection> {
           onExpanded: () => setState(() => _previewChannel = 1),
           leading: const BookingSourceIcon(source: 'booking', size: 20),
           draft: _booking,
-          defaultCommission: widget.adminDefaults.bookingChannelFeePercentage,
+          defaultCommission: _accountDefaults.booking.commissionPercentage,
           currencyCode: currencyCode,
           enabled: !_isSaving,
         ),
@@ -362,7 +371,7 @@ class _BookingSettingsSectionState extends State<_BookingSettingsSection> {
           onExpanded: () => setState(() => _previewChannel = 2),
           leading: const BookingSourceIcon(source: 'direct', size: 20),
           draft: _other,
-          defaultCommission: widget.adminDefaults.otherChannelFeePercentage,
+          defaultCommission: _accountDefaults.other.commissionPercentage,
           currencyCode: currencyCode,
           enabled: !_isSaving,
         ),
@@ -501,13 +510,17 @@ class _PayoutPreview extends StatelessWidget {
   const _PayoutPreview({
     required this.channelName,
     required this.draft,
-    required this.defaultCommission,
+    required this.accountDefault,
     required this.currencyCode,
   });
 
   final String channelName;
   final _ChannelDraft draft;
-  final double defaultCommission;
+
+  /// The account values this channel's unfilled fields fall back to, so the
+  /// preview shows what the property actually charges rather than what it types.
+  final ChannelConfig accountDefault;
+
   final String currencyCode;
 
   @override
@@ -517,14 +530,11 @@ class _PayoutPreview extends StatelessWidget {
     final spacing = context.styledSpacing;
     final s = context.s;
 
-    final config = draft.toConfig();
-    final commissionPercentage =
-        config.commissionPercentage ?? defaultCommission;
+    final config = draft.toOverride().applyTo(accountDefault);
     final settlement = config.settle(
       baseRate: _previewBaseRate,
       nights: _previewNights,
       guests: _previewGuests,
-      commissionPercentage: commissionPercentage,
     );
 
     // Cleaning + linen are shown together, service and other on their own
@@ -591,7 +601,7 @@ class _PayoutPreview extends StatelessWidget {
               if (settlement.markup != 0)
                 _PayoutRow(
                   label: s.pricingPayoutMarkup(
-                    _formatDecimal(config.rateMarkupPercentage ?? 0),
+                    _formatDecimal(config.rateMarkupPercentage),
                   ),
                   value: money(settlement.markup),
                 ),
@@ -599,7 +609,7 @@ class _PayoutPreview extends StatelessWidget {
               if (settlement.commission != 0)
                 _PayoutRow(
                   label: s.pricingPayoutCommission(
-                    _formatDecimal(commissionPercentage),
+                    _formatDecimal(config.commissionPercentage),
                   ),
                   value: money(settlement.commission),
                   negative: true,
@@ -846,7 +856,7 @@ class _CostInputRow extends StatelessWidget {
                   .map(
                     (t) => DropdownMenuItem(
                       value: t,
-                      child: Text(costTypeLabel(t)),
+                      child: Text(_costTypeLabel(context.s, t)),
                     ),
                   )
                   .toList(),
@@ -923,54 +933,53 @@ class _ChannelDraft {
     onChanged();
   }
 
-  factory _ChannelDraft.from(ChannelConfig config, VoidCallback onChanged) {
+  /// A draft over one channel's overrides.
+  ///
+  /// An empty field is not zero: it means the property follows the account for
+  /// that field, which is why every controller starts empty when the override
+  /// is absent.
+  factory _ChannelDraft.from(ChannelOverride override, VoidCallback onChanged) {
     return _ChannelDraft(
       commissionController: TextEditingController(
-        text: _formatOptionalDecimal(config.commissionPercentage),
+        text: _formatOptionalDecimal(override.commissionPercentage),
       ),
       markupController: TextEditingController(
-        text: _formatOptionalDecimal(config.rateMarkupPercentage),
+        text: _formatOptionalDecimal(override.rateMarkupPercentage),
       ),
       cleaningController: TextEditingController(
-        text: _formatDecimal(config.cleaningCost.amount),
+        text: _formatOptionalDecimal(override.cleaningCost?.amount),
       ),
       linenController: TextEditingController(
-        text: _formatDecimal(config.linenCost.amount),
+        text: _formatOptionalDecimal(override.linenCost?.amount),
       ),
       serviceController: TextEditingController(
-        text: _formatDecimal(config.serviceCost.amount),
+        text: _formatOptionalDecimal(override.serviceCost?.amount),
       ),
       otherController: TextEditingController(
-        text: _formatDecimal(config.otherCost.amount),
+        text: _formatOptionalDecimal(override.otherCost?.amount),
       ),
-      cleaningType: config.cleaningCost.type,
-      linenType: config.linenCost.type,
-      serviceType: config.serviceCost.type,
-      otherType: config.otherCost.type,
+      cleaningType: override.cleaningCost?.type ?? CostType.perBooking,
+      linenType: override.linenCost?.type ?? CostType.perBooking,
+      serviceType: override.serviceCost?.type ?? CostType.perBooking,
+      otherType: override.otherCost?.type ?? CostType.perBooking,
       onChanged: onChanged,
     );
   }
 
-  ChannelConfig toConfig() {
-    return ChannelConfig(
+  ChannelOverride toOverride() {
+    CostEntry? cost(TextEditingController controller, CostType type) {
+      final amount = _parseNullable(controller.text);
+      if (amount == null) return null;
+      return CostEntry(amount: amount, type: type);
+    }
+
+    return ChannelOverride(
       commissionPercentage: _parseNullable(commissionController.text),
       rateMarkupPercentage: _parseNullable(markupController.text),
-      cleaningCost: CostEntry(
-        amount: _parseAmount(cleaningController.text),
-        type: cleaningType,
-      ),
-      linenCost: CostEntry(
-        amount: _parseAmount(linenController.text),
-        type: linenType,
-      ),
-      serviceCost: CostEntry(
-        amount: _parseAmount(serviceController.text),
-        type: serviceType,
-      ),
-      otherCost: CostEntry(
-        amount: _parseAmount(otherController.text),
-        type: otherType,
-      ),
+      cleaningCost: cost(cleaningController, cleaningType),
+      linenCost: cost(linenController, linenType),
+      serviceCost: cost(serviceController, serviceType),
+      otherCost: cost(otherController, otherType),
     );
   }
 
@@ -1027,8 +1036,14 @@ double? _parseNullable(String value) {
   return double.tryParse(trimmed.replaceAll(',', '.'));
 }
 
-double _parseAmount(String value) {
-  final trimmed = value.trim();
-  if (trimmed.isEmpty) return 0;
-  return double.tryParse(trimmed.replaceAll(',', '.')) ?? 0;
+/// How a cost multiplies, in the interface language.
+String _costTypeLabel(S s, CostType type) {
+  switch (type) {
+    case CostType.perBooking:
+      return s.pricingCostTypePerBooking;
+    case CostType.perPerson:
+      return s.pricingCostTypePerPerson;
+    case CostType.perNight:
+      return s.pricingCostTypePerNight;
+  }
 }

@@ -154,7 +154,7 @@ class _ReservationsPageBody extends StatefulWidget {
 class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
   _ReservationsViewMode _viewMode = _ReservationsViewMode.list;
   DateTime _focusedMonth = DateTime(DateTime.now().year, DateTime.now().month);
-  String? _lastPropertyId;
+  String? _lastChannelPropertyId;
   bool _showHistorical = false;
   _TimelineDensity _timelineDensity = _TimelineDensity.comfortable;
   OutOfMonthDisplay _outOfMonthDisplay = OutOfMonthDisplay.hide;
@@ -245,10 +245,10 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
               current.status == ReservationsStatus.loaded,
           listener: (context, state) {
             // Na het laden van reserveringen: laad tarieven.
-            final propertyId = _lastPropertyId;
-            if (propertyId == null || propertyId.isEmpty) return;
+            final channelPropertyId = _lastChannelPropertyId;
+            if (channelPropertyId == null || channelPropertyId.isEmpty) return;
             context.read<NightlyRatesCubit>().loadRates(
-              propertyId: propertyId,
+              propertyId: channelPropertyId,
               focusedMonth: _focusedMonth,
             );
           },
@@ -511,10 +511,10 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
 
     final month = DateTime(firstStart.year, firstStart.month);
     _continuousActiveMonth.value = month;
-    final propertyId = _lastPropertyId;
-    if (propertyId != null && propertyId.isNotEmpty) {
+    final channelPropertyId = _lastChannelPropertyId;
+    if (channelPropertyId != null && channelPropertyId.isNotEmpty) {
       context.read<NightlyRatesCubit>().loadRates(
-        propertyId: propertyId,
+        propertyId: channelPropertyId,
         focusedMonth: month,
       );
     }
@@ -913,14 +913,21 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
   }
 
   void _loadReservationsForProperty(PropertySummary? property) {
-    final lodgifyId = property?.lodgifyId?.trim();
-    if (lodgifyId == null || lodgifyId.isEmpty) {
-      _lastPropertyId = null;
+    if (property == null) {
+      _lastChannelPropertyId = null;
       return;
     }
-    if (_lastPropertyId == lodgifyId) return;
-    _lastPropertyId = lodgifyId;
-    context.read<ReservationsCubit>().loadReservations(propertyId: lodgifyId);
+    final lodgifyId = property.lodgifyId?.trim();
+    if (lodgifyId == null || lodgifyId.isEmpty) {
+      _lastChannelPropertyId = null;
+      return;
+    }
+    if (_lastChannelPropertyId == lodgifyId) return;
+    _lastChannelPropertyId = lodgifyId;
+    context.read<ReservationsCubit>().loadReservations(
+      propertyId: property.id,
+      channelPropertyId: lodgifyId,
+    );
     // Rates worden geladen via BlocListener zodra reserveringen klaar zijn.
   }
 

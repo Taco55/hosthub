@@ -11,6 +11,7 @@ import 'package:hosthub_console/features/revenue/domain/booking_revenue.dart';
 void main() {
   Reservation booking(Map<String, dynamic> raw, {num? totalAmount}) =>
       Reservation(
+        propertyId: 1,
         reservationId: 'B-1',
         startDate: DateTime(2027, 2, 7),
         endDate: DateTime(2027, 2, 12),
@@ -31,8 +32,12 @@ void main() {
       for (final raw in [
         {'currency': 'NOK'},
         {'currencyCode': 'NOK'},
-        {'pricing': {'currency': 'NOK'}},
-        {'financials': {'currency': 'NOK'}},
+        {
+          'pricing': {'currency': 'NOK'},
+        },
+        {
+          'financials': {'currency': 'NOK'},
+        },
       ]) {
         expect(readBookingPayloadRevenue(booking(raw)).currency, 'NOK');
       }
@@ -49,14 +54,20 @@ void main() {
     test('falls back through totalAmount → total → amount → price', () {
       expect(readBookingPayloadRevenue(booking({'price': 700})).total, 700);
       expect(
-        readBookingPayloadRevenue(booking({'quote': {'total': 800}})).total,
+        readBookingPayloadRevenue(
+          booking({
+            'quote': {'total': 800},
+          }),
+        ).total,
         800,
       );
     });
 
     test('a string amount with a comma decimal still parses', () {
-      expect(readBookingPayloadRevenue(booking({'total': '1.234,50'})).total,
-          1234.5);
+      expect(
+        readBookingPayloadRevenue(booking({'total': '1.234,50'})).total,
+        1234.5,
+      );
     });
   });
 

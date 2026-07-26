@@ -93,9 +93,58 @@ kale `flutter` op PATH is nog 3.35.7 en die mix bouwt test-assets met de verkeer
 | E2 | Website-editor §11-gaten | console | done | Vijf commits: `60328c2` (locale-switcher naar de editorheader, geen AI-badges, previewheader alleen Live preview + Web/Mobiel, Team/gear/breadcrumb-segment weg), `aa04050` (coverage-meter → `N of M fields yours`, chip ís de schakelaar met tooltip, één in-sessie undo, banners weg), `fbbffb4` (tweeregelige eerlijke statusregel + Saved/Saving-indicator, publicatiedialoog "Wat gaat live" met checkbox per taal + Nagekeken/Concept/Overgeslagen + live meetellende knoplabel), `8f137a5` (lazy vertalen bij openen van een taal + één spacing-token tussen velden), `09f50a3` (wit invoervlak i.p.v. leesgrijs). Lib: `c35e572` (`actionTextListenable`), `formFields.input.backgroundColorDark`. 51 editor-tests groen |
 | E3 | Visuele verificatie van de drie schermen tegen `HostHub CMS.dc.html` | console | blocked (login) | Release-build met `hosthub-dev.env` gebouwd en geserveerd op `localhost:43112` (browser-pane staat open, viewport 1360x880). Loginpagina rendert, geen console-errors. Verder komen vraagt een ingelogde sessie — wachtwoorden invullen doe ik niet. Zodra Taco inlogt: Reserveringen (lijst + tijdlijn, beide dichtheden), Omzet (jaar, met grafiek/kanaalsplitsing/totaalrij) en Prijzen (breed + smal) naast de mock leggen |
 
+## Run 6 — multi-property handoff (2026-07-26, opdracht "stop na elke stap voor review")
+
+Increment op de CMS-handoff: `hosthub-design/design_handoff_hosthub_multiproperty/`
+(README + CONFORMANCE). Zes stappen in vaste volgorde, elk met review-stop.
+De bare `flutter` op PATH is inmiddels óók 3.44.8 (gelijk aan fvm) — de waarschuwing
+onder run 5 over een engine-mix geldt niet meer.
+
+| # | slice | scope | status | evidence |
+|---|-------|-------|--------|----------|
+| M1 | Domein: `booking.propertyId`, één `effectiveChannelSettings(propertyId)`, sparse overrides | console | done | zie hieronder |
+| M2 | Aggregatie: gefilterde set, kosten per eigen property, bezetting ÷ `dagen × selectie` | console | todo | drie unit-tests per README §3 |
+| M3 | Routing + sidebar-boom (expansie uit de route, deeplinks) | console | todo | |
+| M4 | Property-filter op Boekingen + Omzet (per pagina per user, nooit leeg) | console | todo | |
+| M5 | Single-property-collapse (§5) als configuratie, geen fork | console | todo | |
+| M6 | Railgeometrie (§7) incl. no-movement-eis | console (+lib) | todo | |
+
+**M1-bewijs.** Twee tiers, één merge:
+- `properties/domain/booking_channel.dart` — `BookingChannel` + `bookingChannelForSource`: de
+  source-string wordt nu op één plek naar een kanaal herleid.
+- `account_channel_defaults.dart` — accounttier, elk veld resolved.
+  `fromCommissionPercentages` overbrugt `admin_settings` (dat alleen commissie per kanaal heeft).
+- `channel_overrides.dart` — propertytier, **sparse**: `null` = volgt account, en `toMap()` laat
+  niet-overschreven velden weg. `overriddenFieldCount` is het getal achter de Prijzen-badge.
+- `channel_settings_resolver.dart` — `effectiveChannelSettings(int propertyId)` voor *elke*
+  property; er is geen tweede merge-site meer om op te greppen.
+- `channel_settings.dart` — `ChannelConfig` is nu het resolved type en `settle()` gebruikt zijn
+  eigen commissie; de ingespoten `commissionPercentage` (de weg waarlangs een portfolio-view alles
+  met één property's tarief kon kosten) is weg. `ChannelSettings` bestaat niet meer.
+- `booking.propertyId` verplicht (`Reservation`), en `fetchReservations` neemt `propertyId` (onze
+  id) + `channelPropertyId` (Lodgify) apart; `LodgifyCalendarDto.toDomain(propertyId:)` tagt.
+  `ReservationsState` draagt beide.
+- `booking_revenue.dart`-helpers nemen `EffectiveChannelSettings` i.p.v. `PropertySummary` +
+  `AdminSettings`; Omzet resolvet nu **per boeking** op `entry.propertyId`.
+- Prijzen-pagina schrijft de sparse tier (leeg veld = volgt account) en de payout-preview settelt
+  `override.applyTo(accountDefault)`.
+- Kosttype-labels uit het domein naar ARB (`pricingCostTypePer*`, nl+en) — stonden hardcoded in
+  Nederlands in `channel_settings.dart`.
+- Tests: `channel_settings_resolver_test.dart` (19 checks: merge per property, propagatie van een
+  accountwijziging naar niet-overschreven velden, expliciete nul ≠ afwezig, sparse round-trip,
+  legacy-rij, override-counts) + `lodgify_calendar_dto_test.dart` (3× id-tagging).
+  `channel_settlement_test.dart` en `payout_preview_test.dart` bijgewerkt. 228 tests groen,
+  `flutter analyze` op de 2 bekende infos.
+
+**Open beslissing voor M2 e.v.:** de accounttier heeft nog geen eigen opslag — `admin_settings` is
+platformbreed en kent alleen commissie per kanaal, dus markup en kosten defaulten account-wijd naar
+nul. Zodra Accountinstellingen (§4) die velden echt moet bewerken is een per-account rij nodig;
+`AccountChannelDefaults.fromMap/toMap` heeft daar de vorm al voor. Niet in M1 gebouwd omdat M1
+"geen UI" is.
+
 ## next_lens
-RUN 5 loopt: E1 + E2 done. E3 (visuele verificatie) is de volgende lens — die vraagt een
-ingelogde sessie, dus user-gated.
+RUN 6 loopt: M1 done, wacht op review. Daarna M2 (aggregatie + de drie unit-tests).
+RUN 5: E1 + E2 done. E3 (visuele verificatie) is user-gated — vraagt een ingelogde sessie.
 
 **Nog open uit §11, met reden:** de kostenbeheersing (hash-cache, één request per taal, locked
 overslaan, alleen ingeschakelde talen) zit al in de Edge Function en `translateNow`; een

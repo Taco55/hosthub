@@ -3,20 +3,24 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:hosthub_console/features/auth/infrastructure/supabase/supabase_repository.dart';
 import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
-import 'package:hosthub_console/features/properties/domain/channel_settings.dart';
+import 'package:hosthub_console/features/properties/domain/channel_overrides.dart';
 
 class PropertySummary {
   const PropertySummary({
     required this.id,
     required this.name,
     this.lodgifyId,
-    this.channelSettings = const ChannelSettings(),
+    this.channelOverrides = ChannelOverrides.none,
   });
 
   final int id;
   final String name;
   final String? lodgifyId;
-  final ChannelSettings channelSettings;
+
+  /// Only what this property states for itself. What it actually charges is
+  /// [ChannelSettingsResolver.effectiveChannelSettings] of its id — a property
+  /// row is one of two tiers and never the answer on its own.
+  final ChannelOverrides channelOverrides;
 
   factory PropertySummary.fromMap(Map<String, dynamic> map) {
     final id = map['id'] as int;
@@ -25,7 +29,7 @@ class PropertySummary {
       id: id,
       name: name?.isNotEmpty == true ? name! : id.toString(),
       lodgifyId: (map['lodgify_id'] as String?)?.trim(),
-      channelSettings: ChannelSettings.fromMap(
+      channelOverrides: ChannelOverrides.fromMap(
         map['channel_settings'] as Map<String, dynamic>?,
       ),
     );
@@ -68,7 +72,7 @@ class PropertyDetails {
     this.currency,
     this.subscriptionPlans,
     this.lodgifySyncedAt,
-    this.channelSettings = const ChannelSettings(),
+    this.channelOverrides = ChannelOverrides.none,
   });
 
   final int id;
@@ -103,7 +107,9 @@ class PropertyDetails {
   /// when the account last looked for *new* properties.
   final DateTime? lodgifySyncedAt;
 
-  final ChannelSettings channelSettings;
+  /// This property's own deviations from the account defaults, sparsely — see
+  /// [PropertySummary.channelOverrides].
+  final ChannelOverrides channelOverrides;
 
   /// Resolved currency code from the Lodgify currency field.
   String get currencyCode {
@@ -157,7 +163,7 @@ class PropertyDetails {
       currency: map['currency'],
       subscriptionPlans: _toStringList(map['subscription_plans']),
       lodgifySyncedAt: _toDateTime(map['lodgify_synced_at']),
-      channelSettings: ChannelSettings.fromMap(
+      channelOverrides: ChannelOverrides.fromMap(
         map['channel_settings'] as Map<String, dynamic>?,
       ),
     );
@@ -336,14 +342,18 @@ class PropertyRepository extends SupabaseRepository {
     }
   }
 
-  Future<PropertyDetails> updateChannelSettings({
+  /// Write this property's deviations from the account defaults.
+  ///
+  /// Sparse on purpose: [ChannelOverrides.toMap] omits every field the property
+  /// does not state, so a later change to an account default still reaches it.
+  Future<PropertyDetails> updateChannelOverrides({
     required int propertyId,
-    required ChannelSettings channelSettings,
+    required ChannelOverrides channelOverrides,
   }) async {
     try {
       final response = await supabase
           .from('properties')
-          .update({'channel_settings': channelSettings.toMap()})
+          .update({'channel_settings': channelOverrides.toMap()})
           .eq('id', propertyId)
           .select(_propertyDetailsColumns)
           .single();
@@ -353,7 +363,7 @@ class PropertyRepository extends SupabaseRepository {
         error,
         stack,
         reason: DomainErrorReason.cannotSaveData,
-        context: {'op': 'updateChannelSettings', 'property_id': propertyId},
+        context: {'op': 'updateChannelOverrides', 'property_id': propertyId},
       );
     }
   }
