@@ -103,7 +103,7 @@ onder run 5 over een engine-mix geldt niet meer.
 | # | slice | scope | status | evidence |
 |---|-------|-------|--------|----------|
 | M1 | Domein: `booking.propertyId`, één `effectiveChannelSettings(propertyId)`, sparse overrides | console | done | zie hieronder |
-| M2 | Aggregatie: gefilterde set, kosten per eigen property, bezetting ÷ `dagen × selectie` | console | todo | drie unit-tests per README §3 |
+| M2 | Aggregatie: gefilterde set, kosten per eigen property, bezetting ÷ `dagen × selectie` | console | done | zie M2-bewijs |
 | M3 | Routing + sidebar-boom (expansie uit de route, deeplinks) | console | todo | |
 | M4 | Property-filter op Boekingen + Omzet (per pagina per user, nooit leeg) | console | todo | |
 | M5 | Single-property-collapse (§5) als configuratie, geen fork | console | todo | |
@@ -136,14 +136,50 @@ onder run 5 over een engine-mix geldt niet meer.
   `channel_settlement_test.dart` en `payout_preview_test.dart` bijgewerkt. 228 tests groen,
   `flutter analyze` op de 2 bekende infos.
 
-**Open beslissing voor M2 e.v.:** de accounttier heeft nog geen eigen opslag — `admin_settings` is
+**M2-bewijs.** Nieuw `features/portfolio/domain/`:
+- `property_selection.dart` — `PropertySelection` draagt *beschikbaar* én *gekozen*: nooit leeg
+  (laatste uitvinken = no-op), default alles, `clampedTo` laat een verwijderde property vallen en
+  laat een nieuwe meelopen als alles geselecteerd was.
+- `property_ref.dart` — `PropertyRef` koppelt onze id aan de kanaal-id, zodat een portfolio-fetch
+  een loop is en geen twee parallelle lijsten.
+- `portfolio_aggregation.dart` — de drie regels: `bookingsForSelection`,
+  `channelSettingsForBooking` (resolvet op `booking.propertyId`), `occupiedNightsInPeriod` +
+  `occupancyRate/occupancyPercentage(occupiedNights, daysInPeriod, selectedPropertyCount)`.
+
+`ReservationsCubit.loadReservations` neemt nu `List<PropertyRef>`: één request per property
+(sync is per property), samengevoegd in de volgorde van de lijst. Een property die faalt komt in
+`stalePropertyIds` en de rest laadt gewoon — pas als *alle* properties falen is het een error
+(§9: één kapotte sync mag het portfolio niet blanken). `ReservationsState.properties` zegt welke
+properties de entries dekken; daar komt de bezettingsdeler uit, dus de gesommeerde en de gedeelde
+set kunnen niet uit elkaar lopen.
+
+**Twee off-by-one-bugs onderweg gefixt** (beide lieten bezetting boven 100% uitkomen):
+Boekingen telde `end - start + 1`, dus de vertrekdag als bezette nacht — twee opeenvolgende
+boekingen rapporteerden 32 nachten in juli. Omzet deelde de *ongeclipte* nachten van alle
+boekingen door de periodelengte, dus een boeking over de periodegrens bracht al zijn nachten mee.
+Beide gaan nu door `occupiedNightsInPeriod` (half-open, geclipt).
+
+Tests: `portfolio_aggregation_test.dart` (19 checks, per regel het benoemde falen, incl. "2 van 4 =
+som van die twee alleen", "eenmaal resolven voor het scherm rekent 3% i.p.v. 3%+20%", "4 properties
+≈ ¼ van de naïeve waarde"), `property_selection_test.dart` (18), `reservations_cubit_test.dart`
+(9, incl. partial failure). `occupancy_test.dart` herschreven: testte zijn eigen kopie van de
+formule (en dus niet de +1-bug in de pagina), test nu de echte functie. 271 tests groen,
+`flutter analyze` op de 2 bekende infos.
+
+**Bewust nog niet in M2:** er is geen UI om de selectie te veranderen — dat is M4. Beide
+portfolio-schermen laden vandaag één property en de selectie dekt precies die, dus
+`selectedPropertyCount` is 1 en niets verschuift; zodra M4 meerdere `PropertyRef`s meegeeft
+levert dezelfde expressie N. Nachttarieven en de valuta-write-back lopen alleen bij
+`state.singleProperty` — een gemengd portfolio heeft geen enkele tariefkalender of valuta.
+
+**Open beslissing (ongewijzigd):** de accounttier heeft nog geen eigen opslag — `admin_settings` is
 platformbreed en kent alleen commissie per kanaal, dus markup en kosten defaulten account-wijd naar
 nul. Zodra Accountinstellingen (§4) die velden echt moet bewerken is een per-account rij nodig;
 `AccountChannelDefaults.fromMap/toMap` heeft daar de vorm al voor. Niet in M1 gebouwd omdat M1
 "geen UI" is.
 
 ## next_lens
-RUN 6 loopt: M1 done, wacht op review. Daarna M2 (aggregatie + de drie unit-tests).
+RUN 6 loopt: M1 + M2 done, wacht op review. Daarna M3 (routing + sidebar-boom).
 RUN 5: E1 + E2 done. E3 (visuele verificatie) is user-gated — vraagt een ingelogde sessie.
 
 **Nog open uit §11, met reden:** de kostenbeheersing (hash-cache, één request per taal, locked

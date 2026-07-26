@@ -5,6 +5,9 @@ import 'package:intl/intl.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
 import 'package:hosthub_console/features/channel_manager/infrastructure/lodgify/lodgify_error_utils.dart';
+import 'package:hosthub_console/features/portfolio/domain/portfolio_aggregation.dart';
+import 'package:hosthub_console/features/portfolio/domain/property_ref.dart';
+import 'package:hosthub_console/features/portfolio/domain/property_selection.dart';
 import 'package:hosthub_console/features/reservations/application/nightly_rates_cubit.dart';
 import 'package:hosthub_console/features/reservations/application/reservations_cubit.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
@@ -91,7 +94,9 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
               previous.status != current.status &&
               current.status == ReservationsStatus.loaded,
           listener: (context, state) {
-            final channelPropertyId = state.channelPropertyId;
+            // Rates are per property: a mixed portfolio has no single rate
+            // calendar and no single currency, so this only runs for one.
+            final channelPropertyId = state.singleProperty?.channelPropertyId;
             if (channelPropertyId == null || channelPropertyId.isEmpty) return;
             final range = _rangeForPeriod(_period, _periodAnchor);
             final midpoint = range.start.add(
@@ -151,7 +156,16 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
           final periodRangeLabel =
               '${dateFormatter.format(periodRange.start)} - ${dateFormatter.format(periodRange.end)}';
 
-          final bookedEntries = _entriesForRevenue(state.entries);
+          // One filtered set feeds the KPIs, the chart, the table, the totals
+          // row, the export and the detail modal — §3's "one filter, one source
+          // of truth". The selection covers the properties actually loaded, so
+          // the occupancy divisor and the booking set can never disagree.
+          final selection = PropertySelection.all(
+            state.properties.map((ref) => ref.propertyId),
+          );
+          final bookedEntries = _entriesForRevenue(
+            bookingsForSelection(state.entries, selection),
+          );
           final periodEntries = _entriesWithinRange(
             bookedEntries,
             start: periodRange.start,
@@ -164,8 +178,9 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
                   entry,
                   // Per booking, for the booking's own property — the resolver
                   // answers for any property, not for "the current one".
-                  channelSettings: channelSettings.effectiveChannelSettings(
-                    entry.propertyId,
+                  channelSettings: channelSettingsForBooking(
+                    channelSettings,
+                    entry,
                   ),
                   unknownBookerLabel: s.revenueUnknownBooker,
                 ),
@@ -263,9 +278,18 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
                 SizedBox(height: context.styledSpacing.lg),
                 _RevenueKpis(
                   totals: totals,
-                  periodDays: periodRange.end
-                      .difference(periodRange.start)
-                      .inDays,
+                  occupancy: occupancyPercentage(
+                    occupiedNights: occupiedNightsInPeriod(
+                      periodEntries,
+                      periodStart: periodRange.start,
+                      periodEnd: periodRange.end,
+                    ),
+                    daysInPeriod: daysInPeriod(
+                      start: periodRange.start,
+                      end: periodRange.end,
+                    ),
+                    selectedPropertyCount: selection.selectedCount,
+                  ),
                 ),
                 SizedBox(height: context.styledSpacing.lg),
                 Expanded(
@@ -673,7 +697,7 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
 
     final calendarState = context.read<ReservationsCubit>().state;
     final hasSameCalendarRequest =
-        calendarState.channelPropertyId == lodgifyId &&
+        calendarState.singleProperty?.channelPropertyId == lodgifyId &&
         calendarState.rangeStart == range.start &&
         calendarState.rangeEnd == range.end &&
         (calendarState.status == ReservationsStatus.loading ||
@@ -686,8 +710,9 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
     _lastRequestKey = requestKey;
 
     context.read<ReservationsCubit>().loadReservations(
-      propertyId: property.id,
-      channelPropertyId: lodgifyId,
+      properties: [
+        PropertyRef(propertyId: property.id, channelPropertyId: lodgifyId),
+      ],
       start: range.start,
       end: range.end,
     );
@@ -766,19 +791,17 @@ class _RevenuePeriodNav extends StatelessWidget {
 /// Design: four KPI tiles above the revenue table — Bruto, Netto, gemiddelde
 /// nachtprijs (ADR) and Bezetting for the selected period.
 class _RevenueKpis extends StatelessWidget {
-  const _RevenueKpis({required this.totals, required this.periodDays});
+  const _RevenueKpis({required this.totals, required this.occupancy});
 
   final _RevenueTotals totals;
 
-  /// Nights in the selected period, the denominator for occupancy.
-  final int periodDays;
+  /// Occupancy over the whole selection as a whole percentage, computed by
+  /// [occupancyPercentage] in the portfolio domain — the screen only labels it.
+  final int occupancy;
 
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    final occupancy = periodDays <= 0
-        ? 0
-        : ((totals.totalNights / periodDays) * 100).round();
 
     // Design: the revenue `.kpi .kl` is a plain label — no icon, unlike the
     // reservations tiles.

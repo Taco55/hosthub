@@ -18,6 +18,9 @@ import 'package:hosthub_console/features/reservations/application/nightly_rates_
 import 'package:hosthub_console/features/reservations/application/reservations_cubit.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
+import 'package:hosthub_console/features/portfolio/domain/portfolio_aggregation.dart';
+import 'package:hosthub_console/features/portfolio/domain/property_ref.dart';
+import 'package:hosthub_console/features/portfolio/domain/property_selection.dart';
 import 'package:hosthub_console/core/l10n/l10n.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:hosthub_console/features/reservations/presentation/dialogs/reservation_details_dialog.dart';
@@ -281,7 +284,10 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
           final locale = Localizations.localeOf(context).toString();
           final dateFormatter = DateFormat('d MMM yyyy', locale);
           final dateTimeFormatter = DateFormat('d MMM yyyy HH:mm', locale);
-          final allBookings = _sortedBookings(state.entries);
+          final selection = _selectionFor(state);
+          final allBookings = _sortedBookings(
+            bookingsForSelection(state.entries, selection),
+          );
           final today = _dateOnly(DateTime.now());
           final afterHistorical = _showHistorical
               ? allBookings
@@ -442,11 +448,16 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     required List<Reservation> entries,
   }) {
     final l10n = context.s;
+    final selectedPropertyCount = _selectionFor(state).selectedCount;
 
     if (_viewMode == _ReservationsViewMode.list) {
       return MetricsGrid(
         metrics: _monthMetrics(
-          _monthSummary(_focusedMonth, entries),
+          _monthSummary(
+            _focusedMonth,
+            entries,
+            selectedPropertyCount: selectedPropertyCount,
+          ),
           l10n: l10n,
         ),
       );
@@ -456,7 +467,11 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     if (!_continuousMonths) {
       return MetricsGrid(
         metrics: _monthMetrics(
-          _monthSummary(_focusedMonth, timelineBookings),
+          _monthSummary(
+            _focusedMonth,
+            timelineBookings,
+            selectedPropertyCount: selectedPropertyCount,
+          ),
           l10n: l10n,
         ),
       );
@@ -468,16 +483,28 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
       valueListenable: _continuousActiveMonth,
       builder: (context, activeMonth, _) => MetricsGrid(
         metrics: _monthMetrics(
-          _monthSummary(activeMonth, timelineBookings),
+          _monthSummary(
+            activeMonth,
+            timelineBookings,
+            selectedPropertyCount: selectedPropertyCount,
+          ),
           l10n: l10n,
         ),
       ),
     );
   }
 
+  /// The properties in view — the same set the bookings were loaded for, so a
+  /// rate can never be divided by a different number of properties than it was
+  /// summed over.
+  PropertySelection _selectionFor(ReservationsState state) =>
+      PropertySelection.all(state.properties.map((ref) => ref.propertyId));
+
   /// Timeline bookings: always including historical, status filter applied.
   List<Reservation> _timelineBookings(ReservationsState state) {
-    final all = _sortedBookings(state.entries);
+    final all = _sortedBookings(
+      bookingsForSelection(state.entries, _selectionFor(state)),
+    );
     if (_hiddenStatuses.isEmpty) return all;
     return all.where((e) {
       final s = e.status?.trim().toLowerCase() ?? '';
@@ -925,8 +952,9 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     if (_lastChannelPropertyId == lodgifyId) return;
     _lastChannelPropertyId = lodgifyId;
     context.read<ReservationsCubit>().loadReservations(
-      propertyId: property.id,
-      channelPropertyId: lodgifyId,
+      properties: [
+        PropertyRef(propertyId: property.id, channelPropertyId: lodgifyId),
+      ],
     );
     // Rates worden geladen via BlocListener zodra reserveringen klaar zijn.
   }
@@ -2049,7 +2077,7 @@ List<MetricTileData> _monthMetrics(_MonthSummary summary, {required S l10n}) {
     ),
     MetricTileData(
       label: l10n.reservationsKpiOccupancy,
-      value: '${summary.occupancyPercentage}%',
+      value: '${summary.occupancy}%',
       icon: Icons.work_outline,
       caption: l10n.reservationsBarNights(summary.occupiedNights),
     ),
@@ -2063,22 +2091,30 @@ class _MonthSummary {
     required this.departures,
     required this.occupiedNights,
     required this.daysInMonth,
+    required this.selectedPropertyCount,
   });
 
   final int bookingCount;
   final int arrivals;
   final int departures;
 
-  /// Nights occupied within this month, clipped to the month — a stay that
-  /// straddles the boundary counts only its nights inside it.
+  /// Nights occupied within this month across every selected property, clipped
+  /// to the month — a stay that straddles the boundary counts only its nights
+  /// inside it.
   final int occupiedNights;
+
   final int daysInMonth;
 
-  /// Occupancy as a whole percentage, `0` for a month with no nights.
-  int get occupancyPercentage {
-    if (daysInMonth <= 0) return 0;
-    return ((occupiedNights / daysInMonth) * 100).round();
-  }
+  /// How many properties' calendars the month covers — the second factor of the
+  /// occupancy denominator.
+  final int selectedPropertyCount;
+
+  /// Occupancy as a whole percentage, over the whole selection.
+  int get occupancy => occupancyPercentage(
+    occupiedNights: occupiedNights,
+    daysInPeriod: daysInMonth,
+    selectedPropertyCount: selectedPropertyCount,
+  );
 }
 
 List<Reservation> _sortedBookings(List<Reservation> entries) {
@@ -2103,14 +2139,17 @@ bool _bookingEnded(Reservation entry, DateTime today) {
   return _dateOnly(end).isBefore(today);
 }
 
-_MonthSummary _monthSummary(DateTime month, List<Reservation> entries) {
+_MonthSummary _monthSummary(
+  DateTime month,
+  List<Reservation> entries, {
+  required int selectedPropertyCount,
+}) {
   final monthStart = DateTime(month.year, month.month, 1);
   final monthEnd = DateTime(month.year, month.month + 1, 1);
 
   var bookingCount = 0;
   var arrivals = 0;
   var departures = 0;
-  var occupiedNights = 0;
 
   for (final entry in entries) {
     final start = entry.startDate;
@@ -2123,15 +2162,7 @@ _MonthSummary _monthSummary(DateTime month, List<Reservation> entries) {
     final overlapsMonth =
         !endDay.isBefore(monthStart) && !startDay.isAfter(monthEnd);
 
-    if (overlapsMonth) {
-      bookingCount += 1;
-      occupiedNights += _overlapDays(
-        startDay,
-        endDay,
-        monthStart,
-        monthEnd.subtract(const Duration(days: 1)),
-      );
-    }
+    if (overlapsMonth) bookingCount += 1;
 
     if (!startDay.isBefore(monthStart) && startDay.isBefore(monthEnd)) {
       arrivals += 1;
@@ -2146,21 +2177,17 @@ _MonthSummary _monthSummary(DateTime month, List<Reservation> entries) {
     bookingCount: bookingCount,
     arrivals: arrivals,
     departures: departures,
-    occupiedNights: occupiedNights,
+    // Half-open and clipped, from the portfolio domain: this screen used to add
+    // one, which counted the departure day as an occupied night and let two
+    // back-to-back stays report more nights than the month has.
+    occupiedNights: occupiedNightsInPeriod(
+      entries,
+      periodStart: monthStart,
+      periodEnd: monthEnd,
+    ),
     daysInMonth: monthEnd.difference(monthStart).inDays,
+    selectedPropertyCount: selectedPropertyCount,
   );
-}
-
-int _overlapDays(
-  DateTime start,
-  DateTime end,
-  DateTime rangeStart,
-  DateTime rangeEnd,
-) {
-  final overlapStart = start.isAfter(rangeStart) ? start : rangeStart;
-  final overlapEnd = end.isBefore(rangeEnd) ? end : rangeEnd;
-  if (overlapEnd.isBefore(overlapStart)) return 0;
-  return overlapEnd.difference(overlapStart).inDays + 1;
 }
 
 String _reservationKey(Reservation entry) {

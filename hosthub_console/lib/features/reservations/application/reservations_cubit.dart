@@ -1,9 +1,11 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:app_errors/app_errors.dart';
 
 import 'package:hosthub_console/features/channel_manager/domain/channel_manager_repository.dart';
 import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
+import 'package:hosthub_console/features/portfolio/domain/property_ref.dart';
 
 enum ReservationsStatus { initial, loading, loaded, error }
 
@@ -13,8 +15,8 @@ class ReservationsState extends Equatable {
     required this.entries,
     required this.rangeStart,
     required this.rangeEnd,
-    this.propertyId,
-    this.channelPropertyId,
+    this.properties = const [],
+    this.stalePropertyIds = const {},
     this.lastUpdated,
     this.error,
   });
@@ -24,33 +26,52 @@ class ReservationsState extends Equatable {
       entries = const [],
       rangeStart = null,
       rangeEnd = null,
-      propertyId = null,
-      channelPropertyId = null,
+      properties = const [],
+      stalePropertyIds = const {},
       lastUpdated = null,
       error = null;
 
   final ReservationsStatus status;
+
+  /// Every booking loaded, across [properties]. Each one carries its own
+  /// `propertyId`; narrowing to a selection is `bookingsForSelection`'s job, not
+  /// this state's.
   final List<Reservation> entries;
+
   final DateTime? rangeStart;
   final DateTime? rangeEnd;
 
-  /// The console's own property id these entries were loaded for.
-  final int? propertyId;
+  /// The properties [entries] covers — and therefore what a rate divides by.
+  ///
+  /// Occupancy scales with the number of properties in view, so the set that was
+  /// loaded and the set that is counted have to be the same one. Keeping it on
+  /// the state makes that structural instead of a convention.
+  final List<PropertyRef> properties;
 
-  /// The channel manager's id the request was addressed to. Only the loader
-  /// cares about it; everything downstream filters on [propertyId].
-  final String? channelPropertyId;
+  /// Properties whose fetch failed.
+  ///
+  /// Their bookings are missing from [entries] while the rest of the portfolio
+  /// still shows: a failed sync on one property must not blank the view (§9).
+  /// The screen marks these stale rather than reporting they have no bookings.
+  final Set<int> stalePropertyIds;
 
   final DateTime? lastUpdated;
   final DomainError? error;
+
+  /// The single property in view, or null for a portfolio of several.
+  ///
+  /// Only loader-adjacent concerns use this — nightly rates and the currency
+  /// write-back are per property and have no answer for a mixed portfolio.
+  PropertyRef? get singleProperty =>
+      properties.length == 1 ? properties.single : null;
 
   ReservationsState copyWith({
     ReservationsStatus? status,
     List<Reservation>? entries,
     DateTime? rangeStart,
     DateTime? rangeEnd,
-    int? propertyId,
-    String? channelPropertyId,
+    List<PropertyRef>? properties,
+    Set<int>? stalePropertyIds,
     DateTime? lastUpdated,
     DomainError? error,
   }) {
@@ -59,8 +80,8 @@ class ReservationsState extends Equatable {
       entries: entries ?? this.entries,
       rangeStart: rangeStart ?? this.rangeStart,
       rangeEnd: rangeEnd ?? this.rangeEnd,
-      propertyId: propertyId ?? this.propertyId,
-      channelPropertyId: channelPropertyId ?? this.channelPropertyId,
+      properties: properties ?? this.properties,
+      stalePropertyIds: stalePropertyIds ?? this.stalePropertyIds,
       lastUpdated: lastUpdated ?? this.lastUpdated,
       error: error,
     );
@@ -72,8 +93,8 @@ class ReservationsState extends Equatable {
     entries,
     rangeStart,
     rangeEnd,
-    propertyId,
-    channelPropertyId,
+    properties,
+    stalePropertyIds,
     lastUpdated,
     error,
   ];
@@ -118,8 +139,8 @@ class ReservationsState extends Equatable {
         'withReservationId=$withReservationId, '
         'statusCounts={$statusSummary}, '
         'range=${_dateOnly(rangeStart) ?? '-'}..${_dateOnly(rangeEnd) ?? '-'}, '
-        'propertyId=${propertyId ?? '-'}, '
-        'channelPropertyId=${channelPropertyId ?? '-'}, '
+        'properties=${properties.map((p) => p.propertyId).toList()}, '
+        'stale=${stalePropertyIds.toList()}, '
         'lastUpdated=${lastUpdated?.toIso8601String() ?? '-'}, '
         'hasError=${error != null}'
         '${sample.isNotEmpty ? ', sample=[$sample]' : ''})';
@@ -142,9 +163,18 @@ class ReservationsCubit extends Cubit<ReservationsState> {
 
   final ChannelManagerRepository _channelManagerRepository;
 
+  /// Load the bookings of every property in [properties].
+  ///
+  /// One request per property, because sync is per property (§9): each one
+  /// carries its own channel id and each one can fail on its own. A property
+  /// that fails lands in [ReservationsState.stalePropertyIds] and the others
+  /// still load — the alternative, one throw blanking the portfolio, hides three
+  /// properties because of one.
+  ///
+  /// The whole load only reports an error when **every** property failed; that
+  /// is the case where there is genuinely nothing to show.
   Future<void> loadReservations({
-    required int propertyId,
-    required String channelPropertyId,
+    required List<PropertyRef> properties,
     DateTime? start,
     DateTime? end,
   }) async {
@@ -155,7 +185,7 @@ class ReservationsCubit extends Cubit<ReservationsState> {
         DateTime(now.year, now.month + 12, 0).add(const Duration(days: 14));
 
     if (state.status == ReservationsStatus.loading &&
-        state.propertyId == propertyId &&
+        listEquals(state.properties, properties) &&
         state.rangeStart == rangeStart &&
         state.rangeEnd == rangeEnd) {
       return;
@@ -165,8 +195,8 @@ class ReservationsCubit extends Cubit<ReservationsState> {
       emit(
         state.copyWith(
           status: ReservationsStatus.loading,
-          propertyId: propertyId,
-          channelPropertyId: channelPropertyId,
+          properties: properties,
+          stalePropertyIds: const {},
           rangeStart: rangeStart,
           rangeEnd: rangeEnd,
           error: null,
@@ -174,35 +204,73 @@ class ReservationsCubit extends Cubit<ReservationsState> {
       );
     }
 
-    try {
-      final entries = await _channelManagerRepository.fetchReservations(
-        propertyId: propertyId,
-        channelPropertyId: channelPropertyId,
-        start: rangeStart,
-        end: rangeEnd,
-      );
-
+    if (properties.isEmpty) {
       if (!isClosed) {
         emit(
           state.copyWith(
             status: ReservationsStatus.loaded,
-            entries: entries,
+            entries: const [],
             lastUpdated: DateTime.now(),
             error: null,
           ),
         );
       }
-    } catch (error, stack) {
-      if (!isClosed) {
-        emit(
-          state.copyWith(
-            status: ReservationsStatus.error,
-            entries: const [],
-            error: DomainError.from(error, stack: stack),
-          ),
-        );
-      }
+      return;
     }
+
+    final entries = <Reservation>[];
+    final stale = <int>{};
+    DomainError? firstError;
+
+    final results = await Future.wait(
+      properties.map((property) async {
+        try {
+          return (
+            property: property,
+            bookings: await _channelManagerRepository.fetchReservations(
+              propertyId: property.propertyId,
+              channelPropertyId: property.channelPropertyId,
+              start: rangeStart,
+              end: rangeEnd,
+            ),
+            error: null,
+          );
+        } catch (error, stack) {
+          return (
+            property: property,
+            bookings: const <Reservation>[],
+            error: DomainError.from(error, stack: stack),
+          );
+        }
+      }),
+    );
+
+    // Ordered by the property list rather than by whichever request answered
+    // first, so a reload cannot reshuffle the table.
+    for (final result in results) {
+      final error = result.error;
+      if (error != null) {
+        stale.add(result.property.propertyId);
+        firstError ??= error;
+        continue;
+      }
+      entries.addAll(result.bookings);
+    }
+
+    if (isClosed) return;
+
+    final everyPropertyFailed = stale.length == properties.length;
+    emit(
+      state.copyWith(
+        status: everyPropertyFailed
+            ? ReservationsStatus.error
+            : ReservationsStatus.loaded,
+        entries: entries,
+        stalePropertyIds: stale,
+        lastUpdated: DateTime.now(),
+        error: everyPropertyFailed ? firstError : null,
+      ),
+    );
   }
 
   Future<void> updateNotes(String reservationId, String notes) async {
