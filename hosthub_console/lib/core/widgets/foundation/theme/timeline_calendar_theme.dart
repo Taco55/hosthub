@@ -99,8 +99,10 @@ class TimelineCalendarTheme extends ThemeExtension<TimelineCalendarTheme> {
     required this.pastEntryTextColor,
     required this.pastEntryLeadingOpacity,
     this.dayCellHorizontalPadding = 8,
-    this.weekdayHeaderPadding =
-        const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+    this.weekdayHeaderPadding = const EdgeInsets.symmetric(
+      horizontal: 10,
+      vertical: 9,
+    ),
     this.monthHeadingPadding = const EdgeInsets.fromLTRB(2, 14, 2, 6),
     this.barRadius = 7,
     this.barPadding = const EdgeInsets.symmetric(horizontal: 7),
@@ -226,12 +228,11 @@ class TimelineCalendarTheme extends ThemeExtension<TimelineCalendarTheme> {
         t,
       ),
       compact: TimelineCalendarDensity.lerp(compact, other.compact, t),
-      pastEntryBlend:
-          TimelineCalendarDensity.lerpDouble(
-            pastEntryBlend,
-            other.pastEntryBlend,
-            t,
-          ),
+      pastEntryBlend: TimelineCalendarDensity.lerpDouble(
+        pastEntryBlend,
+        other.pastEntryBlend,
+        t,
+      ),
       pastEntryBlendColor:
           Color.lerp(pastEntryBlendColor, other.pastEntryBlendColor, t) ??
           pastEntryBlendColor,
@@ -249,7 +250,11 @@ class TimelineCalendarTheme extends ThemeExtension<TimelineCalendarTheme> {
         t,
       ),
       weekdayHeaderPadding:
-          EdgeInsets.lerp(weekdayHeaderPadding, other.weekdayHeaderPadding, t) ??
+          EdgeInsets.lerp(
+            weekdayHeaderPadding,
+            other.weekdayHeaderPadding,
+            t,
+          ) ??
           weekdayHeaderPadding,
       monthHeadingPadding:
           EdgeInsets.lerp(monthHeadingPadding, other.monthHeadingPadding, t) ??

@@ -68,7 +68,10 @@ class ContentCard extends StatelessWidget {
       showDividers: false,
       // `.card{padding:18px}` bottom — the group has no vertical padding of
       // its own now that `innerPadding` is horizontal.
-      children: [...children, const SizedBox(height: _cardPadding)],
+      children: [
+        ...children,
+        const SizedBox(height: _cardPadding),
+      ],
     );
   }
 }

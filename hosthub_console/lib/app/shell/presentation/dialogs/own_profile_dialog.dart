@@ -18,8 +18,6 @@ Future<void> showOwnProfileDialog(
   BuildContext context, {
   required Profile profile,
 }) async {
-  final s = context.s;
-
   // --- Edit details controllers ---
   final emailCtrl = TextEditingController(text: profile.email);
   final usernameCtrl = TextEditingController(text: profile.username ?? '');
@@ -113,15 +111,15 @@ Future<void> showOwnProfileDialog(
                   children: [
                     StyledTile(
                       leading: const Icon(Icons.person_outline),
-                      title: s.editDetailsAction,
-                      subtitle: s.editDetailsDescription,
+                      title: context.s.editDetailsAction,
+                      subtitle: context.s.editDetailsDescription,
                       showChevron: true,
                       onTap: () => flow.goToChild(0),
                     ),
                     StyledTile(
                       leading: const Icon(Icons.key_outlined),
-                      title: s.changePasswordTitle,
-                      subtitle: s.changePasswordDescription,
+                      title: context.s.changePasswordTitle,
+                      subtitle: context.s.changePasswordDescription,
                       showChevron: true,
                       onTap: () => flow.goToChild(1),
                     ),
@@ -130,7 +128,7 @@ Future<void> showOwnProfileDialog(
                 StyledSection(
                   inset: false,
                   horizontalPadding: 24,
-                  header: s.preferencesSectionTitle,
+                  header: context.s.preferencesSectionTitle,
                   children: [
                     const _InterfaceLanguageTile(),
                     if (isDesktopShell) const _CompactSideMenuTile(),
@@ -142,8 +140,8 @@ Future<void> showOwnProfileDialog(
           children: [
             // ----- Child 0: Edit Details -----
             StyledModalStep(
-              title: s.editDetailsAction,
-              footerActionLabel: s.saveButton,
+              title: context.s.editDetailsAction,
+              footerActionLabel: context.s.saveButton,
               actionResult: StyledModalStepActionResult.back,
               onActionPressed: (steps, data) async {
                 if (!(editFormKey.currentState?.validate() ?? false)) {
@@ -176,7 +174,7 @@ Future<void> showOwnProfileDialog(
                 showStyledToast(
                   context,
                   type: ToastificationType.success,
-                  description: s.userUpdated,
+                  description: context.s.userUpdated,
                   backgroundColor: Theme.of(
                     context,
                   ).colorScheme.surfaceContainerHighest,
@@ -197,14 +195,14 @@ Future<void> showOwnProfileDialog(
                           StyledTextFormField(
                             name: 'email',
                             controller: emailCtrl,
-                            label: s.emailLabel,
+                            label: context.s.emailLabel,
                             autofillHints: const [AutofillHints.email],
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
-                                return s.emailRequired;
+                                return context.s.emailRequired;
                               }
                               if (!value.contains('@')) {
-                                return s.emailInvalid;
+                                return context.s.emailInvalid;
                               }
                               return null;
                             },
@@ -213,7 +211,7 @@ Future<void> showOwnProfileDialog(
                           StyledTextFormField(
                             name: 'username',
                             controller: usernameCtrl,
-                            label: s.usernameLabel,
+                            label: context.s.usernameLabel,
                           ),
                         ],
                       ),
@@ -225,12 +223,12 @@ Future<void> showOwnProfileDialog(
 
             // ----- Child 1: Change Password -----
             StyledModalStep(
-              title: s.changePasswordTitle,
+              title: context.s.changePasswordTitle,
               onEnter: () {
                 passwordCtrl.clear();
                 confirmPasswordCtrl.clear();
               },
-              footerActionLabel: s.updateButton,
+              footerActionLabel: context.s.updateButton,
               actionResult: StyledModalStepActionResult.back,
               onActionPressed: (steps, data) async {
                 if (!(passwordFormKey.currentState?.validate() ?? false)) {
@@ -258,7 +256,7 @@ Future<void> showOwnProfileDialog(
                 showStyledToast(
                   context,
                   type: ToastificationType.success,
-                  description: s.passwordChanged,
+                  description: context.s.passwordChanged,
                   backgroundColor: Theme.of(
                     context,
                   ).colorScheme.surfaceContainerHighest,
@@ -279,12 +277,12 @@ Future<void> showOwnProfileDialog(
                           StyledTextFormField(
                             name: 'new-password',
                             controller: passwordCtrl,
-                            label: s.newPasswordLabel,
+                            label: context.s.newPasswordLabel,
                             obscureText: true,
                             enablePasswordToggle: true,
                             validator: (value) {
                               if (value == null || value.length < 8) {
-                                return s.passwordMinLength;
+                                return context.s.passwordMinLength;
                               }
                               return null;
                             },
@@ -293,12 +291,12 @@ Future<void> showOwnProfileDialog(
                           StyledTextFormField(
                             name: 'confirm-password',
                             controller: confirmPasswordCtrl,
-                            label: s.confirmPasswordLabel,
+                            label: context.s.confirmPasswordLabel,
                             obscureText: true,
                             enablePasswordToggle: true,
                             validator: (value) {
                               if (value != passwordCtrl.text) {
-                                return s.passwordsDoNotMatch;
+                                return context.s.passwordsDoNotMatch;
                               }
                               return null;
                             },
@@ -324,14 +322,15 @@ Future<void> showOwnProfileDialog(
 }
 
 List<Widget> _buildAccountChips(BuildContext context, Profile profile) {
-  final s = context.s;
   final chips = <Widget>[
     Chip(
       avatar: Icon(
         profile.isAdmin ? Icons.shield_moon_outlined : Icons.person_outline,
         size: 18,
       ),
-      label: Text(profile.isAdmin ? s.adminRightsActive : s.standardUser),
+      label: Text(
+        profile.isAdmin ? context.s.adminRightsActive : context.s.standardUser,
+      ),
     ),
   ];
 
@@ -339,7 +338,7 @@ List<Widget> _buildAccountChips(BuildContext context, Profile profile) {
     chips.add(
       Chip(
         avatar: const Icon(Icons.science_outlined, size: 18),
-        label: Text(s.developmentAccount),
+        label: Text(context.s.developmentAccount),
       ),
     );
   }
@@ -370,7 +369,6 @@ class _InterfaceLanguageTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
     final currentLocale = context.watch<LanguageCubit>().state;
     final localeNames = LocaleNames.of(context);
     final supportedLocales = S.delegate.supportedLocales;
@@ -382,8 +380,8 @@ class _InterfaceLanguageTile extends StatelessWidget {
         .languageCode;
 
     return StyledSelectionTile<String>.dropdown(
-      title: s.interfaceLanguageTitle,
-      subtitle: s.interfaceLanguageDescription,
+      title: context.s.interfaceLanguageTitle,
+      subtitle: context.s.interfaceLanguageDescription,
       leading: const Icon(Icons.language_outlined),
       currentValue: selected,
       options: [for (final locale in supportedLocales) locale.languageCode],
@@ -393,7 +391,7 @@ class _InterfaceLanguageTile extends StatelessWidget {
       onChanged: (code) {
         if (code == null || code == currentLocale.languageCode) return;
         // Interface language is strictly user scope: changing it must never
-        // change the property's source language (design §4b).
+        // change the property'context.s source language (design §4b).
         context.read<UserSettingsCubit>().changeLanguage(code);
       },
     );
@@ -408,13 +406,12 @@ class _CompactSideMenuTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
     final mode = context.watch<SidebarModeCubit>().state;
 
     return StyledSwitchTile(
       leading: const Icon(Icons.view_sidebar_outlined),
-      title: s.compactSideMenuTitle,
-      subtitle: s.compactSideMenuDescription,
+      title: context.s.compactSideMenuTitle,
+      subtitle: context.s.compactSideMenuDescription,
       value: mode == StyledSideMenuMode.compact,
       onChanged: (compact) => context.read<SidebarModeCubit>().setMode(
         compact ? StyledSideMenuMode.compact : StyledSideMenuMode.expanded,

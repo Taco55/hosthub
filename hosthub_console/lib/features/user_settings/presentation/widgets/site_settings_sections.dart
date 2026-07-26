@@ -36,11 +36,10 @@ String languageDisplayName(BuildContext context, String code) {
 
 /// Dimmed placeholder for an empty value on a read-only/value tile.
 Widget notSetPlaceholder(BuildContext context) {
-  final theme = Theme.of(context);
   return Text(
     context.s.notSet,
-    style: theme.textTheme.bodyMedium?.copyWith(
-      color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+    style: context.theme.textTheme.bodyMedium?.copyWith(
+      color: context.colors.onSurface.withValues(alpha: 0.45),
     ),
   );
 }
@@ -56,24 +55,23 @@ class _SiteDetailsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
     final site = state.site!;
 
     return StyledSection(
       isFirstSection: true,
-      header: s.siteDetailsSectionTitle,
+      header: context.s.siteDetailsSectionTitle,
       inset: true,
       horizontalPadding: 0,
       children: [
         StyledTile(
           leading: const Icon(Icons.home_outlined),
-          title: s.propertyNameLabel,
+          title: context.s.propertyNameLabel,
           value: site.name,
           showChevron: true,
           onTap: () async {
             final name = await _promptTextValue(
               context,
-              title: s.propertyNameLabel,
+              title: context.s.propertyNameLabel,
               initialValue: site.name,
             );
             if (name == null || !context.mounted) return;
@@ -85,19 +83,19 @@ class _SiteDetailsSection extends StatelessWidget {
         // trailing pattern across these rows.
         StyledTile(
           leading: const Icon(Icons.language_outlined),
-          title: s.publicDomainLabel,
+          title: context.s.publicDomainLabel,
           value: state.primaryDomain ?? notSetPlaceholder(context),
         ),
         StyledTile(
           leading: const Icon(Icons.link_outlined),
-          title: s.bookingLinkLabel,
+          title: context.s.bookingLinkLabel,
           value: state.bookingUrl ?? notSetPlaceholder(context),
           valueMaxWidthFraction: 0.5,
           showChevron: true,
           onTap: () async {
             final url = await _promptTextValue(
               context,
-              title: s.bookingLinkLabel,
+              title: context.s.bookingLinkLabel,
               initialValue: state.bookingUrl ?? '',
             );
             if (url == null || !context.mounted) return;
@@ -144,13 +142,11 @@ class _WebsiteLanguagesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
     final site = state.site!;
-    final colorScheme = Theme.of(context).colorScheme;
 
     return StyledSection(
-      header: s.websiteLanguagesSectionTitle,
-      footer: s.websiteLanguagesFooter,
+      header: context.s.websiteLanguagesSectionTitle,
+      footer: context.s.websiteLanguagesFooter,
       inset: true,
       horizontalPadding: 0,
       children: [
@@ -160,16 +156,16 @@ class _WebsiteLanguagesSection extends StatelessWidget {
             title: languageDisplayName(context, code),
             trailing: code == site.defaultLocale
                 ? StyledChip(
-                    label: s.sourceBadgeLabel.toUpperCase(),
+                    label: context.s.sourceBadgeLabel.toUpperCase(),
                     size: StyledChipSize.display,
-                    backgroundColor: colorScheme.surface,
-                    borderColor: colorScheme.primaryContainer,
-                    labelColor: colorScheme.primary,
+                    backgroundColor: context.colors.surface,
+                    borderColor: context.colors.primaryContainer,
+                    labelColor: context.colors.primary,
                   )
                 : StyledToolbarButton(
                     iconData: Icons.delete_outline,
                     destructive: true,
-                    tooltip: s.removeLanguageTooltip,
+                    tooltip: context.s.removeLanguageTooltip,
                     onPressed: () => _confirmRemove(context, code),
                   ),
           ),
@@ -187,9 +183,9 @@ class _WebsiteLanguagesSection extends StatelessWidget {
             onSelected: (code) =>
                 context.read<SiteContextCubit>().addLanguage(code),
             child: StyledTile(
-              leading: Icon(Icons.add, color: colorScheme.primary),
-              title: s.addLanguageAction,
-              titleColor: colorScheme.primary,
+              leading: Icon(Icons.add, color: context.colors.primary),
+              title: context.s.addLanguageAction,
+              titleColor: context.colors.primary,
               // The enclosing StyledMenuOverlay owns the tap; a selectable
               // tile would wrap itself in a SelectionArea that claims it.
               selectable: false,
@@ -200,13 +196,14 @@ class _WebsiteLanguagesSection extends StatelessWidget {
   }
 
   void _confirmRemove(BuildContext context, String code) {
-    final s = context.s;
     showStyledAlertDialog(
       context,
-      title: s.removeLanguageConfirmTitle(languageDisplayName(context, code)),
-      message: s.removeLanguageConfirmMessage,
-      actionText: s.remove,
-      dismissText: s.cancelButton,
+      title: context.s.removeLanguageConfirmTitle(
+        languageDisplayName(context, code),
+      ),
+      message: context.s.removeLanguageConfirmMessage,
+      actionText: context.s.remove,
+      dismissText: context.s.cancelButton,
       isDestructiveAction: true,
       onAction: () => context.read<SiteContextCubit>().removeLanguage(code),
     );
@@ -224,14 +221,13 @@ class _LanguageTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return StyledChip(
       label: code.toUpperCase(),
-      backgroundColor: theme.colorScheme.surfaceContainerHighest,
+      backgroundColor: context.colors.surfaceContainerHighest,
       cornerRadius: 8,
       minHeight: 28,
       padding: const EdgeInsets.symmetric(horizontal: 8),
-      labelStyle: theme.textTheme.labelSmall?.copyWith(
+      labelStyle: context.theme.textTheme.labelSmall?.copyWith(
         fontWeight: FontWeight.w700,
       ),
     );
@@ -249,9 +245,7 @@ class _SourceLanguageSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
     final site = state.site!;
-    final colorScheme = Theme.of(context).colorScheme;
     final interfaceLanguage = context.watch<LanguageCubit>().state.languageCode;
     // The one-time adopt action only makes sense when it would change
     // something and the website actually offers the interface language.
@@ -260,8 +254,8 @@ class _SourceLanguageSection extends StatelessWidget {
         site.defaultLocale != interfaceLanguage;
 
     return StyledSection(
-      header: s.sourceLanguageLabel,
-      footer: s.sourceLanguageFooter,
+      header: context.s.sourceLanguageLabel,
+      footer: context.s.sourceLanguageFooter,
       inset: true,
       horizontalPadding: 0,
       children: [
@@ -269,8 +263,8 @@ class _SourceLanguageSection extends StatelessWidget {
         // interface language (user scope). Every change is confirmed: it
         // re-bases what all other languages are translated from.
         StyledSelectionTile<String>.dropdown(
-          title: s.sourceLanguageLabel,
-          subtitle: s.sourceLanguageDescription,
+          title: context.s.sourceLanguageLabel,
+          subtitle: context.s.sourceLanguageDescription,
           leading: const Icon(Icons.translate),
           currentValue: site.defaultLocale,
           options: site.locales,
@@ -288,15 +282,15 @@ class _SourceLanguageSection extends StatelessWidget {
         StyledTile(
           leading: Icon(
             Icons.sync_alt,
-            color: canAdopt ? colorScheme.primary : null,
+            color: canAdopt ? context.colors.primary : null,
           ),
-          title: s.adoptInterfaceLanguageTitle,
-          titleColor: canAdopt ? colorScheme.primary : null,
-          subtitle: s.adoptInterfaceLanguageSubtitle(
+          title: context.s.adoptInterfaceLanguageTitle,
+          titleColor: canAdopt ? context.colors.primary : null,
+          subtitle: context.s.adoptInterfaceLanguageSubtitle(
             languageDisplayName(context, interfaceLanguage),
           ),
           enabled: canAdopt,
-          // Disabled = dimmed row, not the theme's dark disabled surface —
+          // Disabled = dimmed row, not the theme'context.s dark disabled surface —
           // inside an inset group that slab reads as a rendering glitch.
           disabledBackgroundColor: Colors.transparent,
           onTap: canAdopt
@@ -308,14 +302,13 @@ class _SourceLanguageSection extends StatelessWidget {
   }
 
   void _confirmSourceLanguageChange(BuildContext context, String code) {
-    final s = context.s;
     final language = languageDisplayName(context, code);
     showStyledAlertDialog(
       context,
-      title: s.changeSourceLanguageConfirmTitle(language),
-      message: s.changeSourceLanguageConfirmMessage(language),
-      actionText: s.changeButton,
-      dismissText: s.cancelButton,
+      title: context.s.changeSourceLanguageConfirmTitle(language),
+      message: context.s.changeSourceLanguageConfirmMessage(language),
+      actionText: context.s.changeButton,
+      dismissText: context.s.cancelButton,
       onAction: () => context.read<SiteContextCubit>().setSourceLanguage(code),
     );
   }

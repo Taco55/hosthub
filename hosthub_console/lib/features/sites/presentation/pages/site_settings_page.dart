@@ -61,7 +61,6 @@ class _SiteSettingsPageState extends State<SiteSettingsPage> {
   Future<void> _save() async {
     setState(() => _saving = true);
     final messenger = ScaffoldMessenger.of(context);
-    final s = context.s;
     try {
       await context.read<CmsCubit>().saveSiteSettings(
         contactEmail: _norm(_contactEmail.text),
@@ -69,9 +68,13 @@ class _SiteSettingsPageState extends State<SiteSettingsPage> {
         lodgifyPropertyId: _norm(_lodgifyPropertyId.text),
         lodgifyRoomTypeId: _norm(_lodgifyRoomTypeId.text),
       );
-      messenger.showSnackBar(SnackBar(content: Text(s.siteSettingsSaved)));
+      messenger.showSnackBar(
+        SnackBar(content: Text(context.s.siteSettingsSaved)),
+      );
     } catch (_) {
-      messenger.showSnackBar(SnackBar(content: Text(s.siteSettingsSaveFailed)));
+      messenger.showSnackBar(
+        SnackBar(content: Text(context.s.siteSettingsSaveFailed)),
+      );
     } finally {
       if (mounted) setState(() => _saving = false);
     }

@@ -23,7 +23,6 @@ Future<bool?> showPublishModal(
   Future<void> Function(Set<String> skipLanguages)? onConfirm,
 }) {
   final skipped = <String>{};
-  final s = context.s;
   // The confirm label counts what is actually going out, so it has to follow
   // the checkboxes while the dialog is open.
   final actionLabel = ValueNotifier<String>(
@@ -32,7 +31,7 @@ Future<bool?> showPublishModal(
 
   return showStyledAlertDialog(
     context,
-    title: s.wePublishModalTitle,
+    title: context.s.wePublishModalTitle,
     content: StatefulBuilder(
       builder: (context, setState) => _PublishContent(
         state: state,
@@ -47,7 +46,7 @@ Future<bool?> showPublishModal(
         }),
       ),
     ),
-    dismissText: s.wePublishCancel,
+    dismissText: context.s.wePublishCancel,
     // Built in one place, so a count of 1 can never render as
     // "Publish 1 languages".
     actionTextListenable: actionLabel,
@@ -87,18 +86,17 @@ class _PublishContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
-    final scheme = Theme.of(context).colorScheme;
-
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          s.wePublishSubtitle(languageName(context, state.sourceLanguage)),
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+          context.s.wePublishSubtitle(
+            languageName(context, state.sourceLanguage),
+          ),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: context.colors.onSurfaceVariant,
+          ),
         ),
         SizedBox(height: context.styledSpacing.md),
         for (final code in state.orderedLocales)
@@ -128,36 +126,36 @@ class _LanguageRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
-    final brightness = Theme.of(context).brightness;
     final isSource = code == state.sourceLanguage;
     final reviewed = state.reviewedLanguages.contains(code);
     final tokens = included && (isSource || reviewed)
-        ? WebsiteStatusColors.locked(brightness)
-        : WebsiteStatusColors.auto(brightness);
+        ? WebsiteStatusColors.locked(context.theme.brightness)
+        : WebsiteStatusColors.auto(context.theme.brightness);
 
     final String status;
     if (!included) {
-      status = s.wePublishSkipped;
+      status = context.s.wePublishSkipped;
     } else if (isSource) {
-      status = s.wePublishReadyNote;
+      status = context.s.wePublishReadyNote;
     } else {
       // §11a: a language the owner never opened is translated *at publish*, so
       // the row has to say both things — it was not reviewed, and it is about
       // to be written. Shipping unreviewed output stays a visible choice.
-      status = reviewed ? s.wePublishReviewed : s.wePublishDraftTranslatesNow;
+      status = reviewed
+          ? context.s.wePublishReviewed
+          : context.s.wePublishDraftTranslatesNow;
     }
 
     return StyledTile(
       leading: _langBadge(context, code),
       title: isSource
-          ? s.wePublishSourceRole(languageName(context, code))
+          ? context.s.wePublishSourceRole(languageName(context, code))
           : languageName(context, code),
       subtitle: status,
       // The source is not optional; every target is.
       trailing: isSource
           ? StyledChip(
-              label: s.wePublishReady,
+              label: context.s.wePublishReady,
               size: StyledChipSize.display,
               leading: Icon(Icons.check, size: 13, color: tokens.foreground),
               backgroundColor: tokens.background,
@@ -171,9 +169,8 @@ class _LanguageRow extends StatelessWidget {
   }
 
   Widget _langBadge(BuildContext context, String code) {
-    final scheme = Theme.of(context).colorScheme;
     return StyledContainer(
-      backgroundColor: scheme.primaryContainer,
+      backgroundColor: context.colors.primaryContainer,
       borderRadius: BorderRadius.circular(10),
       padding: EdgeInsets.zero,
       child: SizedBox(
@@ -183,7 +180,7 @@ class _LanguageRow extends StatelessWidget {
           child: Text(
             languageShort(code),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: scheme.primary,
+              color: context.colors.primary,
               fontWeight: FontWeight.w700,
             ),
           ),

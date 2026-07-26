@@ -57,6 +57,7 @@ import 'package:styled_widgets/styled_widgets.dart';
 import 'package:hosthub_console/core/widgets/foundation/theme/timeline_calendar_theme.dart';
 
 import 'timeline_calendar_entry.dart';
+import 'package:hosthub_console/core/widgets/foundation/utils/utils.dart';
 
 // ---------------------------------------------------------------------------
 // Out-of-month day display mode
@@ -185,7 +186,6 @@ class TimelineCalendar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final effectiveLocale = locale ?? Intl.defaultLocale ?? 'en';
 
     // Grid geometry
@@ -230,7 +230,7 @@ class TimelineCalendar extends StatelessWidget {
             onEntryTap: onEntryTap,
             entryBuilder: entryBuilder,
             outOfMonthDisplay: outOfMonthDisplay,
-            theme: theme,
+            theme: context.theme,
           ),
           if (w < weekCount - 1) SizedBox(height: weekSpacing),
         ],
@@ -262,8 +262,11 @@ class TimelineCalendar extends StatelessWidget {
         ],
 
         if (showWeekdayHeader) ...[
-          _WeekdayHeader(locale: effectiveLocale, theme: theme),
-          Divider(height: 1, color: theme.dividerColor.withValues(alpha: 0.3)),
+          _WeekdayHeader(locale: effectiveLocale, theme: context.theme),
+          Divider(
+            height: 1,
+            color: context.theme.dividerColor.withValues(alpha: 0.3),
+          ),
         ],
 
         if (shrinkWrap)
@@ -298,7 +301,6 @@ class _MonthNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final monthLabel = DateFormat('MMMM yyyy', locale).format(month);
     final dateFormatter = DateFormat('d MMM yyyy', locale);
     final monthStart = DateTime(month.year, month.month, 1);
@@ -321,12 +323,12 @@ class _MonthNavigation extends StatelessWidget {
           children: [
             Text(
               monthLabel,
-              style: theme.textTheme.titleMedium?.copyWith(
+              style: context.theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
             SizedBox(height: context.styledSpacing.xs),
-            Text(rangeLabel, style: theme.textTheme.bodySmall),
+            Text(rangeLabel, style: context.theme.textTheme.bodySmall),
           ],
         ),
         SizedBox(width: context.styledSpacing.md),

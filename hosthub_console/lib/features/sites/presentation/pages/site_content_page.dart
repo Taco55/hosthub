@@ -420,20 +420,19 @@ class _ContentSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final cubit = context.read<CmsCubit>();
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Theme(
-        data: theme.copyWith(dividerColor: Colors.transparent),
+        data: context.theme.copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
           title: Row(
             children: [
               Expanded(
                 child: Text(
                   title,
-                  style: theme.textTheme.titleMedium?.copyWith(
+                  style: context.theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -446,7 +445,7 @@ class _ContentSection extends StatelessWidget {
                     child: Icon(
                       Icons.edit,
                       size: 14,
-                      color: theme.colorScheme.primary,
+                      color: context.colors.primary,
                     ),
                   ),
                 Padding(
@@ -496,21 +495,20 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isPublished = status == 'published';
-    final colors = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
         color: isPublished
-            ? colors.primaryContainer
-            : colors.surfaceContainerHighest,
+            ? context.colors.primaryContainer
+            : context.colors.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         isPublished ? context.s.cmsStatusPublished : context.s.cmsStatusDraft,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
           color: isPublished
-              ? colors.onPrimaryContainer
-              : colors.onSurfaceVariant,
+              ? context.colors.onPrimaryContainer
+              : context.colors.onSurfaceVariant,
         ),
       ),
     );
@@ -529,7 +527,6 @@ class _VersionHistoryPane extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final cubit = context.read<CmsCubit>();
     final dateFormat = DateFormat.yMMMd().add_Hm();
 
@@ -543,7 +540,7 @@ class _VersionHistoryPane extends StatelessWidget {
               Expanded(
                 child: Text(
                   context.s.cmsVersionHistory,
-                  style: theme.textTheme.titleSmall?.copyWith(
+                  style: context.theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -560,8 +557,8 @@ class _VersionHistoryPane extends StatelessWidget {
               padding: const EdgeInsets.only(top: 16),
               child: Text(
                 context.s.cmsNoVersions,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                style: context.theme.textTheme.bodySmall?.copyWith(
+                  color: context.colors.onSurfaceVariant,
                 ),
               ),
             )
@@ -576,7 +573,7 @@ class _VersionHistoryPane extends StatelessWidget {
                     contentPadding: EdgeInsets.zero,
                     title: Text(
                       context.s.cmsVersionLabel(v.version),
-                      style: theme.textTheme.bodyMedium?.copyWith(
+                      style: context.theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -584,7 +581,7 @@ class _VersionHistoryPane extends StatelessWidget {
                       context.s.cmsVersionDate(
                         dateFormat.format(v.publishedAt.toLocal()),
                       ),
-                      style: theme.textTheme.bodySmall,
+                      style: context.theme.textTheme.bodySmall,
                     ),
                     trailing: TextButton(
                       onPressed: () => _confirmRestore(context, cubit, v),

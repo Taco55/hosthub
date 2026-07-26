@@ -19,8 +19,6 @@ class SiteTeamPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
-
     return BlocConsumer<SiteMembersCubit, SiteMembersState>(
       listenWhen: (prev, curr) => prev.error != curr.error,
       listener: (context, state) async {
@@ -36,7 +34,7 @@ class SiteTeamPage extends StatelessWidget {
         if (state.isLoading && state.members.isEmpty) {
           return StyledWebPageScaffold(
             overline: siteName,
-            title: s.teamTitle,
+            title: context.s.teamTitle,
             onBack: () async {
               context.pop();
               return false;
@@ -47,16 +45,16 @@ class SiteTeamPage extends StatelessWidget {
 
         return StyledWebPageScaffold(
           // Design `.top`: the site this team belongs to as the crumb, the
-          // page's own subject as the title — not a name as a subtitle.
+          // page'context.s own subject as the title — not a name as a subtitle.
           overline: siteName,
-          title: s.teamTitle,
+          title: context.s.teamTitle,
           onBack: () async {
             context.pop();
             return false;
           },
           actions: [
             StyledButton(
-              title: s.teamInviteMemberButton,
+              title: context.s.teamInviteMemberButton,
               leftIconData: Icons.person_add_outlined,
               showLeftIcon: true,
               onPressed: () => _handleInvite(context),
@@ -106,17 +104,15 @@ class _MembersSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
-
     return StyledSection(
       isFirstSection: true,
-      header: s.teamMembersSection,
+      header: context.s.teamMembersSection,
       inset: false,
       children: [
         if (members.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Text(s.teamNoMembers),
+            child: Text(context.s.teamNoMembers),
           )
         else
           StyledDataTable(
@@ -124,17 +120,17 @@ class _MembersSection extends StatelessWidget {
             dense: true,
             columns: [
               StyledDataColumn(
-                columnHeaderLabel: s.teamUserColumn,
+                columnHeaderLabel: context.s.teamUserColumn,
                 flex: 3,
                 minWidth: 180,
               ),
               StyledDataColumn(
-                columnHeaderLabel: s.teamRoleColumn,
+                columnHeaderLabel: context.s.teamRoleColumn,
                 flex: 2,
                 minWidth: 120,
               ),
               StyledDataColumn(
-                columnHeaderLabel: s.teamActionsColumn,
+                columnHeaderLabel: context.s.teamActionsColumn,
                 flex: 1,
                 minWidth: 80,
               ),
@@ -161,7 +157,6 @@ class _RoleDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final role = member.memberRole;
 
     // Owner role cannot be changed
@@ -169,13 +164,13 @@ class _RoleDisplay extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         decoration: BoxDecoration(
-          color: theme.colorScheme.primaryContainer,
+          color: context.colors.primaryContainer,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
           role.label,
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.onPrimaryContainer,
+          style: context.theme.textTheme.labelSmall?.copyWith(
+            color: context.colors.onPrimaryContainer,
           ),
         ),
       );
@@ -217,14 +212,12 @@ class _MemberActions extends StatelessWidget {
   }
 
   void _confirmRemove(BuildContext context) {
-    final s = context.s;
-
     showStyledAlertDialog(
       context,
-      title: s.teamRemoveMemberTitle,
-      message: s.teamRemoveMemberConfirm(member.displayName),
-      dismissText: s.cancelButton,
-      actionText: s.teamRemoveMember,
+      title: context.s.teamRemoveMemberTitle,
+      message: context.s.teamRemoveMemberConfirm(member.displayName),
+      dismissText: context.s.cancelButton,
+      actionText: context.s.teamRemoveMember,
       isDestructiveAction: true,
       onAction: () {
         context.read<SiteMembersCubit>().removeMember(member);
@@ -248,10 +241,8 @@ class _InvitationsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
-
     return StyledSection(
-      header: s.teamPendingInvitations,
+      header: context.s.teamPendingInvitations,
       inset: false,
       children: [
         StyledDataTable(
@@ -259,17 +250,17 @@ class _InvitationsSection extends StatelessWidget {
           dense: true,
           columns: [
             StyledDataColumn(
-              columnHeaderLabel: s.teamEmailColumn,
+              columnHeaderLabel: context.s.teamEmailColumn,
               flex: 3,
               minWidth: 180,
             ),
             StyledDataColumn(
-              columnHeaderLabel: s.teamRoleColumn,
+              columnHeaderLabel: context.s.teamRoleColumn,
               flex: 2,
               minWidth: 100,
             ),
             StyledDataColumn(
-              columnHeaderLabel: s.teamActionsColumn,
+              columnHeaderLabel: context.s.teamActionsColumn,
               flex: 2,
               minWidth: 140,
             ),
@@ -285,7 +276,7 @@ class _InvitationsSection extends StatelessWidget {
                 children: [
                   StyledToolbarButton(
                     iconData: Icons.send_outlined,
-                    tooltip: s.teamResendInvitation,
+                    tooltip: context.s.teamResendInvitation,
                     onPressed: () {
                       context.read<SiteMembersCubit>().resendInvitation(
                         invitation: inv,
@@ -294,7 +285,7 @@ class _InvitationsSection extends StatelessWidget {
                       showStyledToast(
                         context,
                         type: ToastificationType.success,
-                        description: s.teamInvitationResent,
+                        description: context.s.teamInvitationResent,
                       );
                     },
                   ),
@@ -302,7 +293,7 @@ class _InvitationsSection extends StatelessWidget {
                   StyledToolbarButton(
                     iconData: Icons.cancel_outlined,
                     destructive: true,
-                    tooltip: s.teamCancelInvitation,
+                    tooltip: context.s.teamCancelInvitation,
                     onPressed: () {
                       context.read<SiteMembersCubit>().cancelInvitation(inv);
                     },
@@ -311,7 +302,7 @@ class _InvitationsSection extends StatelessWidget {
               ),
             ];
           },
-          emptyLabel: s.teamNoPendingInvitations,
+          emptyLabel: context.s.teamNoPendingInvitations,
         ),
       ],
     );

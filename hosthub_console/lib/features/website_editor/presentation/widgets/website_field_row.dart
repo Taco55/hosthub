@@ -62,10 +62,9 @@ class WebsiteFieldRow extends StatelessWidget {
     SiteContentCubit cubit,
     bool locked,
   ) {
-    final brightness = Theme.of(context).brightness;
     final tokens = locked
-        ? WebsiteStatusColors.locked(brightness)
-        : WebsiteStatusColors.auto(brightness);
+        ? WebsiteStatusColors.locked(context.theme.brightness)
+        : WebsiteStatusColors.auto(context.theme.brightness);
     final lang = state.previewLanguage;
 
     return Tooltip(
@@ -132,7 +131,6 @@ class WebsiteFieldRow extends StatelessWidget {
     SiteContentCubit cubit,
     bool locked,
   ) {
-    final scheme = Theme.of(context).colorScheme;
     final sourceText = state.valueFor(state.sourceLanguage, field.key);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -140,13 +138,13 @@ class WebsiteFieldRow extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest,
+            color: context.colors.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(6),
           ),
           child: Text(
             languageShort(state.sourceLanguage),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: scheme.onSurfaceVariant,
+              color: context.colors.onSurfaceVariant,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -159,7 +157,7 @@ class WebsiteFieldRow extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: Theme.of(
               context,
-            ).textTheme.bodySmall?.copyWith(color: scheme.outline),
+            ).textTheme.bodySmall?.copyWith(color: context.colors.outline),
           ),
         ),
       ],

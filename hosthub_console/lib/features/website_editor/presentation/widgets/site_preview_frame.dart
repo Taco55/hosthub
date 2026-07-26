@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:styled_widgets/styled_widgets.dart';
+import 'package:hosthub_console/core/widgets/widgets.dart';
 
 /// Device chrome rendered around a [SitePreviewFrame]'s content.
 enum SitePreviewFrameDevice {
@@ -84,19 +85,16 @@ class SitePreviewFrame extends StatelessWidget {
   }
 
   Widget _buildDesktop(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
     final chrome = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       child: Row(
         children: [
           if (showTrafficLights) ...[
-            _trafficDot(scheme.error),
+            _trafficDot(context.colors.error),
             const SizedBox(width: 6),
-            _trafficDot(scheme.tertiary),
+            _trafficDot(context.colors.tertiary),
             const SizedBox(width: 6),
-            _trafficDot(scheme.primary),
+            _trafficDot(context.colors.primary),
             const SizedBox(width: 14),
           ],
           Expanded(
@@ -105,15 +103,15 @@ class SitePreviewFrame extends StatelessWidget {
               alignment: Alignment.centerLeft,
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
-                color: scheme.surfaceContainerHighest,
+                color: context.colors.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 url ?? '',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
+                style: context.theme.textTheme.bodySmall?.copyWith(
+                  color: context.colors.onSurfaceVariant,
                 ),
               ),
             ),
@@ -127,9 +125,9 @@ class SitePreviewFrame extends StatelessWidget {
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: maxWidth),
         child: StyledContainer(
-          backgroundColor: scheme.surface,
+          backgroundColor: context.colors.surface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: scheme.outlineVariant),
+          border: Border.all(color: context.colors.outlineVariant),
           boxShadow: _resolveShadow(context),
           padding: EdgeInsets.zero,
           child: Column(
@@ -137,7 +135,11 @@ class SitePreviewFrame extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               chrome,
-              Divider(height: 1, thickness: 1, color: scheme.outlineVariant),
+              Divider(
+                height: 1,
+                thickness: 1,
+                color: context.colors.outlineVariant,
+              ),
               if (expandContent)
                 Expanded(child: child)
               else
@@ -150,13 +152,11 @@ class SitePreviewFrame extends StatelessWidget {
   }
 
   Widget _buildMobile(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
     final host = _host(url);
 
     final bezelColor = Theme.of(context).brightness == Brightness.dark
-        ? scheme.surfaceContainerHighest
-        : scheme.onSurface;
+        ? context.colors.surfaceContainerHighest
+        : context.colors.onSurface;
 
     final phone = Container(
       width: _mobileScreenWidth + _mobileBezelPadding * 2,
@@ -169,7 +169,7 @@ class SitePreviewFrame extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(27),
         child: ColoredBox(
-          color: scheme.surface,
+          color: context.colors.surface,
           child: Column(
             mainAxisSize: expandContent ? MainAxisSize.max : MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -181,8 +181,8 @@ class SitePreviewFrame extends StatelessWidget {
                   children: [
                     Text(
                       '9:41',
-                      style: textTheme.labelSmall?.copyWith(
-                        color: scheme.onSurface,
+                      style: context.theme.textTheme.labelSmall?.copyWith(
+                        color: context.colors.onSurface,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -190,8 +190,8 @@ class SitePreviewFrame extends StatelessWidget {
                       host,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: textTheme.labelSmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
+                      style: context.theme.textTheme.labelSmall?.copyWith(
+                        color: context.colors.onSurfaceVariant,
                       ),
                     ),
                   ],

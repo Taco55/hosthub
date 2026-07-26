@@ -6,14 +6,13 @@ import '../domain/website_content.dart';
 
 /// Localized display name for a language code (falls back to the code).
 String languageName(BuildContext context, String code) {
-  final s = context.s;
   switch (code) {
     case 'nl':
-      return s.weLangDutch;
+      return context.s.weLangDutch;
     case 'en':
-      return s.weLangEnglish;
+      return context.s.weLangEnglish;
     case 'no':
-      return s.weLangNorwegian;
+      return context.s.weLangNorwegian;
     default:
       return code.toUpperCase();
   }
@@ -25,29 +24,28 @@ String languageShort(String code) =>
 
 /// Localized field label for an editor field key.
 String fieldLabel(BuildContext context, String fieldKey) {
-  final s = context.s;
   final highlightMatch = RegExp(r'^highlights\.(\d+)$').firstMatch(fieldKey);
   if (highlightMatch != null) {
-    return s.weFieldHighlight(int.parse(highlightMatch.group(1)!) + 1);
+    return context.s.weFieldHighlight(int.parse(highlightMatch.group(1)!) + 1);
   }
   switch (fieldKey) {
     case 'hero.headline':
-      return s.weFieldHeadline;
+      return context.s.weFieldHeadline;
     case 'hero.subtitle':
     case 'practical.header.subtitle':
     case 'contact.subtitle':
-      return s.weFieldSubtitle;
+      return context.s.weFieldSubtitle;
     // highlights.N is repeatable — handled generically below the switch.
     case 'chalet.description.0':
     case 'area.intro':
-      return s.weFieldIntro;
+      return context.s.weFieldIntro;
     case 'chalet.experience.0':
-      return s.weFieldExperience(1);
+      return context.s.weFieldExperience(1);
     case 'chalet.experience.1':
-      return s.weFieldExperience(2);
+      return context.s.weFieldExperience(2);
     case 'practical.header.title':
     case 'contact.title':
-      return s.weFieldTitle;
+      return context.s.weFieldTitle;
     default:
       return fieldKey;
   }
@@ -55,18 +53,17 @@ String fieldLabel(BuildContext context, String fieldKey) {
 
 /// Localized page name for a page key.
 String pageName(BuildContext context, String pageKey) {
-  final s = context.s;
   switch (pageKey) {
     case 'home':
-      return s.wePageHome;
+      return context.s.wePageHome;
     case 'chalet':
-      return s.wePageChalet;
+      return context.s.wePageChalet;
     case 'practical':
-      return s.wePagePractical;
+      return context.s.wePagePractical;
     case 'area':
-      return s.wePageArea;
+      return context.s.wePageArea;
     case 'contact':
-      return s.wePageContact;
+      return context.s.wePageContact;
     default:
       return pageKey;
   }

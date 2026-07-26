@@ -142,8 +142,6 @@ class _ListingsSectionState extends State<ListingsSection> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return StyledSection(
       header: 'Listings',
       inset: false,
@@ -151,8 +149,8 @@ class _ListingsSectionState extends State<ListingsSection> {
       children: [
         Text(
           'Voeg handmatig een listing toe of verwijder listings om een nieuwe website-opzet te testen zonder Lodgify-sync.',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+          style: context.theme.textTheme.bodySmall?.copyWith(
+            color: context.colors.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 12),
@@ -214,8 +212,8 @@ class _ListingsSectionState extends State<ListingsSection> {
                 properties.isEmpty) {
               return Text(
                 'Kon listings niet laden.',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.error,
+                style: context.theme.textTheme.bodyMedium?.copyWith(
+                  color: context.colors.error,
                 ),
               );
             }
@@ -260,9 +258,8 @@ class _ListingsSectionState extends State<ListingsSection> {
                   ),
                   Text(
                     property.name,
-                    style: Theme.of(tableContext).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: Theme.of(tableContext).textTheme.bodyMedium
+                        ?.copyWith(fontWeight: FontWeight.w600),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -283,8 +280,8 @@ class _ListingsSectionState extends State<ListingsSection> {
                       showProgressIndicatorWhenDisabled: isDeleting,
                       minHeight: 36,
                       minWidth: 104,
-                      backgroundColor: theme.colorScheme.error,
-                      labelColor: theme.colorScheme.onError,
+                      backgroundColor: context.colors.error,
+                      labelColor: context.colors.onError,
                     ),
                   ),
                 ];

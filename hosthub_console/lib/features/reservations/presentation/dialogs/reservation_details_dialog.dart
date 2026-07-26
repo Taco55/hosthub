@@ -149,17 +149,18 @@ class _ReservationDetailsDialogState extends State<ReservationDetailsDialog> {
   @override
   Widget build(BuildContext context) {
     final entry = widget.entry;
-    final theme = Theme.of(context);
     final spacing = context.styledSpacing;
-    final s = context.s;
     final revenue = widget.revenue;
     final prettyRaw = const JsonEncoder.withIndent('  ').convert(entry.raw);
     final nights = stayNights(entry.startDate, entry.endDate);
-    final guestName = guestDisplayName(entry, fallback: s.revenueUnknownBooker);
+    final guestName = guestDisplayName(
+      entry,
+      fallback: context.s.revenueUnknownBooker,
+    );
 
-    final dialogBg = theme.brightness == Brightness.light
+    final dialogBg = context.theme.brightness == Brightness.light
         ? Colors.white
-        : theme.colorScheme.surfaceContainerLow;
+        : context.colors.surfaceContainerLow;
 
     return Dialog(
       backgroundColor: dialogBg,
@@ -183,7 +184,7 @@ class _ReservationDetailsDialogState extends State<ReservationDetailsDialog> {
                   Expanded(
                     child: Text(
                       guestName,
-                      style: theme.textTheme.titleMedium?.copyWith(
+                      style: context.theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -191,31 +192,34 @@ class _ReservationDetailsDialogState extends State<ReservationDetailsDialog> {
                 ],
               ),
             ),
-            Divider(height: 1, color: theme.dividerColor),
+            Divider(height: 1, color: context.theme.dividerColor),
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
                   children: [
                     StyledSection(
                       isFirstSection: true,
-                      header: s.reservationSectionBooker,
+                      header: context.s.reservationSectionBooker,
                       children: [
-                        StyledTile(title: s.reservationName, value: guestName),
                         StyledTile(
-                          title: s.reservationEmail,
+                          title: context.s.reservationName,
+                          value: guestName,
+                        ),
+                        StyledTile(
+                          title: context.s.reservationEmail,
                           value: valueOrDash(entry.guestEmail),
                         ),
                         StyledTile(
-                          title: s.reservationPhone,
+                          title: context.s.reservationPhone,
                           value: valueOrDash(entry.guestPhone),
                         ),
                       ],
                     ),
                     StyledSection(
-                      header: s.reservationSectionStay,
+                      header: context.s.reservationSectionStay,
                       children: [
                         StyledTile(
-                          title: s.reservationCheckIn,
+                          title: context.s.reservationCheckIn,
                           value:
                               formatDateTime(
                                 entry.startDate,
@@ -224,7 +228,7 @@ class _ReservationDetailsDialogState extends State<ReservationDetailsDialog> {
                               '-',
                         ),
                         StyledTile(
-                          title: s.reservationCheckOut,
+                          title: context.s.reservationCheckOut,
                           value:
                               formatDateTime(
                                 entry.endDate,
@@ -233,15 +237,15 @@ class _ReservationDetailsDialogState extends State<ReservationDetailsDialog> {
                               '-',
                         ),
                         StyledTile(
-                          title: s.reservationNights,
+                          title: context.s.reservationNights,
                           value: nights != null ? '$nights' : '-',
                         ),
                         StyledTile(
-                          title: s.reservationStatus,
+                          title: context.s.reservationStatus,
                           value: valueOrDash(entry.status),
                         ),
                         StyledTile(
-                          title: s.reservationSource,
+                          title: context.s.reservationSource,
                           value: valueOrDash(entry.source),
                           trailing: BookingSourceIcon(
                             source: entry.source,
@@ -250,39 +254,39 @@ class _ReservationDetailsDialogState extends State<ReservationDetailsDialog> {
                         ),
                         if (_hasReservationId)
                           StyledTile(
-                            title: s.reservationId,
+                            title: context.s.reservationId,
                             value: entry.reservationId!,
                           ),
                       ],
                     ),
                     StyledSection(
-                      header: s.reservationSectionGuests,
+                      header: context.s.reservationSectionGuests,
                       children: [
                         StyledTile(
-                          title: s.reservationGuestTotal,
+                          title: context.s.reservationGuestTotal,
                           value: guestBreakdown(entry),
                         ),
                         StyledTile(
-                          title: s.reservationAdults,
+                          title: context.s.reservationAdults,
                           value: entry.adultCount?.toString() ?? '-',
                         ),
                         StyledTile(
-                          title: s.reservationChildren,
+                          title: context.s.reservationChildren,
                           value: entry.childCount?.toString() ?? '-',
                         ),
                         StyledTile(
-                          title: s.reservationInfants,
+                          title: context.s.reservationInfants,
                           value: entry.infantCount?.toString() ?? '-',
                         ),
                       ],
                     ),
                     if (revenue.hasAnyData)
                       StyledSection(
-                        header: s.reservationSectionRevenue,
+                        header: context.s.reservationSectionRevenue,
                         children: [
                           if (revenue.total != null)
                             StyledTile(
-                              title: s.reservationGross,
+                              title: context.s.reservationGross,
                               value: formatAmount(
                                 revenue.total,
                                 revenue.currency,
@@ -298,7 +302,7 @@ class _ReservationDetailsDialogState extends State<ReservationDetailsDialog> {
                             ),
                           if (revenue.net != null)
                             StyledTile(
-                              title: s.reservationNet,
+                              title: context.s.reservationNet,
                               value: formatAmount(
                                 revenue.net,
                                 revenue.currency,
@@ -306,7 +310,7 @@ class _ReservationDetailsDialogState extends State<ReservationDetailsDialog> {
                             ),
                           if (revenue.outstanding != null)
                             StyledTile(
-                              title: s.reservationOutstanding,
+                              title: context.s.reservationOutstanding,
                               value: formatAmount(
                                 revenue.outstanding,
                                 revenue.currency,
@@ -319,19 +323,19 @@ class _ReservationDetailsDialogState extends State<ReservationDetailsDialog> {
                     else if (entry.notes != null &&
                         entry.notes!.trim().isNotEmpty)
                       StyledSection(
-                        header: s.reservationNotes,
+                        header: context.s.reservationNotes,
                         children: [
                           StyledTile(
-                            title: s.reservationNotes,
+                            title: context.s.reservationNotes,
                             value: entry.notes!.trim(),
                           ),
                         ],
                       ),
                     StyledSection(
-                      header: s.reservationSectionOther,
+                      header: context.s.reservationSectionOther,
                       children: [
                         StyledTile(
-                          title: s.reservationCreatedAt,
+                          title: context.s.reservationCreatedAt,
                           value:
                               formatDateTime(
                                 entry.createdAt,
@@ -340,7 +344,7 @@ class _ReservationDetailsDialogState extends State<ReservationDetailsDialog> {
                               '-',
                         ),
                         StyledTile(
-                          title: s.reservationUpdatedAt,
+                          title: context.s.reservationUpdatedAt,
                           value:
                               formatDateTime(
                                 entry.updatedAt,
@@ -351,21 +355,20 @@ class _ReservationDetailsDialogState extends State<ReservationDetailsDialog> {
                       ],
                     ),
                     StyledSection(
-                      header: s.reservationSectionPayload,
+                      header: context.s.reservationSectionPayload,
                       inset: false,
                       children: [
                         StyledContainer(
-                          backgroundColor: theme.colorScheme.surface,
-                          border: Border.all(color: theme.dividerColor),
+                          backgroundColor: context.colors.surface,
+                          border: Border.all(color: context.theme.dividerColor),
                           child: SizedBox(
                             width: double.infinity,
                             child: SingleChildScrollView(
                               scrollDirection: Axis.horizontal,
                               child: SelectableText(
                                 prettyRaw,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  fontFamily: 'monospace',
-                                ),
+                                style: context.theme.textTheme.bodySmall
+                                    ?.copyWith(fontFamily: 'monospace'),
                               ),
                             ),
                           ),
@@ -384,12 +387,10 @@ class _ReservationDetailsDialogState extends State<ReservationDetailsDialog> {
   }
 
   Widget _buildNotesEditor(BuildContext context) {
-    final theme = Theme.of(context);
     final spacing = context.styledSpacing;
-    final s = context.s;
 
     return StyledSection(
-      header: s.reservationNotes,
+      header: context.s.reservationNotes,
       inset: false,
       children: [
         StyledTextField(
@@ -397,16 +398,16 @@ class _ReservationDetailsDialogState extends State<ReservationDetailsDialog> {
           enabled: _hasReservationId && !_isSavingNotes,
           maxLines: 4,
           placeholder: _hasReservationId
-              ? s.reservationNotesHint
-              : s.reservationNotesDisabledHint,
+              ? context.s.reservationNotesHint
+              : context.s.reservationNotesDisabledHint,
         ),
         SizedBox(height: spacing.sm),
         Row(
           children: [
             if (_notesSaved)
               Text(
-                s.savedLabel,
-                style: theme.textTheme.bodySmall?.copyWith(
+                context.s.savedLabel,
+                style: context.theme.textTheme.bodySmall?.copyWith(
                   color: HosthubDiploraV1Palette.successText,
                 ),
               ),
@@ -419,7 +420,7 @@ class _ReservationDetailsDialogState extends State<ReservationDetailsDialog> {
               )
             else if (_hasReservationId)
               StyledTextButton(
-                title: s.reservationNotesSave,
+                title: context.s.reservationNotesSave,
                 showLeftIcon: true,
                 leftIconData: Icons.save_outlined,
                 onPressed: _saveNotes,

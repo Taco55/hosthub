@@ -168,13 +168,12 @@ class _PropertyDetailsPageState extends State<PropertyDetailsPage> {
     DateTime? syncedAt,
     bool isLoading = false,
   }) {
-    final s = context.s;
     return StyledWebPageScaffold(
-      // Design: the cards *are* this page's surfaces. A pane card around them
+      // Design: the cards *are* this page'context.s surfaces. A pane card around them
       // would draw a second border around every one of them.
       decorateLeftPane: false,
-      overline: s.propertyDetailsOverline,
-      title: propertyName ?? s.propertyDetailsTitle,
+      overline: context.s.propertyDetailsOverline,
+      title: propertyName ?? context.s.propertyDetailsTitle,
       contentMaxWidth: _recordMaxWidth,
       isLoading: isLoading,
       actions: [
@@ -192,7 +191,7 @@ class _PropertyDetailsPageState extends State<PropertyDetailsPage> {
         builder: (context) => ListView(
           padding: EdgeInsets.only(
             top: context.styledSpacing.lg,
-            // The page's bottom padding, spent at the end of the list, so the
+            // The page'context.s bottom padding, spent at the end of the list, so the
             // last card does not sit against the window edge.
             bottom: StyledWebPageScaffoldScope.of(context).contentBottomInset,
           ),
@@ -225,13 +224,12 @@ class _SyncAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
     final stamp = syncedAt;
     return Tooltip(
       message: switch (stamp) {
-        _ when !canSync => s.propertyDetailsRefreshTooltip,
-        null => s.propertyDetailsSyncTooltip,
-        _ => s.propertyDetailsRefreshTooltipSynced(
+        _ when !canSync => context.s.propertyDetailsRefreshTooltip,
+        null => context.s.propertyDetailsSyncTooltip,
+        _ => context.s.propertyDetailsRefreshTooltipSynced(
           timeago.format(
             stamp.toLocal(),
             locale: Localizations.localeOf(context).languageCode,
@@ -240,10 +238,12 @@ class _SyncAction extends StatelessWidget {
       },
       // Design `.btn-sm`: 34 high, 13px sides, a 12.5px label and a 15px
       // glyph — a toolbar action, quieter than the 40-high `.btn` a form
-      // submits with. Its colours are the preset's outlined button.
+      // submits with. Its colours are the preset'context.s outlined button.
       child: StyledButton(
         variant: StyledButtonVariant.secondary,
-        title: canSync ? s.propertyDetailsSync : s.propertyDetailsRefresh,
+        title: canSync
+            ? context.s.propertyDetailsSync
+            : context.s.propertyDetailsRefresh,
         showLeftIcon: true,
         leftIconData: canSync ? Icons.sync : Icons.refresh,
         minHeight: 34,
@@ -296,8 +296,6 @@ class _LodgifyConnection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
-    final theme = Theme.of(context);
     final lodgifyId = details.lodgifyId?.trim();
     final isLinked = lodgifyId != null && lodgifyId.isNotEmpty;
 
@@ -313,23 +311,23 @@ class _LodgifyConnection extends StatelessWidget {
             'LG',
             size: 38,
             borderRadius: 11,
-            backgroundColor: theme.colorScheme.secondary,
-            iconColor: theme.colorScheme.onSecondary,
+            backgroundColor: context.colors.secondary,
+            iconColor: context.colors.onSecondary,
           ),
           title: 'Lodgify',
-          titleStyle: theme.textTheme.bodyLarge?.copyWith(
+          titleStyle: context.theme.textTheme.bodyLarge?.copyWith(
             fontWeight: FontWeight.w700,
           ),
           subtitle: isLinked
               ? _linkedSummary(context, lodgifyId, details.lodgifySyncedAt)
-              : s.propertyDetailsConnectionMissing,
+              : context.s.propertyDetailsConnectionMissing,
           trailing: isLinked
               ? StatusPill(
-                  label: s.propertyDetailsConnectionActive,
+                  label: context.s.propertyDetailsConnectionActive,
                   tone: StatusPillTone.positive,
                   icon: Icons.check,
                 )
-              : StatusPill(label: s.propertyLodgifyNotLinked),
+              : StatusPill(label: context.s.propertyLodgifyNotLinked),
         ),
       ],
     );
@@ -345,11 +343,10 @@ class _LodgifyConnection extends StatelessWidget {
     String lodgifyId,
     DateTime? syncedAt,
   ) {
-    final s = context.s;
     if (syncedAt == null) {
-      return s.propertyDetailsConnectionSummaryNoSync(lodgifyId);
+      return context.s.propertyDetailsConnectionSummaryNoSync(lodgifyId);
     }
-    return s.propertyDetailsConnectionSummary(
+    return context.s.propertyDetailsConnectionSummary(
       lodgifyId,
       timeago.format(
         syncedAt.toLocal(),
@@ -366,18 +363,17 @@ class _SourceNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return StyledNotice(
       icon: Icons.info_outline,
       // A footnote carries no surface of its own: transparent and unpadded,
       // the notice is exactly the design's icon plus a line of muted text.
       backgroundColor: Colors.transparent,
       padding: EdgeInsets.zero,
-      foregroundColor: theme.colorScheme.outline,
+      foregroundColor: context.colors.outline,
       child: Text(
         context.s.propertyDetailsSourceNote,
-        style: theme.textTheme.bodySmall?.copyWith(
-          color: theme.colorScheme.outline,
+        style: context.theme.textTheme.bodySmall?.copyWith(
+          color: context.colors.outline,
         ),
       ),
     );
@@ -391,21 +387,26 @@ class _AddressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
     return ContentCard(
       icon: Icons.location_on_outlined,
-      title: s.propertyDetailsAddressCard,
+      title: context.s.propertyDetailsAddressCard,
       children: [
         StyledDefinitionList(
           definitions: [
             StyledDefinition(
-              label: s.propertyDetailsStreet,
+              label: context.s.propertyDetailsStreet,
               value: details.address,
             ),
-            StyledDefinition(label: s.propertyDetailsZip, value: details.zip),
-            StyledDefinition(label: s.propertyDetailsCity, value: details.city),
             StyledDefinition(
-              label: s.propertyDetailsCountry,
+              label: context.s.propertyDetailsZip,
+              value: details.zip,
+            ),
+            StyledDefinition(
+              label: context.s.propertyDetailsCity,
+              value: details.city,
+            ),
+            StyledDefinition(
+              label: context.s.propertyDetailsCountry,
               value: details.country,
             ),
           ],
@@ -422,47 +423,46 @@ class _RentalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
     final rating = details.rating;
     final priceUnitInDays = details.priceUnitInDays;
 
     return ContentCard(
       icon: Icons.home_work_outlined,
-      title: s.propertyDetailsRentalCard,
+      title: context.s.propertyDetailsRentalCard,
       children: [
         StyledDefinitionList(
           definitions: [
             StyledDefinition(
-              label: s.propertyDetailsRooms,
-              value: _roomSummary(details.rooms, s),
+              label: context.s.propertyDetailsRooms,
+              value: _roomSummary(details.rooms, context.s),
             ),
             StyledDefinition(
-              label: s.propertyDetailsRating,
+              label: context.s.propertyDetailsRating,
               value: rating == null
                   ? null
-                  : s.propertyDetailsRatingValue(_number(rating)),
+                  : context.s.propertyDetailsRatingValue(_number(rating)),
             ),
             StyledDefinition(
-              label: s.propertyDetailsPriceRange,
+              label: context.s.propertyDetailsPriceRange,
               value: _priceRange(details),
             ),
             StyledDefinition(
-              label: s.propertyDetailsPriceUnit,
+              label: context.s.propertyDetailsPriceUnit,
               value: priceUnitInDays == null
                   ? null
-                  : s.propertyDetailsPriceUnitValue(priceUnitInDays),
+                  : context.s.propertyDetailsPriceUnitValue(priceUnitInDays),
             ),
             StyledDefinition(
-              label: s.propertyDetailsOwnerLanguages,
+              label: context.s.propertyDetailsOwnerLanguages,
               value: details.ownerSpokenLanguages?.join(', '),
             ),
             StyledDefinition(
-              label: s.propertyDetailsAddons,
-              value: _presence(details.hasAddons, s),
+              label: context.s.propertyDetailsAddons,
+              value: _presence(details.hasAddons, context.s),
             ),
             StyledDefinition(
-              label: s.propertyDetailsAgreement,
-              value: _presence(details.hasAgreement, s),
+              label: context.s.propertyDetailsAgreement,
+              value: _presence(details.hasAgreement, context.s),
             ),
           ],
         ),
@@ -482,17 +482,15 @@ class _RawData extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
-    final theme = Theme.of(context);
     final inOut = _json(details.inOut);
     final rooms = _json(details.rooms);
     final plans = details.subscriptionPlans;
 
     final blocks = <(String, String)>[
-      if (inOut != null) (s.propertyDetailsRawInOut, inOut),
-      if (rooms != null) (s.propertyDetailsRooms, rooms),
+      if (inOut != null) (context.s.propertyDetailsRawInOut, inOut),
+      if (rooms != null) (context.s.propertyDetailsRooms, rooms),
       if (plans != null && plans.isNotEmpty)
-        (s.propertyDetailsRawSubscriptions, plans.join('\n')),
+        (context.s.propertyDetailsRawSubscriptions, plans.join('\n')),
     ];
 
     return StyledSection(
@@ -502,15 +500,15 @@ class _RawData extends StatelessWidget {
       showDividers: false,
       children: [
         StyledExpansionTile(
-          title: s.propertyDetailsRawTitle,
+          title: context.s.propertyDetailsRawTitle,
           emphasizeTitle: true,
           // Design `.chan-hd .sum`: the closed header says what is inside, so
           // the fold is worth opening — or worth leaving shut. A quiet grey
           // line, not the emphasised value a settings row carries.
           value: Text(
-            s.propertyDetailsRawSummary,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            context.s.propertyDetailsRawSummary,
+            style: context.theme.textTheme.bodySmall?.copyWith(
+              color: context.colors.onSurfaceVariant,
             ),
             textAlign: TextAlign.end,
           ),
@@ -521,15 +519,15 @@ class _RawData extends StatelessWidget {
             context.styledSpacing.lg,
             context.styledSpacing.lg,
           ),
-          // `pre.raw` is block content: it fills the card's width rather than
+          // `pre.raw` is block content: it fills the card'context.s width rather than
           // shrinking to the width of its longest line.
           childrenCrossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (blocks.isEmpty)
               Text(
-                s.propertyDetailsRawEmpty,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.outline,
+                context.s.propertyDetailsRawEmpty,
+                style: context.theme.textTheme.bodySmall?.copyWith(
+                  color: context.colors.outline,
                 ),
               ),
             for (var i = 0; i < blocks.length; i++) ...[
@@ -551,18 +549,17 @@ class _RawLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Padding(
       padding: EdgeInsets.only(bottom: context.styledSpacing.xs),
       child: Text(
         label,
         // The design sets these sub-labels in 11.5px caps; the console keeps
-        // sentence case for the same reason its table headers do (theme preset,
+        // sentence case for the same reason its table headers do (context.theme preset,
         // `tables`), and takes the weight and the muted colour.
-        style: theme.textTheme.labelMedium?.copyWith(
+        style: context.theme.textTheme.labelMedium?.copyWith(
           fontWeight: FontWeight.w600,
           letterSpacing: 0.4,
-          color: theme.colorScheme.outline,
+          color: context.colors.outline,
         ),
       ),
     );
@@ -576,14 +573,13 @@ class _LoadFailed extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
     return StyledNotice(
       tone: StyledNoticeTone.error,
       icon: Icons.error_outline,
-      message: s.errorGeneric,
+      message: context.s.errorGeneric,
       trailing: StyledButton(
         variant: StyledButtonVariant.secondary,
-        title: s.propertyDetailsRefreshRetry,
+        title: context.s.propertyDetailsRefreshRetry,
         minHeight: 34,
         onPressed: onRetry,
       ),

@@ -40,7 +40,6 @@ class PreviewPane extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final lang = state.previewLanguage;
     final liveUrl = _liveUrl;
     final displayHost =
@@ -63,7 +62,7 @@ class PreviewPane extends StatelessWidget {
     );
 
     return ColoredBox(
-      color: scheme.surfaceContainerLow,
+      color: context.colors.surfaceContainerLow,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
         child: Column(
@@ -106,8 +105,6 @@ class _PreviewToolbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<SiteContentCubit>();
-    final scheme = Theme.of(context).colorScheme;
-    final s = context.s;
 
     // §11g: the preview header keeps `Live preview` and the Web/Mobile
     // toggle. The AI pill, the `<Language> preview` caption and the locale
@@ -117,10 +114,13 @@ class _PreviewToolbar extends StatelessWidget {
     final deviceToggle = StyledSegmentedControl.compact(
       segments: [
         StyledSegment(
-          label: s.weDeviceWeb,
+          label: context.s.weDeviceWeb,
           icon: Icons.desktop_windows_outlined,
         ),
-        StyledSegment(label: s.weDeviceMobile, icon: Icons.smartphone_outlined),
+        StyledSegment(
+          label: context.s.weDeviceMobile,
+          icon: Icons.smartphone_outlined,
+        ),
       ],
       selectedIndex: state.previewDevice == PreviewDevice.web ? 0 : 1,
       onChanged: (i) => cubit.setPreviewDevice(
@@ -141,9 +141,9 @@ class _PreviewToolbar extends StatelessWidget {
       runSpacing: 8,
       children: [
         Text(
-          s.weLivePreview,
+          context.s.weLivePreview,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: scheme.onSurfaceVariant,
+            color: context.colors.onSurfaceVariant,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -164,7 +164,6 @@ class _SitePreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final lang = state.previewLanguage;
     final isMobile = state.previewDevice == PreviewDevice.mobile;
-    final scheme = Theme.of(context).colorScheme;
 
     final headline = state.valueFor(lang, 'hero.headline');
     final subtitle = state.valueFor(lang, 'hero.subtitle');
@@ -182,8 +181,8 @@ class _SitePreview extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            scheme.primary.withValues(alpha: 0.55),
-            scheme.onSurface.withValues(alpha: 0.75),
+            context.colors.primary.withValues(alpha: 0.55),
+            context.colors.onSurface.withValues(alpha: 0.75),
           ],
         ),
       ),
@@ -196,7 +195,7 @@ class _SitePreview extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: scheme.surface,
+              color: context.colors.surface,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -206,7 +205,7 @@ class _SitePreview extends StatelessWidget {
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: scheme.surface.withValues(alpha: 0.9),
+              color: context.colors.surface.withValues(alpha: 0.9),
             ),
           ),
         ],
@@ -219,9 +218,9 @@ class _SitePreview extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           child: Text(
             text,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: context.colors.onSurfaceVariant,
+            ),
           ),
         ),
     ];
@@ -235,7 +234,7 @@ class _SitePreview extends StatelessWidget {
             Expanded(
               child: StyledContainer(
                 borderRadius: BorderRadius.circular(8),
-                backgroundColor: scheme.surfaceContainerHighest,
+                backgroundColor: context.colors.surfaceContainerHighest,
                 padding: EdgeInsets.zero,
                 child: const SizedBox(height: 64),
               ),
@@ -273,7 +272,6 @@ class _PreviewRibbon extends StatelessWidget {
     final cubit = context.read<SiteContentCubit>();
     final lang = state.previewLanguage;
     final stale = state.isLanguageStale(lang);
-    final brightness = Theme.of(context).brightness;
 
     if (stale) {
       return StyledNotice(
@@ -291,7 +289,7 @@ class _PreviewRibbon extends StatelessWidget {
       );
     }
 
-    final tokens = WebsiteStatusColors.locked(brightness);
+    final tokens = WebsiteStatusColors.locked(context.theme.brightness);
     return StyledNotice(
       icon: Icons.check_circle_outline,
       message: context.s.weRibbonDraft,

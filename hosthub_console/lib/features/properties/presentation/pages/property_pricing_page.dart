@@ -534,10 +534,7 @@ class _PayoutPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
     final spacing = context.styledSpacing;
-    final s = context.s;
 
     final config = draft.toOverride().applyTo(accountDefault);
     final settlement = config.settle(
@@ -547,7 +544,7 @@ class _PayoutPreview extends StatelessWidget {
     );
 
     // Cleaning + linen are shown together, service and other on their own
-    // lines, matching the design's row breakdown.
+    // lines, matching the design'context.s row breakdown.
     final cleaningAndLinen =
         config.cleaningCost.resolve(
           guests: _previewGuests,
@@ -575,33 +572,37 @@ class _PayoutPreview extends StatelessWidget {
           // Padding and radius are the card defaults (`sections.contentPadding`
           // and `sharedLayout.cardRadius`); only the ice fill and its border are
           // particular to this panel.
-          backgroundColor: colors.primaryContainer,
-          border: Border.all(color: colors.primary.withValues(alpha: 0.2)),
+          backgroundColor: context.colors.primaryContainer,
+          border: Border.all(
+            color: context.colors.primary.withValues(alpha: 0.2),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                s.pricingPayoutHeader,
-                style: theme.textTheme.titleSmall?.copyWith(
+                context.s.pricingPayoutHeader,
+                style: context.theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: colors.onPrimaryContainer,
+                  color: context.colors.onPrimaryContainer,
                 ),
               ),
               SizedBox(height: spacing.xs),
               Text(
-                s.pricingPayoutSubtitle(
+                context.s.pricingPayoutSubtitle(
                   _previewNights,
                   _previewGuests,
                   money(_previewBaseRate),
                   channelName,
                 ),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: colors.onPrimaryContainer.withValues(alpha: 0.8),
+                style: context.theme.textTheme.bodySmall?.copyWith(
+                  color: context.colors.onPrimaryContainer.withValues(
+                    alpha: 0.8,
+                  ),
                 ),
               ),
               SizedBox(height: spacing.md),
               _PayoutRow(
-                label: s.pricingPayoutGross(
+                label: context.s.pricingPayoutGross(
                   _previewNights,
                   money(_previewBaseRate),
                 ),
@@ -609,7 +610,7 @@ class _PayoutPreview extends StatelessWidget {
               ),
               if (settlement.markup != 0)
                 _PayoutRow(
-                  label: s.pricingPayoutMarkup(
+                  label: context.s.pricingPayoutMarkup(
                     _formatDecimal(config.rateMarkupPercentage),
                   ),
                   value: money(settlement.markup),
@@ -617,7 +618,7 @@ class _PayoutPreview extends StatelessWidget {
               _PayoutDivider(),
               if (settlement.commission != 0)
                 _PayoutRow(
-                  label: s.pricingPayoutCommission(
+                  label: context.s.pricingPayoutCommission(
                     _formatDecimal(config.commissionPercentage),
                   ),
                   value: money(settlement.commission),
@@ -625,24 +626,24 @@ class _PayoutPreview extends StatelessWidget {
                 ),
               if (cleaningAndLinen != 0)
                 _PayoutRow(
-                  label: s.pricingPayoutFixedCosts,
+                  label: context.s.pricingPayoutFixedCosts,
                   value: money(cleaningAndLinen),
                   negative: true,
                 ),
               if (service != 0)
                 _PayoutRow(
-                  label: s.pricingPayoutService(_previewGuests),
+                  label: context.s.pricingPayoutService(_previewGuests),
                   value: money(service),
                   negative: true,
                 ),
               if (other != 0)
                 _PayoutRow(
-                  label: s.pricingPayoutOther,
+                  label: context.s.pricingPayoutOther,
                   value: money(other),
                   negative: true,
                 ),
               _PayoutRow(
-                label: s.pricingPayoutNet,
+                label: context.s.pricingPayoutNet,
                 value: money(settlement.net),
                 total: true,
               ),
@@ -653,9 +654,9 @@ class _PayoutPreview extends StatelessWidget {
         Padding(
           padding: EdgeInsets.symmetric(horizontal: spacing.xs),
           child: Text(
-            s.pricingPayoutNote,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: colors.outline,
+            context.s.pricingPayoutNote,
+            style: context.theme.textTheme.bodySmall?.copyWith(
+              color: context.colors.outline,
               height: 1.5,
             ),
           ),
@@ -682,15 +683,13 @@ class _PayoutRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
     final spacing = context.styledSpacing;
 
     final valueColor = total
-        ? colors.primary
+        ? context.colors.primary
         : negative
-        ? colors.error
-        : colors.onPrimaryContainer;
+        ? context.colors.error
+        : context.colors.onPrimaryContainer;
 
     // Design `.prow2{padding:7px 0}` — 7 is off the 4px scale, so it takes the
     // neighbouring step.
@@ -701,8 +700,10 @@ class _PayoutRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: colors.onPrimaryContainer.withValues(alpha: 0.85),
+              style: context.theme.textTheme.bodySmall?.copyWith(
+                color: context.colors.onPrimaryContainer.withValues(
+                  alpha: 0.85,
+                ),
                 fontWeight: total ? FontWeight.w700 : null,
               ),
             ),
@@ -712,8 +713,8 @@ class _PayoutRow extends StatelessWidget {
             negative ? '\u2212$value' : value,
             style:
                 (total
-                        ? theme.textTheme.titleMedium
-                        : theme.textTheme.bodySmall)
+                        ? context.theme.textTheme.titleMedium
+                        : context.theme.textTheme.bodySmall)
                     ?.copyWith(
                       color: valueColor,
                       fontWeight: total ? FontWeight.w700 : FontWeight.w600,
@@ -732,7 +733,7 @@ class _PayoutRow extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border(
           top: BorderSide(
-            color: colors.onPrimaryContainer.withValues(alpha: 0.16),
+            color: context.colors.onPrimaryContainer.withValues(alpha: 0.16),
           ),
         ),
       ),
@@ -777,7 +778,6 @@ class _PercentageInputTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return StyledTile(
       title: title,
       subtitle: description,
@@ -793,8 +793,8 @@ class _PercentageInputTile extends StatelessWidget {
       ),
       trailing: Text(
         '%',
-        style: theme.textTheme.labelMedium?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
+        style: context.theme.textTheme.labelMedium?.copyWith(
+          color: context.colors.onSurfaceVariant,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -821,14 +821,13 @@ class _CostInputRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Padding(
       padding: StyledWidgetsTheme.of(context).tiles.defaultPadding,
       child: Row(
         children: [
           Expanded(
             flex: 3,
-            child: Text(title, style: theme.textTheme.bodyMedium),
+            child: Text(title, style: context.theme.textTheme.bodyMedium),
           ),
           SizedBox(
             width: 100,
@@ -845,8 +844,8 @@ class _CostInputRow extends StatelessWidget {
           SizedBox(width: context.styledSpacing.sm),
           Text(
             currencyCode,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            style: context.theme.textTheme.labelMedium?.copyWith(
+              color: context.colors.onSurfaceVariant,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -858,8 +857,8 @@ class _CostInputRow extends StatelessWidget {
               isExpanded: true,
               isDense: true,
               underline: const SizedBox.shrink(),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface,
+              style: context.theme.textTheme.bodySmall?.copyWith(
+                color: context.colors.onSurface,
               ),
               items: CostType.values
                   .map(

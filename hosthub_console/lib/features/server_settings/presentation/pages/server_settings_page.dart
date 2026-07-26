@@ -210,16 +210,14 @@ class _UsersAdminSectionState extends State<_UsersAdminSection> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return StyledSection(
       header: context.s.usersTitle,
       inset: false,
       children: [
         Text(
           '${context.s.createUserDescription} ${context.s.adminRightsDisabled}',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+          style: context.theme.textTheme.bodySmall?.copyWith(
+            color: context.colors.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 12),

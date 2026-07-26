@@ -154,18 +154,17 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
           final locale = Localizations.localeOf(context).toString();
           final dateFormatter = DateFormat('d MMM yyyy', locale);
           final dateTimeFormatter = DateFormat('d MMM yyyy HH:mm', locale);
-          final s = context.s;
           final periodLabel = _periodDisplayLabel(
             _period,
             periodRange.start,
             locale,
-            s,
+            context.s,
           );
           final periodRangeLabel =
               '${dateFormatter.format(periodRange.start)} - ${dateFormatter.format(periodRange.end)}';
 
           // One filtered set feeds the KPIs, the chart, the table, the totals
-          // row, the export and the detail modal — §3's "one filter, one source
+          // row, the export and the detail modal — §3'context.s "one filter, one source
           // of truth". The selection covers the properties actually loaded, so
           // the occupancy divisor and the booking set can never disagree.
           // What the user last chose for *this* page, clamped to the properties
@@ -201,13 +200,13 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
               .map(
                 (entry) => _RevenueRow.fromEntry(
                   entry,
-                  // Per booking, for the booking's own property — the resolver
+                  // Per booking, for the booking'context.s own property — the resolver
                   // answers for any property, not for "the current one".
                   channelSettings: channelSettingsForBooking(
                     channelSettings,
                     entry,
                   ),
-                  unknownBookerLabel: s.revenueUnknownBooker,
+                  unknownBookerLabel: context.s.revenueUnknownBooker,
                 ),
               )
               .toList(growable: false);
@@ -241,9 +240,9 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
               // the title, not on top of the body.
               StyledSegmentedControl(
                 labels: [
-                  s.revenuePeriodMonth,
-                  s.revenuePeriodQuarter,
-                  s.revenuePeriodYear,
+                  context.s.revenuePeriodMonth,
+                  context.s.revenuePeriodQuarter,
+                  context.s.revenuePeriodYear,
                 ],
                 selectedIndex: _period.index,
                 onChanged: (index) {
@@ -821,7 +820,6 @@ class _RevenuePeriodNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Row(
       children: [
         _buildPeriodArrowButton(
@@ -836,12 +834,12 @@ class _RevenuePeriodNav extends StatelessWidget {
           children: [
             Text(
               periodLabel,
-              style: theme.textTheme.titleMedium?.copyWith(
+              style: context.theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
             SizedBox(height: context.styledSpacing.xs),
-            Text(periodRangeLabel, style: theme.textTheme.bodySmall),
+            Text(periodRangeLabel, style: context.theme.textTheme.bodySmall),
           ],
         ),
         SizedBox(width: context.styledSpacing.md),
@@ -885,31 +883,29 @@ class _RevenueKpis extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
-
     // Design: the revenue `.kpi .kl` is a plain label — no icon, unlike the
     // reservations tiles.
     return MetricsGrid(
       metrics: [
         MetricTileData(
-          label: s.revenueKpiGross,
+          label: context.s.revenueKpiGross,
           value: formatAmount(totals.totalRevenue, totals.currency),
-          caption: s.revenueKpiGrossCaption(totals.bookingCount),
+          caption: context.s.revenueKpiGrossCaption(totals.bookingCount),
         ),
         MetricTileData(
-          label: s.revenueKpiNet,
+          label: context.s.revenueKpiNet,
           value: formatAmount(totals.totalNetRevenue, totals.currency),
-          caption: s.revenueKpiNetCaption,
+          caption: context.s.revenueKpiNetCaption,
         ),
         MetricTileData(
-          label: s.revenueKpiAdr,
+          label: context.s.revenueKpiAdr,
           value: formatAmount(totals.averageNightlyRate, totals.currency),
-          caption: s.revenueKpiAdrCaption(totals.totalNights),
+          caption: context.s.revenueKpiAdrCaption(totals.totalNights),
         ),
         MetricTileData(
-          label: s.revenueKpiOccupancy,
+          label: context.s.revenueKpiOccupancy,
           value: '$occupancy%',
-          caption: s.revenueKpiOccupancyCaption,
+          caption: context.s.revenueKpiOccupancyCaption,
         ),
       ],
     );
@@ -959,8 +955,6 @@ class _RevenueMonthChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final s = context.s;
     final byMonth = monthlyRevenue(entries);
     final shortMonth = DateFormat('MMM', locale);
     final longMonth = DateFormat('MMMM', locale);
@@ -968,15 +962,15 @@ class _RevenueMonthChart extends StatelessWidget {
     return StyledSection(
       isFirstSection: true,
       headerInsideGroup: true,
-      // The page pane already pads its content; the section's own 24 would
+      // The page pane already pads its content; the section'context.s own 24 would
       // indent the chart card past the period control, the KPI tiles and the
       // table, which all sit flush against the pane.
       horizontalPadding: 0,
-      header: s.revenueChartTitle,
+      header: context.s.revenueChartTitle,
       headerAction: Text(
         periodLabel,
-        style: theme.textTheme.bodySmall?.copyWith(
-          color: theme.colorScheme.outline,
+        style: context.theme.textTheme.bodySmall?.copyWith(
+          color: context.colors.outline,
         ),
       ),
       children: [
@@ -995,14 +989,14 @@ class _RevenueMonthChart extends StatelessWidget {
               orElse: () => months.first,
             );
             final revenue = byMonth[month] ?? MonthRevenue.zero;
-            return s.revenueChartTooltip(
+            return context.s.revenueChartTooltip(
               longMonth.format(month),
               formatAmount(revenue.gross, currency),
               formatAmount(revenue.net, currency),
             );
           },
-          primaryLegendLabel: s.revenueChartLegendGross,
-          secondaryLegendLabel: s.revenueChartLegendNet,
+          primaryLegendLabel: context.s.revenueChartLegendGross,
+          secondaryLegendLabel: context.s.revenueChartLegendNet,
         ),
       ],
     );
@@ -1019,7 +1013,6 @@ class _RevenueChannelSplit extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final spacing = context.styledSpacing;
     final largest = channels.fold<double>(
       0,
@@ -1049,7 +1042,7 @@ class _RevenueChannelSplit extends StatelessWidget {
                     channel.label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: context.theme.textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -1074,7 +1067,7 @@ class _RevenueChannelSplit extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.right,
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: context.theme.textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.w700,
                       fontFeatures: const [FontFeature.tabularFigures()],
                     ),

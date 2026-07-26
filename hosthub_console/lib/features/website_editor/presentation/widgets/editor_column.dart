@@ -34,13 +34,12 @@ class EditorColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _TopBar(state: state, siteId: siteId, propertyName: propertyName),
         _PageTabs(state: state),
-        Divider(height: 1, thickness: 1, color: scheme.outlineVariant),
+        Divider(height: 1, thickness: 1, color: context.colors.outlineVariant),
         Expanded(
           child: ListView(
             // Design `.body{padding:20px 22px 30px}`.
@@ -75,23 +74,23 @@ class _TopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
     // This bar lives inside the editor column (design `.editcol .top`), not in
     // the page scaffold's header band, so it composes the same title/overline
     // type the scaffold does rather than inventing its own.
     final scaffoldTheme = StyledWidgetsTheme.of(context).webPageScaffold;
-    final overlineStyle = (theme.textTheme.bodySmall ?? const TextStyle())
-        .copyWith(color: scheme.outline)
-        .merge(scaffoldTheme.overlineTextStyle);
-    final titleStyle = (theme.textTheme.headlineLarge ?? const TextStyle())
-        .copyWith(
-          fontWeight: FontWeight.w700,
-          height: 1.0,
-          letterSpacing: 0,
-          color: scheme.secondary,
-        )
-        .merge(scaffoldTheme.titleTextStyle);
+    final overlineStyle =
+        (context.theme.textTheme.bodySmall ?? const TextStyle())
+            .copyWith(color: context.colors.outline)
+            .merge(scaffoldTheme.overlineTextStyle);
+    final titleStyle =
+        (context.theme.textTheme.headlineLarge ?? const TextStyle())
+            .copyWith(
+              fontWeight: FontWeight.w700,
+              height: 1.0,
+              letterSpacing: 0,
+              color: context.colors.secondary,
+            )
+            .merge(scaffoldTheme.titleTextStyle);
     // The title names what you are editing — the property — the way every
     // other page titles its subject. The page you are on ("Home") is already
     // the selected tab right below, so it is not the title.
@@ -209,7 +208,6 @@ class _Banner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
     final sourceName = languageName(context, state.sourceLanguage);
 
     if (state.isSourceMode) {
@@ -217,7 +215,7 @@ class _Banner extends StatelessWidget {
       // for word and its action duplicated the locale switcher — deleted, not
       // restyled. What is left is one line saying which language you write in.
       return Text(
-        s.weBannerWritingTitle(sourceName),
+        context.s.weBannerWritingTitle(sourceName),
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
           color: Theme.of(context).colorScheme.outline,
         ),
@@ -232,11 +230,11 @@ class _Banner extends StatelessWidget {
     return StyledNotice(
       icon: Icons.translate,
       trailing: StyledChip(
-        label: s.weLockedCounter(locked, state.translatableFieldCount),
+        label: context.s.weLockedCounter(locked, state.translatableFieldCount),
         size: StyledChipSize.display,
       ),
       child: Text(
-        s.weBannerEditingTitle(lang),
+        context.s.weBannerEditingTitle(lang),
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
           fontWeight: FontWeight.w600,
           color: Theme.of(context).colorScheme.primary,
@@ -254,11 +252,10 @@ class _TranslationStatusToolbar extends StatelessWidget {
   Widget build(BuildContext context) {
     final cubit = context.read<SiteContentCubit>();
     final lang = state.previewLanguage;
-    final brightness = Theme.of(context).brightness;
     final stale = state.isLanguageStale(lang);
     final tokens = stale
-        ? WebsiteStatusColors.auto(brightness)
-        : WebsiteStatusColors.locked(brightness);
+        ? WebsiteStatusColors.auto(context.theme.brightness)
+        : WebsiteStatusColors.locked(context.theme.brightness);
     // §11g: only the exception is worth a line. "Fresh draft, matches your
     // latest source" was true almost always, so it carried no information.
     if (!stale) return const SizedBox.shrink();
@@ -292,13 +289,12 @@ class _HeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
     final heroFields = state.fields
         .where((f) => f.card == EditorCard.hero)
         .toList();
     return ContentCard(
       icon: Icons.auto_awesome,
-      title: s.weCardHero,
+      title: context.s.weCardHero,
       children: [
         for (final field in heroFields) ...[
           WebsiteFieldRow(
@@ -321,13 +317,11 @@ class _HeroPhotos extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final s = context.s;
     final label = Text(
-      s.weFieldHeroPhotos,
+      context.s.weFieldHeroPhotos,
       style: Theme.of(context).textTheme.bodySmall?.copyWith(
         fontWeight: FontWeight.w600,
-        color: scheme.onSurface,
+        color: context.colors.onSurface,
       ),
     );
 
@@ -340,7 +334,7 @@ class _HeroPhotos extends StatelessWidget {
           StyledNotice(
             tone: StyledNoticeTone.neutral,
             icon: Icons.photo_library_outlined,
-            message: s.weSharedPhotosNote,
+            message: context.s.weSharedPhotosNote,
           ),
         ],
       );
@@ -356,10 +350,10 @@ class _HeroPhotos extends StatelessWidget {
           child: Row(
             children: [
               for (var i = 0; i < 3; i++) ...[
-                _photoTile(scheme),
+                _photoTile(context.colors),
                 const SizedBox(width: 8),
               ],
-              _addPhotoTile(context, scheme),
+              _addPhotoTile(context, context.colors),
             ],
           ),
         ),
@@ -406,7 +400,6 @@ class _HighlightsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<SiteContentCubit>();
-    final s = context.s;
     final highlightFields = state.fields
         .where((f) => f.card == EditorCard.highlights)
         .toList();
@@ -416,7 +409,7 @@ class _HighlightsCard extends StatelessWidget {
 
     return ContentCard(
       icon: Icons.star_outline,
-      title: s.weCardHighlights,
+      title: context.s.weCardHighlights,
       children: [
         if (canReorder)
           StyledReorderableList(
@@ -458,14 +451,14 @@ class _HighlightsCard extends StatelessWidget {
               label: fieldLabel(context, field.key),
             ),
             // §11e: field-to-field spacing inside a section is one token; the
-            // section's own padding supplies the outer breathing room.
+            // section'context.s own padding supplies the outer breathing room.
             SizedBox(height: context.styledSpacing.lg),
           ],
         if (state.isSourceMode)
           Align(
             alignment: Alignment.centerLeft,
             child: StyledTextButton(
-              title: s.weAddHighlight,
+              title: context.s.weAddHighlight,
               showLeftIcon: true,
               leftIconData: Icons.add,
               onPressed: cubit.addHighlight,
@@ -508,32 +501,30 @@ class _SaveBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<SiteContentCubit>();
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
     final spacing = context.styledSpacing;
-    final s = context.s;
-    final brightness = theme.brightness;
 
     // §11b: the status line says what *is*, the button says what *happens*.
     // The old bar could read "Published · all languages" while the banner above
     // said there were unpublished changes; one of them was lying.
     final dotColor = state.dirty
-        ? WebsiteStatusColors.auto(brightness).foreground
-        : WebsiteStatusColors.locked(brightness).foreground;
+        ? WebsiteStatusColors.auto(context.theme.brightness).foreground
+        : WebsiteStatusColors.locked(context.theme.brightness).foreground;
     final targets = state.targetLanguages
         .map((l) => languageName(context, l))
         .join(' & ');
-    final title = state.dirty ? s.weStatusDirtyTitle : s.weStatusCleanTitle;
+    final title = state.dirty
+        ? context.s.weStatusDirtyTitle
+        : context.s.weStatusCleanTitle;
     final body = state.dirty
-        ? s.weStatusDirtyBody(targets)
-        : s.weStatusCleanBody(
+        ? context.s.weStatusDirtyBody(targets)
+        : context.s.weStatusCleanBody(
             languageName(context, state.sourceLanguage),
             state.targetLanguages.length,
           );
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: scheme.outlineVariant)),
+        border: Border(top: BorderSide(color: context.colors.outlineVariant)),
       ),
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 22, vertical: spacing.md),
@@ -560,30 +551,32 @@ class _SaveBar extends StatelessWidget {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: context.theme.textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: scheme.onSurface,
+                      color: context.colors.onSurface,
                     ),
                   ),
                   Text(
                     body,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: scheme.outline,
+                    style: context.theme.textTheme.bodySmall?.copyWith(
+                      color: context.colors.outline,
                     ),
                   ),
                 ],
               ),
             ),
             // §11h: the lock/auto mode is editorial metadata that saves with
-            // the page's autosave, not at publish — so the bar has to show
+            // the page'context.s autosave, not at publish — so the bar has to show
             // save state, which it previously didn't at all.
             if (state.saving || state.lastSavedAt != null) ...[
               Text(
-                state.saving ? s.weSavingIndicator : s.weSavedIndicator,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: scheme.outline,
+                state.saving
+                    ? context.s.weSavingIndicator
+                    : context.s.weSavedIndicator,
+                style: context.theme.textTheme.bodySmall?.copyWith(
+                  color: context.colors.outline,
                 ),
               ),
               SizedBox(width: spacing.md),
@@ -592,7 +585,7 @@ class _SaveBar extends StatelessWidget {
               // §11a: one button. A split button forced the reader to parse
               // the difference between two options, and the difference is what
               // *doesn't* happen — the hardest thing to put in a label.
-              title: s.wePublish,
+              title: context.s.wePublish,
               showLeftIcon: true,
               leftIconData: Icons.publish_outlined,
               onPressed: cubit.openPublish,

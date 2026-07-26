@@ -541,8 +541,6 @@ class _ReorderableStringListEditorState
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Column(
@@ -553,8 +551,8 @@ class _ReorderableStringListEditorState
               padding: const EdgeInsets.only(bottom: 8),
               child: Text(
                 widget.helperText!,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                style: context.theme.textTheme.bodySmall?.copyWith(
+                  color: context.colors.onSurfaceVariant,
                 ),
               ),
             ),
@@ -609,8 +607,8 @@ class _ReorderableStringListEditorState
               padding: const EdgeInsets.only(bottom: 10),
               child: Text(
                 'No items yet.',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                style: context.theme.textTheme.bodySmall?.copyWith(
+                  color: context.colors.onSurfaceVariant,
                 ),
               ),
             ),

@@ -158,16 +158,15 @@ class _PropertySectionPageState extends State<PropertySectionPage> {
   }
 
   String _overlineFor(BuildContext context, PropertySection section) {
-    final s = context.s;
     switch (section) {
       case PropertySection.overview:
-        return s.navPropertyOverview;
+        return context.s.navPropertyOverview;
       case PropertySection.website:
-        return s.navPropertyWebsite;
+        return context.s.navPropertyWebsite;
       case PropertySection.pricing:
-        return s.menuPricing;
+        return context.s.menuPricing;
       case PropertySection.settings:
-        return s.navPropertySiteSettings;
+        return context.s.navPropertySiteSettings;
     }
   }
 

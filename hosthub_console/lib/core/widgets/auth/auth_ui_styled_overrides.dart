@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:app_errors/app_errors.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 import 'package:auth_ui_flutter/auth_ui_flutter.dart';
+import 'package:hosthub_console/core/widgets/foundation/utils/utils.dart';
 
 /// Maps [AuthUiButtonConfig] to a [StyledButton].
 Widget _buildStyledButton(BuildContext context, AuthUiButtonConfig config) {
@@ -76,18 +77,17 @@ String? _buildAuthErrorMessage(BuildContext context, AuthError error) {
 
 /// Builds an inline error widget using the app's styled error container.
 Widget _buildStyledInlineError(BuildContext context, String message) {
-  final theme = Theme.of(context);
   return Container(
     width: double.infinity,
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
     decoration: BoxDecoration(
-      color: theme.colorScheme.errorContainer,
+      color: context.colors.errorContainer,
       borderRadius: BorderRadius.circular(12),
     ),
     child: Text(
       message,
-      style: theme.textTheme.bodyMedium?.copyWith(
-        color: theme.colorScheme.onErrorContainer,
+      style: context.theme.textTheme.bodyMedium?.copyWith(
+        color: context.colors.onErrorContainer,
       ),
     ),
   );

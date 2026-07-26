@@ -130,7 +130,6 @@ class _UserSettingsView extends StatelessWidget {
       ],
       child: BlocBuilder<UserSettingsCubit, UserSettingsState>(
         builder: (context, state) {
-          final theme = Theme.of(context);
           final settings = state.settings;
           final isLoading =
               state.status == UserSettingsStatus.loading && settings == null;
@@ -144,7 +143,10 @@ class _UserSettingsView extends StatelessWidget {
             intrinsicPaneHeight: true,
             leftChild: isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : _UserSettingsSection(theme: theme, settings: settings),
+                : _UserSettingsSection(
+                    theme: context.theme,
+                    settings: settings,
+                  ),
           );
         },
       ),
@@ -310,8 +312,6 @@ class _TeamSectionState extends State<_TeamSection> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return BlocConsumer<SiteMembersCubit, SiteMembersState>(
       listenWhen: (prev, curr) => prev.error != curr.error,
       listener: (context, state) async {
@@ -339,8 +339,8 @@ class _TeamSectionState extends State<_TeamSection> {
                   Expanded(
                     child: Text(
                       'Nodig een gebruiker uit om samen je properties te beheren.',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+                      style: context.theme.textTheme.bodySmall?.copyWith(
+                        color: context.colors.onSurfaceVariant,
                       ),
                     ),
                   ),
@@ -366,8 +366,8 @@ class _TeamSectionState extends State<_TeamSection> {
                 if (members.isNotEmpty) const SizedBox(height: 16),
                 Text(
                   'Openstaande uitnodigingen',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                  style: context.theme.textTheme.labelMedium?.copyWith(
+                    color: context.colors.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -378,8 +378,8 @@ class _TeamSectionState extends State<_TeamSection> {
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Text(
                     'Je hebt nog geen gebruikers uitgenodigd.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                    style: context.theme.textTheme.bodySmall?.copyWith(
+                      color: context.colors.onSurfaceVariant,
                     ),
                   ),
                 ),
@@ -409,7 +409,6 @@ class _TeamMembersList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Column(
       children: members.map((member) {
         return StyledTile(
@@ -417,13 +416,13 @@ class _TeamMembersList extends StatelessWidget {
           value: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: theme.colorScheme.secondaryContainer,
+              color: context.colors.secondaryContainer,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
               member.memberRole.label,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSecondaryContainer,
+              style: context.theme.textTheme.labelSmall?.copyWith(
+                color: context.colors.onSecondaryContainer,
               ),
             ),
           ),
@@ -475,7 +474,6 @@ class _TeamInvitationsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Column(
       children: invitations.map((inv) {
         return StyledTile(
@@ -483,13 +481,13 @@ class _TeamInvitationsList extends StatelessWidget {
           value: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: theme.colorScheme.tertiaryContainer,
+              color: context.colors.tertiaryContainer,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
               inv.memberRole.label,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onTertiaryContainer,
+              style: context.theme.textTheme.labelSmall?.copyWith(
+                color: context.colors.onTertiaryContainer,
               ),
             ),
           ),
@@ -764,7 +762,6 @@ class _ChannelFeeInputTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return StyledTile(
       title: title,
       leading: leading,
@@ -780,8 +777,8 @@ class _ChannelFeeInputTile extends StatelessWidget {
       ),
       trailing: Text(
         '%',
-        style: theme.textTheme.labelMedium?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
+        style: context.theme.textTheme.labelMedium?.copyWith(
+          color: context.colors.onSurfaceVariant,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -838,12 +835,11 @@ class _LastSyncTileState extends State<_LastSyncTile> {
     }
 
     final formattedSyncTime = _formatSyncTimestamp(context, timestamp);
-    final theme = Theme.of(context);
     return StyledTile(
       title: Text(
         context.s.lodgifyLastSyncLabel(formattedSyncTime),
-        style: theme.textTheme.bodySmall?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
+        style: context.theme.textTheme.bodySmall?.copyWith(
+          color: context.colors.onSurfaceVariant,
         ),
       ),
     );
@@ -966,7 +962,6 @@ class _LodgifyApiKeyDialogContentState
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Column(
@@ -997,8 +992,8 @@ class _LodgifyApiKeyDialogContentState
               onPressed: () => Navigator.of(
                 context,
               ).pop(const _LodgifyApiKeyDialogResult.remove()),
-              backgroundColor: theme.colorScheme.error,
-              labelColor: theme.colorScheme.onError,
+              backgroundColor: context.colors.error,
+              labelColor: context.colors.onError,
               minHeight: 40,
             ),
           ],
@@ -1024,7 +1019,6 @@ Future<bool> _showMissingPropertiesDialog(
       .where((value) => value.isNotEmpty)
       .toSet();
   final hasMissing = missing.isNotEmpty;
-  final theme = Theme.of(context);
   final styledTheme = StyledWidgetsTheme.of(context);
   final subtitle = hasMissing ? null : context.s.lodgifyNoNewPropertiesFound;
 
@@ -1047,15 +1041,15 @@ Future<bool> _showMissingPropertiesDialog(
                       children: [
                         Text(
                           context.s.lodgifyMissingPropertiesTitle,
-                          style: theme.textTheme.titleMedium,
+                          style: context.theme.textTheme.titleMedium,
                           textAlign: TextAlign.center,
                         ),
                         if (subtitle != null) ...[
                           const SizedBox(height: 6),
                           Text(
                             subtitle,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
+                            style: context.theme.textTheme.bodySmall?.copyWith(
+                              color: context.colors.onSurfaceVariant,
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -1087,7 +1081,7 @@ Future<bool> _showMissingPropertiesDialog(
                                 ? null
                                 : Icon(
                                     Icons.check_circle,
-                                    color: theme.colorScheme.primary,
+                                    color: context.colors.primary,
                                   ),
                             centerContent: false,
                             minHeight: 44,
@@ -1125,10 +1119,11 @@ Future<bool> _showMissingPropertiesDialog(
                                               .s
                                               .lodgifyMissingPropertiesAddAction
                                         : context.s.lodgifySyncLabel,
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: styledTheme.buttons.labelColor,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                    style: context.theme.textTheme.bodyMedium
+                                        ?.copyWith(
+                                          color: styledTheme.buttons.labelColor,
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                     maxLines: 1,
                                   ),
                                 ),

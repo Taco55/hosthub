@@ -47,13 +47,11 @@ class PropertyFilterButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
-
     return StyledToolbarButton.menu<int>(
       iconData: Icons.holiday_village_outlined,
       trailingIconData: Icons.expand_more,
-      label: _label(s),
-      tooltip: s.portfolioFilterTooltip,
+      label: _label(context.s),
+      tooltip: context.s.portfolioFilterTooltip,
       // Applied means narrowed: all properties is the resting state, not a
       // filter the user should see highlighted.
       isSelected: !selection.isAll,
@@ -62,7 +60,7 @@ class PropertyFilterButton extends StatelessWidget {
       entries: [
         StyledMenuOverlayEntry<int>(
           value: _selectAllValue,
-          label: s.portfolioFilterAll,
+          label: context.s.portfolioFilterAll,
           checked: selection.isAll,
         ),
         for (final option in options)

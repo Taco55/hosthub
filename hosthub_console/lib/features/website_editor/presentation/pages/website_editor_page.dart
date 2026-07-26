@@ -117,13 +117,12 @@ class _WebsiteEditorView extends StatelessWidget {
       listenWhen: (prev, next) =>
           next.errorMessage != null && prev.errorMessage != next.errorMessage,
       listener: (context, state) {
-        final s = context.s;
         final message = switch (state.errorMessage) {
-          'load_failed' => s.weErrorLoadFailed,
-          'save_failed' => s.weErrorSaveFailed,
-          'translate_failed' => s.weErrorTranslateFailed,
-          'reset_failed' => s.weErrorResetFailed,
-          'publish_failed' => s.weErrorPublishFailed,
+          'load_failed' => context.s.weErrorLoadFailed,
+          'save_failed' => context.s.weErrorSaveFailed,
+          'translate_failed' => context.s.weErrorTranslateFailed,
+          'reset_failed' => context.s.weErrorResetFailed,
+          'publish_failed' => context.s.weErrorPublishFailed,
           _ => null,
         };
         if (message != null) {

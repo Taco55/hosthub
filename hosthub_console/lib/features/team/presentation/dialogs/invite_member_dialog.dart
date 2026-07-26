@@ -23,8 +23,9 @@ Future<bool?> _showInviteDialog(
   String? siteName,
   required bool accountWide,
 }) {
-  final s = context.s;
-  final title = accountWide ? s.teamInviteUserTitle : s.teamInviteMemberTitle;
+  final title = accountWide
+      ? context.s.teamInviteUserTitle
+      : context.s.teamInviteMemberTitle;
   final cubit = context.read<SiteMembersCubit>();
 
   return showStyledModal<bool>(
@@ -34,7 +35,7 @@ Future<bool?> _showInviteDialog(
     hideDefaultHeader: false,
     showCloseButton: true,
     leadingClose: true,
-    leadingLabel: s.cancelButton,
+    leadingLabel: context.s.cancelButton,
     showAction: false,
     dialogMaxWidth: 560,
     builder: (modalContext, modal) {
@@ -104,8 +105,6 @@ class _InviteMemberFormState extends State<_InviteMemberForm> {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
-    final theme = Theme.of(context);
     final roles = SiteMemberRole.assignableRoles;
 
     return Form(
@@ -118,22 +117,22 @@ class _InviteMemberFormState extends State<_InviteMemberForm> {
           children: [
             Text(
               widget.accountWide
-                  ? s.teamInviteUserDescription
-                  : s.teamInviteSiteDescription(widget.siteName ?? ''),
-              style: theme.textTheme.bodyMedium,
+                  ? context.s.teamInviteUserDescription
+                  : context.s.teamInviteSiteDescription(widget.siteName ?? ''),
+              style: context.theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
             StyledTextFormField(
               controller: _emailController,
-              placeholder: s.teamEmailPlaceholder,
+              placeholder: context.s.teamEmailPlaceholder,
               keyboardType: TextInputType.emailAddress,
               enabled: !_isBusy,
               validators: [
                 (value) {
                   final trimmed = value?.trim() ?? '';
-                  if (trimmed.isEmpty) return s.requiredField;
+                  if (trimmed.isEmpty) return context.s.requiredField;
                   if (!trimmed.contains('@') || !trimmed.contains('.')) {
-                    return s.enterValidEmail;
+                    return context.s.enterValidEmail;
                   }
                   return null;
                 },
@@ -141,7 +140,7 @@ class _InviteMemberFormState extends State<_InviteMemberForm> {
             ),
             const SizedBox(height: 12),
             StyledSelectionTile<SiteMemberRole>.dropdown(
-              title: s.teamRoleColumn,
+              title: context.s.teamRoleColumn,
               currentValue: _selectedRole,
               options: roles,
               optionLabelBuilder: (role) => role.label,
@@ -155,7 +154,7 @@ class _InviteMemberFormState extends State<_InviteMemberForm> {
             ),
             const SizedBox(height: 16),
             StyledButton(
-              title: s.teamSendInvitation,
+              title: context.s.teamSendInvitation,
               enabled: !_isBusy,
               showProgressIndicatorWhenDisabled: true,
               onPressed: _submit,

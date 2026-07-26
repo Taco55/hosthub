@@ -113,8 +113,6 @@ class _CreateUserFormState extends State<_CreateUserForm> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Form(
       key: _formKey,
       child: Column(
@@ -123,20 +121,20 @@ class _CreateUserFormState extends State<_CreateUserForm> {
         children: [
           Text(
             context.s.createUserDescription,
-            style: theme.textTheme.bodyMedium,
+            style: context.theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 16),
           if (_errorMessage != null) ...[
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: theme.colorScheme.errorContainer,
+                color: context.colors.errorContainer,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
                 _errorMessage!,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onErrorContainer,
+                style: context.theme.textTheme.bodyMedium?.copyWith(
+                  color: context.colors.onErrorContainer,
                 ),
               ),
             ),

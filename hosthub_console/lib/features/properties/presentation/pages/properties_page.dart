@@ -24,8 +24,6 @@ class PropertiesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
-
     return BlocBuilder<PropertyContextCubit, PropertyContextState>(
       builder: (context, state) {
         final properties = state.properties;
@@ -63,14 +61,14 @@ class PropertiesPage extends StatelessWidget {
         return StyledWebPageScaffold(
           decorateLeftPane: false,
           overline: chrome.isSingleProperty
-              ? s.navGroupSingleProperty
-              : s.navGroupProperties,
-          title: s.propertiesListHeading,
+              ? context.s.navGroupSingleProperty
+              : context.s.navGroupProperties,
+          title: context.s.propertiesListHeading,
           leftChild: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                s.propertiesListIntro,
+                context.s.propertiesListIntro,
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               SizedBox(height: context.styledSpacing.lg),
@@ -79,14 +77,14 @@ class PropertiesPage extends StatelessWidget {
                 const Center(child: CircularProgressIndicator())
               else if (properties.isEmpty)
                 Text(
-                  s.propertiesListEmpty,
+                  context.s.propertiesListEmpty,
                   style: Theme.of(context).textTheme.bodyMedium,
                 )
               else
                 StyledSection(
                   isFirstSection: true,
                   horizontalPadding: 0,
-                  header: s.propertiesListHeading,
+                  header: context.s.propertiesListHeading,
                   children: [
                     for (final property in properties)
                       StyledTile(
@@ -97,7 +95,7 @@ class PropertiesPage extends StatelessWidget {
                         ),
                         title: property.name,
                         subtitle: _subtitleFor(
-                          s: s,
+                          s: context.s,
                           bookingCount: bookingsByProperty[property.id] ?? 0,
                           overriddenFieldCount: channelSettings
                               .overriddenFieldCount(property.id),

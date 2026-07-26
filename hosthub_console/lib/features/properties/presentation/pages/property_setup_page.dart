@@ -138,25 +138,20 @@ class _ConnectLodgifyContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          Icons.link_off,
-          size: 48,
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
+        Icon(Icons.link_off, size: 48, color: context.colors.onSurfaceVariant),
         const SizedBox(height: 16),
         Text(
           context.s.propertySetupConnectTitle,
-          style: theme.textTheme.titleMedium,
+          style: context.theme.textTheme.titleMedium,
         ),
         const SizedBox(height: 8),
         Text(
           context.s.propertySetupConnectBody,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+          style: context.theme.textTheme.bodyMedium?.copyWith(
+            color: context.colors.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 16),
@@ -181,7 +176,6 @@ class _SyncFromLodgifyContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return BlocBuilder<UserSettingsCubit, UserSettingsState>(
       builder: (context, userSettingsState) {
         final isSyncing =
@@ -189,21 +183,17 @@ class _SyncFromLodgifyContent extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              Icons.sync,
-              size: 48,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+            Icon(Icons.sync, size: 48, color: context.colors.onSurfaceVariant),
             const SizedBox(height: 16),
             Text(
               context.s.propertySetupSyncTitle,
-              style: theme.textTheme.titleMedium,
+              style: context.theme.textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             Text(
               context.s.propertySetupSyncBody,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+              style: context.theme.textTheme.bodyMedium?.copyWith(
+                color: context.colors.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 16),
@@ -234,7 +224,6 @@ class _OrDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 24),
       child: Row(
@@ -244,8 +233,8 @@ class _OrDivider extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               context.s.propertySetupOrDivider,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+              style: context.theme.textTheme.bodyMedium?.copyWith(
+                color: context.colors.onSurfaceVariant,
               ),
             ),
           ),
@@ -301,7 +290,6 @@ class _ManualCreateContentState extends State<_ManualCreateContent> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final canCreate = _nameController.text.trim().isNotEmpty && !_isCreating;
 
     return Column(
@@ -310,18 +298,18 @@ class _ManualCreateContentState extends State<_ManualCreateContent> {
         Icon(
           Icons.add_home_outlined,
           size: 48,
-          color: theme.colorScheme.onSurfaceVariant,
+          color: context.colors.onSurfaceVariant,
         ),
         const SizedBox(height: 16),
         Text(
           context.s.propertySetupManualTitle,
-          style: theme.textTheme.titleMedium,
+          style: context.theme.textTheme.titleMedium,
         ),
         const SizedBox(height: 8),
         Text(
           context.s.propertySetupManualBody,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+          style: context.theme.textTheme.bodyMedium?.copyWith(
+            color: context.colors.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 16),
@@ -374,7 +362,6 @@ Future<bool> _showMissingPropertiesDialog(
       .where((value) => value.isNotEmpty)
       .toSet();
   final hasMissing = missing.isNotEmpty;
-  final theme = Theme.of(context);
   final styledTheme = StyledWidgetsTheme.of(context);
   final subtitle = hasMissing ? null : context.s.lodgifyNoNewPropertiesFound;
 
@@ -397,15 +384,15 @@ Future<bool> _showMissingPropertiesDialog(
                       children: [
                         Text(
                           context.s.lodgifyMissingPropertiesTitle,
-                          style: theme.textTheme.titleMedium,
+                          style: context.theme.textTheme.titleMedium,
                           textAlign: TextAlign.center,
                         ),
                         if (subtitle != null) ...[
                           const SizedBox(height: 6),
                           Text(
                             subtitle,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
+                            style: context.theme.textTheme.bodySmall?.copyWith(
+                              color: context.colors.onSurfaceVariant,
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -437,7 +424,7 @@ Future<bool> _showMissingPropertiesDialog(
                                 ? null
                                 : Icon(
                                     Icons.check_circle,
-                                    color: theme.colorScheme.primary,
+                                    color: context.colors.primary,
                                   ),
                             centerContent: false,
                             minHeight: 44,
@@ -475,10 +462,11 @@ Future<bool> _showMissingPropertiesDialog(
                                               .s
                                               .lodgifyMissingPropertiesAddAction
                                         : context.s.lodgifySyncLabel,
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: styledTheme.buttons.labelColor,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                    style: context.theme.textTheme.bodyMedium
+                                        ?.copyWith(
+                                          color: styledTheme.buttons.labelColor,
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                     maxLines: 1,
                                   ),
                                 ),

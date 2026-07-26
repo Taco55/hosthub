@@ -481,7 +481,6 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     required ReservationsState state,
     required List<Reservation> entries,
   }) {
-    final l10n = context.s;
     final selectedPropertyCount = _selectionFor(state).selectedCount;
 
     if (_viewMode == _ReservationsViewMode.list) {
@@ -492,7 +491,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
             entries,
             selectedPropertyCount: selectedPropertyCount,
           ),
-          l10n: l10n,
+          l10n: context.s,
         ),
       );
     }
@@ -506,7 +505,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
             timelineBookings,
             selectedPropertyCount: selectedPropertyCount,
           ),
-          l10n: l10n,
+          l10n: context.s,
         ),
       );
     }
@@ -522,7 +521,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
             timelineBookings,
             selectedPropertyCount: selectedPropertyCount,
           ),
-          l10n: l10n,
+          l10n: context.s,
         ),
       ),
     );
@@ -618,12 +617,10 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     required List<PropertyFilterOption> properties,
     required PropertySelection selection,
   }) {
-    final l10n = context.s;
-
     if (!hasChannelProperties) {
       return Center(
         child: Text(
-          l10n.reservationsNoLodgifyId,
+          context.s.reservationsNoLodgifyId,
           style: Theme.of(context).textTheme.bodyMedium,
           textAlign: TextAlign.center,
         ),
@@ -710,18 +707,19 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                 _dateOnly(e.endDate!).isAtSameMomentAs(today);
             final baseColor = BookingSourceIcon.barColor(e.source);
             final guestInfo = guestBreakdown(e, unknownLabel: '');
-            final name = e.guestName ?? l10n.revenueUnknownBooker;
+            final name = e.guestName ?? context.s.revenueUnknownBooker;
             final label = guestInfo.isNotEmpty ? '$name ($guestInfo)' : name;
             final nights = stayNights(e.startDate, e.endDate);
             final tooltipParts = <String>[
               name,
               '${dateFormatter.format(e.startDate!.toLocal())} → ${dateFormatter.format(e.endDate!.toLocal())}',
-              if (nights != null) l10n.reservationsBarNights(nights),
-              if (guestInfo.isNotEmpty) l10n.reservationsBarGuests(guestInfo),
+              if (nights != null) context.s.reservationsBarNights(nights),
+              if (guestInfo.isNotEmpty)
+                context.s.reservationsBarGuests(guestInfo),
               if (e.source != null && e.source!.isNotEmpty)
-                l10n.reservationsBarSource(e.source!),
+                context.s.reservationsBarSource(e.source!),
               if (e.status != null && e.status!.isNotEmpty)
-                l10n.reservationsBarStatus(e.status!),
+                context.s.reservationsBarStatus(e.status!),
             ];
             return TimelineCalendarEntry(
               start: e.startDate!,
@@ -1098,11 +1096,10 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     required DateFormat dateFormatter,
   }) {
     final newCount = _markedAsNew.length;
-    final l10n = context.s;
     String labeledWithNew(String label) {
       return switch (newCount) {
         0 => label,
-        _ => '$label (${l10n.reservationNewCount(newCount)})',
+        _ => '$label (${context.s.reservationNewCount(newCount)})',
       };
     }
 
@@ -1115,7 +1112,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
       showDividers: true,
       anchorBuilder: (anchorContext, isOpen, toggle) => StyledButton(
         variant: StyledButtonVariant.secondary,
-        title: l10n.reservationsExportLabel,
+        title: context.s.reservationsExportLabel,
         showLeftIcon: true,
         leftIconData: Icons.file_upload_outlined,
         iconSize: 16,
@@ -1218,10 +1215,9 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     DateFormat dateFormatter, {
     List<String>? columns,
   }) {
-    final l10n = S.of(context);
     final enabledColumns = columns ?? _ExportColumn.defaults;
-    final yesLabel = l10n.yes;
-    final exportedLabel = l10n.reservationExportedLabel;
+    final yesLabel = context.s.yes;
+    final exportedLabel = context.s.reservationExportedLabel;
 
     final now = DateTime.now();
     final exportDate = DateFormat('yyyy-MM-dd').format(now);
@@ -1257,7 +1253,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     // Header row
     buf.write('<tr>');
     for (final key in enabledColumns) {
-      buf.write('<th>${_ExportColumn.label(key, l10n: l10n)}</th>');
+      buf.write('<th>${_ExportColumn.label(key, l10n: context.s)}</th>');
     }
     buf.writeln('</tr>');
 
@@ -1274,12 +1270,12 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
             ? dateFormatter.format(e.endDate!.toLocal())
             : '',
         _ExportColumn.guestName: _escapeHtml(
-          guestDisplayName(e, fallback: l10n.revenueUnknownBooker),
+          guestDisplayName(e, fallback: context.s.revenueUnknownBooker),
         ),
         _ExportColumn.guests: _escapeHtml(guestBreakdown(e, unknownLabel: '')),
         _ExportColumn.babyBed: _formatBabyExportValue(
           e.infantCount,
-          l10n: l10n,
+          l10n: context.s,
         ),
         _ExportColumn.nights:
             stayNights(e.startDate, e.endDate)?.toString() ?? '',
@@ -1318,14 +1314,13 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     List<Reservation> entries,
     DateFormat dateFormatter,
   ) {
-    final l10n = S.of(context);
     final buf = StringBuffer();
     buf.writeln(
-      '${l10n.reservationListColumnNew}\t${l10n.reservationArrival}\t${l10n.reservationDeparture}\t${l10n.reservationSectionBooker}\t${l10n.reservationSectionGuests}\t${l10n.reservationBabyBed}\t${l10n.reservationCheckIn}\t${l10n.reservationCheckOut}\t${l10n.reservationNotes}',
+      '${context.s.reservationListColumnNew}\t${context.s.reservationArrival}\t${context.s.reservationDeparture}\t${context.s.reservationSectionBooker}\t${context.s.reservationSectionGuests}\t${context.s.reservationBabyBed}\t${context.s.reservationCheckIn}\t${context.s.reservationCheckOut}\t${context.s.reservationNotes}',
     );
     for (final e in entries) {
       final id = _reservationKey(e);
-      final isNew = _markedAsNew.contains(id) ? l10n.yes : '';
+      final isNew = _markedAsNew.contains(id) ? context.s.yes : '';
       final arrival = e.startDate != null
           ? dateFormatter.format(e.startDate!.toLocal())
           : '';
@@ -1334,10 +1329,10 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
           : '';
       final guestName = guestDisplayName(
         e,
-        fallback: l10n.revenueUnknownBooker,
+        fallback: context.s.revenueUnknownBooker,
       );
       final guests = guestBreakdown(e, unknownLabel: '');
-      final babyBed = _formatBabyExportValue(e.infantCount, l10n: l10n);
+      final babyBed = _formatBabyExportValue(e.infantCount, l10n: context.s);
       final notes = (e.notes ?? '').replaceAll(RegExp(r'[\t\r\n]+'), ' ');
       buf.writeln(
         '$isNew\t$arrival\t$departure\t$guestName\t$guests\t$babyBed\t$arrival\t$departure\t$notes',
@@ -1365,18 +1360,17 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     String? exportPdfOrientation,
     List<String>? columns,
   }) async {
-    final l10n = S.of(context);
     final pdfOrientation = _normalizePdfOrientation(exportPdfOrientation);
     final enabledColumns = columns ?? _ExportColumn.defaults;
-    final yesLabel = l10n.yes;
-    final exportedLabel = l10n.reservationExportedLabel;
-    final titleLabel = l10n.reservations;
+    final yesLabel = context.s.yes;
+    final exportedLabel = context.s.reservationExportedLabel;
+    final titleLabel = context.s.reservations;
 
     final now = DateTime.now();
     final exportDate = DateFormat('yyyy-MM-dd').format(now);
     final exportDateDisplay = DateFormat('d MMM yyyy, HH:mm').format(now);
     final headers = enabledColumns
-        .map((key) => _ExportColumn.label(key, l10n: l10n))
+        .map((key) => _ExportColumn.label(key, l10n: context.s))
         .toList();
     final rowData = entries.map((entry) {
       final reservationId = _reservationKey(entry);
@@ -1391,12 +1385,12 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
             : '',
         _ExportColumn.guestName: guestDisplayName(
           entry,
-          fallback: l10n.revenueUnknownBooker,
+          fallback: context.s.revenueUnknownBooker,
         ),
         _ExportColumn.guests: guestBreakdown(entry, unknownLabel: ''),
         _ExportColumn.babyBed: _formatBabyExportValue(
           entry.infantCount,
-          l10n: l10n,
+          l10n: context.s,
         ),
         _ExportColumn.nights:
             stayNights(entry.startDate, entry.endDate)?.toString() ?? '',
@@ -1693,7 +1687,6 @@ class _ReservationsHeader extends StatelessWidget {
 
   Widget _buildListColumnsButton(BuildContext context) {
     final hasActiveColumnToggles = hiddenListColumns.isNotEmpty;
-    final l10n = context.s;
 
     return StyledToolbarButton.menu<String>(
       iconData: Icons.view_column_outlined,
@@ -1704,7 +1697,7 @@ class _ReservationsHeader extends StatelessWidget {
         for (final key in _ReservationListColumn.all)
           _checkEntry(
             key,
-            _ReservationListColumn.label(key, l10n: l10n),
+            _ReservationListColumn.label(key, l10n: context.s),
             !hiddenListColumns.contains(key),
             enabled:
                 !hiddenListColumns.contains(key) ||
@@ -1824,7 +1817,6 @@ class _ContinuousMonthNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final monthLabel = DateFormat('MMMM yyyy', locale).format(focusedMonth);
     final dateFormatter = DateFormat('d MMM yyyy', locale);
     final monthStart = DateTime(focusedMonth.year, focusedMonth.month, 1);
@@ -1842,12 +1834,12 @@ class _ContinuousMonthNavigation extends StatelessWidget {
           children: [
             Text(
               monthLabel,
-              style: theme.textTheme.titleMedium?.copyWith(
+              style: context.theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
             SizedBox(height: context.styledSpacing.xs),
-            Text(rangeLabel, style: theme.textTheme.bodySmall),
+            Text(rangeLabel, style: context.theme.textTheme.bodySmall),
           ],
         ),
         SizedBox(width: context.styledSpacing.md),
@@ -1895,7 +1887,6 @@ class _ReservationListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = S.of(context);
     final propertyById = {
       for (final property in properties) property.id: property,
     };
@@ -1920,56 +1911,56 @@ class _ReservationListView extends StatelessWidget {
           width: 28,
         ),
         _ReservationListColumn.property => StyledDataColumn(
-          columnHeaderLabel: l10n.portfolioColumnProperty,
+          columnHeaderLabel: context.s.portfolioColumnProperty,
           flex: 1,
           minWidth: 132,
         ),
         _ReservationListColumn.guestName => StyledDataColumn(
-          columnHeaderLabel: l10n.reservationSectionBooker,
+          columnHeaderLabel: context.s.reservationSectionBooker,
           flex: 2,
           minWidth: 128,
         ),
         _ReservationListColumn.checkIn => StyledDataColumn(
-          columnHeaderLabel: l10n.reservationCheckIn,
+          columnHeaderLabel: context.s.reservationCheckIn,
           flex: 1,
           minWidth: 96,
         ),
         _ReservationListColumn.checkOut => StyledDataColumn(
-          columnHeaderLabel: l10n.reservationCheckOut,
+          columnHeaderLabel: context.s.reservationCheckOut,
           flex: 1,
           minWidth: 96,
         ),
         _ReservationListColumn.nights => StyledDataColumn(
-          columnHeaderLabel: l10n.reservationNights,
+          columnHeaderLabel: context.s.reservationNights,
           flex: 0,
           width: 66,
           alignment: Alignment.centerLeft,
         ),
         _ReservationListColumn.guests => StyledDataColumn(
-          columnHeaderLabel: l10n.reservationsColumnGuests,
+          columnHeaderLabel: context.s.reservationsColumnGuests,
           flex: 0,
           width: 66,
           alignment: Alignment.centerLeft,
         ),
         _ReservationListColumn.babyBed => StyledDataColumn(
-          columnHeaderLabel: l10n.reservationInfants,
+          columnHeaderLabel: context.s.reservationInfants,
           flex: 0,
           width: 52,
           alignment: Alignment.centerLeft,
         ),
         _ReservationListColumn.status => StyledDataColumn(
-          columnHeaderLabel: l10n.reservationStatus,
+          columnHeaderLabel: context.s.reservationStatus,
           flex: 1,
           // The chip carries 9px of padding either side of the label.
           minWidth: 98,
         ),
         _ReservationListColumn.booked => StyledDataColumn(
-          columnHeaderLabel: l10n.reservationListColumnBooked,
+          columnHeaderLabel: context.s.reservationListColumnBooked,
           flex: 2,
           minWidth: 132,
         ),
         _ReservationListColumn.isNew => StyledDataColumn(
-          columnHeaderLabel: l10n.reservationListColumnNew,
+          columnHeaderLabel: context.s.reservationListColumnNew,
           flex: 0,
           width: 44,
           alignment: Alignment.center,
@@ -2045,7 +2036,7 @@ class _ReservationListView extends StatelessWidget {
                       _ReservationListColumn.guestName => textCell(
                         guestDisplayName(
                           entry,
-                          fallback: l10n.revenueUnknownBooker,
+                          fallback: context.s.revenueUnknownBooker,
                         ),
                         fontWeight: FontWeight.w600,
                       ),
@@ -2067,8 +2058,8 @@ class _ReservationListView extends StatelessWidget {
                         entry.infantCount == null
                             ? null
                             : entry.infantCount! > 0
-                            ? l10n.yes
-                            : l10n.no,
+                            ? context.s.yes
+                            : context.s.no,
                         textAlign: TextAlign.left,
                       ),
                       _ReservationListColumn.status => Align(
@@ -2426,8 +2417,6 @@ class _ExportSettingsDialogContentState
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -2481,8 +2470,8 @@ class _ExportSettingsDialogContentState
               ),
               title: Text(
                 _ExportColumn.label(key, l10n: S.of(context)),
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: enabled ? null : theme.colorScheme.onSurfaceVariant,
+                style: context.theme.textTheme.bodyMedium?.copyWith(
+                  color: enabled ? null : context.colors.onSurfaceVariant,
                 ),
               ),
             );

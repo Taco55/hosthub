@@ -40,7 +40,6 @@ class StatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final (Color background, Color foreground) = switch (tone) {
       StatusPillTone.positive => (
         HosthubDiploraV1Palette.success.withValues(alpha: 0.14),
@@ -55,16 +54,14 @@ class StatusPill extends StatelessWidget {
         HosthubDiploraV1Palette.error,
       ),
       StatusPillTone.neutral => (
-        theme.colorScheme.surfaceContainerHighest,
-        theme.colorScheme.onSurfaceVariant,
+        context.colors.surfaceContainerHighest,
+        context.colors.onSurfaceVariant,
       ),
     };
 
     return StyledChip(
       label: label,
-      leading: icon == null
-          ? null
-          : Icon(icon, size: 11, color: foreground),
+      leading: icon == null ? null : Icon(icon, size: 11, color: foreground),
       backgroundColor: background,
       labelColor: foreground,
       borderColor: Colors.transparent,

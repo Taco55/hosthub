@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:styled_widgets/styled_widgets.dart';
+import 'package:hosthub_console/core/widgets/foundation/utils/utils.dart';
 
 // One widget for every place a property has to be recognised at a glance — the
 // sidebar tree, the properties list, the filter menu, a table's property column.
@@ -38,13 +39,12 @@ class PropertyChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     // On the rail the chip sits on the menu's tint, so it takes the menu's own
     // foreground; anywhere else it takes the page's.
     final scope = StyledSideMenuScope.maybeOf(context);
-    final onSurface = scope?.foregroundColor ?? scheme.primary;
+    final onSurface = scope?.foregroundColor ?? context.colors.primary;
     final background = scope == null
-        ? scheme.primaryContainer
+        ? context.colors.primaryContainer
         : onSurface.withValues(alpha: 0.10);
 
     return Container(
@@ -52,14 +52,14 @@ class PropertyChip extends StatelessWidget {
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: filled ? scheme.primary : background,
+        color: filled ? context.colors.primary : background,
         borderRadius: BorderRadius.circular(borderRadius),
       ),
       child: Text(
         abbreviation,
         maxLines: 1,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: filled ? scheme.onPrimary : onSurface,
+          color: filled ? context.colors.onPrimary : onSurface,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.3,
         ),

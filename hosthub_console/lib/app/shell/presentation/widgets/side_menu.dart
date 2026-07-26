@@ -45,7 +45,6 @@ class SideMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
     final authState = context.watch<AuthBloc>().state;
     final profile = context.watch<ProfileCubit>().state.profile;
     final isAdmin = profile?.isAdmin ?? false;
@@ -70,18 +69,18 @@ class SideMenu extends StatelessWidget {
         );
 
         return StyledSideMenu(
-          // §7's rail geometry. The icon box is fixed and the side inset is the
-          // nav's own padding, which together put every icon centre at
-          // `kSidebarSideInset + kSidebarIconBox / 2` = 34px from the rail's
+          // §7'context.s rail geometry. The icon box is fixed and the side inset is the
+          // nav'context.s own padding, which together put every icon centre at
+          // `kSidebarSideInset + kSidebarIconBox / 2` = 34px from the rail'context.s
           // left edge — in both states, because neither value changes with the
           // width.
           iconBox: kSidebarIconBox,
           sideInset: kSidebarSideInset,
           tileHeight: kSidebarTopLevelRowHeight,
           branchTileHeight: kSidebarPropertyRowHeight,
-          // A one-property account renders its property's sections flat at the
+          // A one-property account renders its property'context.s sections flat at the
           // top level (§5), so they take the top-level icon box and no indent —
-          // still the child row's own height and radius.
+          // still the child row'context.s own height and radius.
           childTileHeight: isSingleProperty
               ? kSidebarFlatSubItemRowHeight
               : kSidebarSubItemRowHeight,
@@ -92,15 +91,15 @@ class SideMenu extends StatelessWidget {
           headerHeight: kSidebarHeaderHeight,
           onModeChanged: (mode) =>
               context.read<SidebarModeCubit>().setMode(mode),
-          pinTooltip: s.sidebarPinTooltip,
-          collapseTooltip: s.sidebarCollapseTooltip,
-          expandTooltip: s.sidebarExpandTooltip,
+          pinTooltip: context.s.sidebarPinTooltip,
+          collapseTooltip: context.s.sidebarCollapseTooltip,
+          expandTooltip: context.s.sidebarExpandTooltip,
           showSwitchersWhenCompact: true,
           showProfileWhenCompact: true,
           showFooterWhenCompact: true,
           header: const _MenuLogo(),
           groups: buildConsoleNavGroups(
-            s: s,
+            s: context.s,
             route: route,
             properties: consoleNavProperties(
               properties: properties,
@@ -120,13 +119,13 @@ class SideMenu extends StatelessWidget {
               if (isAdmin)
                 StyledSideMenuTile(
                   icon: Icons.admin_panel_settings_outlined,
-                  label: s.serverSettingsTitle,
+                  label: context.s.serverSettingsTitle,
                   selected: selectedItem == MenuItem.adminOptions,
                   onTap: () => _select(context, MenuItem.adminOptions),
                 ),
               StyledSideMenuTile(
                 icon: Icons.logout,
-                label: s.logoutLabel,
+                label: context.s.logoutLabel,
                 onTap: authState.status == AuthStatus.authenticated
                     ? () =>
                           context.read<AuthBloc>().add(const AuthEvent.logout())
@@ -265,7 +264,6 @@ class _MenuLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final scope = StyledSideMenuScope.maybeOf(context);
     final expanded = scope?.expanded ?? true;
 
@@ -273,13 +271,13 @@ class _MenuLogo extends StatelessWidget {
       width: 34,
       height: 34,
       decoration: BoxDecoration(
-        color: theme.colorScheme.primary,
+        color: context.colors.primary,
         borderRadius: BorderRadius.circular(9),
       ),
       child: Icon(
         Icons.holiday_village_outlined,
         size: 20,
-        color: theme.colorScheme.onPrimary,
+        color: context.colors.onPrimary,
       ),
     );
 
@@ -312,8 +310,8 @@ class _MenuLogo extends StatelessWidget {
             context.s.appTitle,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.titleLarge?.copyWith(
-              color: theme.colorScheme.onPrimaryContainer,
+            style: context.theme.textTheme.titleLarge?.copyWith(
+              color: context.colors.onPrimaryContainer,
               fontWeight: FontWeight.w700,
             ),
           ),
