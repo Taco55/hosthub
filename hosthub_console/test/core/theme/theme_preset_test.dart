@@ -78,7 +78,10 @@ void main() {
       expect(dropdowns.menuCheckedColor, HosthubDiploraV1Palette.success);
       expect(dropdowns.menuCheckedColor, isNot(prototypeGreen));
       expect(dropdowns.menuUncheckedColor, HosthubDiploraV1Palette.softGrey);
-      expect(dropdowns.menuCheckDisabledColor, HosthubDiploraV1Palette.darkGrey);
+      expect(
+        dropdowns.menuCheckDisabledColor,
+        HosthubDiploraV1Palette.darkGrey,
+      );
     });
 
     test('none of the old hardcoded check colours survive', () {
@@ -153,27 +156,39 @@ void main() {
       expect(toolbar.buttonWidth, 40);
       expect(toolbar.buttonHeight, 36);
       expect(toolbar.iconSize, 20);
-      expect(
-        toolbar.borderRadius,
-        const BorderRadius.all(Radius.circular(10)),
-      );
+      expect(toolbar.borderRadius, const BorderRadius.all(Radius.circular(10)));
       expect(toolbar.shape, StyledControlShape.customRadius);
     });
 
     test('selected means "a filter is active": ice + primary', () {
       final toolbar = styledFor(Brightness.light).toolbarButton;
 
-      expect(
-        toolbar.selectedBackgroundColor,
-        HosthubDiploraV1Palette.ice,
-      );
+      expect(toolbar.selectedBackgroundColor, HosthubDiploraV1Palette.ice);
       expect(toolbar.selectedIconColor, HosthubDiploraV1Palette.primary);
+    });
+  });
+
+  group('timeline calendar', () {
+    test('the day-cell hairline survives the dark surface', () {
+      // Black at 8% reads as the design's grid line over a white cell and
+      // vanishes over a dark one, so the dark theme carries its own outline.
+      // Everything else in the extension stays brightness-independent.
+      final light = themeFor(Brightness.light).timelineCalendar;
+      final dark = themeFor(Brightness.dark).timelineCalendar;
+
+      expect(light.dayCellBorderColor, const Color(0x14000000));
+      expect(dark.dayCellBorderColor, HosthubDiploraV1Palette.outlineDark);
+      expect(dark.comfortable, light.comfortable);
+      expect(dark.pastEntryBlendColor, light.pastEntryBlendColor);
     });
   });
 
   group('stat tiles', () {
     test('sit on the white card surface', () {
-      expect(styledFor(Brightness.light).statTiles.backgroundColor, Colors.white);
+      expect(
+        styledFor(Brightness.light).statTiles.backgroundColor,
+        Colors.white,
+      );
       expect(
         styledFor(Brightness.dark).statTiles.backgroundColor,
         HosthubDiploraV1Palette.surfaceContainerDark,
@@ -197,17 +212,21 @@ void main() {
   });
 
   group('surface roles', () {
-    test('light surface is white — ice is primaryContainer, not the surface', () {
-      final light = themeFor(Brightness.light).colorScheme;
+    test(
+      'light surface is white — ice is primaryContainer, not the surface',
+      () {
+        final light = themeFor(Brightness.light).colorScheme;
 
-      expect(light.surface, Colors.white);
-      expect(light.primaryContainer, HosthubDiploraV1Palette.ice);
-      expect(
-        light.surface,
-        isNot(HosthubDiploraV1Palette.ice),
-        reason: 'anything falling back to surface would inherit the sidebar tint',
-      );
-    });
+        expect(light.surface, Colors.white);
+        expect(light.primaryContainer, HosthubDiploraV1Palette.ice);
+        expect(
+          light.surface,
+          isNot(HosthubDiploraV1Palette.ice),
+          reason:
+              'anything falling back to surface would inherit the sidebar tint',
+        );
+      },
+    );
 
     test('table rows and stat tiles therefore land on white', () {
       final tables = styledFor(Brightness.light).tables;
@@ -240,16 +259,18 @@ void main() {
       expect(styledFor(Brightness.light).webPageScaffold.contentMaxWidth, 1040);
     });
 
-    test('the page title is the design 19/700 crumb-and-title, not a headline',
-        () {
-      final header = styledFor(Brightness.light).webPageScaffold;
+    test(
+      'the page title is the design 19/700 crumb-and-title, not a headline',
+      () {
+        final header = styledFor(Brightness.light).webPageScaffold;
 
-      // `.top h1{font-size:19px;font-weight:700;letter-spacing:-.3px}` over
-      // `.crumb{font-size:12px}`. Stated in the preset so pages pass strings.
-      expect(header.titleTextStyle?.fontSize, 19);
-      expect(header.titleTextStyle?.letterSpacing, -0.3);
-      expect(header.overlineTextStyle?.fontSize, 12);
-    });
+        // `.top h1{font-size:19px;font-weight:700;letter-spacing:-.3px}` over
+        // `.crumb{font-size:12px}`. Stated in the preset so pages pass strings.
+        expect(header.titleTextStyle?.fontSize, 19);
+        expect(header.titleTextStyle?.letterSpacing, -0.3);
+        expect(header.overlineTextStyle?.fontSize, 12);
+      },
+    );
 
     test('the title band closes with the design hairline', () {
       // `.top{border-bottom:1px solid var(--jo-border)}` — the same grey as
@@ -277,7 +298,10 @@ void main() {
     test('and stay readable in dark mode', () {
       final toolbar = styledFor(Brightness.dark).toolbarButton;
 
-      expect(toolbar.backgroundColor, HosthubDiploraV1Palette.surfaceContainerDark);
+      expect(
+        toolbar.backgroundColor,
+        HosthubDiploraV1Palette.surfaceContainerDark,
+      );
       expect(toolbar.iconColor, HosthubDiploraV1Palette.onSurfaceDark);
     });
   });
@@ -418,39 +442,60 @@ void main() {
     });
   });
 
-  group('decision: the outlined button is a hairline, not a second blue CTA', () {
-    test('light: design .btn-line — white, card-border hairline, slate label', () {
-      final buttons = styledFor(Brightness.light).buttons;
+  group(
+    'decision: the outlined button is a hairline, not a second blue CTA',
+    () {
+      test(
+        'light: design .btn-line — white, card-border hairline, slate label',
+        () {
+          final buttons = styledFor(Brightness.light).buttons;
 
-      expect(buttons.secondaryBackgroundColor, Colors.white);
-      expect(buttons.secondaryBorderColor, HosthubDiploraV1Palette.softGrey);
-      expect(
-        buttons.secondaryLabelColor,
-        HosthubDiploraV1Palette.outlineButtonLabel,
+          expect(buttons.secondaryBackgroundColor, Colors.white);
+          expect(
+            buttons.secondaryBorderColor,
+            HosthubDiploraV1Palette.softGrey,
+          );
+          expect(
+            buttons.secondaryLabelColor,
+            HosthubDiploraV1Palette.outlineButtonLabel,
+          );
+        },
       );
-    });
 
-    test('the outlined label is never `primary` — that is the filled button', () {
-      for (final brightness in Brightness.values) {
-        expect(
-          styledFor(brightness).buttons.secondaryLabelColor,
-          isNot(themeFor(brightness).colorScheme.primary),
-          reason: 'outlined button label in $brightness',
-        );
-      }
-    });
-
-    test('dark: the same button on the dark surfaces, not white-on-white', () {
-      final buttons = styledFor(Brightness.dark).buttons;
-
-      expect(
-        buttons.secondaryBackgroundColor,
-        HosthubDiploraV1Palette.surfaceContainerDark,
+      test(
+        'the outlined label is never `primary` — that is the filled button',
+        () {
+          for (final brightness in Brightness.values) {
+            expect(
+              styledFor(brightness).buttons.secondaryLabelColor,
+              isNot(themeFor(brightness).colorScheme.primary),
+              reason: 'outlined button label in $brightness',
+            );
+          }
+        },
       );
-      expect(buttons.secondaryBorderColor, HosthubDiploraV1Palette.outlineDark);
-      expect(buttons.secondaryLabelColor, HosthubDiploraV1Palette.onSurfaceDark);
-    });
-  });
+
+      test(
+        'dark: the same button on the dark surfaces, not white-on-white',
+        () {
+          final buttons = styledFor(Brightness.dark).buttons;
+
+          expect(
+            buttons.secondaryBackgroundColor,
+            HosthubDiploraV1Palette.surfaceContainerDark,
+          );
+          expect(
+            buttons.secondaryBorderColor,
+            HosthubDiploraV1Palette.outlineDark,
+          );
+          expect(
+            buttons.secondaryLabelColor,
+            HosthubDiploraV1Palette.onSurfaceDark,
+          );
+        },
+      );
+    },
+  );
 }
 
 double _contrastOnWhite(Color color) {
@@ -465,8 +510,10 @@ class _ProbeExtension extends ThemeExtension<_ProbeExtension> {
   final int value;
 
   @override
-  _ProbeExtension copyWith({int? value}) => _ProbeExtension(value ?? this.value);
+  _ProbeExtension copyWith({int? value}) =>
+      _ProbeExtension(value ?? this.value);
 
   @override
-  _ProbeExtension lerp(ThemeExtension<_ProbeExtension>? other, double t) => this;
+  _ProbeExtension lerp(ThemeExtension<_ProbeExtension>? other, double t) =>
+      this;
 }

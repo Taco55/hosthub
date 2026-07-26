@@ -114,7 +114,12 @@ abstract final class HosthubThemePreset {
         // `TimelineCalendar` is app-local, so its density and past-booking
         // treatment have no `styled_widgets` preset group to live in. Reading
         // them from here is what keeps them out of `reservations_page.dart`.
-        TimelineCalendarTheme.standard,
+        if (brightness == Brightness.light)
+          TimelineCalendarTheme.standard
+        else
+          TimelineCalendarTheme.standard.copyWith(
+            dayCellBorderColor: HosthubDiploraV1Palette.outlineDark,
+          ),
       ],
     );
   }

@@ -107,6 +107,7 @@ class TimelineCalendarTheme extends ThemeExtension<TimelineCalendarTheme> {
     this.barRadius = 7,
     this.barPadding = const EdgeInsets.symmetric(horizontal: 7),
     this.barContentSpacing = 6,
+    this.dayCellBorderColor = const Color(0x14000000),
   });
 
   /// Roomy density: day labels on, 30px bars.
@@ -154,6 +155,14 @@ class TimelineCalendarTheme extends ThemeExtension<TimelineCalendarTheme> {
   /// Design `.cbar{gap:6px}` — gap between the channel logo and the label.
   final double barContentSpacing;
 
+  /// The hairline that separates two day cells.
+  ///
+  /// Brightness-dependent, unlike the rest of this extension: the light value is
+  /// black at 8%, which over the light cell surface reads as the design's grid
+  /// line but disappears entirely against a dark surface. The preset registers a
+  /// palette outline for the dark theme.
+  final Color dayCellBorderColor;
+
   /// The values the reservations page used before they had a home here.
   ///
   /// The greys are carried over exactly as they were rather than snapped to
@@ -196,6 +205,7 @@ class TimelineCalendarTheme extends ThemeExtension<TimelineCalendarTheme> {
     double? barRadius,
     EdgeInsets? barPadding,
     double? barContentSpacing,
+    Color? dayCellBorderColor,
   }) {
     return TimelineCalendarTheme(
       comfortable: comfortable ?? this.comfortable,
@@ -212,6 +222,7 @@ class TimelineCalendarTheme extends ThemeExtension<TimelineCalendarTheme> {
       barRadius: barRadius ?? this.barRadius,
       barPadding: barPadding ?? this.barPadding,
       barContentSpacing: barContentSpacing ?? this.barContentSpacing,
+      dayCellBorderColor: dayCellBorderColor ?? this.dayCellBorderColor,
     );
   }
 
@@ -271,6 +282,9 @@ class TimelineCalendarTheme extends ThemeExtension<TimelineCalendarTheme> {
         other.barContentSpacing,
         t,
       ),
+      dayCellBorderColor:
+          Color.lerp(dayCellBorderColor, other.dayCellBorderColor, t) ??
+          dayCellBorderColor,
     );
   }
 
@@ -290,7 +304,8 @@ class TimelineCalendarTheme extends ThemeExtension<TimelineCalendarTheme> {
           monthHeadingPadding == other.monthHeadingPadding &&
           barRadius == other.barRadius &&
           barPadding == other.barPadding &&
-          barContentSpacing == other.barContentSpacing;
+          barContentSpacing == other.barContentSpacing &&
+          dayCellBorderColor == other.dayCellBorderColor;
 
   @override
   int get hashCode => Object.hash(
@@ -306,6 +321,7 @@ class TimelineCalendarTheme extends ThemeExtension<TimelineCalendarTheme> {
     barRadius,
     barPadding,
     barContentSpacing,
+    dayCellBorderColor,
   );
 }
 
