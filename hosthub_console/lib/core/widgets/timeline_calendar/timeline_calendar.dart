@@ -658,7 +658,7 @@ class _DayCell extends StatelessWidget {
       padding: const EdgeInsets.all(0.5),
       child: Container(
         decoration: BoxDecoration(
-          color: inMonth ? Colors.white : null,
+          color: inMonth ? context.colors.surface : null,
           border: Border.all(
             color: Colors.black.withValues(alpha: 0.08),
             width: 0.5,
