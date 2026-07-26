@@ -25,7 +25,7 @@ void initializeAppConfig({required bool enableLogging, bool? enableApiLogger}) {
 Future<SupabaseClient> initializeSupabase() async {
   await Supabase.initialize(
     url: AppConfig.current.supabaseUrl.toString(),
-    anonKey: AppConfig.current.supabaseAnonKey,
+    publishableKey: AppConfig.current.supabaseAnonKey,
     authOptions: const FlutterAuthClientOptions(autoRefreshToken: true),
   );
 

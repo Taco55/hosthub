@@ -23,7 +23,6 @@ import 'package:hosthub_console/features/portfolio/domain/portfolio_chrome.dart'
 import 'package:hosthub_console/features/portfolio/domain/portfolio_page.dart';
 import 'package:hosthub_console/features/portfolio/domain/portfolio_refs.dart';
 import 'package:hosthub_console/features/portfolio/presentation/widgets/property_filter_button.dart';
-import 'package:hosthub_console/features/user_settings/application/user_settings_cubit.dart';
 import 'package:hosthub_console/features/portfolio/domain/property_selection.dart';
 import 'package:hosthub_console/core/l10n/l10n.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';

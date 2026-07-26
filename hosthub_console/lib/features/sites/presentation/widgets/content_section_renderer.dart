@@ -521,7 +521,6 @@ class _ReorderableStringListEditorState
   }
 
   void _reorder(int oldIndex, int newIndex) {
-    if (newIndex > oldIndex) newIndex -= 1;
     final item = _rows.removeAt(oldIndex);
     _rows.insert(newIndex, item);
     setState(() {});
@@ -565,7 +564,7 @@ class _ReorderableStringListEditorState
               physics: const NeverScrollableScrollPhysics(),
               buildDefaultDragHandles: false,
               itemCount: _rows.length,
-              onReorder: _reorder,
+              onReorderItem: _reorder,
               itemBuilder: (context, index) {
                 final controller = _rows[index];
                 return Container(
