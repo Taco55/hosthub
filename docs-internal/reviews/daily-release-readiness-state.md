@@ -104,7 +104,7 @@ onder run 5 over een engine-mix geldt niet meer.
 |---|-------|-------|--------|----------|
 | M1 | Domein: `booking.propertyId`, één `effectiveChannelSettings(propertyId)`, sparse overrides | console | done | zie hieronder |
 | M2 | Aggregatie: gefilterde set, kosten per eigen property, bezetting ÷ `dagen × selectie` | console | done | zie M2-bewijs |
-| M3 | Routing + sidebar-boom (expansie uit de route, deeplinks) | console | todo | |
+| M3 | Routing + sidebar-boom (expansie uit de route, deeplinks) | console (+lib) | done | zie M3-bewijs |
 | M4 | Property-filter op Boekingen + Omzet (per pagina per user, nooit leeg) | console | todo | |
 | M5 | Single-property-collapse (§5) als configuratie, geen fork | console | todo | |
 | M6 | Railgeometrie (§7) incl. no-movement-eis | console (+lib) | todo | |
@@ -166,6 +166,49 @@ som van die twee alleen", "eenmaal resolven voor het scherm rekent 3% i.p.v. 3%+
 formule (en dus niet de +1-bug in de pagina), test nu de echte functie. 271 tests groen,
 `flutter analyze` op de 2 bekende infos.
 
+**M3-bewijs.** Lib eerst (`styled_widgets` 01b846f, 3205ccb, 97e8def): `StyledSideMenu` kan nu een
+boom zijn — `StyledNavGroup` (label, count-pil, label als eigen bestemming), `StyledNavEntry`
+sealed met `StyledNavItem` (+`badge`) en `StyledNavBranch` (leading-chip, children, caret),
+`StyledSideMenuTileDepth` voor de drie rijhoogtes, `StyledSideMenuGroupLabel` en
+`StyledSideMenuBadge`. **Expansie zit niet in de widget**: `StyledNavBranch.expanded` komt van de
+host, zodat het menu nooit uit de pas kan lopen met waar de app is. Compact: labels faden maar
+houden hun box, children blijven icoonrijen, count-pil houdt zijn hoogte en geeft zijn breedte op
+(weglaten maakte de labelrij korter dan de pil → alles eronder schoof omhoog; breedte houden liep
+buiten de rail). +15 lib-tests, 852 groen.
+
+Console:
+- `app/navigation/console_route.dart` — `ConsoleRoute.parse/path/clampedTo`. Dit is de plek waar
+  "expansie is afgeleid van de route" waar wordt: één `propertyId`-veld, dus er kan er nooit meer
+  dan één open zijn. `clampedTo` vangt §6: een verwijderde property valt terug op de eerste (zelfde
+  sectie), een leeg account op de lijst.
+- Routes: `/bookings`, `/revenue`, `/properties`, `/properties/:id`(→overview),
+  `/properties/:id/{overview,website,pricing,settings}`, `/account`. `/reservations` en `/settings`
+  redirecten, dus bestaande links en bookmarks landen nog. Homepad is nu `/bookings`.
+- `console_nav_tree.dart` — PORTFOLIO / PROPERTIES [n] / ACCOUNT, chip per property, badge op
+  Prijzen (afwezig bij nul), groepslabel linkt naar `/properties`. Property-switcher uit de rail
+  verwijderd: de boom *is* de scope-selector.
+- `property_abbreviation.dart` — 2-letter chip, per account samen toegekend zodat er nooit twee
+  hetzelfde zijn (het is een identifier in de UI).
+- `PropertySectionPage` — de vier property-schermen achter de route; geeft de id expliciet door aan
+  Overzicht en Prijzen (die lazen `currentProperty`), en doet de clamp.
+- `PropertiesPage` — de lijst uit §2 (chip, naam, boekingen, Volgt account / n eigen waarden,
+  chevron) + de introtekst uit §8. 17 nieuwe ARB-keys (nl+en), incl. de designcopy `Boekingen`,
+  `Overzicht`, `Site-instellingen`, `Accountinstellingen`.
+- Tests: `console_route_test.dart` (20), `nav_tree_test.dart` (11: deeplink `/properties/3/pricing`
+  rendert Geilo uitgeklapt met Prijzen actief, precies één uitgeklapt, Boekingen/Omzet blijven
+  zichtbaar, niets disabled, badge-count, distincte chips), `property_abbreviation_test.dart` (14).
+  Shell-harness uitgebreid (route + properties + ServerSettings), rail-goldens hergenereerd.
+  313 tests groen, analyze op de 2 bekende infos.
+
+**Afwijking, zelf besloten:** de route draagt de **numerieke property-id** (`/properties/3/pricing`),
+niet de slug uit het prototype (`/properties/geilo/pricing`). Een afgeleide slug breekt stil bij een
+naamswijziging — dan 404't een bewaarde link — en er is geen slug-kolom. De eis die eronder zit
+(elke property-sectie is deeplinkbaar en de rail leidt zichzelf eruit af) is volledig gehaald.
+
+**Nog open in M3-gebied:** Accountinstellingen wijst naar de bestaande accountpagina; de
+account-defaults-editor + propertylijst met override-counts uit §4b is eigen werk en zat niet in de
+zes stappen. Visuele verificatie in de app vraagt een ingelogde sessie (zelfde blokkade als E3).
+
 **Bewust nog niet in M2:** er is geen UI om de selectie te veranderen — dat is M4. Beide
 portfolio-schermen laden vandaag één property en de selectie dekt precies die, dus
 `selectedPropertyCount` is 1 en niets verschuift; zodra M4 meerdere `PropertyRef`s meegeeft
@@ -179,7 +222,9 @@ nul. Zodra Accountinstellingen (§4) die velden echt moet bewerken is een per-ac
 "geen UI" is.
 
 ## next_lens
-RUN 6 loopt: M1 + M2 done, wacht op review. Daarna M3 (routing + sidebar-boom).
+RUN 6 loopt: M1 + M2 + M3 done, wacht op review. Daarna M4 (property-filter op Boekingen + Omzet,
+persistent per pagina per user, nooit leeg) — dat is ook waar de loader meerdere `PropertyRef`s
+meekrijgt.
 RUN 5: E1 + E2 done. E3 (visuele verificatie) is user-gated — vraagt een ingelogde sessie.
 
 **Nog open uit §11, met reden:** de kostenbeheersing (hash-cache, één request per taal, locked

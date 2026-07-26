@@ -8,18 +8,26 @@ import 'package:hosthub_console/core/models/models.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:hosthub_console/features/auth/auth.dart';
 import 'package:hosthub_console/features/profile/profile.dart';
+import 'package:hosthub_console/app/navigation/console_route.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
+import 'package:hosthub_console/features/server_settings/application/server_settings_cubit.dart';
+import 'package:hosthub_console/features/server_settings/domain/admin_settings.dart';
 
 import '../../application/sidebar_mode_cubit.dart';
 import '../../navigation/navigation_guard_controller.dart';
 import '../dialogs/own_profile_dialog.dart';
+import 'console_nav_tree.dart';
 import 'menu_item.dart';
 
-/// The console navigation rail, composed from the shared [StyledSideMenu]:
-/// logo header with pin/collapse toggle, primary nav items (Website,
-/// Reservations, Revenue, Pricing), the Property switcher pinned at the bottom
-/// as a rail-aligned context tile, then the profile tile, logout and a version
-/// footer. The source-language selector lives on the Settings page.
+/// The console navigation rail, composed from the shared [StyledSideMenu]: logo
+/// header with pin/collapse toggle, then the navigation **tree** — Portfolio
+/// (Boekingen, Omzet), the account's properties each holding their four
+/// sections, and Account — then the profile tile, logout and a version footer.
+///
+/// The tree replaces the old flat nav plus property switcher: the sidebar is the
+/// scope selector now, so there is nowhere else to say which property you mean.
+/// Which property renders expanded is derived from the route
+/// ([ConsoleRoute.propertyId]), never stored, so a deep link arrives correct.
 ///
 /// Everything responsive comes from the enclosing [StyledSideMenuScaffold]
 /// through its [StyledSideMenuPlacement] — which width this copy renders at,
@@ -28,9 +36,12 @@ import 'menu_item.dart';
 /// only says what is in the menu and what tapping it does; the rail geometry
 /// lives in `HosthubThemePreset`.
 class SideMenu extends StatelessWidget {
-  const SideMenu({super.key, required this.selectedItem});
+  const SideMenu({super.key, required this.selectedItem, required this.route});
 
   final MenuItem selectedItem;
+
+  /// Where the console is. The tree's expansion and selection come from here.
+  final ConsoleRoute route;
 
   @override
   Widget build(BuildContext context) {
@@ -38,12 +49,27 @@ class SideMenu extends StatelessWidget {
     final authState = context.watch<AuthBloc>().state;
     final profile = context.watch<ProfileCubit>().state.profile;
     final isAdmin = profile?.isAdmin ?? false;
+    // Account-wide channel defaults, for the Prijzen override badges. Absent
+    // while the settings are still loading, which reads as "no overrides" —
+    // the badge appearing a moment later is better than a wrong count.
+    final adminSettings =
+        context.watch<ServerSettingsCubit>().state.settings ??
+        AdminSettings.defaults();
 
     return BlocBuilder<PropertyContextCubit, PropertyContextState>(
       builder: (context, propertyState) {
-        final hasProperties =
-            propertyState.status == PropertyContextStatus.loaded &&
-            propertyState.properties.isNotEmpty;
+        final properties = propertyState.properties;
+        final channelSettings = ChannelSettingsResolver(
+          accountDefaults: AccountChannelDefaults.fromCommissionPercentages(
+            booking: adminSettings.bookingChannelFeePercentage,
+            airbnb: adminSettings.airbnbChannelFeePercentage,
+            other: adminSettings.otherChannelFeePercentage,
+          ),
+          overridesByPropertyId: {
+            for (final property in properties)
+              property.id: property.channelOverrides,
+          },
+        );
 
         return StyledSideMenu(
           iconBox: kSidebarIconBox,
@@ -57,52 +83,15 @@ class SideMenu extends StatelessWidget {
           showProfileWhenCompact: true,
           showFooterWhenCompact: true,
           header: const _MenuLogo(),
-          items: [
-            if (hasProperties) ...[
-              StyledNavItem(
-                icon: Icons.home_work_outlined,
-                label: s.detailsLabel,
-                selected: selectedItem == MenuItem.propertyDetails,
-                onTap: () => _select(context, MenuItem.propertyDetails),
-              ),
-              StyledNavItem(
-                icon: Icons.language,
-                label: s.sitesTitle,
-                selected: selectedItem == MenuItem.sites,
-                onTap: () => _select(context, MenuItem.sites),
-              ),
-              StyledNavItem(
-                // Design nav glyphs: a month calendar for reservations and a
-                // bar chart for revenue. The bare `show_chart` line was the one
-                // icon in the rail that did not match its page.
-                icon: Icons.calendar_month_outlined,
-                label: s.reservations,
-                selected: selectedItem == MenuItem.reservations,
-                onTap: () => _select(context, MenuItem.reservations),
-              ),
-              StyledNavItem(
-                icon: Icons.bar_chart,
-                label: s.menuRevenue,
-                selected: selectedItem == MenuItem.revenue,
-                onTap: () => _select(context, MenuItem.revenue),
-              ),
-              StyledNavItem(
-                icon: Icons.sell_outlined,
-                label: s.menuPricing,
-                selected: selectedItem == MenuItem.pricing,
-                onTap: () => _select(context, MenuItem.pricing),
-              ),
-            ],
-            // Settings is a primary destination (design §5); personal
-            // preferences live in the profile modal, not here.
-            StyledNavItem(
-              icon: Icons.settings_outlined,
-              label: s.adminSettingsTitle,
-              selected: selectedItem == MenuItem.settings,
-              onTap: () => _select(context, MenuItem.settings),
+          groups: buildConsoleNavGroups(
+            s: s,
+            route: route,
+            properties: consoleNavProperties(
+              properties: properties,
+              channelSettings: channelSettings,
             ),
-          ],
-          switchers: const [_PropertySwitcher()],
+            onNavigate: (path) => _go(context, path),
+          ),
           profile: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -137,23 +126,26 @@ class SideMenu extends StatelessWidget {
 
   /// Navigation always passes the guard first, so a page with unsaved work can
   /// stop it. The row itself has already closed the rail overlay or the drawer.
-  Future<void> _select(BuildContext context, MenuItem item) async {
-    if (item == selectedItem) return;
+  Future<void> _go(BuildContext context, String path) async {
     final router = GoRouter.of(context);
+    if (router.state.uri.path == path) return;
     if (!await context.read<NavigationGuardController>().canNavigateAway()) {
       return;
     }
-    router.go(_pathOf(item));
+    router.go(path);
   }
+
+  Future<void> _select(BuildContext context, MenuItem item) =>
+      _go(context, _pathOf(item));
 
   String _pathOf(MenuItem item) => switch (item) {
     MenuItem.sites => '/sites',
-    MenuItem.reservations => '/reservations',
-    MenuItem.revenue => '/revenue',
-    MenuItem.settings => '/settings',
+    MenuItem.reservations => ConsoleRoute.bookingsPath,
+    MenuItem.revenue => ConsoleRoute.revenuePath,
+    MenuItem.settings => ConsoleRoute.accountPath,
     MenuItem.adminOptions => '/admin-options',
-    MenuItem.pricing => '/properties/pricing',
-    MenuItem.propertyDetails => '/properties/details',
+    MenuItem.pricing => ConsoleRoute.propertiesPath,
+    MenuItem.propertyDetails => ConsoleRoute.propertiesPath,
   };
 }
 
@@ -162,54 +154,6 @@ const double kSidebarIconBox = 48;
 
 /// Header block height, identical in both states (design: 72px).
 const double kSidebarHeaderHeight = 72;
-
-// ---------------------------------------------------------------------------
-// Property switcher — the shared ice dropdown field (design `.swf`): rail
-// icon + bordered field with the uppercase PROPERTY label above the current
-// property name. Icon-only on the compact rail.
-// ---------------------------------------------------------------------------
-
-class _PropertySwitcher extends StatelessWidget {
-  const _PropertySwitcher();
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<PropertyContextCubit, PropertyContextState>(
-      builder: (context, state) {
-        final isReady = state.status == PropertyContextStatus.loaded;
-        final enabled = isReady && state.properties.isNotEmpty;
-        final value = () {
-          if (state.status == PropertyContextStatus.loading) {
-            return context.s.propertySelectorLoading;
-          }
-          if (state.status == PropertyContextStatus.error) {
-            return context.s.propertySelectorUnavailable;
-          }
-          if (state.properties.isEmpty) {
-            return context.s.propertySelectorEmpty;
-          }
-          return state.currentProperty?.name ??
-              context.s.propertySelectorSelect;
-        }();
-
-        return StyledSideMenuSwitcher<PropertySummary>(
-          icon: Icons.apartment_outlined,
-          label: context.s.propertySwitcherLabel,
-          value: value,
-          enabled: enabled,
-          tooltip: context.s.propertySelectorSelect,
-          entries: [
-            for (final property in state.properties)
-              StyledMenuOverlayEntry(value: property, label: property.name),
-          ],
-          selectedValue: state.currentProperty,
-          onSelected: (property) =>
-              context.read<PropertyContextCubit>().selectProperty(property),
-        );
-      },
-    );
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Profile / logo / footer slots

@@ -27,10 +27,11 @@ void main() {
   testWidgets('the brand mark shares the nav rows\' axis', (tester) async {
     await pumpShell(tester, surface: const Size(1400, 900));
 
-    // One axis, so the eye reads a column rather than a staircase.
+    // One axis, so the eye reads a column rather than a staircase. Boekingen is
+    // the first nav row now that the menu is a tree.
     expect(
       tester.getCenter(find.byIcon(Icons.holiday_village_outlined)).dx,
-      tester.getCenter(find.byIcon(Icons.language)).dx,
+      tester.getCenter(find.byIcon(Icons.calendar_month_outlined)).dx,
     );
   });
 }

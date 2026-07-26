@@ -10,13 +10,22 @@ import 'package:hosthub_console/features/server_settings/domain/admin_settings.d
 import 'package:hosthub_console/core/widgets/widgets.dart';
 
 class PropertyPricingPage extends StatelessWidget {
-  const PropertyPricingPage({super.key});
+  const PropertyPricingPage({super.key, this.propertyId});
+
+  /// The property to edit, from the route. See [PropertyDetailsPage.propertyId].
+  final int? propertyId;
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<PropertyContextCubit, PropertyContextState>(
       builder: (context, state) {
-        final current = state.currentProperty;
+        // The route wins when it names one: the page must be about the property
+        // the sidebar shows expanded, not about whatever is selected.
+        final current = propertyId == null
+            ? state.currentProperty
+            : state.properties
+                  .where((property) => property.id == propertyId)
+                  .firstOrNull;
         if (state.status == PropertyContextStatus.loading ||
             state.status == PropertyContextStatus.initial) {
           return StyledWebPageScaffold(

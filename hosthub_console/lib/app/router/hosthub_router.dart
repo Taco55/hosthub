@@ -7,6 +7,7 @@ import 'package:auth_ui_flutter/auth_ui_flutter.dart'
     show AuthPackageVersionInfo;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:styled_widgets/styled_widgets.dart';
+import 'package:hosthub_console/app/navigation/console_route.dart';
 import 'package:hosthub_console/app/shell/application/sidebar_mode_cubit.dart';
 import 'package:hosthub_console/app/shell/presentation/widgets/menu_item.dart';
 import 'package:hosthub_console/app/shell/presentation/widgets/property_setup_gate.dart';
@@ -17,6 +18,7 @@ import 'package:hosthub_console/features/auth/auth.dart';
 import 'package:hosthub_console/features/reservations/reservations.dart';
 import 'package:hosthub_console/features/channel_manager/domain/channel_manager_repository.dart';
 import 'package:hosthub_console/features/cms/cms.dart';
+import 'package:hosthub_console/features/properties/presentation/pages/property_section_page.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/revenue/revenue.dart';
 import 'package:hosthub_console/features/server_settings/data/admin_settings_repository.dart';
@@ -109,6 +111,9 @@ class HosthubRouter {
         ShellRoute(
           builder: (context, state, child) {
             final item = _selectedMenuItem(state.uri.path);
+            // The tree's expansion and selection are read off the location, so
+            // a deep link renders the same as having clicked there.
+            final route = ConsoleRoute.parse(state.uri.path);
             return MultiBlocProvider(
               providers: [
                 BlocProvider<ServerSettingsCubit>(
@@ -149,7 +154,8 @@ class HosthubRouter {
                     drawerMenuTooltip: context.s.menuTooltip,
                     // Nothing from the placement is needed here: the menu and
                     // its rows read it themselves.
-                    menuBuilder: (context, _) => SideMenu(selectedItem: item),
+                    menuBuilder: (context, _) =>
+                        SideMenu(selectedItem: item, route: route),
                     bodyBuilder: (context, _) =>
                         PropertySetupGate(selectedItem: item, child: child),
                   );
@@ -212,24 +218,54 @@ class HosthubRouter {
                 return WebsiteEditorPage(siteId: siteId);
               },
             ),
+            // The tree's own routes. Property sections carry the property in
+            // the path, so every one of them is deep-linkable and the sidebar
+            // needs no state of its own to render them expanded.
             GoRoute(
-              path: '/properties/details',
-              builder: (context, state) => const PropertyDetailsPage(),
+              path: ConsoleRoute.propertiesPath,
+              builder: (context, state) => const PropertiesPage(),
             ),
             GoRoute(
-              path: '/properties/pricing',
-              builder: (context, state) => const PropertyPricingPage(),
+              path: '${ConsoleRoute.propertiesPath}/:propertyId',
+              redirect: (context, state) {
+                final propertyId = state.pathParameters['propertyId'];
+                return propertyId == null
+                    ? ConsoleRoute.propertiesPath
+                    : '${ConsoleRoute.propertiesPath}/$propertyId/'
+                          '${ConsoleRoute.propertySectionSegment(PropertySection.overview)}';
+              },
             ),
             GoRoute(
-              path: '/settings',
+              path: '${ConsoleRoute.propertiesPath}/:propertyId/:section',
+              builder: (context, state) {
+                final route = ConsoleRoute.parse(state.uri.path);
+                final propertyId = route.propertyId;
+                if (propertyId == null) return const PropertiesPage();
+                return PropertySectionPage(
+                  propertyId: propertyId,
+                  section: route.propertySection ?? PropertySection.overview,
+                );
+              },
+            ),
+            GoRoute(
+              path: ConsoleRoute.accountPath,
               builder: (context, state) => const UserSettingsPage(),
             ),
+            // Kept so links and bookmarks from before the tree still land.
             GoRoute(
-              path: homePath,
+              path: '/settings',
+              redirect: (context, state) => ConsoleRoute.accountPath,
+            ),
+            GoRoute(
+              path: '/reservations',
+              redirect: (context, state) => ConsoleRoute.bookingsPath,
+            ),
+            GoRoute(
+              path: ConsoleRoute.bookingsPath,
               builder: (context, state) => const ReservationsPage(),
             ),
             GoRoute(
-              path: '/revenue',
+              path: ConsoleRoute.revenuePath,
               builder: (context, state) => const RevenuePage(),
             ),
             GoRoute(
@@ -244,26 +280,27 @@ class HosthubRouter {
   }
 }
 
+/// Which destination the shell's non-tree concerns are on — the setup gate and
+/// the admin rows. The tree itself reads [ConsoleRoute] instead.
 MenuItem _selectedMenuItem(String path) {
   if (path.startsWith('/sites') || path.startsWith('/website-editor')) {
     return MenuItem.sites;
   }
-  if (path.startsWith('/settings')) {
+  if (path.startsWith(ConsoleRoute.accountPath) ||
+      path.startsWith('/settings')) {
     return MenuItem.settings;
   }
-  if (path.startsWith('/reservations')) {
+  if (path.startsWith(ConsoleRoute.bookingsPath) ||
+      path.startsWith('/reservations')) {
     return MenuItem.reservations;
   }
-  if (path.startsWith('/revenue')) {
+  if (path.startsWith(ConsoleRoute.revenuePath)) {
     return MenuItem.revenue;
   }
   if (path.startsWith('/admin-options')) {
     return MenuItem.adminOptions;
   }
-  if (path.startsWith('/properties/pricing')) {
-    return MenuItem.pricing;
-  }
-  if (path.startsWith('/properties/details')) {
+  if (path.startsWith(ConsoleRoute.propertiesPath)) {
     return MenuItem.propertyDetails;
   }
   return MenuItem.sites;

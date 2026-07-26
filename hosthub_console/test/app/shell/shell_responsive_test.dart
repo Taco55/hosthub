@@ -16,7 +16,7 @@ void main() {
     await pumpShell(tester, surface: const Size(1400, 900));
 
     expect(_menuWidth(tester), sidebarTokens.expandedWidth);
-    expect(find.text('Reservations'), findsOneWidget);
+    expect(find.text('Bookings'), findsOneWidget);
     // No hamburger: the menu is pinned.
     expect(find.byIcon(Icons.menu), findsNothing);
   });
@@ -29,7 +29,7 @@ void main() {
     // The rail, not the drawer, and not the expanded menu.
     expect(_menuWidth(tester), sidebarTokens.railWidth);
     expect(find.byIcon(Icons.menu), findsNothing);
-    expect(find.text('Reservations'), findsNothing);
+    expect(find.text('Bookings'), findsNothing);
     // Icons remain reachable.
     expect(find.byIcon(Icons.calendar_month_outlined), findsOneWidget);
     // Icon centred in the 72px rail, the same x as in the expanded menu.
@@ -42,10 +42,7 @@ void main() {
   testWidgets('600–1100px: the rail ignores the expanded width preference', (
     tester,
   ) async {
-    final sidebarMode = await pumpShell(
-      tester,
-      surface: const Size(900, 800),
-    );
+    final sidebarMode = await pumpShell(tester, surface: const Size(900, 800));
 
     sidebarMode.setMode(StyledSideMenuMode.expanded);
     await tester.pumpAndSettle();
@@ -55,32 +52,37 @@ void main() {
     expect(_menuWidth(tester), sidebarTokens.railWidth);
   });
 
-  testWidgets('600–1100px: tapping the rail header expands it over the content',
-      (tester) async {
-    await pumpShell(tester, surface: const Size(900, 800));
+  testWidgets(
+    '600–1100px: tapping the rail header expands it over the content',
+    (tester) async {
+      await pumpShell(tester, surface: const Size(900, 800));
 
-    // Touch has no hover, so the header is the explicit way to the labels.
-    // The header is the explicit way to the labels on touch; its own label
-    // is a rail flyout, so target the brand mark itself.
-    await tester.tap(find.byIcon(Icons.holiday_village_outlined));
-    await tester.pumpAndSettle();
+      // Touch has no hover, so the header is the explicit way to the labels.
+      // The header is the explicit way to the labels on touch; its own label
+      // is a rail flyout, so target the brand mark itself.
+      await tester.tap(find.byIcon(Icons.holiday_village_outlined));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Reservations'), findsOneWidget);
-    // Overlaid, not reflowed: the pinned rail keeps its width.
-    expect(
-      tester
-          .widgetList<AnimatedContainer>(
-            find.byKey(const ValueKey('styledSideMenu')),
-          )
-          .map((c) => c.constraints!.maxWidth),
-      containsAll(<double>[sidebarTokens.railWidth, sidebarTokens.expandedWidth]),
-    );
+      expect(find.text('Bookings'), findsOneWidget);
+      // Overlaid, not reflowed: the pinned rail keeps its width.
+      expect(
+        tester
+            .widgetList<AnimatedContainer>(
+              find.byKey(const ValueKey('styledSideMenu')),
+            )
+            .map((c) => c.constraints!.maxWidth),
+        containsAll(<double>[
+          sidebarTokens.railWidth,
+          sidebarTokens.expandedWidth,
+        ]),
+      );
 
-    // A tap outside puts the rail back.
-    await tester.tapAt(const Offset(700, 400));
-    await tester.pumpAndSettle();
-    expect(find.text('Reservations'), findsNothing);
-  });
+      // A tap outside puts the rail back.
+      await tester.tapAt(const Offset(700, 400));
+      await tester.pumpAndSettle();
+      expect(find.text('Bookings'), findsNothing);
+    },
+  );
 
   testWidgets('<600px: the menu becomes a hamburger drawer', (tester) async {
     await pumpShell(tester, surface: const Size(420, 800));
@@ -93,6 +95,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(_menuWidth(tester), sidebarTokens.expandedWidth);
-    expect(find.text('Reservations'), findsOneWidget);
+    expect(find.text('Bookings'), findsOneWidget);
   });
 }

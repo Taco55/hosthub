@@ -6807,6 +6807,170 @@ class S {
     );
   }
 
+  /// `Portfolio`
+  String get navGroupPortfolio {
+    return Intl.message(
+      'Portfolio',
+      name: 'navGroupPortfolio',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Properties`
+  String get navGroupProperties {
+    return Intl.message(
+      'Properties',
+      name: 'navGroupProperties',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Account`
+  String get navGroupAccount {
+    return Intl.message('Account', name: 'navGroupAccount', desc: '', args: []);
+  }
+
+  /// `Rental`
+  String get navGroupSingleProperty {
+    return Intl.message(
+      'Rental',
+      name: 'navGroupSingleProperty',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Bookings`
+  String get navBookings {
+    return Intl.message('Bookings', name: 'navBookings', desc: '', args: []);
+  }
+
+  /// `Overview`
+  String get navPropertyOverview {
+    return Intl.message(
+      'Overview',
+      name: 'navPropertyOverview',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Website`
+  String get navPropertyWebsite {
+    return Intl.message(
+      'Website',
+      name: 'navPropertyWebsite',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Site settings`
+  String get navPropertySiteSettings {
+    return Intl.message(
+      'Site settings',
+      name: 'navPropertySiteSettings',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Account settings`
+  String get navAccountSettings {
+    return Intl.message(
+      'Account settings',
+      name: 'navAccountSettings',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Own values`
+  String get navPropertyOverridesTooltip {
+    return Intl.message(
+      'Own values',
+      name: 'navPropertyOverridesTooltip',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Properties`
+  String get propertiesListHeading {
+    return Intl.message(
+      'Properties',
+      name: 'propertiesListHeading',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Open a property to manage its website, details and pricing. Bookings and Revenue cover your whole portfolio.`
+  String get propertiesListIntro {
+    return Intl.message(
+      'Open a property to manage its website, details and pricing. Bookings and Revenue cover your whole portfolio.',
+      name: 'propertiesListIntro',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Add property`
+  String get propertiesListAdd {
+    return Intl.message(
+      'Add property',
+      name: 'propertiesListAdd',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count, plural, =1{1 booking} other{{count} bookings}}`
+  String propertiesListBookingCount(num count) {
+    return Intl.plural(
+      count,
+      one: '1 booking',
+      other: '$count bookings',
+      name: 'propertiesListBookingCount',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Follows account`
+  String get propertiesListFollowsAccount {
+    return Intl.message(
+      'Follows account',
+      name: 'propertiesListFollowsAccount',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count, plural, =1{1 own value} other{{count} own values}}`
+  String propertiesListOwnValues(num count) {
+    return Intl.plural(
+      count,
+      one: '1 own value',
+      other: '$count own values',
+      name: 'propertiesListOwnValues',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `No properties in this account yet.`
+  String get propertiesListEmpty {
+    return Intl.message(
+      'No properties in this account yet.',
+      name: 'propertiesListEmpty',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Pricing`
   String get menuPricing {
     return Intl.message('Pricing', name: 'menuPricing', desc: '', args: []);

@@ -16,6 +16,7 @@ import 'package:hosthub_console/core/widgets/auth/auth_ui_styled_overrides.dart'
 import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:hosthub_console/core/l10n/application/language_cubit.dart';
 
+import 'package:hosthub_console/app/navigation/console_route.dart';
 import 'package:hosthub_console/app/router/hosthub_router.dart';
 import 'package:hosthub_console/app/router/go_router_refresh_stream.dart';
 import 'package:hosthub_console/app/shell/application/sidebar_mode_cubit.dart';
@@ -32,7 +33,9 @@ import 'package:hosthub_console/features/user_settings/user_settings.dart';
 import 'package:hosthub_console/features/users/users.dart';
 
 const _authLoadingPath = '/auth-loading';
-const _reservationsPath = '/reservations';
+
+/// Landing destination after sign-in: Boekingen, the first portfolio screen.
+const _homePath = ConsoleRoute.bookingsPath;
 
 AuthUiPaths get _authUiPaths => AuthUi.config.paths;
 
@@ -150,14 +153,14 @@ class _ConsoleRouterHostState extends State<_ConsoleRouterHost> {
           path: state.uri.path,
           queryParameters: state.uri.queryParameters,
           config: AuthRedirectConfig(
-            homePath: _reservationsPath,
+            homePath: _homePath,
             loadingPath: _authLoadingPath,
             paths: paths,
           ),
         );
       },
       authUiPaths: paths,
-      homePath: _reservationsPath,
+      homePath: _homePath,
       authLoadingPath: _authLoadingPath,
       authErrorDisplayMode: _authErrorDisplayMode,
       demoCredentials: kDebugMode ? _debugDemoCredentials : const [],

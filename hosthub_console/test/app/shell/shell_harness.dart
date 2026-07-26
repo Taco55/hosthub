@@ -6,6 +6,7 @@ import 'package:styled_widgets/styled_widgets.dart';
 
 import 'package:auth_ui_flutter/auth_ui_flutter.dart';
 
+import 'package:hosthub_console/app/navigation/console_route.dart';
 import 'package:hosthub_console/app/shell/application/sidebar_mode_cubit.dart';
 import 'package:hosthub_console/app/shell/navigation/navigation_guard_controller.dart';
 import 'package:hosthub_console/app/shell/presentation/widgets/menu_item.dart';
@@ -16,6 +17,8 @@ import 'package:hosthub_console/core/models/models.dart';
 import 'package:hosthub_console/core/widgets/foundation/foundation.dart';
 import 'package:hosthub_console/features/profile/profile.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
+import 'package:hosthub_console/features/server_settings/application/server_settings_cubit.dart';
+import 'package:hosthub_console/features/server_settings/domain/admin_settings.dart';
 
 /// Shared harness for the shell tests: watch-only stand-ins for the blocs the
 /// menu reads, plus a pump that pins the surface size (the responsive
@@ -30,7 +33,9 @@ class _FakeAuthBloc extends Bloc<AuthEvent, AuthState> implements AuthBloc {
 class _FakeProfileCubit extends Cubit<ProfileState> implements ProfileCubit {
   _FakeProfileCubit()
     : super(
-        const ProfileState(profile: Profile(id: 'p1', email: 'marta@trysil.no')),
+        const ProfileState(
+          profile: Profile(id: 'p1', email: 'marta@trysil.no'),
+        ),
       );
 
   @override
@@ -39,20 +44,37 @@ class _FakeProfileCubit extends Cubit<ProfileState> implements ProfileCubit {
 
 class _FakePropertyContextCubit extends Cubit<PropertyContextState>
     implements PropertyContextCubit {
-  _FakePropertyContextCubit()
+  _FakePropertyContextCubit(List<PropertySummary> properties)
     : super(
-        const PropertyContextState(
+        PropertyContextState(
           status: PropertyContextStatus.loaded,
-          properties: [_property],
-          currentProperty: _property,
+          properties: properties,
+          currentProperty: properties.isEmpty ? null : properties.first,
         ),
       );
-
-  static const _property = PropertySummary(id: 1, name: 'Trysil Panorama');
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
+
+class _FakeServerSettingsCubit extends Cubit<ServerSettingsState>
+    implements ServerSettingsCubit {
+  _FakeServerSettingsCubit()
+    : super(
+        ServerSettingsState(
+          status: ServerSettingsStatus.ready,
+          settings: AdminSettings.defaults(),
+        ),
+      );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// The account the shell tests render: one property unless a test asks for more.
+const List<PropertySummary> defaultShellProperties = [
+  PropertySummary(id: 1, name: 'Trysil Panorama'),
+];
 
 final ThemeData _lightTheme = HosthubThemePreset.applyMaterialTheme(
   baseTheme: ThemeData.light(),
@@ -70,6 +92,8 @@ StyledSideMenuThemeData get sidebarTokens => _styledTheme.sideMenu;
 Future<SidebarModeCubit> pumpShell(
   WidgetTester tester, {
   required Size surface,
+  ConsoleRoute route = const ConsoleRoute.portfolio(PortfolioSection.bookings),
+  List<PropertySummary> properties = defaultShellProperties,
 }) async {
   // setSurfaceSize drives layout, view.physicalSize drives MediaQuery — the
   // breakpoints read the latter.
@@ -82,12 +106,14 @@ Future<SidebarModeCubit> pumpShell(
 
   final authBloc = _FakeAuthBloc();
   final profileCubit = _FakeProfileCubit();
-  final propertyCubit = _FakePropertyContextCubit();
+  final propertyCubit = _FakePropertyContextCubit(properties);
+  final serverSettingsCubit = _FakeServerSettingsCubit();
   final sidebarModeCubit = SidebarModeCubit();
   final guard = NavigationGuardController();
   addTearDown(authBloc.close);
   addTearDown(profileCubit.close);
   addTearDown(propertyCubit.close);
+  addTearDown(serverSettingsCubit.close);
   addTearDown(sidebarModeCubit.close);
   addTearDown(guard.dispose);
 
@@ -97,6 +123,7 @@ Future<SidebarModeCubit> pumpShell(
         BlocProvider<AuthBloc>.value(value: authBloc),
         BlocProvider<ProfileCubit>.value(value: profileCubit),
         BlocProvider<PropertyContextCubit>.value(value: propertyCubit),
+        BlocProvider<ServerSettingsCubit>.value(value: serverSettingsCubit),
         BlocProvider<SidebarModeCubit>.value(value: sidebarModeCubit),
         ChangeNotifierProvider<NavigationGuardController>.value(value: guard),
       ],
@@ -115,7 +142,7 @@ Future<SidebarModeCubit> pumpShell(
             compact: sidebarMode == StyledSideMenuMode.compact,
             drawerMenuTooltip: context.s.menuTooltip,
             menuBuilder: (context, placement) =>
-                const SideMenu(selectedItem: MenuItem.sites),
+                SideMenu(selectedItem: MenuItem.sites, route: route),
             bodyBuilder: (context, layout) => const PropertySetupGate(
               selectedItem: MenuItem.sites,
               child: Text('body'),

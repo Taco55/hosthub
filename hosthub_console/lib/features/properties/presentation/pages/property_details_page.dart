@@ -20,7 +20,15 @@ import 'package:hosthub_console/features/reservations/presentation/reservation_d
 /// an input, even a greyed one, still promises "this is a field you could fill
 /// in", which is the one thing that is not true here.
 class PropertyDetailsPage extends StatefulWidget {
-  const PropertyDetailsPage({super.key});
+  const PropertyDetailsPage({super.key, this.propertyId});
+
+  /// The property to show, from the route.
+  ///
+  /// Given, it is the only property this page reads — it cannot show another
+  /// one than the sidebar has expanded, not even for the frame after a
+  /// navigation. Null falls back to the selected property, which is what the
+  /// pre-route callers did.
+  final int? propertyId;
 
   @override
   State<PropertyDetailsPage> createState() => _PropertyDetailsPageState();
@@ -90,7 +98,13 @@ class _PropertyDetailsPageState extends State<PropertyDetailsPage> {
   Widget build(BuildContext context) {
     return BlocBuilder<PropertyContextCubit, PropertyContextState>(
       builder: (context, state) {
-        final current = state.currentProperty;
+        // The route wins when it names one, so the record can never be about a
+        // different property than the sidebar shows expanded.
+        final current = widget.propertyId == null
+            ? state.currentProperty
+            : state.properties
+                  .where((property) => property.id == widget.propertyId)
+                  .firstOrNull;
         if (state.status == PropertyContextStatus.loading ||
             state.status == PropertyContextStatus.initial) {
           return _page(
