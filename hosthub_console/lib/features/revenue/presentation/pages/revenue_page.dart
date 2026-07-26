@@ -78,16 +78,20 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
               previous.rateCurrency != current.rateCurrency &&
               current.rateCurrency != null,
           listener: (context, state) {
-            final property = context
-                .read<PropertyContextCubit>()
+            // The currency belongs to the property the rates were loaded for, not
+            // to whichever property happens to be selected — writing it to the
+            // wrong row would relabel another cabin's money.
+            final propertyId = context
+                .read<ReservationsCubit>()
                 .state
-                .currentProperty;
-            if (property == null) return;
+                .singleProperty
+                ?.propertyId;
+            if (propertyId == null) return;
             final currency = state.rateCurrency;
             if (currency == null || currency.trim().isEmpty) return;
             context
                 .read<PropertyRepository>()
-                .updatePropertyCurrency(property.id, currency)
+                .updatePropertyCurrency(propertyId, currency)
                 .catchError((_) {
                   /* best-effort */
                 });
@@ -192,7 +196,7 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
             start: periodRange.start,
             end: periodRange.end,
           );
-          final channelSettings = _channelSettingsResolver(property);
+          final channelSettings = _channelSettingsResolver(accountProperties);
           final revenueRows = periodEntries
               .map(
                 (entry) => _RevenueRow.fromEntry(
@@ -724,16 +728,19 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
   /// `admin_settings` holds the account-wide commission per channel; the
   /// property row holds only its own deviations. Only
   /// [ChannelSettingsResolver] puts the two together.
-  ChannelSettingsResolver _channelSettingsResolver(PropertySummary? property) {
-    return ChannelSettingsResolver(
+  /// Over the **whole account**, not the property on screen: the per-booking
+  /// lookup can only find what the resolver was given, so a resolver built from
+  /// one property would cost every other booking at the account's defaults.
+  ChannelSettingsResolver _channelSettingsResolver(
+    List<PropertySummary> properties,
+  ) {
+    return ChannelSettingsResolver.forProperties(
       accountDefaults: AccountChannelDefaults.fromCommissionPercentages(
         booking: _adminSettings.bookingChannelFeePercentage,
         airbnb: _adminSettings.airbnbChannelFeePercentage,
         other: _adminSettings.otherChannelFeePercentage,
       ),
-      overridesByPropertyId: {
-        if (property != null) property.id: property.channelOverrides,
-      },
+      properties: channelOverridesOf(properties),
     );
   }
 

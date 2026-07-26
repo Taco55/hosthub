@@ -331,8 +331,42 @@ nul. Zodra Accountinstellingen (§4) die velden echt moet bewerken is een per-ac
 `AccountChannelDefaults.fromMap/toMap` heeft daar de vorm al voor. Niet in M1 gebouwd omdat M1
 "geen UI" is.
 
+| M7 | CONFORMANCE-pass over M1–M6 (review + fix, geen nieuwe scope) | console | done | zie M7-bewijs |
+
+**M7-bewijs.** Checklist van `design_handoff_hosthub_multiproperty/CONFORMANCE.md` regel voor regel
+nagelopen i.p.v. aangenomen. **Drie echte bugs gevonden en gefixt**, alle drie in de wiring die de
+unit-tests niet raakten:
+
+1. **P0 — de resolver dekte één property.** `_channelSettingsResolver(property)` op Omzet bouwde
+   `overridesByPropertyId` uit *de geselecteerde* property. De per-boeking-lookup was dus correct maar
+   kon alleen vinden wat hij meekreeg: property 2–4 werden met de accountdefaults gekost i.p.v. met
+   hun eigen overrides. Exact het falen uit §3.2, één laag lager. Gefixt met
+   `ChannelSettingsResolver.forProperties` + `channelOverridesOf`, en alle drie de bouwplekken (rail,
+   propertylijst, Omzet) lopen nu door dezelfde factory. Regressietest erbij die precies dit
+   documenteert ("built from one property, it answers defaults for the rest").
+2. **P1 — valuta-write-back naar de verkeerde rij.** Beide schermen schreven `rateCurrency` naar
+   `currentProperty.id`, terwijl de tarieven voor `state.singleProperty` geladen zijn. Bij een ander
+   geselecteerde property herlabelde dat het geld van een andere cabin. Nu naar de property waar de
+   tarieven vandaan komen.
+3. **P1 — tijdlijn-tariefLabels uit het hele portfolio.** De dag-labels werden uit `state.entries`
+   gebouwd; sinds M4 is dat het hele account, dus een dag kon het tarief van een *andere* property
+   tonen — een getal dat autoritair oogt en van een ander huis is. Nu alleen bij één property in
+   beeld, en gefilterd op die property.
+
+Verder gecontroleerd en in orde: export/PDF/CSV krijgen `bookings` (de gefilterde set); grafiek,
+kanaalsplitsing, totaalrij en de detailmodal ook; de overgebleven `state.entries`-reads zijn
+laadchecks ("is er al iets binnen"), wat juist is — een filter dat alles wegfiltert hoort de
+lege-periode-melding te geven, geen spinner. Extra test toegevoegd voor de CONFORMANCE-regel "2 van 4
+= som van die twee alleen" in **geld** (die had ik alleen voor nachten en per boeking).
+374 tests groen, analyze op de 2 bekende infos.
+
+**Niet verifieerbaar zonder ingelogde sessie** (user-gated, zelfde blokkade als E3): de vier
+behavioural checks die een echte klik vragen (klik-om-te-openen/dichtklappen, filter na reload,
+verwijderde open property in de UI, nieuwe property in beide filtermenu's) — de logica erachter is
+wel unit-getest.
+
 ## next_lens
-RUN 6 KLAAR: M1–M6 done (2026-07-26), elk met review-stop. Open, user-gated: visuele verificatie in
+RUN 6 KLAAR: M1–M7 done (2026-07-26), elk met review-stop. Open, user-gated: visuele verificatie in
 de app (vraagt een ingelogde sessie, zelfde blokkade als E3) en de `portfolio_scope`-migratie naar
 prd. Niet gebouwd omdat het buiten de zes stappen viel: de Accountinstellingen-editor voor
 account-defaults + propertylijst met override-counts (§4b), en de tijdlijn bij N properties.

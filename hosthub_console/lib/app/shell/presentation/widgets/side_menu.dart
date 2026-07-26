@@ -60,16 +60,13 @@ class SideMenu extends StatelessWidget {
       builder: (context, propertyState) {
         final properties = propertyState.properties;
         final isSingleProperty = properties.length == 1;
-        final channelSettings = ChannelSettingsResolver(
+        final channelSettings = ChannelSettingsResolver.forProperties(
           accountDefaults: AccountChannelDefaults.fromCommissionPercentages(
             booking: adminSettings.bookingChannelFeePercentage,
             airbnb: adminSettings.airbnbChannelFeePercentage,
             other: adminSettings.otherChannelFeePercentage,
           ),
-          overridesByPropertyId: {
-            for (final property in properties)
-              property.id: property.channelOverrides,
-          },
+          properties: channelOverridesOf(properties),
         );
 
         return StyledSideMenu(

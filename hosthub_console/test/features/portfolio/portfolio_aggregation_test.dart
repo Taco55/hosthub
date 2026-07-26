@@ -190,6 +190,58 @@ void main() {
       expect(wrongTotal, isNot(closeTo(230, 0.001)));
     });
 
+    test('two of four total exactly what those two total alone', () {
+      // The CONFORMANCE case stated for money rather than for nights: the
+      // filtered set is a union and each booking is costed on its own, so the
+      // sums have to be additive.
+      final bookings = [
+        onProperty1,
+        onProperty2,
+        booking(
+          propertyId: 3,
+          checkIn: DateTime(2027, 7, 8),
+          checkOut: DateTime(2027, 7, 10),
+          total: 800,
+        ),
+        booking(
+          propertyId: 4,
+          checkIn: DateTime(2027, 7, 12),
+          checkOut: DateTime(2027, 7, 15),
+          total: 600,
+        ),
+      ];
+
+      double feeTotalFor(List<int> selected) {
+        final selection = PropertySelection.of(
+          allProperties,
+          selectedPropertyIds: selected,
+        );
+        var total = 0.0;
+        for (final entry in bookingsForSelection(bookings, selection)) {
+          total += channelFeeFor(
+            entry,
+            channelSettingsForBooking(resolver, entry),
+          );
+        }
+        return total;
+      }
+
+      expect(
+        feeTotalFor([2, 3]),
+        closeTo(feeTotalFor([2]) + feeTotalFor([3]), 0.001),
+      );
+      expect(
+        feeTotalFor([1, 2, 3, 4]),
+        closeTo(
+          feeTotalFor([1]) +
+              feeTotalFor([2]) +
+              feeTotalFor([3]) +
+              feeTotalFor([4]),
+          0.001,
+        ),
+      );
+    });
+
     test('the same booking on a property that follows the account', () {
       final onProperty4 = booking(
         propertyId: 4,

@@ -32,16 +32,13 @@ class PropertiesPage extends StatelessWidget {
         final adminSettings =
             context.watch<ServerSettingsCubit>().state.settings ??
             AdminSettings.defaults();
-        final channelSettings = ChannelSettingsResolver(
+        final channelSettings = ChannelSettingsResolver.forProperties(
           accountDefaults: AccountChannelDefaults.fromCommissionPercentages(
             booking: adminSettings.bookingChannelFeePercentage,
             airbnb: adminSettings.airbnbChannelFeePercentage,
             other: adminSettings.otherChannelFeePercentage,
           ),
-          overridesByPropertyId: {
-            for (final property in properties)
-              property.id: property.channelOverrides,
-          },
+          properties: channelOverridesOf(properties),
         );
         final abbreviations = uniquePropertyAbbreviations([
           for (final property in properties)

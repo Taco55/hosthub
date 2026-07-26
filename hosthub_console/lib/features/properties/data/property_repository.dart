@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hosthub_console/features/auth/infrastructure/supabase/supabase_repository.dart';
 import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
 import 'package:hosthub_console/features/properties/domain/channel_overrides.dart';
+import 'package:hosthub_console/features/properties/domain/channel_settings_resolver.dart';
 
 class PropertySummary {
   const PropertySummary({
@@ -368,6 +369,19 @@ class PropertyRepository extends SupabaseRepository {
     }
   }
 }
+
+/// The account's properties as [ChannelSettingsResolver.forProperties] wants
+/// them.
+///
+/// The sidebar's badges, the properties list and the portfolio screens all need a
+/// resolver over the *whole* account; going through one function is what keeps
+/// them from each building a narrower one.
+Iterable<({int id, ChannelOverrides overrides})> channelOverridesOf(
+  Iterable<PropertySummary> properties,
+) => [
+  for (final property in properties)
+    (id: property.id, overrides: property.channelOverrides),
+];
 
 num? _toNum(Object? value) => value is num ? value : null;
 

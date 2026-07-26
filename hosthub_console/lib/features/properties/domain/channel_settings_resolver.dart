@@ -23,6 +23,25 @@ class ChannelSettingsResolver {
     overridesByPropertyId: <int, ChannelOverrides>{},
   );
 
+  /// A resolver over a whole account.
+  ///
+  /// Every property has to be in here, not just the one on screen: a resolver
+  /// built from one property answers the account's defaults for all the others,
+  /// which is the §3.2 failure wearing a different hat — the lookup is per
+  /// booking, but it can only find what the resolver was given.
+  factory ChannelSettingsResolver.forProperties({
+    required AccountChannelDefaults accountDefaults,
+    required Iterable<({int id, ChannelOverrides overrides})> properties,
+  }) {
+    return ChannelSettingsResolver(
+      accountDefaults: accountDefaults,
+      overridesByPropertyId: {
+        for (final property in properties)
+          if (!property.overrides.isEmpty) property.id: property.overrides,
+      },
+    );
+  }
+
   final AccountChannelDefaults accountDefaults;
 
   /// Sparse per property as well: a property absent from this map follows the

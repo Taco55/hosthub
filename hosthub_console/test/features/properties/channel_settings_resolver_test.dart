@@ -218,6 +218,96 @@ void main() {
     });
   });
 
+  group('a resolver over an account', () {
+    test('answers every property its own overrides', () {
+      final resolver = ChannelSettingsResolver.forProperties(
+        accountDefaults: accountDefaults,
+        properties: const [
+          (
+            id: 1,
+            overrides: ChannelOverrides(
+              airbnb: ChannelOverride(commissionPercentage: 12),
+            ),
+          ),
+          (
+            id: 2,
+            overrides: ChannelOverrides(
+              airbnb: ChannelOverride(commissionPercentage: 20),
+            ),
+          ),
+          (id: 3, overrides: ChannelOverrides.none),
+        ],
+      );
+
+      expect(
+        resolver.effectiveChannelSettings(1).airbnb.commissionPercentage,
+        12,
+      );
+      expect(
+        resolver.effectiveChannelSettings(2).airbnb.commissionPercentage,
+        20,
+      );
+      expect(
+        resolver.effectiveChannelSettings(3).airbnb.commissionPercentage,
+        3,
+      );
+    });
+
+    test('built from one property, it answers defaults for the rest', () {
+      // Why the call sites must pass the whole account: the per-booking lookup
+      // is right, but it can only find what the resolver was given. A screen
+      // that builds this from the property on display costs every other
+      // property's bookings at the account's rates — §3.2 again, one layer down.
+      final narrow = ChannelSettingsResolver.forProperties(
+        accountDefaults: accountDefaults,
+        properties: const [
+          (
+            id: 1,
+            overrides: ChannelOverrides(
+              airbnb: ChannelOverride(commissionPercentage: 12),
+            ),
+          ),
+        ],
+      );
+
+      expect(
+        narrow.effectiveChannelSettings(1).airbnb.commissionPercentage,
+        12,
+      );
+      expect(
+        narrow.effectiveChannelSettings(2).airbnb.commissionPercentage,
+        3,
+        reason: 'property 2 is unknown to this resolver',
+      );
+    });
+
+    test('a property that overrides nothing is not stored at all', () {
+      final resolver = ChannelSettingsResolver.forProperties(
+        accountDefaults: accountDefaults,
+        properties: const [
+          (id: 1, overrides: ChannelOverrides.none),
+          (id: 2, overrides: ChannelOverrides.none),
+        ],
+      );
+
+      // Sparse per property as well as per field.
+      expect(resolver.overridesByPropertyId, isEmpty);
+      expect(resolver.overriddenFieldCount(1), 0);
+    });
+
+    test('an empty account resolves to the account defaults', () {
+      final resolver = ChannelSettingsResolver.forProperties(
+        accountDefaults: accountDefaults,
+        properties: const [],
+      );
+
+      expect(
+        resolver.effectiveChannelSettings(1).airbnb.commissionPercentage,
+        3,
+      );
+    });
+  });
+
   group('storage stays sparse', () {
     test('only overridden fields are written', () {
       const overrides = ChannelOverrides(

@@ -236,16 +236,19 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
               previous.rateCurrency != current.rateCurrency &&
               current.rateCurrency != null,
           listener: (context, state) {
-            final property = context
-                .read<PropertyContextCubit>()
+            // The currency belongs to the property the rates were loaded for —
+            // see the same listener on the Revenue page.
+            final propertyId = context
+                .read<ReservationsCubit>()
                 .state
-                .currentProperty;
-            if (property == null) return;
+                .singleProperty
+                ?.propertyId;
+            if (propertyId == null) return;
             final currency = state.rateCurrency;
             if (currency == null || currency.trim().isEmpty) return;
             context
                 .read<PropertyRepository>()
-                .updatePropertyCurrency(property.id, currency)
+                .updatePropertyCurrency(propertyId, currency)
                 .catchError((_) {
                   /* best-effort */
                 });
@@ -648,37 +651,47 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
       final timelineBookings = _timelineBookings(state);
       final today = _dateOnly(DateTime.now());
 
-      // Build nightly-rate labels per day from ALL entries (including
-      // "available" entries which carry pricing info).
+      // Nightly-rate labels per day, from every entry of the one property in
+      // view — including the "available" rows, which carry pricing but no guest.
+      //
+      // One property, because a rate label names *the* price of a day and a
+      // portfolio has one per property. Reading them off the whole loaded set
+      // would print whichever property answered first, which is worse than
+      // printing nothing: the number would look authoritative and belong to
+      // another cabin.
       final dayLabels = <DateTime, String>{};
-      for (final e in state.entries) {
-        if (e.startDate == null || e.endDate == null) continue;
-        final rev = readBookingPayloadRevenue(e);
-        num? rate = rev.nightlyRate;
-        if (rate == null && rev.total != null) {
-          final nights = _dateOnly(
-            e.endDate!,
-          ).difference(_dateOnly(e.startDate!)).inDays;
-          if (nights > 0) rate = rev.total! / nights;
+      if (ratesPropertyId.isNotEmpty) {
+        final ratedPropertyId = state.singleProperty?.propertyId;
+        for (final e in state.entries) {
+          if (e.propertyId != ratedPropertyId) continue;
+          if (e.startDate == null || e.endDate == null) continue;
+          final rev = readBookingPayloadRevenue(e);
+          num? rate = rev.nightlyRate;
+          if (rate == null && rev.total != null) {
+            final nights = _dateOnly(
+              e.endDate!,
+            ).difference(_dateOnly(e.startDate!)).inDays;
+            if (nights > 0) rate = rev.total! / nights;
+          }
+          if (rate == null) continue;
+          final rateStr = formatAmount(rate, rev.currency);
+          var d = _dateOnly(e.startDate!);
+          final end = _dateOnly(e.endDate!);
+          while (d.isBefore(end)) {
+            dayLabels.putIfAbsent(d, () => rateStr);
+            d = d.add(const Duration(days: 1));
+          }
         }
-        if (rate == null) continue;
-        final rateStr = formatAmount(rate, rev.currency);
-        var d = _dateOnly(e.startDate!);
-        final end = _dateOnly(e.endDate!);
-        while (d.isBefore(end)) {
-          dayLabels.putIfAbsent(d, () => rateStr);
-          d = d.add(const Duration(days: 1));
-        }
-      }
 
-      // Fill in nightly rates from the availability API for days that
-      // don't already have a label from reservation data.
-      final ratesState = context.watch<NightlyRatesCubit>().state;
-      for (final entry in ratesState.rates.entries) {
-        dayLabels.putIfAbsent(
-          entry.key,
-          () => formatAmount(entry.value, ratesState.rateCurrency),
-        );
+        // Fill in nightly rates from the availability API for days that
+        // don't already have a label from reservation data.
+        final ratesState = context.watch<NightlyRatesCubit>().state;
+        for (final entry in ratesState.rates.entries) {
+          dayLabels.putIfAbsent(
+            entry.key,
+            () => formatAmount(entry.value, ratesState.rateCurrency),
+          );
+        }
       }
 
       final isCompact = _timelineDensity == _TimelineDensity.compact;
