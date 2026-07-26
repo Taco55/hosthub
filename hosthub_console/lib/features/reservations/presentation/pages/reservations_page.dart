@@ -19,7 +19,10 @@ import 'package:hosthub_console/features/reservations/application/reservations_c
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
 import 'package:hosthub_console/features/portfolio/domain/portfolio_aggregation.dart';
-import 'package:hosthub_console/features/portfolio/domain/property_ref.dart';
+import 'package:hosthub_console/features/portfolio/domain/portfolio_page.dart';
+import 'package:hosthub_console/features/portfolio/domain/portfolio_refs.dart';
+import 'package:hosthub_console/features/portfolio/presentation/widgets/property_filter_button.dart';
+import 'package:hosthub_console/features/user_settings/application/user_settings_cubit.dart';
 import 'package:hosthub_console/features/portfolio/domain/property_selection.dart';
 import 'package:hosthub_console/core/l10n/l10n.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
@@ -91,6 +94,12 @@ class _ReservationListColumn {
   _ReservationListColumn._();
 
   static const String source = 'source';
+
+  /// Which property the booking is for. Not in [all]: it is scope information
+  /// rather than a column of the booking, so it appears exactly when the
+  /// selection covers more than one property and is never hidden by hand.
+  static const String property = 'property';
+
   static const String guestName = 'guestName';
   static const String checkIn = 'checkIn';
   static const String checkOut = 'checkOut';
@@ -188,11 +197,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final property = context
-          .read<PropertyContextCubit>()
-          .state
-          .currentProperty;
-      _loadReservationsForProperty(property);
+      _loadPortfolio(context.read<PropertyContextCubit>().state.properties);
     });
   }
 
@@ -208,18 +213,21 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     return MultiBlocListener(
       listeners: [
         BlocListener<PropertyContextCubit, PropertyContextState>(
+          // The whole account, not the selected property: this screen is about
+          // the portfolio now.
           listenWhen: (previous, current) =>
-              previous.currentProperty?.lodgifyId !=
-              current.currentProperty?.lodgifyId,
+              previous.properties.length != current.properties.length ||
+              previous.properties.map((p) => p.lodgifyId).join(',') !=
+                  current.properties.map((p) => p.lodgifyId).join(','),
           listener: (context, state) {
             final now = DateTime(DateTime.now().year, DateTime.now().month);
             setState(() {
               _focusedMonth = now;
-              // Another property has another first booking.
+              // Another portfolio has another first booking.
               _timelineFocusInitialized = false;
             });
             _continuousActiveMonth.value = now;
-            _loadReservationsForProperty(state.currentProperty);
+            _loadPortfolio(state.properties);
           },
         ),
         BlocListener<NightlyRatesCubit, NightlyRatesState>(
@@ -274,17 +282,17 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
       ],
       child: BlocBuilder<ReservationsCubit, ReservationsState>(
         builder: (context, state) {
-          final property = context
-              .watch<PropertyContextCubit>()
-              .state
-              .currentProperty;
-          final propertyName =
-              property?.name ?? context.s.revenueUnknownProperty;
-          final propertyId = property?.lodgifyId?.trim() ?? '';
+          // A portfolio screen has data as soon as any property is connected;
+          // the nightly rates below are per property, so they still address one.
+          final hasChannelProperties = state.properties.isNotEmpty;
+          final ratesPropertyId = state.singleProperty?.channelPropertyId ?? '';
           final locale = Localizations.localeOf(context).toString();
           final dateFormatter = DateFormat('d MMM yyyy', locale);
           final dateTimeFormatter = DateFormat('d MMM yyyy HH:mm', locale);
           final selection = _selectionFor(state);
+          final filterOptions = portfolioFilterOptions(
+            context.watch<PropertyContextCubit>().state.properties,
+          );
           final allBookings = _sortedBookings(
             bookingsForSelection(state.entries, selection),
           );
@@ -322,9 +330,19 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
             // surfaces — a pane card around everything adds a second
             // border the design does not have.
             decorateLeftPane: false,
-            // Design `.top`: crumb over a title that names the property.
-            overline: context.s.reservationsPageTitle,
-            title: context.s.reservationsPageHeading(propertyName),
+            // Design `.top`: the crumb says which part of the console this is,
+            // the title is the screen. A portfolio screen does not name one
+            // property — the filter beside it says what the scope is.
+            overline: context.s.navGroupPortfolio,
+            title: context.s.navBookings,
+            actions: [
+              // §3: one control in the page header — which properties count.
+              PropertyFilterButton(
+                selection: selection,
+                options: filterOptions,
+                onChanged: _persistSelection,
+              ),
+            ],
             isLoading: state.status == ReservationsStatus.loading,
             leftChild: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -334,7 +352,7 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                 // toolbar is filtering, so they read as page context above the
                 // controls, not as a caption under them. Nothing to summarise
                 // when the page is showing a message instead of data.
-                if (_hasReservationData(state, propertyId)) ...[
+                if (_hasReservationData(state, hasChannelProperties)) ...[
                   _buildMetrics(context, state: state, entries: bookings),
                   SizedBox(height: context.styledSpacing.lg),
                 ],
@@ -413,10 +431,13 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                   child: _buildContent(
                     context,
                     state: state,
-                    propertyId: propertyId.isEmpty ? null : propertyId,
+                    hasChannelProperties: hasChannelProperties,
+                    ratesPropertyId: ratesPropertyId,
                     entries: bookings,
                     dateFormatter: dateFormatter,
                     dateTimeFormatter: dateTimeFormatter,
+                    properties: filterOptions,
+                    selection: selection,
                   ),
                 ),
               ],
@@ -429,8 +450,8 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
 
   /// Whether the body is showing reservations rather than one of the three
   /// message states `_buildContent` short-circuits to.
-  bool _hasReservationData(ReservationsState state, String propertyId) {
-    if (propertyId.isEmpty) return false;
+  bool _hasReservationData(ReservationsState state, bool hasChannelProperties) {
+    if (!hasChannelProperties) return false;
     if (state.status == ReservationsStatus.error) return false;
     return !(state.status == ReservationsStatus.loading &&
         state.entries.isEmpty);
@@ -494,11 +515,32 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     );
   }
 
-  /// The properties in view — the same set the bookings were loaded for, so a
-  /// rate can never be divided by a different number of properties than it was
-  /// summed over.
+  /// What this page is filtered to: the user's own choice, clamped to the
+  /// properties the bookings were actually loaded for — so a rate can never be
+  /// divided by a different number of properties than it was summed over.
   PropertySelection _selectionFor(ReservationsState state) =>
-      PropertySelection.all(state.properties.map((ref) => ref.propertyId));
+      propertySelectionFor(
+        page: PortfolioPage.bookings,
+        availablePropertyIds: state.properties.map((ref) => ref.propertyId),
+        storedScope: context
+            .watch<UserSettingsCubit>()
+            .state
+            .settings
+            ?.portfolioScope,
+      );
+
+  /// Remember this page's filter for this user. Boekingen and Omzet keep their
+  /// own, so narrowing one does not narrow the other.
+  void _persistSelection(PropertySelection selection) {
+    final settings = context.read<UserSettingsCubit>();
+    settings.changePortfolioScope(
+      storedScopeWith(
+        page: PortfolioPage.bookings,
+        selection: selection,
+        storedScope: settings.state.settings?.portfolioScope,
+      ),
+    );
+  }
 
   /// Timeline bookings: always including historical, status filter applied.
   List<Reservation> _timelineBookings(ReservationsState state) {
@@ -555,14 +597,17 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
   Widget _buildContent(
     BuildContext context, {
     required ReservationsState state,
-    required String? propertyId,
+    required bool hasChannelProperties,
+    required String ratesPropertyId,
     required List<Reservation> entries,
     required DateFormat dateFormatter,
     required DateFormat dateTimeFormatter,
+    required List<PropertyFilterOption> properties,
+    required PropertySelection selection,
   }) {
     final l10n = context.s;
 
-    if (propertyId == null || propertyId.isEmpty) {
+    if (!hasChannelProperties) {
       return Center(
         child: Text(
           l10n.reservationsNoLodgifyId,
@@ -708,9 +753,9 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                           activeMonth.month - 1,
                         );
                         _continuousActiveMonth.value = prev;
-                        if (propertyId.isNotEmpty) {
+                        if (ratesPropertyId.isNotEmpty) {
                           context.read<NightlyRatesCubit>().loadRates(
-                            propertyId: propertyId,
+                            propertyId: ratesPropertyId,
                             focusedMonth: prev,
                           );
                         }
@@ -724,9 +769,9 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                           activeMonth.month + 1,
                         );
                         _continuousActiveMonth.value = next;
-                        if (propertyId.isNotEmpty) {
+                        if (ratesPropertyId.isNotEmpty) {
                           context.read<NightlyRatesCubit>().loadRates(
-                            propertyId: propertyId,
+                            propertyId: ratesPropertyId,
                             focusedMonth: next,
                           );
                         }
@@ -831,9 +876,9 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
                 rangeEnd: state.rangeEnd,
                 onMonthChanged: (month) {
                   setState(() => _focusedMonth = month);
-                  if (propertyId.isNotEmpty) {
+                  if (ratesPropertyId.isNotEmpty) {
                     context.read<NightlyRatesCubit>().loadRates(
-                      propertyId: propertyId,
+                      propertyId: ratesPropertyId,
                       focusedMonth: month,
                     );
                   }
@@ -868,6 +913,8 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
         entries: entries,
         dateFormatter: dateFormatter,
         dateTimeFormatter: dateTimeFormatter,
+        properties: properties,
+        selection: selection,
       );
     }
 
@@ -878,6 +925,8 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     required List<Reservation> entries,
     required DateFormat dateFormatter,
     required DateFormat dateTimeFormatter,
+    required List<PropertyFilterOption> properties,
+    required PropertySelection selection,
   }) {
     return _ReservationListView(
       entries: entries,
@@ -885,6 +934,8 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
       dateTimeFormatter: dateTimeFormatter,
       markedAsNew: _markedAsNew,
       hiddenColumns: _hiddenListColumns,
+      properties: properties,
+      showPropertyColumn: !selection.isSingle && !selection.isEmpty,
       onToggleNew: (id) {
         setState(() {
           if (_markedAsNew.contains(id)) {
@@ -939,23 +990,19 @@ class _ReservationsPageBodyState extends State<_ReservationsPageBody> {
     );
   }
 
-  void _loadReservationsForProperty(PropertySummary? property) {
-    if (property == null) {
+  /// Load every property in the account: the filter narrows a set that is
+  /// already here, so toggling it costs no request.
+  void _loadPortfolio(List<PropertySummary> properties) {
+    final refs = portfolioPropertyRefs(properties);
+    if (refs.isEmpty) {
       _lastChannelPropertyId = null;
       return;
     }
-    final lodgifyId = property.lodgifyId?.trim();
-    if (lodgifyId == null || lodgifyId.isEmpty) {
-      _lastChannelPropertyId = null;
-      return;
-    }
-    if (_lastChannelPropertyId == lodgifyId) return;
-    _lastChannelPropertyId = lodgifyId;
-    context.read<ReservationsCubit>().loadReservations(
-      properties: [
-        PropertyRef(propertyId: property.id, channelPropertyId: lodgifyId),
-      ],
-    );
+    // Rates are per property, so the timeline addresses the first one it has.
+    final requestKey = refs.map((ref) => ref.channelPropertyId).join(',');
+    if (_lastChannelPropertyId == requestKey) return;
+    _lastChannelPropertyId = requestKey;
+    context.read<ReservationsCubit>().loadReservations(properties: refs);
     // Rates worden geladen via BlocListener zodra reserveringen klaar zijn.
   }
 
@@ -1801,6 +1848,8 @@ class _ReservationListView extends StatelessWidget {
     required this.dateTimeFormatter,
     required this.markedAsNew,
     required this.hiddenColumns,
+    required this.properties,
+    required this.showPropertyColumn,
     required this.onToggleNew,
     required this.onEntryTap,
   });
@@ -1810,15 +1859,32 @@ class _ReservationListView extends StatelessWidget {
   final DateFormat dateTimeFormatter;
   final Set<String> markedAsNew;
   final Set<String> hiddenColumns;
+
+  /// The account's properties, for the property column's chip and name.
+  final List<PropertyFilterOption> properties;
+
+  /// §3.4: only when the selection covers more than one property. With one
+  /// selected the column would repeat the filter on every row.
+  final bool showPropertyColumn;
+
   final ValueChanged<String> onToggleNew;
   final ValueChanged<Reservation> onEntryTap;
 
   @override
   Widget build(BuildContext context) {
     final l10n = S.of(context);
-    final visibleColumns = _ReservationListColumn.all
-        .where((column) => !hiddenColumns.contains(column))
-        .toList();
+    final propertyById = {
+      for (final property in properties) property.id: property,
+    };
+    final visibleColumns = [
+      for (final column in _ReservationListColumn.all)
+        if (!hiddenColumns.contains(column)) ...[
+          column,
+          // Directly after the channel icon, where the design puts it.
+          if (column == _ReservationListColumn.source && showPropertyColumn)
+            _ReservationListColumn.property,
+        ],
+    ];
     final safeVisibleColumns = visibleColumns.isEmpty
         ? [_ReservationListColumn.guestName]
         : visibleColumns;
@@ -1829,6 +1895,11 @@ class _ReservationListView extends StatelessWidget {
           columnHeaderLabel: '',
           flex: 0,
           width: 28,
+        ),
+        _ReservationListColumn.property => StyledDataColumn(
+          columnHeaderLabel: l10n.portfolioColumnProperty,
+          flex: 1,
+          minWidth: 132,
         ),
         _ReservationListColumn.guestName => StyledDataColumn(
           columnHeaderLabel: l10n.reservationSectionBooker,
@@ -1941,6 +2012,12 @@ class _ReservationListView extends StatelessWidget {
                           source: entry.source,
                           size: 18,
                         ),
+                      ),
+                      _ReservationListColumn.property => _PropertyCell(
+                        property: propertyById[entry.propertyId],
+                        // Reservations has the room for the name beside the
+                        // chip; the denser Revenue table shows the chip alone.
+                        showName: true,
                       ),
                       _ReservationListColumn.guestName => textCell(
                         guestDisplayName(
@@ -2403,4 +2480,42 @@ String _escapeHtml(String value) {
 
 DateTime _dateOnly(DateTime date) {
   return DateTime(date.year, date.month, date.day);
+}
+
+/// A booking's property in a table cell: the chip, and its name where the table
+/// has room for it.
+///
+/// Shown only while more than one property is selected — with one, the column
+/// would repeat the filter on every row.
+class _PropertyCell extends StatelessWidget {
+  const _PropertyCell({required this.property, this.showName = true});
+
+  final PropertyFilterOption? property;
+  final bool showName;
+
+  @override
+  Widget build(BuildContext context) {
+    final property = this.property;
+    if (property == null) return const SizedBox.shrink();
+
+    final chip = PropertyChip(abbreviation: property.abbreviation, size: 22);
+    if (!showName) return Align(alignment: Alignment.centerLeft, child: chip);
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        chip,
+        SizedBox(width: context.styledSpacing.sm),
+        Flexible(
+          child: Text(
+            property.name,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ),
+      ],
+    );
+  }
 }

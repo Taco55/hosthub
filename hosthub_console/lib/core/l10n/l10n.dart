@@ -6807,6 +6807,46 @@ class S {
     );
   }
 
+  /// `All properties`
+  String get portfolioFilterAll {
+    return Intl.message(
+      'All properties',
+      name: 'portfolioFilterAll',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count} of {total} properties`
+  String portfolioFilterSome(Object count, Object total) {
+    return Intl.message(
+      '$count of $total properties',
+      name: 'portfolioFilterSome',
+      desc: '',
+      args: [count, total],
+    );
+  }
+
+  /// `Choose which properties count`
+  String get portfolioFilterTooltip {
+    return Intl.message(
+      'Choose which properties count',
+      name: 'portfolioFilterTooltip',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Property`
+  String get portfolioColumnProperty {
+    return Intl.message(
+      'Property',
+      name: 'portfolioColumnProperty',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Portfolio`
   String get navGroupPortfolio {
     return Intl.message(

@@ -86,8 +86,9 @@ class PropertiesPage extends StatelessWidget {
                   children: [
                     for (final property in properties)
                       StyledTile(
-                        leading: _PropertyChip(
+                        leading: PropertyChip(
                           abbreviation: abbreviations[property.id] ?? '??',
+                          size: 32,
                         ),
                         title: property.name,
                         subtitle: _subtitleFor(
@@ -121,34 +122,5 @@ class PropertiesPage extends StatelessWidget {
         ? s.propertiesListFollowsAccount
         : s.propertiesListOwnValues(overriddenFieldCount);
     return '$bookings · $scope';
-  }
-}
-
-/// The same two-letter chip the sidebar uses, so a property is recognisable in
-/// both places.
-class _PropertyChip extends StatelessWidget {
-  const _PropertyChip({required this.abbreviation});
-
-  final String abbreviation;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      width: 32,
-      height: 32,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: scheme.primaryContainer,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        abbreviation,
-        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-          color: scheme.primary,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
   }
 }

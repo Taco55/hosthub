@@ -105,7 +105,7 @@ onder run 5 over een engine-mix geldt niet meer.
 | M1 | Domein: `booking.propertyId`, één `effectiveChannelSettings(propertyId)`, sparse overrides | console | done | zie hieronder |
 | M2 | Aggregatie: gefilterde set, kosten per eigen property, bezetting ÷ `dagen × selectie` | console | done | zie M2-bewijs |
 | M3 | Routing + sidebar-boom (expansie uit de route, deeplinks) | console (+lib) | done | zie M3-bewijs |
-| M4 | Property-filter op Boekingen + Omzet (per pagina per user, nooit leeg) | console | todo | |
+| M4 | Property-filter op Boekingen + Omzet (per pagina per user, nooit leeg) | console (+lib+supabase) | done | zie M4-bewijs |
 | M5 | Single-property-collapse (§5) als configuratie, geen fork | console | todo | |
 | M6 | Railgeometrie (§7) incl. no-movement-eis | console (+lib) | todo | |
 
@@ -200,6 +200,44 @@ Console:
   Shell-harness uitgebreid (route + properties + ServerSettings), rail-goldens hergenereerd.
   313 tests groen, analyze op de 2 bekende infos.
 
+**M4-bewijs.** Lib: `StyledToolbarButton`/`StyledIconButton` kunnen zichzelf benoemen
+(`label` + `trailingIconData`); met een label meet de knop zich naar zijn inhoud i.p.v. vierkant te
+blijven — dezelfde control, breder (sw@6cadc3d, +7 tests, 859 groen).
+
+**Beslissing (START_HERE vraagt erom): de selectie staat server-side**, in
+`user_settings.portfolio_scope` (jsonb, migratie `20260726150000`, lokaal toegepast en gecontroleerd:
+kolom is `jsonb`). Dus "per user" letterlijk — hij volgt de gebruiker, niet het apparaat — naast
+`export_columns`, dat exact dezelfde soort viewvoorkeur is. Vorm: `{"bookings":[1,3],"revenue":[...]}`;
+een afwezige pagina = alle properties, dus de default kost geen write. `UserSettingsCubit` blijft de
+enige schrijver van die rij (`changePortfolioScope`, stil — een filter is geen toast waard).
+
+- `portfolio/domain/portfolio_page.dart` — `PortfolioPage` + `propertySelectionFor` /
+  `storedScopeWith`: leest de bewaarde keuze, clamped op de properties die nu bestaan, en valt op
+  alles terug als er niets van overblijft.
+- `portfolio/presentation/widgets/property_filter_button.dart` — de kop-control. Het label zégt de
+  scope (`Alle properties` / de propertynaam / `2 van 4 properties`) i.p.v. "Filter", zodat je de
+  scope kunt lézen zonder het menu te openen. Laatste uitvinken is een no-op.
+- **Beide portfolio-schermen laden nu het hele account** (`portfolioPropertyRefs`) en het filter
+  versmalt een set die er al is: toggelen kost geen request en dus ook geen 429 bij Lodgify.
+  Dit is ook wat het prototype doet (`PORTFOLIO_BOOKINGS` → `bookings`).
+- Koppen kloppen nu met het design: crumb `Portfolio`, titel `Boekingen` / `Omzet` — een
+  portfolio-scherm noemt geen enkele property meer in zijn titel.
+- §3.4: property-kolom in beide tabellen, alleen bij >1 geselecteerd. Boekingen chip + naam (direct
+  na de kanaal-icon, zoals het design), Omzet alleen de chip (dichte tabel). Niet handmatig te
+  verbergen: het is scope-informatie, geen boekingskolom.
+- Eén `PropertyChip` in `core/widgets` voor rail, lijst, filtermenu en tabelcellen — hij is een
+  identifier, dus hij moet er overal hetzelfde uitzien.
+- Nachttarieven/valuta-write-back blijven aan één property hangen (`state.singleProperty`): een
+  gemengd portfolio heeft geen enkele tariefkalender.
+- Tests: `portfolio_page_scope_test.dart` (13: per pagina, nooit leeg, clamp, round-trip, andere
+  pagina blijft ongemoeid), `property_filter_button_test.dart` (7: de drie labelvormen, checkstate,
+  verbreden, alles selecteren, laatste uitvinken = no-op). 334 tests groen, analyze op de 2 bekende
+  infos. Rail-goldens hergenereerd (chip is nu de gedeelde widget).
+
+**Nog open in M4-gebied:** de nachttarieven op de tijdlijn zijn per property; bij meerdere
+geselecteerde properties toont de tijdlijn nog één kalender. Het design zegt niets over de tijdlijn
+bij N properties — bewust niet zelf verzonnen.
+
 **Afwijking, zelf besloten:** de route draagt de **numerieke property-id** (`/properties/3/pricing`),
 niet de slug uit het prototype (`/properties/geilo/pricing`). Een afgeleide slug breekt stil bij een
 naamswijziging — dan 404't een bewaarde link — en er is geen slug-kolom. De eis die eronder zit
@@ -222,9 +260,8 @@ nul. Zodra Accountinstellingen (§4) die velden echt moet bewerken is een per-ac
 "geen UI" is.
 
 ## next_lens
-RUN 6 loopt: M1 + M2 + M3 done, wacht op review. Daarna M4 (property-filter op Boekingen + Omzet,
-persistent per pagina per user, nooit leeg) — dat is ook waar de loader meerdere `PropertyRef`s
-meekrijgt.
+RUN 6 loopt: M1–M4 done, wacht op review. Daarna M5 (single-property-collapse §5 als configuratie
+van dezelfde schermen) en M6 (railgeometrie §7 + de no-movement-eis).
 RUN 5: E1 + E2 done. E3 (visuele verificatie) is user-gated — vraagt een ingelogde sessie.
 
 **Nog open uit §11, met reden:** de kostenbeheersing (hash-cache, één request per taal, locked

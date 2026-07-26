@@ -3,6 +3,7 @@ import 'package:styled_widgets/styled_widgets.dart';
 
 import 'package:hosthub_console/app/navigation/console_route.dart';
 import 'package:hosthub_console/core/l10n/l10n.dart';
+import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 
 /// One property as the tree renders it.
@@ -106,7 +107,7 @@ StyledNavBranch _propertyBranch({
 }) {
   return StyledNavBranch(
     label: property.name,
-    leading: _PropertyChip(abbreviation: property.abbreviation, open: isOpen),
+    leading: PropertyChip(abbreviation: property.abbreviation, filled: isOpen),
     // Exactly one property is expanded: the one in the route. Nothing else can
     // be, because a route carries one property id.
     expanded: isOpen,
@@ -184,40 +185,6 @@ StyledNavItem _propertySection({
     onTap: () => onNavigate(ConsoleRoute.propertyPath(property.id, section)),
     badge: badge,
   );
-}
-
-/// The two-letter property chip: the account's tint normally, the primary fill
-/// while that property is open.
-class _PropertyChip extends StatelessWidget {
-  const _PropertyChip({required this.abbreviation, required this.open});
-
-  final String abbreviation;
-  final bool open;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final scope = StyledSideMenuScope.maybeOf(context);
-    final baseFg = scope?.foregroundColor ?? scheme.onPrimaryContainer;
-
-    return Container(
-      width: 26,
-      height: 26,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: open ? scheme.primary : baseFg.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(7),
-      ),
-      child: Text(
-        abbreviation,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: open ? scheme.onPrimary : baseFg,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.3,
-        ),
-      ),
-    );
-  }
 }
 
 /// The tree's properties, from the account's property rows.

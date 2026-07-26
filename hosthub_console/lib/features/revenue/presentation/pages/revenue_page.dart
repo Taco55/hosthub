@@ -6,13 +6,16 @@ import 'package:styled_widgets/styled_widgets.dart';
 
 import 'package:hosthub_console/features/channel_manager/infrastructure/lodgify/lodgify_error_utils.dart';
 import 'package:hosthub_console/features/portfolio/domain/portfolio_aggregation.dart';
-import 'package:hosthub_console/features/portfolio/domain/property_ref.dart';
+import 'package:hosthub_console/features/portfolio/domain/portfolio_page.dart';
+import 'package:hosthub_console/features/portfolio/domain/portfolio_refs.dart';
+import 'package:hosthub_console/features/portfolio/presentation/widgets/property_filter_button.dart';
 import 'package:hosthub_console/features/portfolio/domain/property_selection.dart';
 import 'package:hosthub_console/features/reservations/application/nightly_rates_cubit.dart';
 import 'package:hosthub_console/features/reservations/application/reservations_cubit.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/server_settings/data/admin_settings_repository.dart';
 import 'package:hosthub_console/features/server_settings/domain/admin_settings.dart';
+import 'package:hosthub_console/features/user_settings/application/user_settings_cubit.dart';
 import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
 import 'package:hosthub_console/features/reservations/presentation/dialogs/reservation_details_dialog.dart';
 import 'package:hosthub_console/features/reservations/presentation/reservation_display.dart';
@@ -50,9 +53,7 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadAdminSettings();
-      _loadForProperty(
-        context.read<PropertyContextCubit>().state.currentProperty,
-      );
+      _loadPortfolio(context.read<PropertyContextCubit>().state.properties);
     });
   }
 
@@ -61,12 +62,14 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
     return MultiBlocListener(
       listeners: [
         BlocListener<PropertyContextCubit, PropertyContextState>(
+          // The whole account, not the selected property: the filter narrows a
+          // set that is already loaded, so toggling it costs no request and
+          // cannot run into the channel's rate limit.
           listenWhen: (previous, current) =>
-              previous.currentProperty?.lodgifyId !=
-              current.currentProperty?.lodgifyId,
+              !_sameProperties(previous.properties, current.properties),
           listener: (context, state) {
             _lastRequestKey = null;
-            _loadForProperty(state.currentProperty);
+            _loadPortfolio(state.properties);
           },
         ),
         BlocListener<NightlyRatesCubit, NightlyRatesState>(
@@ -137,11 +140,11 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
             _periodAnchor,
             now,
           );
-          final propertyName =
-              property?.name ?? context.s.revenueUnknownProperty;
-          final propertyId = property?.lodgifyId?.trim() ?? '';
+          // A portfolio screen has something to show as soon as *any* property
+          // is connected to the channel, not just the selected one.
+          final hasChannelProperties = state.properties.isNotEmpty;
           final canRefresh =
-              propertyId.isNotEmpty &&
+              hasChannelProperties &&
               state.status != ReservationsStatus.loading;
           final locale = Localizations.localeOf(context).toString();
           final dateFormatter = DateFormat('d MMM yyyy', locale);
@@ -160,8 +163,19 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
           // row, the export and the detail modal — §3's "one filter, one source
           // of truth". The selection covers the properties actually loaded, so
           // the occupancy divisor and the booking set can never disagree.
-          final selection = PropertySelection.all(
-            state.properties.map((ref) => ref.propertyId),
+          // What the user last chose for *this* page, clamped to the properties
+          // that are actually loaded. Boekingen keeps its own.
+          final selection = propertySelectionFor(
+            page: PortfolioPage.revenue,
+            availablePropertyIds: state.properties.map((ref) => ref.propertyId),
+            storedScope: context
+                .watch<UserSettingsCubit>()
+                .state
+                .settings
+                ?.portfolioScope,
+          );
+          final filterOptions = portfolioFilterOptions(
+            context.watch<PropertyContextCubit>().state.properties,
           );
           final bookedEntries = _entriesForRevenue(
             bookingsForSelection(state.entries, selection),
@@ -194,11 +208,19 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
             // surfaces — a pane card around everything adds a second
             // border the design does not have.
             decorateLeftPane: false,
-            // Design `.top`: a small section crumb over a title that names
-            // the property — not a title with a sentence under it.
-            overline: context.s.menuRevenue,
-            title: context.s.revenueHeading(propertyName),
+            // Design `.top`: the crumb says which part of the console this is;
+            // the title is the screen. A portfolio screen does not name one
+            // property — the filter beside it says what the scope is.
+            overline: context.s.navGroupPortfolio,
+            title: context.s.menuRevenue,
             actions: [
+              // §3: one control in the page header — which properties count.
+              PropertyFilterButton(
+                selection: selection,
+                options: filterOptions,
+                onChanged: (updated) => _persistSelection(context, updated),
+              ),
+              SizedBox(width: context.styledSpacing.sm),
               // Design `.top`: the period `.seg` sits in the header band beside
               // the title, not on top of the body.
               StyledSegmentedControl(
@@ -214,7 +236,7 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
                     _period = value;
                     _periodAnchor = _startOfPeriod(value, DateTime.now());
                   });
-                  _loadForProperty(property, force: true);
+                  _reload();
                 },
               ),
               const SizedBox(width: 8),
@@ -223,9 +245,7 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
               StyledToolbarButton(
                 iconData: Icons.refresh,
                 tooltip: context.s.revenueRefreshTooltip,
-                onPressed: canRefresh
-                    ? () => _loadForProperty(property, force: true)
-                    : null,
+                onPressed: canRefresh ? () => _reload() : null,
               ),
             ],
             isLoading: state.status == ReservationsStatus.loading,
@@ -245,7 +265,7 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
                         -1,
                       );
                     });
-                    _loadForProperty(property, force: true);
+                    _reload();
                   },
                   onNextPeriod: canNavigateForward
                       ? () {
@@ -267,7 +287,7 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
                                 ? latestStart
                                 : candidate;
                           });
-                          _loadForProperty(property, force: true);
+                          _reload();
                         }
                       : null,
                   periodLabel: periodLabel,
@@ -297,8 +317,10 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
                     context,
                     state: state,
                     property: property,
+                    properties: filterOptions,
+                    selection: selection,
                     channelSettings: channelSettings,
-                    propertyId: propertyId.isEmpty ? null : propertyId,
+                    hasChannelProperties: hasChannelProperties,
                     dateFormatter: dateFormatter,
                     dateTimeFormatter: dateTimeFormatter,
                     rows: revenueRows,
@@ -321,16 +343,21 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
     required ReservationsState state,
     required PropertySummary? property,
     required ChannelSettingsResolver channelSettings,
-    required String? propertyId,
+    required bool hasChannelProperties,
     required DateFormat dateFormatter,
     required DateFormat dateTimeFormatter,
     required List<_RevenueRow> rows,
+    required List<PropertyFilterOption> properties,
+    required PropertySelection selection,
     required _RevenueTotals totals,
     required _DateRange periodRange,
     required String periodLabel,
     required String locale,
   }) {
-    if (propertyId == null || propertyId.isEmpty) {
+    final showPropertyColumn = !selection.isSingle && !selection.isEmpty;
+    final propertyById = {for (final option in properties) option.id: option};
+
+    if (!hasChannelProperties) {
       return Center(
         child: Text(
           S.of(context).revenueNoLodgifyId,
@@ -424,6 +451,19 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
             dense: true,
             uppercaseHeaderLabels: false,
             columns: [
+              // §3.4: a leading property column while the selection covers more
+              // than one. This table is the dense one, so it shows the chip
+              // alone — the name is in the filter above it.
+              if (showPropertyColumn)
+                StyledDataColumn(
+                  columnHeader: Text(
+                    S.of(context).portfolioColumnProperty,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  flex: 0,
+                  width: 40,
+                ),
               StyledDataColumn(
                 columnHeader: Text(
                   S.of(context).revenueColumnBooker,
@@ -526,6 +566,11 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
             rowBuilder: (tableContext, index) {
               final row = rows[index];
               return [
+                if (showPropertyColumn)
+                  _RevenuePropertyCell(
+                    abbreviation:
+                        propertyById[row.entry.propertyId]?.abbreviation,
+                  ),
                 textCell(tableContext, row.booker, fontWeight: FontWeight.w600),
                 textCell(
                   tableContext,
@@ -680,39 +725,59 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
     );
   }
 
-  void _loadForProperty(PropertySummary? property, {bool force = false}) {
-    if (property == null) {
-      _lastRequestKey = null;
-      return;
+  static bool _sameProperties(
+    List<PropertySummary> a,
+    List<PropertySummary> b,
+  ) {
+    if (a.length != b.length) return false;
+    for (var index = 0; index < a.length; index++) {
+      if (a[index].id != b[index].id ||
+          a[index].lodgifyId != b[index].lodgifyId) {
+        return false;
+      }
     }
-    final lodgifyId = property.lodgifyId?.trim();
-    if (lodgifyId == null || lodgifyId.isEmpty) {
+    return true;
+  }
+
+  /// Remember this page's filter for this user.
+  ///
+  /// Nothing is refetched: the selection narrows a booking set that is already
+  /// loaded, so the screen updates in the same frame the checkbox does.
+  void _persistSelection(BuildContext context, PropertySelection selection) {
+    final settings = context.read<UserSettingsCubit>();
+    settings.changePortfolioScope(
+      storedScopeWith(
+        page: PortfolioPage.revenue,
+        selection: selection,
+        storedScope: settings.state.settings?.portfolioScope,
+      ),
+    );
+  }
+
+  void _reload() => _loadPortfolio(
+    context.read<PropertyContextCubit>().state.properties,
+    force: true,
+  );
+
+  /// Load every property in the account, so the filter is a narrowing of what is
+  /// already here rather than a reason to fetch again.
+  void _loadPortfolio(List<PropertySummary> properties, {bool force = false}) {
+    final refs = portfolioPropertyRefs(properties);
+    if (refs.isEmpty) {
       _lastRequestKey = null;
       return;
     }
 
     final range = _rangeForPeriod(_period, _periodAnchor);
     final requestKey =
-        '$lodgifyId:${range.start.toIso8601String()}:${range.end.toIso8601String()}';
+        '${refs.map((ref) => ref.channelPropertyId).join(',')}:'
+        '${range.start.toIso8601String()}:${range.end.toIso8601String()}';
 
-    final calendarState = context.read<ReservationsCubit>().state;
-    final hasSameCalendarRequest =
-        calendarState.singleProperty?.channelPropertyId == lodgifyId &&
-        calendarState.rangeStart == range.start &&
-        calendarState.rangeEnd == range.end &&
-        (calendarState.status == ReservationsStatus.loading ||
-            calendarState.status == ReservationsStatus.loaded);
-
-    if (!force && (_lastRequestKey == requestKey || hasSameCalendarRequest)) {
-      _lastRequestKey = requestKey;
-      return;
-    }
+    if (!force && _lastRequestKey == requestKey) return;
     _lastRequestKey = requestKey;
 
     context.read<ReservationsCubit>().loadReservations(
-      properties: [
-        PropertyRef(propertyId: property.id, channelPropertyId: lodgifyId),
-      ],
+      properties: refs,
       start: range.start,
       end: range.end,
     );
@@ -1393,4 +1458,24 @@ bool _isLikelyRevenueEntry(Reservation entry) {
   }
 
   return hasReservationId || hasGuestIdentity || hasAmount || hasSource;
+}
+
+/// A booking's property in the Revenue table: the chip alone.
+///
+/// The table is the dense one — five money columns — so the name would cost a
+/// column the figures need. The filter above the table names the properties.
+class _RevenuePropertyCell extends StatelessWidget {
+  const _RevenuePropertyCell({required this.abbreviation});
+
+  final String? abbreviation;
+
+  @override
+  Widget build(BuildContext context) {
+    final abbreviation = this.abbreviation;
+    if (abbreviation == null) return const SizedBox.shrink();
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: PropertyChip(abbreviation: abbreviation, size: 22),
+    );
+  }
 }

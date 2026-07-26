@@ -76,6 +76,36 @@ class UserSettingsCubit extends Cubit<UserSettingsState> {
     );
   }
 
+  /// Remember which properties a portfolio screen is filtered to.
+  ///
+  /// Saved without a toast: a filter is a view preference, and confirming every
+  /// checkbox would be noise. It is stored per page, so Boekingen and Omzet keep
+  /// their own selection.
+  Future<void> changePortfolioScope(Map<String, List<int>> scope) async {
+    final settings = state.settings;
+    if (settings == null) return;
+    if (_isBusy) return;
+    if (_scopesEqual(settings.portfolioScope, scope)) return;
+
+    await _saveSettings(settings.copyWith(portfolioScope: scope));
+  }
+
+  static bool _scopesEqual(
+    Map<String, List<int>>? a,
+    Map<String, List<int>>? b,
+  ) {
+    if (a == null || b == null) return a == b;
+    if (a.length != b.length) return false;
+    for (final entry in a.entries) {
+      final other = b[entry.key];
+      if (other == null || other.length != entry.value.length) return false;
+      for (var index = 0; index < other.length; index++) {
+        if (other[index] != entry.value[index]) return false;
+      }
+    }
+    return true;
+  }
+
   Future<void> changeExportLanguage(String exportLanguageCode) async {
     final settings = state.settings;
     if (settings == null) return;
@@ -350,9 +380,11 @@ class UserSettingsCubit extends Cubit<UserSettingsState> {
     await bootstrap(userId: userId);
   }
 
+  /// [toast] is optional: a preference the user did not ask to be confirmed —
+  /// a view filter — saves silently.
   Future<void> _saveSettings(
     UserSettings updated, {
-    required UserSettingsToast toast,
+    UserSettingsToast? toast,
   }) async {
     emit(state.copyWith(status: UserSettingsStatus.saving));
     try {
@@ -363,6 +395,7 @@ class UserSettingsCubit extends Cubit<UserSettingsState> {
           status: UserSettingsStatus.ready,
           settings: saved,
           toast: toast,
+          clearToast: toast == null,
           errorMessage: null,
         ),
       );

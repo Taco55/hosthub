@@ -16,6 +16,12 @@ _UserSettings _$UserSettingsFromJson(Map<String, dynamic> json) =>
           .toList(),
       exportPdfOrientation:
           json['export_pdf_orientation'] as String? ?? 'portrait',
+      portfolioScope: (json['portfolio_scope'] as Map<String, dynamic>?)?.map(
+        (k, e) => MapEntry(
+          k,
+          (e as List<dynamic>).map((e) => (e as num).toInt()).toList(),
+        ),
+      ),
       lodgifyApiKey: json['lodgify_api_key'] as String?,
       lodgifyApiKeyLast4: json['lodgify_api_key_last4'] as String?,
       lodgifyConnected: json['lodgify_connected'] as bool? ?? false,
@@ -34,6 +40,7 @@ Map<String, dynamic> _$UserSettingsToJson(_UserSettings instance) =>
       'export_language_code': instance.exportLanguageCode,
       'export_columns': instance.exportColumns,
       'export_pdf_orientation': instance.exportPdfOrientation,
+      'portfolio_scope': instance.portfolioScope,
       'lodgify_api_key': instance.lodgifyApiKey,
       'lodgify_api_key_last4': instance.lodgifyApiKeyLast4,
       'lodgify_connected': instance.lodgifyConnected,
