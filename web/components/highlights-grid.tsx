@@ -10,7 +10,7 @@ type HighlightImage = ResponsiveImage & {
 };
 
 type HighlightsGridProps = {
-  highlights: { title: string; description?: string }[];
+  highlights: { id?: string; title: string; description?: string }[];
   icons?: LucideIcon[];
   images?: HighlightImage[];
 };
@@ -47,7 +47,12 @@ export function HighlightsGrid({ highlights, icons, images }: HighlightsGridProp
                 {highlight.description ? (
                   <p
                     className="text-sm text-muted-foreground"
-                    {...cmsField("page/home", "highlights", index, "description")}
+                    {...cmsField(
+                      "page/home",
+                      "highlights",
+                      highlight.id ?? index,
+                      "description",
+                    )}
                   >
                     {highlight.description}
                   </p>

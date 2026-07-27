@@ -19,7 +19,7 @@ export type CabinContent = {
     badges: { label: string; value: string }[];
   };
   experience: string[];
-  description: string[];
+  description: Array<string | import("./cms-rows").TextRow>;
   layoutAndFacilities: {
     title: string;
     items: string[];
@@ -775,8 +775,14 @@ export type LocalizedImage = {
 };
 
 export type HighlightItem = {
+  /** Stable row id (post row-id migration); addresses editor bindings. */
+  id?: string;
   title: string;
   description: string;
+  /** Image fused into the row by the row-id migration. */
+  image?: string;
+  /** Localized alt text of that image. */
+  alt?: string;
 };
 
 type HighlightImageSelection = {

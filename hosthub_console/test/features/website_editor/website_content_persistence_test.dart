@@ -19,6 +19,9 @@ class FakeWebsiteContentRepository implements WebsiteContentRepository {
   /// When set, [loadPageContent] throws it instead of returning content.
   Object? loadError;
 
+  /// The list orders each saveSourceDraft call carried.
+  final List<Map<String, List<String>>> sourceDraftOrders = [];
+
   @override
   Future<WebsitePageContent> loadPageContent({
     required String siteId,
@@ -36,6 +39,7 @@ class FakeWebsiteContentRepository implements WebsiteContentRepository {
     required String siteId,
     required String sourceLanguage,
     required Map<String, String> fields,
+    Map<String, List<String>> listOrders = const {},
   }) async {
     final error = nextSourceDraftError;
     if (error != null) {
@@ -43,6 +47,7 @@ class FakeWebsiteContentRepository implements WebsiteContentRepository {
       throw error;
     }
     sourceDraftSaves.add(Map.of(fields));
+    sourceDraftOrders.add(Map.of(listOrders));
   }
 
   @override
@@ -60,6 +65,7 @@ class FakeWebsiteContentRepository implements WebsiteContentRepository {
     required String siteId,
     required String sourceLocale,
     required Map<String, Map<String, String>> valuesByLocale,
+    Map<String, List<String>> listOrders = const {},
   }) async {
     publishes.add(valuesByLocale);
   }
@@ -73,30 +79,33 @@ WebsitePageContent _remoteContent() => WebsitePageContent(
   // persistent editor has none of its own until this arrives.
   sourceLanguage: 'nl',
   locales: const ['nl', 'en', 'no'],
+  listOrder: const {
+    'home.highlights': ['hA', 'hB'],
+  },
   source: {
-    'hero.headline': 'Titel uit database',
-    'hero.subtitle': 'Ondertitel uit database',
-    'highlights.0': 'Hoogtepunt A',
-    'highlights.1': 'Hoogtepunt B',
+    'cabin.hero.title': 'Titel uit database',
+    'cabin.hero.subtitle': 'Ondertitel uit database',
+    'home.highlights.hA.description': 'Hoogtepunt A',
+    'home.highlights.hB.description': 'Hoogtepunt B',
   },
   translations: {
     for (final lang in ['en', 'no'])
       lang: {
         for (final key in const [
-          'hero.headline',
-          'hero.subtitle',
-          'highlights.0',
-          'highlights.1',
+          'cabin.hero.title',
+          'cabin.hero.subtitle',
+          'home.highlights.hA.description',
+          'home.highlights.hB.description',
         ])
           key: TranslatedField(
             value: '[$lang] $key',
             status: FieldTranslationStatus.auto,
             sourceHash: sourceHashOf(
               {
-                'hero.headline': 'Titel uit database',
-                'hero.subtitle': 'Ondertitel uit database',
-                'highlights.0': 'Hoogtepunt A',
-                'highlights.1': 'Hoogtepunt B',
+                'cabin.hero.title': 'Titel uit database',
+                'cabin.hero.subtitle': 'Ondertitel uit database',
+                'home.highlights.hA.description': 'Hoogtepunt A',
+                'home.highlights.hB.description': 'Hoogtepunt B',
               }[key]!,
             ),
           ),
@@ -121,7 +130,7 @@ void main() {
     expect(cubit.state.translations, isEmpty);
     expect(cubit.state.propertyName, isEmpty);
     // Not the seed's 'Jouw bergwoning in Trysil'.
-    expect(cubit.state.valueFor('nl', 'hero.headline'), isEmpty);
+    expect(cubit.state.valueFor('nl', 'cabin.hero.title'), isEmpty);
     await cubit.close();
   });
 
@@ -138,7 +147,7 @@ void main() {
 
     // Whatever the editor does next must not reach the site's documents: the
     // fields belong to no site, so a save would overwrite the owner's pages.
-    cubit.editSourceField('hero.headline', 'Iets');
+    cubit.editSourceField('cabin.hero.title', 'Iets');
     await cubit.save();
     expect(repo.sourceDraftSaves, isEmpty);
 
@@ -149,7 +158,7 @@ void main() {
     repo.loadError = null;
     await cubit.loadContent();
     expect(cubit.state.loadStatus, ContentLoadStatus.ready);
-    expect(cubit.state.valueFor('nl', 'hero.headline'), 'Titel uit database');
+    expect(cubit.state.valueFor('nl', 'cabin.hero.title'), 'Titel uit database');
     await cubit.close();
   });
 
@@ -162,8 +171,8 @@ void main() {
       await cubit.loadContent();
 
       expect(repo.loadCalls, 1);
-      expect(cubit.state.valueFor('nl', 'hero.headline'), 'Titel uit database');
-      expect(cubit.state.valueFor('en', 'hero.headline'), '[en] hero.headline');
+      expect(cubit.state.valueFor('nl', 'cabin.hero.title'), 'Titel uit database');
+      expect(cubit.state.valueFor('en', 'cabin.hero.title'), '[en] cabin.hero.title');
       expect(cubit.state.dirty, isFalse);
       expect(cubit.state.staleLanguages, isEmpty);
       await cubit.close();
@@ -175,7 +184,7 @@ void main() {
     final cubit = _build(repo);
     await cubit.loadContent();
 
-    cubit.editSourceField('hero.headline', 'Nieuwe titel');
+    cubit.editSourceField('cabin.hero.title', 'Nieuwe titel');
 
     expect(cubit.state.unsavedChanges, isTrue);
     expect(repo.sourceDraftSaves, isEmpty);
@@ -183,7 +192,7 @@ void main() {
     await cubit.save();
 
     expect(repo.sourceDraftSaves, hasLength(1));
-    expect(repo.sourceDraftSaves.single['hero.headline'], 'Nieuwe titel');
+    expect(repo.sourceDraftSaves.single['cabin.hero.title'], 'Nieuwe titel');
     expect(cubit.state.unsavedChanges, isFalse);
     await cubit.close();
   });
@@ -193,7 +202,7 @@ void main() {
     final cubit = _build(repo);
     await cubit.loadContent();
 
-    cubit.editSourceField('hero.headline', 'Nieuwe titel');
+    cubit.editSourceField('cabin.hero.title', 'Nieuwe titel');
     await cubit.close();
 
     expect(repo.sourceDraftSaves, isEmpty);
@@ -204,7 +213,7 @@ void main() {
     final cubit = _build(repo);
     await cubit.loadContent();
 
-    cubit.editSourceField('hero.headline', 'Nieuwe titel');
+    cubit.editSourceField('cabin.hero.title', 'Nieuwe titel');
     repo.nextSourceDraftError = StateError('offline');
     await cubit.save();
 
@@ -220,18 +229,55 @@ void main() {
     await cubit.close();
   });
 
+  test('a reorder saves the new row order; translations stay put', () async {
+    // The handoff's mandatory regression (fase 2, stap 1): drag a row in the
+    // source, open the target language — the translations traveled with
+    // their row. Persistence-side: the save carries the order, not swapped
+    // values.
+    final repo = FakeWebsiteContentRepository(content: _remoteContent());
+    final cubit = _build(repo);
+    await cubit.loadContent();
+    expect(cubit.state.listOrder['home.highlights'], ['hA', 'hB']);
+
+    cubit.moveRow('home.highlights', 0, 2);
+    await cubit.save();
+
+    // The write is the order; no field values changed hands.
+    expect(repo.sourceDraftOrders.single, {
+      'home.highlights': ['hB', 'hA'],
+    });
+    expect(repo.sourceDraftSaves.single['home.highlights.hA.description'],
+        'Hoogtepunt A');
+    expect(cubit.state.listOrder['home.highlights'], ['hB', 'hA']);
+    expect(cubit.state.unsavedChanges, isFalse);
+
+    // Open the target language: the translation still belongs to its row.
+    cubit.setPreviewLanguage('en');
+    expect(
+      cubit.state.valueFor('en', 'home.highlights.hA.description'),
+      '[en] home.highlights.hA.description',
+    );
+    expect(
+      cubit.state.fields
+          .where((f) => f.listKey == 'home.highlights')
+          .map((f) => f.rowId),
+      ['hB', 'hA'],
+    );
+    await cubit.close();
+  });
+
   test('translation edits persist as locked rows on save', () async {
     final repo = FakeWebsiteContentRepository(content: _remoteContent());
     final cubit = _build(repo);
     await cubit.loadContent();
 
-    cubit.editTranslationField('en', 'hero.headline', 'My headline');
+    cubit.editTranslationField('en', 'cabin.hero.title', 'My headline');
     await cubit.save();
 
     expect(repo.translationSaves, hasLength(1));
     final (language, key, field) = repo.translationSaves.single;
     expect(language, 'en');
-    expect(key, 'hero.headline');
+    expect(key, 'cabin.hero.title');
     expect(field.status, FieldTranslationStatus.locked);
     expect(field.value, 'My headline');
     await cubit.close();
@@ -241,7 +287,7 @@ void main() {
     final repo = FakeWebsiteContentRepository(content: _remoteContent());
     final cubit = _build(repo);
     await cubit.loadContent();
-    cubit.editSourceField('hero.headline', 'Nieuwe titel');
+    cubit.editSourceField('cabin.hero.title', 'Nieuwe titel');
     // Publish ships the saved layer, so there has to be one (§11i).
     await cubit.save();
 
@@ -250,10 +296,10 @@ void main() {
     expect(repo.publishes, hasLength(1));
     final byLocale = repo.publishes.single;
     expect(byLocale.keys, containsAll(<String>['nl', 'en', 'no']));
-    expect(byLocale['nl']!['hero.headline'], 'Nieuwe titel');
+    expect(byLocale['nl']!['cabin.hero.title'], 'Nieuwe titel');
     // Targets publish their current (translated) values for every field of
     // every page (the publish scope spans the whole site).
-    expect(byLocale['en']!.keys, hasLength(kAllFields.length));
+    expect(byLocale['en']!.keys, hasLength(cubit.state.allFields.length));
     expect(cubit.state.dirty, isFalse);
     await cubit.close();
   });
@@ -302,7 +348,7 @@ void main() {
       expect(cubit.state.previewDomain, 'trysilpanorama.com');
       expect(cubit.state.lastSavedAt, isNull);
 
-      cubit.editSourceField('hero.headline', 'Nieuwe titel');
+      cubit.editSourceField('cabin.hero.title', 'Nieuwe titel');
       await cubit.save();
 
       // The save marked its moment, which the embedded live preview uses as a
@@ -318,15 +364,15 @@ void main() {
     await cubit.loadContent();
     expect(cubit.state.isLanguageStale('en'), isFalse);
 
-    cubit.editSourceField('hero.headline', 'Nieuwe titel');
+    cubit.editSourceField('cabin.hero.title', 'Nieuwe titel');
     // Staleness is measured against the saved source: the translations still
     // match what was translated from until the edit is committed.
-    expect(cubit.state.isFieldStale('en', 'hero.headline'), isFalse);
+    expect(cubit.state.isFieldStale('en', 'cabin.hero.title'), isFalse);
     await cubit.save();
 
     // sha256 source hashes survive hydration, so staleness is detected.
-    expect(cubit.state.isFieldStale('en', 'hero.headline'), isTrue);
-    expect(cubit.state.isFieldStale('en', 'hero.subtitle'), isFalse);
+    expect(cubit.state.isFieldStale('en', 'cabin.hero.title'), isTrue);
+    expect(cubit.state.isFieldStale('en', 'cabin.hero.subtitle'), isFalse);
     await cubit.close();
   });
 
@@ -388,12 +434,12 @@ void main() {
       };
 
       expect(
-        WebsiteContentRepository.readField('hero.headline', 'cabin', content),
+        WebsiteContentRepository.readField('cabin.hero.title', 'cabin', content),
         'Oude titel',
       );
 
       WebsiteContentRepository.writeField(
-        'hero.headline',
+        'cabin.hero.title',
         'cabin',
         content,
         'Nieuwe titel',
@@ -404,15 +450,21 @@ void main() {
       expect((content['meta'] as Map)['name'], 'x');
     });
 
-    test('chalet fields map to cabin description[N]/experience[N]', () {
+    test('description/experience rows resolve by their stable id', () {
       final content = <String, dynamic>{
-        'description': <dynamic>['Eerste alinea', 'Tweede alinea'],
-        'experience': <dynamic>['Ski-in', 'Sauna'],
+        'description': <dynamic>[
+          <String, dynamic>{'id': 'dA', 'text': 'Eerste alinea'},
+          <String, dynamic>{'id': 'dB', 'text': 'Tweede alinea'},
+        ],
+        'experience': <dynamic>[
+          <String, dynamic>{'id': 'eA', 'text': 'Ski-in'},
+          <String, dynamic>{'id': 'eB', 'text': 'Sauna'},
+        ],
       };
 
       expect(
         WebsiteContentRepository.readField(
-          'chalet.description.0',
+          'cabin.description.dA.text',
           'cabin',
           content,
         ),
@@ -420,7 +472,7 @@ void main() {
       );
       expect(
         WebsiteContentRepository.readField(
-          'chalet.experience.1',
+          'cabin.experience.eB.text',
           'cabin',
           content,
         ),
@@ -428,14 +480,52 @@ void main() {
       );
 
       WebsiteContentRepository.writeField(
-        'chalet.experience.0',
+        'cabin.experience.eA.text',
         'cabin',
         content,
         'Nieuw',
       );
-      expect((content['experience'] as List)[0], 'Nieuw');
-      expect((content['experience'] as List)[1], 'Sauna');
-      expect((content['description'] as List)[0], 'Eerste alinea');
+      expect(((content['experience'] as List)[0] as Map)['text'], 'Nieuw');
+      expect(((content['experience'] as List)[1] as Map)['text'], 'Sauna');
+      expect(
+        ((content['description'] as List)[0] as Map)['text'],
+        'Eerste alinea',
+      );
+    });
+
+    test('a row keeps its value when the array is reordered', () {
+      // The regression the id model exists for: with index-based keys,
+      // dragging row 1 to position 3 made the translation of row 1 the
+      // translation of row 2.
+      final content = <String, dynamic>{
+        'highlights': <dynamic>[
+          <String, dynamic>{'id': 'hA', 'description': 'Eerste'},
+          <String, dynamic>{'id': 'hB', 'description': 'Tweede'},
+          <String, dynamic>{'id': 'hC', 'description': 'Derde'},
+        ],
+      };
+
+      WebsiteContentRepository.applyListOrder(
+        'home.highlights',
+        content,
+        const ['hC', 'hA', 'hB'],
+      );
+
+      final rows = content['highlights'] as List;
+      expect([for (final r in rows) (r as Map)['id']], ['hC', 'hA', 'hB']);
+      // Reads by id are order-independent.
+      expect(
+        WebsiteContentRepository.readField(
+          'home.highlights.hA.description',
+          'page',
+          content,
+        ),
+        'Eerste',
+      );
+      expect(
+        WebsiteContentRepository.listRowIdsIn('home.highlights', content),
+        ['hC', 'hA', 'hB'],
+      );
     });
 
     test('practical/area/contact fields map to their documents', () {
@@ -499,21 +589,33 @@ void main() {
       );
     });
 
-    test('highlight fields map to page highlights[N].description', () {
+    test('highlight fields map to their row by id, not by position', () {
       final content = <String, dynamic>{
         'highlights': <dynamic>[
-          <String, dynamic>{'title': 'Ski-in / ski-out', 'description': 'Oud'},
-          <String, dynamic>{'title': 'Sauna', 'description': 'Ontspan'},
+          <String, dynamic>{
+            'id': 'hA',
+            'title': 'Ski-in / ski-out',
+            'description': 'Oud',
+          },
+          <String, dynamic>{
+            'id': 'hB',
+            'title': 'Sauna',
+            'description': 'Ontspan',
+          },
         ],
       };
 
       expect(
-        WebsiteContentRepository.readField('highlights.1', 'page', content),
+        WebsiteContentRepository.readField(
+          'home.highlights.hB.description',
+          'page',
+          content,
+        ),
         'Ontspan',
       );
 
       WebsiteContentRepository.writeField(
-        'highlights.0',
+        'home.highlights.hA.description',
         'page',
         content,
         'Direct de pistes op',
@@ -528,21 +630,23 @@ void main() {
       final content = <String, dynamic>{};
 
       WebsiteContentRepository.writeField(
-        'hero.headline',
+        'cabin.hero.title',
         'cabin',
         content,
         'Titel',
       );
       WebsiteContentRepository.writeField(
-        'chalet.experience.2',
+        'cabin.experience.eZ.text',
         'cabin',
         content,
         'Derde',
       );
 
       expect((content['hero'] as Map)['title'], 'Titel');
-      // Rows before the written one exist and are usable, not missing.
-      expect(content['experience'], ['', '', 'Derde']);
+      // A write for an unknown row id appends a fresh, usable row.
+      expect(content['experience'], [
+        {'id': 'eZ', 'text': 'Derde'},
+      ]);
     });
 
     test('a field key that is not in the mapping is left alone', () {
@@ -563,10 +667,16 @@ void main() {
       String? addressOf(String fieldKey) =>
           WebsiteContentRepository.locationOf(fieldKey)?.address;
 
-      expect(addressOf('hero.headline'), 'cabin/main:hero.title');
-      expect(addressOf('hero.subtitle'), 'cabin/main:hero.subtitle');
-      expect(addressOf('chalet.description.0'), 'cabin/main:description.0');
-      expect(addressOf('highlights.2'), 'page/home:highlights.2.description');
+      expect(addressOf('cabin.hero.title'), 'cabin/main:hero.title');
+      expect(addressOf('cabin.hero.subtitle'), 'cabin/main:hero.subtitle');
+      expect(
+        addressOf('cabin.description.dA.text'),
+        'cabin/main:description.dA.text',
+      );
+      expect(
+        addressOf('home.highlights.a1b2c3d4.description'),
+        'page/home:highlights.a1b2c3d4.description',
+      );
       expect(
         addressOf('practical.header.title'),
         'page/practical:header.title',

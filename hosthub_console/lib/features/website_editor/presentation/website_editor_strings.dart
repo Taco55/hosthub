@@ -22,32 +22,37 @@ String languageName(BuildContext context, String code) {
 String languageShort(String code) =>
     WebsiteSeed.languageShort[code] ?? code.toUpperCase();
 
-/// Localized field label for an editor field key.
+/// Localized field label for a plain (non-list) editor field key.
 String fieldLabel(BuildContext context, String fieldKey) {
-  final highlightMatch = RegExp(r'^highlights\.(\d+)$').firstMatch(fieldKey);
-  if (highlightMatch != null) {
-    return context.s.weFieldHighlight(int.parse(highlightMatch.group(1)!) + 1);
-  }
   switch (fieldKey) {
-    case 'hero.headline':
+    case 'cabin.hero.title':
       return context.s.weFieldHeadline;
-    case 'hero.subtitle':
+    case 'cabin.hero.subtitle':
     case 'practical.header.subtitle':
     case 'contact.subtitle':
       return context.s.weFieldSubtitle;
-    // highlights.N is repeatable — handled generically below the switch.
-    case 'chalet.description.0':
     case 'area.intro':
       return context.s.weFieldIntro;
-    case 'chalet.experience.0':
-      return context.s.weFieldExperience(1);
-    case 'chalet.experience.1':
-      return context.s.weFieldExperience(2);
     case 'practical.header.title':
     case 'contact.title':
       return context.s.weFieldTitle;
     default:
       return fieldKey;
+  }
+}
+
+/// Localized label for row [number] (1-based) of a repeatable list. Rows are
+/// numbered by display position — their id is identity, not a name.
+String listRowLabel(BuildContext context, String listKey, int number) {
+  switch (listKey) {
+    case 'home.highlights':
+      return context.s.weFieldHighlight(number);
+    case 'cabin.description':
+      return context.s.weFieldIntro;
+    case 'cabin.experience':
+      return context.s.weFieldExperience(number);
+    default:
+      return '$listKey $number';
   }
 }
 

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:crypto/crypto.dart';
 import 'package:equatable/equatable.dart';
@@ -72,27 +73,45 @@ class FieldRow extends EditorRow {
   final bool multiline;
 }
 
-/// A repeatable list of fields keyed `<listKey>.<row>`.
+/// A repeatable list of fields keyed `<listKey>.<rowId>[.<sub>]`.
 ///
-/// The number of rows is derived from the content, never stored in the
-/// schema: `max(minRows, rows present in the source)`.
+/// Which rows exist — and in what order — comes from the content
+/// (`listOrder`), never from the schema: the row id is identity, the array
+/// index is display order.
 class ListRow extends EditorRow {
   const ListRow(
     this.listKey, {
-    this.minRows = 1,
+    this.sub,
     this.multiline = false,
     this.repeatable = false,
   });
 
-  /// Prefix of the row keys (`highlights` -> `highlights.0`, `highlights.1`).
+  /// Prefix of the row keys (`home.highlights` ->
+  /// `home.highlights.<id>.description`).
   final String listKey;
 
-  /// Rows the list always shows, even when the content has fewer.
-  final int minRows;
+  /// The row's editable subfield (`text`, `description`); appended to the
+  /// field key. Null when the row itself is the value.
+  final String? sub;
   final bool multiline;
 
   /// Whether the owner can add and reorder rows in the editor.
   final bool repeatable;
+}
+
+/// The field key of one list row: `<listKey>.<rowId>[.<sub>]`.
+String listFieldKey(String listKey, String rowId, String? sub) =>
+    sub == null ? '$listKey.$rowId' : '$listKey.$rowId.$sub';
+
+/// Makes the stable id a new list row carries for life: 8 lowercase base36
+/// characters. It only has to be unique within one list; the migration gives
+/// existing rows deterministic ids of the same shape.
+String generateRowId() {
+  final random = Random.secure();
+  const alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  return [
+    for (var i = 0; i < 8; i++) alphabet[random.nextInt(alphabet.length)],
+  ].join();
 }
 
 /// One card in the editor: an identity (icon + localized title resolve
@@ -121,19 +140,21 @@ const Map<String, List<EditorCard>> kPageCards = {
     EditorCard(
       id: 'hero',
       rows: [
-        FieldRow('hero.headline'),
-        FieldRow('hero.subtitle', multiline: true),
+        FieldRow('cabin.hero.title'),
+        FieldRow('cabin.hero.subtitle', multiline: true),
       ],
     ),
     EditorCard(
       id: 'highlights',
-      rows: [ListRow('highlights', minRows: 2, repeatable: true)],
+      rows: [
+        ListRow('home.highlights', sub: 'description', repeatable: true),
+      ],
     ),
     EditorCard(
       id: 'content',
       rows: [
-        ListRow('chalet.description', multiline: true),
-        ListRow('chalet.experience', minRows: 2),
+        ListRow('cabin.description', sub: 'text', multiline: true),
+        ListRow('cabin.experience', sub: 'text'),
       ],
     ),
     EditorCard(
@@ -165,16 +186,18 @@ const Map<String, List<EditorCard>> kPageCards = {
 };
 
 /// One concrete editable field, expanded from the schema: a [FieldRow] as-is,
-/// or one row of a [ListRow] (`highlights.2`).
+/// or one row of a [ListRow] (`home.highlights.<id>.description`).
 class EditorField extends Equatable {
   const EditorField({
     required this.key,
     required this.cardId,
     this.multiline = false,
     this.listKey,
+    this.rowId,
   });
 
-  /// Stable field key, e.g. `hero.headline`, `highlights.0`.
+  /// Stable field key, e.g. `cabin.hero.title`,
+  /// `home.highlights.a1b2c3d4.description`.
   final String key;
 
   /// The card this field renders on.
@@ -184,29 +207,18 @@ class EditorField extends Equatable {
   /// The list this field is a row of; null for a plain field.
   final String? listKey;
 
+  /// The stable id of the row this field belongs to; null for a plain field.
+  final String? rowId;
+
   @override
-  List<Object?> get props => [key, cardId, multiline, listKey];
+  List<Object?> get props => [key, cardId, multiline, listKey, rowId];
 }
 
-/// Number of `<listKey>.<n>` rows present in [source], at least [minRows].
-int listRowCount(String listKey, int minRows, Map<String, String> source) {
-  var maxIndex = minRows - 1;
-  final pattern = RegExp('^${RegExp.escape(listKey)}\\.(\\d+)\$');
-  for (final key in source.keys) {
-    final match = pattern.firstMatch(key);
-    if (match != null) {
-      final index = int.parse(match.group(1)!);
-      if (index > maxIndex) maxIndex = index;
-    }
-  }
-  return maxIndex + 1;
-}
-
-/// Expands one page's schema against the source content: plain fields as-is,
-/// list rows one field per row present (minimum: the schema's [ListRow.minRows]).
+/// Expands one page's schema: plain fields as-is, list rows one field per row
+/// id in [listOrder] (identity from the content, order from the content).
 List<EditorField> effectiveFieldsFor(
   String pageKey,
-  Map<String, String> source,
+  Map<String, List<String>> listOrder,
 ) {
   final cards = kPageCards[pageKey] ?? const <EditorCard>[];
   return [
@@ -216,24 +228,19 @@ List<EditorField> effectiveFieldsFor(
           FieldRow(:final key, :final multiline) => [
             EditorField(key: key, cardId: card.id, multiline: multiline),
           ],
-          ListRow(:final listKey, :final minRows, :final multiline) => [
-            for (var i = 0; i < listRowCount(listKey, minRows, source); i++)
+          ListRow(:final listKey, :final sub, :final multiline) => [
+            for (final rowId in listOrder[listKey] ?? const <String>[])
               EditorField(
-                key: '$listKey.$i',
+                key: listFieldKey(listKey, rowId, sub),
                 cardId: card.id,
                 multiline: multiline,
                 listKey: listKey,
+                rowId: rowId,
               ),
           ],
         },
   ];
 }
-
-/// Every editable field across all pages at its schema minimum — the
-/// source-independent enumeration (seed state, load-time field set).
-List<EditorField> get kAllFields => [
-  for (final page in kPageCards.keys) ...effectiveFieldsFor(page, const {}),
-];
 
 /// Computes the source-text hash used to detect stale auto translations.
 /// sha256 hex — identical to the hash the translate-content Edge Function
@@ -264,18 +271,26 @@ class WebsiteSeed {
     'no': 'NO',
   };
 
+  /// Row ids per repeatable list, in display order. Fixed ids: the seed is a
+  /// demo document, and its ids behave exactly like the generated ones.
+  static const Map<String, List<String>> listOrder = {
+    'home.highlights': ['h1', 'h2'],
+    'cabin.description': ['d1'],
+    'cabin.experience': ['e1', 'e2'],
+  };
+
   /// Home-page field text per language.
   static const Map<String, Map<String, String>> home = {
     'nl': {
-      'hero.headline': 'Jouw bergwoning in Trysil',
-      'hero.subtitle':
+      'cabin.hero.title': 'Jouw bergwoning in Trysil',
+      'cabin.hero.subtitle':
           'Ski-in, ski-out luxe voor acht personen, op een steenworp van piste en bos.',
-      'highlights.0': 'Direct de Trysilfjellet-pistes op.',
-      'highlights.1': 'Ontspan na een dag op de berg.',
-      'chalet.description.0':
+      'home.highlights.h1.description': 'Direct de Trysilfjellet-pistes op.',
+      'home.highlights.h2.description': 'Ontspan na een dag op de berg.',
+      'cabin.description.d1.text':
           'Vrijstaand chalet in Fageråsen met privésauna en panoramisch uitzicht op de bergen.',
-      'chalet.experience.0': 'Ski-in/ski-out via de transportpiste.',
-      'chalet.experience.1': 'Sauna met uitzicht na een dag op de piste.',
+      'cabin.experience.e1.text': 'Ski-in/ski-out via de transportpiste.',
+      'cabin.experience.e2.text': 'Sauna met uitzicht na een dag op de piste.',
       'practical.header.title': 'Praktische informatie',
       'practical.header.subtitle':
           'Alles voor aankomst, verblijf en vertrek op een rij.',
@@ -285,15 +300,15 @@ class WebsiteSeed {
       'contact.subtitle': 'Vragen of boeken? We reageren snel.',
     },
     'en': {
-      'hero.headline': 'Your mountain home in Trysil',
-      'hero.subtitle':
+      'cabin.hero.title': 'Your mountain home in Trysil',
+      'cabin.hero.subtitle':
           "Ski-in, ski-out luxury for eight, a stone's throw from the slopes and the forest.",
-      'highlights.0': 'Straight onto the Trysilfjellet trails.',
-      'highlights.1': 'Unwind after a day on the mountain.',
-      'chalet.description.0':
+      'home.highlights.h1.description': 'Straight onto the Trysilfjellet trails.',
+      'home.highlights.h2.description': 'Unwind after a day on the mountain.',
+      'cabin.description.d1.text':
           'Detached chalet in Fageråsen with a private sauna and panoramic mountain views.',
-      'chalet.experience.0': 'Ski-in/ski-out via the transport track.',
-      'chalet.experience.1': 'A sauna with a view after a day on the slopes.',
+      'cabin.experience.e1.text': 'Ski-in/ski-out via the transport track.',
+      'cabin.experience.e2.text': 'A sauna with a view after a day on the slopes.',
       'practical.header.title': 'Practical information',
       'practical.header.subtitle':
           'Everything for arrival, stay and departure at a glance.',
@@ -303,15 +318,15 @@ class WebsiteSeed {
       'contact.subtitle': 'Questions or booking? We reply quickly.',
     },
     'no': {
-      'hero.headline': 'Ditt fjellhjem i Trysil',
-      'hero.subtitle':
+      'cabin.hero.title': 'Ditt fjellhjem i Trysil',
+      'cabin.hero.subtitle':
           'Ski-in, ski-out-luksus for åtte, et steinkast fra bakkene og skogen.',
-      'highlights.0': 'Rett ut i Trysilfjellet-løypene.',
-      'highlights.1': 'Slapp av etter en dag på fjellet.',
-      'chalet.description.0':
+      'home.highlights.h1.description': 'Rett ut i Trysilfjellet-løypene.',
+      'home.highlights.h2.description': 'Slapp av etter en dag på fjellet.',
+      'cabin.description.d1.text':
           'Frittliggende hytte i Fageråsen med privat badstue og panoramautsikt over fjellene.',
-      'chalet.experience.0': 'Ski-in/ski-out via transportløypa.',
-      'chalet.experience.1': 'Badstue med utsikt etter en dag i bakken.',
+      'cabin.experience.e1.text': 'Ski-in/ski-out via transportløypa.',
+      'cabin.experience.e2.text': 'Badstue med utsikt etter en dag i bakken.',
       'practical.header.title': 'Praktisk informasjon',
       'practical.header.subtitle':
           'Alt om ankomst, opphold og avreise på ett sted.',

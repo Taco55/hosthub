@@ -302,7 +302,7 @@ class _EditorCardView extends StatelessWidget {
                 state: state,
                 field: state.fields.firstWhere((f) => f.key == key),
                 label: fieldLabel(context, key),
-                autofocus: key == 'hero.headline' && state.isSourceMode,
+                autofocus: key == 'cabin.hero.title' && state.isSourceMode,
               ),
             ),
             ListRow(:final listKey, :final repeatable) => _FieldListView(
@@ -451,7 +451,7 @@ class _FieldListView extends StatelessWidget {
                     child: WebsiteFieldRow(
                       state: state,
                       field: rowFields[index],
-                      label: fieldLabel(context, rowFields[index].key),
+                      label: listRowLabel(context, listKey, index + 1),
                     ),
                   ),
                 ],
@@ -459,11 +459,11 @@ class _FieldListView extends StatelessWidget {
             ),
           )
         else
-          for (final field in rowFields) ...[
+          for (final (index, field) in rowFields.indexed) ...[
             WebsiteFieldRow(
               state: state,
               field: field,
-              label: fieldLabel(context, field.key),
+              label: listRowLabel(context, listKey, index + 1),
             ),
             // §11e: field-to-field spacing inside a section is one token; the
             // section's own padding supplies the outer breathing room.

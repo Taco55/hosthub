@@ -82,7 +82,7 @@ void main() {
     cubit.setPreviewLanguage('en');
     cubit.editTranslationField(
       'en',
-      'hero.headline',
+      'cabin.hero.title',
       'Your mountain home in Trysil',
     );
     await tester.pumpAndSettle();

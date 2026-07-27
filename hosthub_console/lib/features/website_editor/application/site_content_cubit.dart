@@ -46,8 +46,10 @@ class SiteContentState extends Equatable {
     required this.dirty,
     required this.publishOpen,
     required this.translating,
+    this.listOrder = const {},
     this.draftSource = const {},
     this.draftTranslations = const {},
+    this.draftListOrder = const {},
     this.errorMessage,
     this.loadError,
     this.previewDomain,
@@ -76,6 +78,10 @@ class SiteContentState extends Equatable {
   /// locale.
   final Map<String, Map<String, TranslatedField>> translations;
 
+  /// Saved `listKey -> row ids` in display order. Identity lives in the id,
+  /// order lives here — reordering changes this and nothing else.
+  final Map<String, List<String>> listOrder;
+
   /// Uncommitted source-language edits. Only holds fields whose value differs
   /// from [source].
   final Map<String, String> draftSource;
@@ -83,6 +89,9 @@ class SiteContentState extends Equatable {
   /// Uncommitted target-language edits — text *and* the auto/locked mode, which
   /// is editorial metadata that travels with the copy it belongs to (§11h).
   final Map<String, Map<String, TranslatedField>> draftTranslations;
+
+  /// Uncommitted row-order/row-set changes per list (add, reorder).
+  final Map<String, List<String>> draftListOrder;
 
   /// Whether there are saved-but-unpublished changes. Set by a save, cleared by
   /// publish: typing does not set it, because typing does not save (§11i).
@@ -136,11 +145,17 @@ class SiteContentState extends Equatable {
   /// saved clears it again. It dims `Publish` and drives the exit warning.
   bool get unsavedChanges =>
       draftSource.isNotEmpty ||
+      draftListOrder.isNotEmpty ||
       draftTranslations.values.any((fields) => fields.isNotEmpty);
 
   /// Source text as the fields show it: the draft on top of the saved layer.
   Map<String, String> get effectiveSource =>
       draftSource.isEmpty ? source : {...source, ...draftSource};
+
+  /// Row order as the editor shows it: the draft on top of the saved layer.
+  Map<String, List<String>> get effectiveListOrder => draftListOrder.isEmpty
+      ? listOrder
+      : {...listOrder, ...draftListOrder};
 
   /// Target locales in display order (source first, then the rest).
   List<String> get orderedLocales => [
@@ -153,12 +168,13 @@ class SiteContentState extends Equatable {
 
   /// The editable fields for the current page (list rows are repeatable
   /// and derived from the content the owner sees, drafts included).
-  List<EditorField> get fields => effectiveFieldsFor(pageKey, effectiveSource);
+  List<EditorField> get fields =>
+      effectiveFieldsFor(pageKey, effectiveListOrder);
 
   /// Every editable field across all pages (translate/publish scope).
   List<EditorField> get allFields => [
     for (final page in kPageCards.keys)
-      ...effectiveFieldsFor(page, effectiveSource),
+      ...effectiveFieldsFor(page, effectiveListOrder),
   ];
 
   /// Hash of the **saved** source text. Translation reads the saved layer, so
@@ -231,8 +247,10 @@ class SiteContentState extends Equatable {
     bool? previewVisible,
     Map<String, String>? source,
     Map<String, Map<String, TranslatedField>>? translations,
+    Map<String, List<String>>? listOrder,
     Map<String, String>? draftSource,
     Map<String, Map<String, TranslatedField>>? draftTranslations,
+    Map<String, List<String>>? draftListOrder,
     bool? dirty,
     bool? publishOpen,
     Set<String>? translating,
@@ -259,10 +277,14 @@ class SiteContentState extends Equatable {
       previewVisible: previewVisible ?? this.previewVisible,
       source: source ?? this.source,
       translations: translations ?? this.translations,
+      listOrder: listOrder ?? this.listOrder,
       draftSource: clearDraft ? const {} : (draftSource ?? this.draftSource),
       draftTranslations: clearDraft
           ? const {}
           : (draftTranslations ?? this.draftTranslations),
+      draftListOrder: clearDraft
+          ? const {}
+          : (draftListOrder ?? this.draftListOrder),
       dirty: dirty ?? this.dirty,
       publishOpen: publishOpen ?? this.publishOpen,
       translating: translating ?? this.translating,
@@ -290,8 +312,10 @@ class SiteContentState extends Equatable {
     previewVisible,
     source,
     translations,
+    listOrder,
     draftSource,
     draftTranslations,
+    draftListOrder,
     dirty,
     publishOpen,
     translating,
@@ -348,9 +372,11 @@ class SiteContentCubit extends Cubit<SiteContentState> {
     required TranslationService translationService,
     WebsiteContentRepository? repository,
     String? siteId,
+    String Function()? rowIdGenerator,
   }) : _translationService = translationService,
        _repository = repository,
        _siteId = siteId,
+       _rowIdGenerator = rowIdGenerator ?? generateRowId,
        // A persistent editor has no content until loadContent brings it in.
        // Starting it on the seed would put demo copy in the owner's fields.
        super(
@@ -360,6 +386,10 @@ class SiteContentCubit extends Cubit<SiteContentState> {
   final TranslationService _translationService;
   final WebsiteContentRepository? _repository;
   final String? _siteId;
+
+  /// Makes the id a new row carries for life. Injectable so tests are
+  /// deterministic; the default is [generateRowId].
+  final String Function() _rowIdGenerator;
 
   bool get _persistent => _repository != null && _siteId != null;
 
@@ -389,6 +419,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
               : sourceLanguage,
           source: content.source,
           translations: content.translations,
+          listOrder: content.listOrder,
           previewDomain: content.previewDomain,
           dirty: false,
           loadStatus: ContentLoadStatus.ready,
@@ -431,11 +462,15 @@ class SiteContentCubit extends Cubit<SiteContentState> {
 
   static SiteContentState _seedState() {
     final source = Map<String, String>.from(WebsiteSeed.home['nl']!);
+    final seedFields = [
+      for (final page in kPageCards.keys)
+        ...effectiveFieldsFor(page, WebsiteSeed.listOrder),
+    ];
     final translations = <String, Map<String, TranslatedField>>{};
     for (final lang in WebsiteSeed.locales.where((l) => l != 'nl')) {
       final seed = WebsiteSeed.home[lang]!;
       translations[lang] = {
-        for (final field in kAllFields)
+        for (final field in seedFields)
           field.key: TranslatedField(
             value: seed[field.key] ?? '',
             status: FieldTranslationStatus.auto,
@@ -453,6 +488,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
       previewVisible: true,
       source: source,
       translations: translations,
+      listOrder: WebsiteSeed.listOrder,
       dirty: false,
       publishOpen: false,
       translating: const {},
@@ -598,10 +634,17 @@ class SiteContentCubit extends Cubit<SiteContentState> {
 
   /// Appends an empty row to a repeatable list (source language; targets
   /// start as fresh empty auto fields so they translate on publish). A draft,
-  /// like every edit.
+  /// like every edit — the new row's id goes into the draft order.
   void addRow(String listKey) {
-    final index = state.fields.where((f) => f.listKey == listKey).length;
-    final key = '$listKey.$index';
+    final sub = _listSubOf(listKey);
+    final rowId = _rowIdGenerator();
+    final key = listFieldKey(listKey, rowId, sub);
+
+    final order = [...?state.effectiveListOrder[listKey], rowId];
+    final draftListOrder = Map<String, List<String>>.from(
+      state.draftListOrder,
+    )..[listKey] = order;
+
     final draftSource = Map<String, String>.from(state.draftSource)..[key] = '';
     final draftTranslations = _cloneDraftTranslations();
     for (final language in state.targetLanguages) {
@@ -615,61 +658,54 @@ class SiteContentCubit extends Cubit<SiteContentState> {
       state.copyWith(
         draftSource: draftSource,
         draftTranslations: draftTranslations,
+        draftListOrder: draftListOrder,
       ),
     );
   }
 
-  /// Reorders a repeatable list's rows (drag grip). Values move in every
-  /// language, including their locked/auto status, so translations stay
-  /// attached to their row.
+  /// Reorders a repeatable list's rows (drag grip). Only the order changes:
+  /// every value — source text, translations, locked/auto status — is keyed
+  /// by the row's stable id and travels with it untouched.
   void moveRow(String listKey, int oldIndex, int newIndex) {
-    final keys = state.fields
-        .where((f) => f.listKey == listKey)
-        .map((f) => f.key)
-        .toList();
-    if (oldIndex < 0 || oldIndex >= keys.length) return;
+    final order = [...?state.effectiveListOrder[listKey]];
+    if (oldIndex < 0 || oldIndex >= order.length) return;
     if (newIndex > oldIndex) newIndex -= 1;
-    newIndex = newIndex.clamp(0, keys.length - 1);
+    newIndex = newIndex.clamp(0, order.length - 1);
     if (newIndex == oldIndex) return;
 
-    List<T> moved<T>(List<T> values) {
-      final list = List<T>.from(values);
-      final item = list.removeAt(oldIndex);
-      list.insert(newIndex, item);
-      return list;
-    }
+    final id = order.removeAt(oldIndex);
+    order.insert(newIndex, id);
 
-    final draftSource = Map<String, String>.from(state.draftSource);
-    final sourceValues = moved([
-      for (final k in keys) state.valueFor(state.sourceLanguage, k),
-    ]);
-    for (var i = 0; i < keys.length; i++) {
-      draftSource[keys[i]] = sourceValues[i];
+    final draftListOrder = Map<String, List<String>>.from(
+      state.draftListOrder,
+    );
+    // Ordering back to the saved order is not a change.
+    if (_sameOrder(order, state.listOrder[listKey])) {
+      draftListOrder.remove(listKey);
+    } else {
+      draftListOrder[listKey] = order;
     }
+    emit(state.copyWith(draftListOrder: draftListOrder));
+  }
 
-    final draftTranslations = _cloneDraftTranslations();
-    for (final language in state.targetLanguages) {
-      final langDraft = draftTranslations[language] ??= {};
-      final fieldValues = moved([
-        for (final k in keys)
-          state.translatedField(language, k) ??
-              TranslatedField(
-                value: '',
-                status: FieldTranslationStatus.auto,
-                sourceHash: sourceHashOf(''),
-              ),
-      ]);
-      for (var i = 0; i < keys.length; i++) {
-        langDraft[keys[i]] = fieldValues[i];
+  static bool _sameOrder(List<String> a, List<String>? b) {
+    if (b == null || a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  /// The schema's subfield for a list (`text`, `description`).
+  static String? _listSubOf(String listKey) {
+    for (final cards in kPageCards.values) {
+      for (final card in cards) {
+        for (final row in card.rows) {
+          if (row is ListRow && row.listKey == listKey) return row.sub;
+        }
       }
     }
-
-    emit(
-      state.copyWith(
-        draftSource: draftSource,
-        draftTranslations: draftTranslations,
-      ),
-    );
+    return null;
   }
 
   // -- save / discard --------------------------------------------------------
@@ -689,12 +725,14 @@ class SiteContentCubit extends Cubit<SiteContentState> {
     if (state.loadStatus != ContentLoadStatus.ready) return;
 
     final mergedSource = {...state.source, ...state.draftSource};
+    final mergedOrder = {...state.listOrder, ...state.draftListOrder};
     final changedFields = <(String, String, TranslatedField)>[
       for (final entry in state.draftTranslations.entries)
         for (final field in entry.value.entries)
           (entry.key, field.key, field.value),
     ];
-    final sourceChanged = state.draftSource.isNotEmpty;
+    final sourceChanged =
+        state.draftSource.isNotEmpty || state.draftListOrder.isNotEmpty;
 
     emit(state.copyWith(saving: true, clearError: true));
     if (_persistent) {
@@ -704,6 +742,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
             siteId: _siteId!,
             sourceLanguage: state.sourceLanguage,
             fields: mergedSource,
+            listOrders: state.draftListOrder,
           );
         }
         for (final (language, key, field) in changedFields) {
@@ -742,13 +781,20 @@ class SiteContentCubit extends Cubit<SiteContentState> {
       };
       if (remaining.isNotEmpty) remainingTranslations[entry.key] = remaining;
     }
+    final remainingOrder = {
+      for (final entry in state.draftListOrder.entries)
+        if (!_sameOrder(entry.value, mergedOrder[entry.key]))
+          entry.key: entry.value,
+    };
 
     emit(
       state.copyWith(
         source: mergedSource,
         translations: translations,
+        listOrder: mergedOrder,
         draftSource: remainingSource,
         draftTranslations: remainingTranslations,
+        draftListOrder: remainingOrder,
         dirty: true,
         saving: false,
         // The embedded live preview reloads on this marker.
@@ -881,6 +927,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
         await _repository!.publishAll(
           siteId: _siteId!,
           sourceLocale: state.sourceLanguage,
+          listOrders: state.listOrder,
           valuesByLocale: {
             state.sourceLanguage: Map<String, String>.from(state.source),
             for (final language in targets)

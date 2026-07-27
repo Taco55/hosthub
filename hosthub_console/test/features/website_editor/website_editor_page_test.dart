@@ -146,7 +146,7 @@ void main() {
 
     expect(find.text('Locked'), findsOneWidget);
     expect(
-      cubit.state.translatedField('en', 'hero.headline')!.status,
+      cubit.state.translatedField('en', 'cabin.hero.title')!.status,
       FieldTranslationStatus.locked,
     );
   });
@@ -157,7 +157,7 @@ void main() {
     cubit.setPreviewLanguage('en');
     await tester.pumpAndSettle();
 
-    cubit.editTranslationField('en', 'hero.headline', 'Manual override');
+    cubit.editTranslationField('en', 'cabin.hero.title', 'Manual override');
     await tester.pumpAndSettle();
     expect(find.text('Locked'), findsOneWidget);
 
@@ -165,7 +165,7 @@ void main() {
     await tester.tap(find.text('Locked'));
     await tester.pumpAndSettle();
 
-    var field = cubit.state.translatedField('en', 'hero.headline')!;
+    var field = cubit.state.translatedField('en', 'cabin.hero.title')!;
     expect(field.status, FieldTranslationStatus.auto);
     expect(field.value, 'Your mountain home in Trysil');
     expect(find.text('Locked'), findsNothing);
@@ -175,7 +175,7 @@ void main() {
     await tester.tap(find.text('Undo'));
     await tester.pumpAndSettle();
 
-    field = cubit.state.translatedField('en', 'hero.headline')!;
+    field = cubit.state.translatedField('en', 'cabin.hero.title')!;
     expect(field.status, FieldTranslationStatus.locked);
     expect(field.value, 'Manual override');
 
@@ -183,7 +183,7 @@ void main() {
     await tester.tap(find.text('Locked'));
     await tester.pumpAndSettle();
     expect(
-      cubit.state.translatedField('en', 'hero.headline')!.status,
+      cubit.state.translatedField('en', 'cabin.hero.title')!.status,
       FieldTranslationStatus.auto,
     );
   });
@@ -203,7 +203,7 @@ void main() {
         .data!;
     expect(before, startsWith('0 of '));
 
-    cubit.editTranslationField('en', 'hero.headline', 'Mine');
+    cubit.editTranslationField('en', 'cabin.hero.title', 'Mine');
     await tester.pumpAndSettle();
     expect(
       tester.widget<Text>(find.textContaining('fields yours')).data,
@@ -262,7 +262,7 @@ void main() {
       findsOneWidget,
     );
 
-    cubit.editSourceField('hero.headline', 'Nieuwe titel');
+    cubit.editSourceField('cabin.hero.title', 'Nieuwe titel');
     // Translation follows the saved source, so the ribbon does too.
     await cubit.save();
     await tester.pumpAndSettle();
@@ -279,7 +279,7 @@ void main() {
     tester,
   ) async {
     final cubit = await pumpEditor(tester);
-    cubit.editSourceField('hero.headline', 'Nieuwe titel');
+    cubit.editSourceField('cabin.hero.title', 'Nieuwe titel');
     await cubit.save();
     // Opening a language is what reviewing it means.
     cubit.setPreviewLanguage('en');
@@ -314,7 +314,7 @@ void main() {
 
   testWidgets('a skipped language is not published', (tester) async {
     final cubit = await pumpEditor(tester);
-    cubit.editSourceField('hero.headline', 'Nieuwe titel');
+    cubit.editSourceField('cabin.hero.title', 'Nieuwe titel');
     await cubit.save();
     await tester.pumpAndSettle();
 
@@ -328,7 +328,7 @@ void main() {
 
   testWidgets('confirm publish clears dirty + stale', (tester) async {
     final cubit = await pumpEditor(tester);
-    cubit.editSourceField('hero.headline', 'Nieuwe titel');
+    cubit.editSourceField('cabin.hero.title', 'Nieuwe titel');
     await cubit.save();
     await tester.pumpAndSettle();
     expect(cubit.state.dirty, isTrue);

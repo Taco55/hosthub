@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:app_errors/app_errors.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -13,6 +11,7 @@ class WebsitePageContent {
   const WebsitePageContent({
     required this.source,
     required this.translations,
+    this.listOrder = const {},
     this.sourceLanguage,
     this.locales,
     this.previewDomain,
@@ -20,6 +19,9 @@ class WebsitePageContent {
 
   /// `fieldKey -> text` in the source language.
   final Map<String, String> source;
+
+  /// `listKey -> row ids` in display order, from the source-locale documents.
+  final Map<String, List<String>> listOrder;
 
   /// `language -> (fieldKey -> TranslatedField)` for the target languages.
   final Map<String, Map<String, TranslatedField>> translations;
@@ -36,8 +38,29 @@ class WebsitePageContent {
   final String? previewDomain;
 }
 
+/// A path segment addressing a repeatable-list row by its stable id.
+///
+/// The array index is display order; the id is identity. Reads and writes
+/// resolve the row by scanning the array for `row['id'] == value`, so a row
+/// keeps its translations and its content when the owner drags it elsewhere.
+class RowId {
+  const RowId(this.value);
+
+  final String value;
+
+  @override
+  String toString() => value;
+
+  @override
+  bool operator ==(Object other) => other is RowId && other.value == value;
+
+  @override
+  int get hashCode => value.hashCode;
+}
+
 /// Where an editor field lives in the site's content: which document, and the
-/// path inside that document's JSON (object keys as String, list indices as int).
+/// path inside that document's JSON (object keys as String, row ids as
+/// [RowId], list indices as int).
 class EditorFieldLocation {
   const EditorFieldLocation({
     required this.contentType,
@@ -58,21 +81,32 @@ class EditorFieldLocation {
   String get address => '$contentType/$slug:${path.join('.')}';
 }
 
+/// Marks the position in a path template where a captured row id lands.
+class _RowIdSlot {
+  const _RowIdSlot();
+}
+
+const _rowId = _RowIdSlot();
+
 /// Persistence for the website editor. The editor's flat field keys map onto
 /// the site's real CMS documents (the same JSON the public site renders):
 ///
-/// | field key                 | document (type/slug) | JSON path                 |
-/// |---------------------------|----------------------|---------------------------|
-/// | hero.headline             | cabin / main         | hero.title                |
-/// | hero.subtitle             | cabin / main         | hero.subtitle             |
-/// | highlights.N              | page / home          | highlights[N].description |
-/// | chalet.description.N      | cabin / main         | description[N]            |
-/// | chalet.experience.N       | cabin / main         | experience[N]             |
-/// | practical.header.title    | page / practical     | header.title              |
-/// | practical.header.subtitle | page / practical     | header.subtitle           |
-/// | area.intro                | page / area          | intro                     |
-/// | contact.title             | contact_form / main  | title                     |
-/// | contact.subtitle          | contact_form / main  | subtitle                  |
+/// | field key                       | document (type/slug) | JSON path                    |
+/// |---------------------------------|----------------------|------------------------------|
+/// | cabin.hero.title                | cabin / main         | hero.title                   |
+/// | cabin.hero.subtitle             | cabin / main         | hero.subtitle                |
+/// | cabin.description.{id}.text     | cabin / main         | description[id].text         |
+/// | cabin.experience.{id}.text      | cabin / main         | experience[id].text          |
+/// | home.highlights.{id}.description| page / home          | highlights[id].description   |
+/// | practical.header.title          | page / practical     | header.title                 |
+/// | practical.header.subtitle       | page / practical     | header.subtitle              |
+/// | area.intro                      | page / area          | intro                        |
+/// | contact.title                   | contact_form / main  | title                        |
+/// | contact.subtitle                | contact_form / main  | subtitle                     |
+///
+/// `{id}` is the row's **stable id** — an `id` key stored in the row object
+/// itself. The array index is display order and nothing else: reordering rows
+/// moves objects around, and every translation keyed by id travels along.
 ///
 /// Working values for target languages live in `site_translations`
 /// (value/status/source_hash per field); publish folds them back into each
@@ -98,18 +132,26 @@ class WebsiteContentRepository extends SupabaseRepository {
   ///
   /// One table, one lookup: adding a field is a line here plus its row in
   /// the page schema ([kPageCards]), not a branch in a read function and a
-  /// matching branch in a write function. `{n}` in a pattern captures the row
-  /// index of a repeatable field and lands in the path at the same position.
+  /// matching branch in a write function. `{id}` in a pattern captures a
+  /// stable row id and lands in the path at the [_rowId] position.
   static const List<({String pattern, int document, List<Object> path})>
   _fieldPaths = [
-    (pattern: 'hero.headline', document: 0, path: ['hero', 'title']),
-    (pattern: 'hero.subtitle', document: 0, path: ['hero', 'subtitle']),
-    (pattern: 'chalet.description.{n}', document: 0, path: ['description', 0]),
-    (pattern: 'chalet.experience.{n}', document: 0, path: ['experience', 0]),
+    (pattern: 'cabin.hero.title', document: 0, path: ['hero', 'title']),
+    (pattern: 'cabin.hero.subtitle', document: 0, path: ['hero', 'subtitle']),
     (
-      pattern: 'highlights.{n}',
+      pattern: 'cabin.description.{id}.text',
+      document: 0,
+      path: ['description', _rowId, 'text'],
+    ),
+    (
+      pattern: 'cabin.experience.{id}.text',
+      document: 0,
+      path: ['experience', _rowId, 'text'],
+    ),
+    (
+      pattern: 'home.highlights.{id}.description',
       document: 1,
-      path: ['highlights', 0, 'description'],
+      path: ['highlights', _rowId, 'description'],
     ),
     (
       pattern: 'practical.header.title',
@@ -127,7 +169,8 @@ class WebsiteContentRepository extends SupabaseRepository {
   ];
 
   /// Where one editor field lives: which document, and the path within its JSON.
-  /// Path segments are object keys (String) or list indices (int).
+  /// Path segments are object keys (String), row-id lookups (a String at a
+  /// list position) or plain list indices (int).
   static EditorFieldLocation? locationOf(String fieldKey) {
     for (final entry in _fieldPaths) {
       final match = _match(entry.pattern, fieldKey);
@@ -138,26 +181,55 @@ class WebsiteContentRepository extends SupabaseRepository {
         slug: document.slug,
         path: [
           for (final segment in entry.path)
-            // The int placeholder in the table is where the row index lands.
-            if (segment is int) match.index ?? segment else segment,
+            // The slot in the table is where the captured row id lands.
+            if (segment is _RowIdSlot) RowId(match.rowId!) else segment,
         ],
       );
     }
     return null;
   }
 
-  /// Matches a field key against a pattern. [index] carries the captured row
-  /// number for a `{n}` pattern and is null for a fixed one.
-  static ({bool matched, int? index}) _match(String pattern, String fieldKey) {
-    const noMatch = (matched: false, index: null);
-    final placeholder = pattern.indexOf('{n}');
+  /// The document and array path a repeatable list lives at, from the same
+  /// table (`<listKey>.{id}...` patterns). Null for an unknown list.
+  static ({
+    ({String contentType, String slug}) document,
+    List<Object> arrayPath,
+  })?
+  _listLocationOf(String listKey) {
+    for (final entry in _fieldPaths) {
+      if (!entry.pattern.startsWith('$listKey.{id}')) continue;
+      final slot = entry.path.indexWhere((segment) => segment is _RowIdSlot);
+      if (slot < 0) continue;
+      return (
+        document: _documents[entry.document],
+        arrayPath: entry.path.sublist(0, slot),
+      );
+    }
+    return null;
+  }
+
+  /// Matches a field key against a pattern. [rowId] carries the captured id
+  /// for a `{id}` pattern and is null for a fixed one.
+  static ({bool matched, String? rowId}) _match(
+    String pattern,
+    String fieldKey,
+  ) {
+    const noMatch = (matched: false, rowId: null);
+    final placeholder = pattern.indexOf('{id}');
     if (placeholder == -1) {
-      return pattern == fieldKey ? (matched: true, index: null) : noMatch;
+      return pattern == fieldKey ? (matched: true, rowId: null) : noMatch;
     }
     final prefix = pattern.substring(0, placeholder);
-    if (!fieldKey.startsWith(prefix)) return noMatch;
-    final index = int.tryParse(fieldKey.substring(prefix.length));
-    return index == null ? noMatch : (matched: true, index: index);
+    final suffix = pattern.substring(placeholder + '{id}'.length);
+    if (!fieldKey.startsWith(prefix) || !fieldKey.endsWith(suffix)) {
+      return noMatch;
+    }
+    final rowId = fieldKey.substring(
+      prefix.length,
+      fieldKey.length - suffix.length,
+    );
+    if (rowId.isEmpty || rowId.contains('.')) return noMatch;
+    return (matched: true, rowId: rowId);
   }
 
   static ({String contentType, String slug}) _documentFor(String fieldKey) {
@@ -179,45 +251,55 @@ class WebsiteContentRepository extends SupabaseRepository {
     return _readPath(content, location.path);
   }
 
-  /// How many rows a repeatable list has in a document's JSON: the length of
-  /// the array the list's row index runs over. 0 when the document or the
-  /// array is missing.
-  static int _listLengthIn(String listKey, Map<String, dynamic>? content) {
-    if (content == null) return 0;
-    final location = locationOf('$listKey.0');
-    if (location == null) return 0;
-    // The first int segment is where the row index lands (the `{n}` in the
-    // path table); the array itself lives at the path up to that segment.
-    final indexPosition = location.path.indexWhere(
-      (segment) => segment is int,
-    );
-    if (indexPosition < 0) return 0;
+  /// The stable row ids of a repeatable list in a document's JSON, in array
+  /// (= display) order. Rows without an id are skipped: identity is the id,
+  /// and a row that has none is not addressable by the editor.
+  static List<String> listRowIdsIn(
+    String listKey,
+    Map<String, dynamic>? content,
+  ) {
+    if (content == null) return const [];
+    final list = _listLocationOf(listKey);
+    if (list == null) return const [];
     Object? node = content;
-    for (final segment in location.path.sublist(0, indexPosition)) {
-      if (node is! Map) return 0;
+    for (final segment in list.arrayPath) {
+      if (node is! Map) return const [];
       node = node[segment];
     }
-    return node is List ? node.length : 0;
+    if (node is! List) return const [];
+    return [
+      for (final row in node)
+        if (row is Map && row['id'] is String) row['id'] as String,
+    ];
   }
 
   /// Reads a JSON path, stopping at the first segment that is not there.
   static String? _readPath(Object? node, List<Object> path) {
     var current = node;
     for (final segment in path) {
-      if (segment is int) {
-        if (current is! List || segment >= current.length) return null;
-        current = current[segment];
-      } else {
-        if (current is! Map) return null;
-        current = current[segment];
+      switch (segment) {
+        case final RowId id:
+          if (current is! List) return null;
+          current = current.firstWhere(
+            (row) => row is Map && row['id'] == id.value,
+            orElse: () => null,
+          );
+          if (current == null) return null;
+        case final int index:
+          if (current is! List || index >= current.length) return null;
+          current = current[index];
+        default:
+          if (current is! Map) return null;
+          current = current[segment];
       }
     }
     return current is String ? current : null;
   }
 
-  /// Writes a JSON path, creating the objects and list entries it runs through.
-  /// Lists grow to fit the index; the filler matches what the next segment
-  /// needs, so a row added at the end is a usable row and not a type error.
+  /// Writes a JSON path, creating the containers it runs through. A [RowId]
+  /// segment resolves its row by stable id and appends a fresh `{id: ...}`
+  /// row when the id is not there yet — a newly added row lands at the end of
+  /// the list, in every locale, as a usable row.
   static void _writePath(
     Map<String, dynamic> content,
     List<Object> path,
@@ -226,20 +308,36 @@ class WebsiteContentRepository extends SupabaseRepository {
     Object container = content;
     for (var i = 0; i < path.length - 1; i++) {
       final segment = path[i];
-      final nextIsIndex = path[i + 1] is int;
-      final child = nextIsIndex ? <dynamic>[] : <String, dynamic>{};
-      if (segment is int) {
-        final list = container as List<dynamic>;
-        while (list.length <= segment) {
-          list.add(nextIsIndex ? <dynamic>[] : <String, dynamic>{});
-        }
-        list[segment] = _coerce(list[segment], child);
-        container = list[segment] as Object;
-      } else {
-        final key = segment as String;
-        final map = container as Map<String, dynamic>;
-        map[key] = _coerce(map[key], child);
-        container = map[key] as Object;
+      final next = path[i + 1];
+      final Object emptyChild = next is int || next is RowId
+          ? <dynamic>[]
+          : <String, dynamic>{};
+      switch (segment) {
+        case final RowId id:
+          final list = container as List<dynamic>;
+          var index = list.indexWhere(
+            (row) => row is Map && row['id'] == id.value,
+          );
+          if (index == -1) {
+            list.add(<String, dynamic>{'id': id.value});
+            index = list.length - 1;
+          }
+          list[index] = _coerce(list[index], emptyChild);
+          container = list[index] as Object;
+        case final int index:
+          final list = container as List<dynamic>;
+          while (list.length <= index) {
+            list.add(next is int || next is RowId
+                ? <dynamic>[]
+                : <String, dynamic>{});
+          }
+          list[index] = _coerce(list[index], emptyChild);
+          container = list[index] as Object;
+        default:
+          final key = segment as String;
+          final map = container as Map<String, dynamic>;
+          map[key] = _coerce(map[key], emptyChild);
+          container = map[key] as Object;
       }
     }
 
@@ -255,10 +353,48 @@ class WebsiteContentRepository extends SupabaseRepository {
     }
   }
 
+  /// Reorders a repeatable list's array in [content] to match [order]
+  /// (row ids in display order). Rows whose id is not in [order] keep their
+  /// place after the ordered ones, so an unknown row is never dropped.
+  static void applyListOrder(
+    String listKey,
+    Map<String, dynamic> content,
+    List<String> order,
+  ) {
+    final list = _listLocationOf(listKey);
+    if (list == null) return;
+    Object? parent = content;
+    for (var i = 0; i < list.arrayPath.length - 1; i++) {
+      if (parent is! Map) return;
+      parent = parent[list.arrayPath[i]];
+    }
+    if (parent is! Map) return;
+    final arrayKey = list.arrayPath.last as String;
+    final array = parent[arrayKey];
+    if (array is! List) return;
+
+    final byId = <String, Object?>{};
+    final rest = <Object?>[];
+    for (final row in array) {
+      final id = row is Map ? row['id'] : null;
+      if (id is String) {
+        byId[id] = row;
+      } else {
+        rest.add(row);
+      }
+    }
+    parent[arrayKey] = <dynamic>[
+      for (final id in order)
+        if (byId.containsKey(id)) byId.remove(id),
+      ...byId.values,
+      ...rest,
+    ];
+  }
+
   /// Keeps an existing container of the right shape, replaces anything else.
   static Object _coerce(Object? existing, Object empty) {
     if (empty is List<dynamic> && existing is List) {
-      return List<dynamic>.from(existing);
+      return existing;
     }
     if (empty is Map<String, dynamic> && existing is Map) {
       return Map<String, dynamic>.from(existing);
@@ -377,27 +513,32 @@ class WebsiteContentRepository extends SupabaseRepository {
         return readField(fieldKey, doc.contentType, content);
       }
 
-      // List rows are repeatable: derive each list's actual row count from
-      // the source-locale document so extra rows survive a reload.
-      int listCount(String listKey, int minRows) {
-        final doc = _documentFor('$listKey.0');
-        final content =
-            contentByDocLocale['${_documentKeyOf(doc)}:$sourceLanguage'];
-        return math.max(minRows, _listLengthIn(listKey, content));
+      // List rows carry their identity in the row itself; the source-locale
+      // document is authoritative for which rows exist and in what order.
+      final listOrder = <String, List<String>>{};
+      final fieldKeys = <String>[];
+      for (final cards in kPageCards.values) {
+        for (final card in cards) {
+          for (final row in card.rows) {
+            switch (row) {
+              case FieldRow(:final key):
+                fieldKeys.add(key);
+              case ListRow(:final listKey, :final sub):
+                final document = _listLocationOf(listKey)?.document;
+                final ids = document == null
+                    ? const <String>[]
+                    : listRowIdsIn(
+                        listKey,
+                        contentByDocLocale['${_documentKeyOf(document)}:$sourceLanguage'],
+                      );
+                listOrder[listKey] = ids;
+                fieldKeys.addAll([
+                  for (final id in ids) listFieldKey(listKey, id, sub),
+                ]);
+            }
+          }
+        }
       }
-
-      final fieldKeys = <String>[
-        for (final cards in kPageCards.values)
-          for (final card in cards)
-            for (final row in card.rows)
-              ...switch (row) {
-                FieldRow(:final key) => [key],
-                ListRow(:final listKey, :final minRows) => [
-                  for (var i = 0; i < listCount(listKey, minRows); i++)
-                    '$listKey.$i',
-                ],
-              },
-      ];
 
       final source = <String, String>{
         for (final key in fieldKeys)
@@ -444,6 +585,7 @@ class WebsiteContentRepository extends SupabaseRepository {
       return WebsitePageContent(
         source: source,
         translations: translations,
+        listOrder: listOrder,
         sourceLanguage: sourceLanguage,
         locales: locales,
         previewDomain: domainRow?['domain'] as String?,
@@ -469,12 +611,14 @@ class WebsiteContentRepository extends SupabaseRepository {
     required String siteId,
     required String sourceLanguage,
     required Map<String, String> fields,
+    Map<String, List<String>> listOrders = const {},
   }) async {
     try {
       await _mergeFieldsIntoDocuments(
         siteId: siteId,
         locale: sourceLanguage,
         fields: fields,
+        listOrders: listOrders,
         publish: false,
       );
     } catch (error, stack) {
@@ -533,6 +677,7 @@ class WebsiteContentRepository extends SupabaseRepository {
     required String siteId,
     required String sourceLocale,
     required Map<String, Map<String, String>> valuesByLocale,
+    Map<String, List<String>> listOrders = const {},
   }) async {
     try {
       final locales = [
@@ -544,6 +689,7 @@ class WebsiteContentRepository extends SupabaseRepository {
           siteId: siteId,
           locale: locale,
           fields: valuesByLocale[locale]!,
+          listOrders: listOrders,
           publish: true,
           seedLocale: locale == sourceLocale ? null : sourceLocale,
         );
@@ -569,6 +715,7 @@ class WebsiteContentRepository extends SupabaseRepository {
     required String locale,
     required Map<String, String> fields,
     required bool publish,
+    Map<String, List<String>> listOrders = const {},
     String? seedLocale,
   }) async {
     for (final doc in _documents) {
@@ -576,7 +723,14 @@ class WebsiteContentRepository extends SupabaseRepository {
         for (final entry in fields.entries)
           if (_documentFor(entry.key) == doc) entry.key: entry.value,
       };
-      if (docFields.isEmpty) continue;
+      final docOrders = {
+        for (final entry in listOrders.entries)
+          if (_listLocationOf(entry.key)?.document == doc)
+            entry.key: entry.value,
+      };
+      // A pure reorder is a document change too: the array order is what the
+      // public site renders.
+      if (docFields.isEmpty && docOrders.isEmpty) continue;
 
       final row = await _documentRow(siteId: siteId, doc: doc, locale: locale);
       // A site whose documents were never provisioned — or a locale enabled
@@ -608,6 +762,9 @@ class WebsiteContentRepository extends SupabaseRepository {
             );
       docFields.forEach(
         (key, value) => writeField(key, doc.contentType, content, value),
+      );
+      docOrders.forEach(
+        (listKey, order) => applyListOrder(listKey, content, order),
       );
 
       final String documentId;

@@ -39,6 +39,14 @@ import {
   type DocumentOutcome,
   type DocumentUnavailableReason,
 } from "./supabase/cms";
+import {
+  normalizeAreaContent,
+  normalizeCabinContent,
+  normalizeContactFormContent,
+  normalizeHomeContent,
+  normalizePracticalContent,
+  normalizePrivacyContent,
+} from "./normalize-content";
 
 /** Every document the site renders, as `contentType/slug`. */
 const SITE_DOCUMENTS: { contentType: string; slug: string }[] = [
@@ -161,11 +169,11 @@ export async function getCabinContent(
       locale,
       options,
     );
-    if (doc) return doc;
+    if (doc) return normalizeCabinContent(doc);
   }
   const generated = fromGenerated(generatedContentSnapshot.cabin, locale);
-  if (generated) return generated;
-  return getStaticCabinContent(locale);
+  if (generated) return normalizeCabinContent(generated);
+  return normalizeCabinContent(getStaticCabinContent(locale));
 }
 
 // ---------------------------------------------------------------------------
@@ -190,10 +198,17 @@ export async function getLocalizedContent(
       locale,
       options,
     );
-    if (doc) return { ...localizedContent[locale], ...doc };
+    if (doc) {
+      return {
+        ...localizedContent[locale],
+        ...normalizeHomeContent(doc),
+      };
+    }
   }
   const generated = fromGenerated(generatedContentSnapshot.home, locale);
-  if (generated) return { ...localizedContent[locale], ...generated };
+  if (generated) {
+    return { ...localizedContent[locale], ...normalizeHomeContent(generated) };
+  }
   return localizedContent[locale];
 }
 
@@ -219,10 +234,10 @@ export async function getPracticalContent(
       locale,
       options,
     );
-    if (doc) return doc;
+    if (doc) return normalizePracticalContent(doc);
   }
   const generated = fromGenerated(generatedContentSnapshot.practical, locale);
-  if (generated) return generated;
+  if (generated) return normalizePracticalContent(generated);
   return localizedContent[locale].practical;
 }
 
@@ -246,10 +261,10 @@ export async function getAreaContent(
       locale,
       options,
     );
-    if (doc) return doc;
+    if (doc) return normalizeAreaContent(doc);
   }
   const generated = fromGenerated(generatedContentSnapshot.area, locale);
-  if (generated) return generated;
+  if (generated) return normalizeAreaContent(generated);
   return localizedContent[locale].area;
 }
 
@@ -273,10 +288,10 @@ export async function getPrivacyContent(
       locale,
       options,
     );
-    if (doc) return doc;
+    if (doc) return normalizePrivacyContent(doc);
   }
   const generated = fromGenerated(generatedContentSnapshot.privacy, locale);
-  if (generated) return generated;
+  if (generated) return normalizePrivacyContent(generated);
   return localizedContent[locale].privacy;
 }
 
@@ -302,10 +317,10 @@ export async function getContactFormContent(
       locale,
       options,
     );
-    if (doc) return doc;
+    if (doc) return normalizeContactFormContent(doc);
   }
   const generated = fromGenerated(generatedContentSnapshot.contactForm, locale);
-  if (generated) return generated;
+  if (generated) return normalizeContactFormContent(generated);
   return contactFormSection[locale];
 }
 
