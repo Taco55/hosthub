@@ -1,5 +1,30 @@
+import 'package:app_errors/app_errors.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import 'package:hosthub_console/features/website_editor/website_editor.dart';
+
+/// Repository whose load always fails the way the real one does: with a mapped
+/// [DomainError]. The client is never touched.
+class _FailingLoadRepository extends WebsiteContentRepository {
+  _FailingLoadRepository()
+    : super(
+        supabase: SupabaseClient(
+          'http://localhost:7011',
+          'sb_publishable_test',
+        ),
+      );
+
+  @override
+  Future<WebsitePageContent> loadPageContent({
+    required String siteId,
+    required String sourceLanguage,
+    required List<String> locales,
+  }) async => throw DomainErrorCode.unknown.err(
+    reason: DomainErrorReason.cannotLoadData,
+    message: 'boom',
+  );
+}
 
 void main() {
   SiteContentCubit build() =>
@@ -443,6 +468,27 @@ void main() {
         cubit.state.savedValueFor('en', 'hero.subtitle'),
         isNot(contains('Half getypte')),
       );
+    });
+  });
+
+  group('SiteContentCubit — load failure', () {
+    test('surfaces a DomainError, not a toast message', () async {
+      final cubit = SiteContentCubit(
+        translationService: const SeedTranslationService(),
+        repository: _FailingLoadRepository(),
+        siteId: 'site-1',
+      );
+
+      await cubit.loadContent();
+
+      final error = cubit.state.loadError;
+      expect(error, isNotNull);
+      expect(error!.reason, DomainErrorReason.cannotLoadData);
+      // A failed load is blocking; it must not degrade into the toast lane.
+      expect(cubit.state.errorMessage, isNull);
+
+      cubit.clearLoadError();
+      expect(cubit.state.loadError, isNull);
     });
   });
 }
