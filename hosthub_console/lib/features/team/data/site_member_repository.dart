@@ -500,6 +500,7 @@ class SiteMemberRepository extends SupabaseRepository {
       throw DomainErrorCode.unauthorized.err(
         reason: DomainErrorReason.cannotSaveData,
         message: 'User not logged in',
+        logout: false,
         context: const {'supabase_user': null},
       );
     }

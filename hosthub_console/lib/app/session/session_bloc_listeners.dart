@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -19,35 +21,71 @@ class SessionBlocListeners extends StatefulWidget {
 }
 
 class _SessionBlocListenersState extends State<SessionBlocListeners> {
+  StreamSubscription<AuthSessionChange>? _sessionSubscription;
+
   @override
   void initState() {
     super.initState();
-    Future.microtask(_primeSessionData);
+    Future.microtask(() => _loadSessionData(force: false));
+
+    // The Supabase session can surface a beat after AuthBloc reports
+    // authenticated — a token refresh landing during app start, for instance.
+    // Loads that fire inside that gap fail with an unauthorized DomainError and
+    // are never retried, leaving the shell on a permanent "loading" profile and
+    // an empty property list. Re-priming on every session event closes that
+    // gap: whatever is still unloaded is picked up as soon as a session exists.
+    _sessionSubscription = I.get<AuthPort>().onAuthStateChange.listen((change) {
+      if (change.user == null) return;
+      _loadSessionData(force: false);
+    });
   }
 
-  void _primeSessionData() {
+  @override
+  void dispose() {
+    _sessionSubscription?.cancel();
+    super.dispose();
+  }
+
+  /// Loads the session-scoped cubits.
+  ///
+  /// [force] reloads them regardless of their current state — used on a fresh
+  /// sign-in. Otherwise only cubits that hold no data are (re)loaded: the ones
+  /// that never started, and the ones left in error by a failed earlier attempt.
+  void _loadSessionData({required bool force}) {
     if (!mounted) return;
     final authState = context.read<AuthBloc>().state;
     if (authState.status != AuthStatus.authenticated) return;
 
+    // No usable session yet; the auth-state subscription re-primes once there
+    // is one, so this is a wait rather than a failure.
+    final userId = context.read<CurrentUserProvider>().currentUserIdOrNull;
+    if (userId == null) return;
+
     final profileCubit = context.read<ProfileCubit>();
-    if (profileCubit.state.status == ProfileStatus.initial) {
+    if (force ||
+        profileCubit.state.status == ProfileStatus.initial ||
+        profileCubit.state.status == ProfileStatus.error) {
       profileCubit.loadProfile();
     }
 
     final settingsCubit = context.read<SettingsCubit>();
-    if (settingsCubit.state.status == SettingsStatus.initial) {
+    if (force ||
+        settingsCubit.state.status == SettingsStatus.initial ||
+        settingsCubit.state.status == SettingsStatus.error) {
       settingsCubit.load(forceRefresh: true);
     }
 
     final propertyCubit = context.read<PropertyContextCubit>();
-    if (propertyCubit.state.status == PropertyContextStatus.initial) {
+    if (force ||
+        propertyCubit.state.status == PropertyContextStatus.initial ||
+        propertyCubit.state.status == PropertyContextStatus.error) {
       propertyCubit.loadProperties();
     }
 
     final userSettingsCubit = context.read<UserSettingsCubit>();
-    if (userSettingsCubit.state.status == UserSettingsStatus.initial) {
-      final userId = context.read<CurrentUserProvider>().currentUserId;
+    if (force ||
+        userSettingsCubit.state.status == UserSettingsStatus.initial ||
+        userSettingsCubit.state.status == UserSettingsStatus.error) {
       userSettingsCubit.bootstrap(userId: userId);
     }
   }
@@ -62,11 +100,7 @@ class _SessionBlocListenersState extends State<SessionBlocListeners> {
           listenWhen: (previous, current) => previous.status != current.status,
           listener: (context, state) {
             if (state.status == AuthStatus.authenticated) {
-              context.read<ProfileCubit>().loadProfile();
-              context.read<SettingsCubit>().load(forceRefresh: true);
-              context.read<PropertyContextCubit>().loadProperties();
-              final userId = context.read<CurrentUserProvider>().currentUserId;
-              context.read<UserSettingsCubit>().bootstrap(userId: userId);
+              _loadSessionData(force: true);
               return;
             }
 

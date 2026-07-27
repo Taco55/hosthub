@@ -59,11 +59,13 @@ class PropertyContextState extends Equatable {
 }
 
 class PropertyContextCubit extends Cubit<PropertyContextState> {
+  /// Does not load on construction: the property list is session-scoped, and
+  /// [SessionBlocListeners] primes it once a session is readable. Loading from
+  /// the constructor fetches before the session exists and leaves the cubit in
+  /// an unrecoverable error state.
   PropertyContextCubit({required PropertyRepository repository})
     : _repository = repository,
-      super(const PropertyContextState.initial()) {
-    loadProperties();
-  }
+      super(const PropertyContextState.initial());
 
   final PropertyRepository _repository;
 

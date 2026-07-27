@@ -11,13 +11,25 @@ class CurrentUserProviderSupabase implements CurrentUserProvider {
 
   @override
   String get currentUserId {
-    final user = _client.auth.currentUser;
-    if (user == null || user.id.isEmpty) {
+    final userId = currentUserIdOrNull;
+    if (userId == null) {
+      // logout: false — this is a local precondition, not a server verdict on
+      // the session. Without it the message trips the "expired session"
+      // heuristic in app_errors and a client-side read that raced the session
+      // (app start, token refresh) would force a real sign-out.
       throw DomainErrorCode.unauthorized.err(
         message: 'User not logged in',
+        logout: false,
         context: const {'supabase_user': null},
       );
     }
+    return userId;
+  }
+
+  @override
+  String? get currentUserIdOrNull {
+    final user = _client.auth.currentUser;
+    if (user == null || user.id.isEmpty) return null;
     return user.id;
   }
 }

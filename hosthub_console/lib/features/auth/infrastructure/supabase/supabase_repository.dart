@@ -11,8 +11,11 @@ abstract class SupabaseRepository {
   String get currentUserId {
     final user = supabase.auth.currentUser;
     if (user == null || user.id.isEmpty) {
+      // logout: false — a missing client-side session is a local precondition,
+      // not proof that the session was revoked. See CurrentUserProviderSupabase.
       throw DomainErrorCode.unauthorized.err(
         message: 'User not logged in',
+        logout: false,
         context: const {'supabase_user': null},
       );
     }

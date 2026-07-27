@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import 'package:hosthub_console/core/core.dart';
 
 import 'package:hosthub_console/features/auth/domain/ports/auth_port.dart';
+import 'package:hosthub_console/features/auth/infrastructure/supabase/auth_user_existence_check.dart';
 import 'package:hosthub_console/features/auth/infrastructure/supabase/supabase_onboarding_adapter.dart';
 import 'package:hosthub_console/features/auth/infrastructure/supabase/supabase_repository.dart';
 import 'package:app_errors/app_errors.dart';
@@ -259,8 +260,19 @@ class SupabaseAuthAdapter extends SupabaseRepository implements AuthPort {
     try {
       final response = await supabase.auth.getUser();
       return response.user != null;
-    } catch (_) {
-      return false;
+    } catch (error, stack) {
+      // Only a definitive "this account is gone" may return false: AuthBloc
+      // signs out on false. Anything else is inconclusive — an expired access
+      // token, an offline client, a 5xx — and must be thrown so the bloc keeps
+      // the session.
+      if (AuthUserExistenceCheck.provesUserIsGone(error)) return false;
+      final mapped = mapError(
+        error,
+        stack,
+        context: _context('validateCurrentUserExists'),
+      );
+      log('Session validation inconclusive, keeping session: $mapped');
+      throw mapped;
     }
   }
 
