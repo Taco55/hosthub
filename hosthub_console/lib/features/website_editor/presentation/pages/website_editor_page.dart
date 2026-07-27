@@ -1,3 +1,4 @@
+import 'package:app_errors/app_errors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:styled_widgets/styled_widgets.dart';
@@ -120,7 +121,6 @@ class _WebsiteEditorView extends StatelessWidget {
           next.errorMessage != null && prev.errorMessage != next.errorMessage,
       listener: (context, state) {
         final message = switch (state.errorMessage) {
-          'load_failed' => context.s.weErrorLoadFailed,
           'save_failed' => context.s.weErrorSaveFailed,
           'translate_failed' => context.s.weErrorTranslateFailed,
           'reset_failed' => context.s.weErrorResetFailed,
@@ -139,9 +139,32 @@ class _WebsiteEditorView extends StatelessWidget {
       child: view,
     );
 
+    // A failed load is not a degradation: the editor is left showing content
+    // that is not this site's, so it gets the blocking error dialog rather than
+    // a toast the owner can type straight past.
+    final withLoadError = BlocListener<SiteContentCubit, SiteContentState>(
+      listenWhen: (prev, next) =>
+          next.loadError != null && prev.loadError != next.loadError,
+      listener: (context, state) async {
+        final error = state.loadError;
+        if (error == null) return;
+        await showAppError(
+          context,
+          // The mapped alert says why it failed; the title says what failed.
+          AppError.fromDomain(
+            context,
+            error,
+          ).copyWith(title: context.s.weErrorLoadFailed),
+        );
+        if (!context.mounted) return;
+        context.read<SiteContentCubit>().clearLoadError();
+      },
+      child: withErrorToasts,
+    );
+
     // §11i: the draft lives in the cubit and nothing writes it behind the
     // owner's back, so leaving is the one moment it can be lost silently.
-    final guarded = _UnsavedChangesGuard(child: withErrorToasts);
+    final guarded = _UnsavedChangesGuard(child: withLoadError);
 
     if (siteId == null) return guarded;
 

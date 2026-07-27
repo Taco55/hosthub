@@ -1,3 +1,4 @@
+import 'package:app_errors/app_errors.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -39,6 +40,7 @@ class SiteContentState extends Equatable {
     this.draftSource = const {},
     this.draftTranslations = const {},
     this.errorMessage,
+    this.loadError,
     this.previewDomain,
     this.lastSavedAt,
     this.saving = false,
@@ -79,7 +81,16 @@ class SiteContentState extends Equatable {
 
   /// Languages currently being (re)translated.
   final Set<String> translating;
+
+  /// Non-blocking failures that keep the editor usable (save, translate, reset,
+  /// publish): the owner's text is still on screen, so these degrade to a toast.
   final String? errorMessage;
+
+  /// A failed [SiteContentCubit.loadContent]. Unlike [errorMessage] this is not
+  /// a degradation: nothing of the site's own content made it in, so the editor
+  /// is showing something that is not this site. It travels as a [DomainError]
+  /// and is presented with `showAppError`.
+  final DomainError? loadError;
 
   /// The site's primary public domain; when set, the preview pane embeds the
   /// real website's draft-preview route instead of the schematic mock.
@@ -201,6 +212,7 @@ class SiteContentState extends Equatable {
     bool? publishOpen,
     Set<String>? translating,
     String? errorMessage,
+    DomainError? loadError,
     String? previewDomain,
     DateTime? lastSavedAt,
     bool? saving,
@@ -209,6 +221,7 @@ class SiteContentState extends Equatable {
     bool clearDraft = false,
     bool clearPendingAutoSwitch = false,
     bool clearError = false,
+    bool clearLoadError = false,
   }) {
     return SiteContentState(
       propertyName: propertyName,
@@ -228,6 +241,7 @@ class SiteContentState extends Equatable {
       publishOpen: publishOpen ?? this.publishOpen,
       translating: translating ?? this.translating,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      loadError: clearLoadError ? null : (loadError ?? this.loadError),
       previewDomain: previewDomain ?? this.previewDomain,
       lastSavedAt: lastSavedAt ?? this.lastSavedAt,
       saving: saving ?? this.saving,
@@ -255,6 +269,7 @@ class SiteContentState extends Equatable {
     publishOpen,
     translating,
     errorMessage,
+    loadError,
     previewDomain,
     lastSavedAt,
     saving,
@@ -317,7 +332,8 @@ class SiteContentCubit extends Cubit<SiteContentState> {
   bool get _persistent => _repository != null && _siteId != null;
 
   /// Hydrates the state from the repository. No-op without persistence; on
-  /// failure the seed state stays and an error message is surfaced.
+  /// failure the seed state stays and the [DomainError] is surfaced as a
+  /// blocking error — what is on screen then belongs to no site at all.
   Future<void> loadContent() async {
     if (!_persistent) return;
     try {
@@ -342,10 +358,17 @@ class SiteContentCubit extends Cubit<SiteContentState> {
           dirty: false,
           clearDraft: true,
           clearError: true,
+          clearLoadError: true,
         ),
       );
-    } catch (_) {
-      emit(state.copyWith(errorMessage: 'load_failed'));
+    } catch (error, stack) {
+      emit(
+        state.copyWith(
+          loadError: error is DomainError
+              ? error
+              : DomainError.from(error, stack: stack),
+        ),
+      );
     }
   }
 
@@ -762,6 +785,10 @@ class SiteContentCubit extends Cubit<SiteContentState> {
   /// Clears the surfaced error after the UI has shown it (so an identical
   /// follow-up failure triggers feedback again).
   void clearErrorMessage() => emit(state.copyWith(clearError: true));
+
+  /// Clears the load failure after its dialog has been dismissed, so a retried
+  /// load that fails again is shown again.
+  void clearLoadError() => emit(state.copyWith(clearLoadError: true));
 
   void openPublish() {
     // The button is disabled while a draft exists; this is the same rule at the
