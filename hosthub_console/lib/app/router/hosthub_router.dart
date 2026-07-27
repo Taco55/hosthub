@@ -158,8 +158,7 @@ class HosthubRouter {
                     drawerMenuTooltip: context.s.menuTooltip,
                     // Nothing from the placement is needed here: the menu and
                     // its rows read it themselves.
-                    menuBuilder: (context, _) =>
-                        SideMenu(selectedItem: item, route: route),
+                    menuBuilder: (context, _) => SideMenu(route: route),
                     bodyBuilder: (context, _) =>
                         PropertySetupGate(selectedItem: item, child: child),
                   );
@@ -272,9 +271,11 @@ class HosthubRouter {
               path: ConsoleRoute.revenuePath,
               builder: (context, state) => const RevenuePage(),
             ),
+            // The admin options are a section on Settings now; the old
+            // destination keeps working as a link.
             GoRoute(
               path: '/admin-options',
-              builder: (context, state) => const ServerSettingsPage(),
+              redirect: (context, state) => ConsoleRoute.accountPath,
             ),
           ],
         ),
@@ -284,8 +285,8 @@ class HosthubRouter {
   }
 }
 
-/// Which destination the shell's non-tree concerns are on — the setup gate and
-/// the admin rows. The tree itself reads [ConsoleRoute] instead.
+/// Which destination the shell's non-tree concerns are on — the setup gate.
+/// The tree itself reads [ConsoleRoute] instead.
 MenuItem _selectedMenuItem(String path) {
   if (path.startsWith('/sites') || path.startsWith('/website-editor')) {
     return MenuItem.sites;
@@ -300,9 +301,6 @@ MenuItem _selectedMenuItem(String path) {
   }
   if (path.startsWith(ConsoleRoute.revenuePath)) {
     return MenuItem.revenue;
-  }
-  if (path.startsWith('/admin-options')) {
-    return MenuItem.adminOptions;
   }
   if (path.startsWith(ConsoleRoute.propertiesPath)) {
     return MenuItem.propertyDetails;

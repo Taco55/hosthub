@@ -235,6 +235,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "add": MessageLookupByLibrary.simpleMessage("Add"),
     "addLanguageAction": MessageLookupByLibrary.simpleMessage("Add language"),
     "addressBook": MessageLookupByLibrary.simpleMessage("Address Book"),
+    "adminOnlyBadge": MessageLookupByLibrary.simpleMessage("Admins only"),
+    "adminOptionsSectionSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Settings for the whole environment, not for this account.",
+    ),
     "adminRightsActive": MessageLookupByLibrary.simpleMessage(
       "Admin rights enabled",
     ),
@@ -2121,6 +2125,15 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "weDeviceMobile": MessageLookupByLibrary.simpleMessage("Mobile"),
     "weDeviceWeb": MessageLookupByLibrary.simpleMessage("Web"),
+    "weDiscard": MessageLookupByLibrary.simpleMessage("Discard"),
+    "weDiscardCancel": MessageLookupByLibrary.simpleMessage("Keep editing"),
+    "weDiscardConfirm": MessageLookupByLibrary.simpleMessage("Discard"),
+    "weDiscardMessage": MessageLookupByLibrary.simpleMessage(
+      "Every language goes back to what was last saved. This cannot be undone.",
+    ),
+    "weDiscardTitle": MessageLookupByLibrary.simpleMessage(
+      "Discard your unsaved changes?",
+    ),
     "weEditingChip": m79,
     "weErrorLoadFailed": MessageLookupByLibrary.simpleMessage(
       "Couldn\'t load the website content",
@@ -2151,6 +2164,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "weLangDutch": MessageLookupByLibrary.simpleMessage("Dutch"),
     "weLangEnglish": MessageLookupByLibrary.simpleMessage("English"),
     "weLangNorwegian": MessageLookupByLibrary.simpleMessage("Norwegian"),
+    "weLeaveCancel": MessageLookupByLibrary.simpleMessage("Stay"),
+    "weLeaveConfirm": MessageLookupByLibrary.simpleMessage("Leave anyway"),
+    "weLeaveMessage": MessageLookupByLibrary.simpleMessage(
+      "Nothing has been written to the site yet. Leaving keeps your edits here for now, but closing the tab loses them.",
+    ),
+    "weLeaveTitle": MessageLookupByLibrary.simpleMessage(
+      "You have unsaved changes",
+    ),
     "weLivePreview": MessageLookupByLibrary.simpleMessage("Live preview"),
     "weLocaleSourceBadge": MessageLookupByLibrary.simpleMessage("source"),
     "weLockedCounter": m82,
@@ -2179,6 +2200,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePublishModalTitle": MessageLookupByLibrary.simpleMessage(
       "What goes live",
     ),
+    "wePublishNeedsSave": MessageLookupByLibrary.simpleMessage(
+      "Save your changes first",
+    ),
     "wePublishReady": MessageLookupByLibrary.simpleMessage("Ready"),
     "wePublishReadyNote": MessageLookupByLibrary.simpleMessage(
       "Published as written",
@@ -2206,14 +2230,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "weRibbonStale": MessageLookupByLibrary.simpleMessage(
       "Earlier preview — updates automatically on publish.",
     ),
+    "weSave": MessageLookupByLibrary.simpleMessage("Save changes"),
     "weSaveDirty": MessageLookupByLibrary.simpleMessage(
       "Unpublished changes · auto-translates on publish",
     ),
     "weSavePublished": MessageLookupByLibrary.simpleMessage(
       "Published · all languages",
     ),
-    "weSavedIndicator": MessageLookupByLibrary.simpleMessage("Saved"),
-    "weSavingIndicator": MessageLookupByLibrary.simpleMessage("Saving…"),
     "weSharedPhotosNote": MessageLookupByLibrary.simpleMessage(
       "Photos are shared across all languages — edit them in the source.",
     ),
@@ -2226,9 +2249,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "weStatusCleanTitle": MessageLookupByLibrary.simpleMessage(
       "Everything published",
     ),
-    "weStatusDirtyBody": m90,
-    "weStatusDirtyTitle": MessageLookupByLibrary.simpleMessage(
-      "Unpublished changes",
+    "weStatusSavedBody": m90,
+    "weStatusSavedTitle": MessageLookupByLibrary.simpleMessage(
+      "Saved · not published",
+    ),
+    "weStatusUnsavedBody": MessageLookupByLibrary.simpleMessage(
+      "Nothing is saved until you press Save changes",
+    ),
+    "weStatusUnsavedTitle": MessageLookupByLibrary.simpleMessage(
+      "Unsaved changes",
     ),
     "weUndo": MessageLookupByLibrary.simpleMessage("Undo"),
     "weUndoSwitchNotice": m91,

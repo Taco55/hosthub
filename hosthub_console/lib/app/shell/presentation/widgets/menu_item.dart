@@ -4,6 +4,5 @@ enum MenuItem {
   revenue,
   pricing,
   settings,
-  adminOptions,
   propertyDetails,
 }

@@ -236,6 +236,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "add": MessageLookupByLibrary.simpleMessage("Toevoegen"),
     "addLanguageAction": MessageLookupByLibrary.simpleMessage("Taal toevoegen"),
     "addressBook": MessageLookupByLibrary.simpleMessage("Adresboek"),
+    "adminOnlyBadge": MessageLookupByLibrary.simpleMessage("Alleen beheerders"),
+    "adminOptionsSectionSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Instellingen voor de hele omgeving, niet voor dit account.",
+    ),
     "adminRightsActive": MessageLookupByLibrary.simpleMessage(
       "Adminrechten actief",
     ),
@@ -2222,6 +2226,15 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "weDeviceMobile": MessageLookupByLibrary.simpleMessage("Mobiel"),
     "weDeviceWeb": MessageLookupByLibrary.simpleMessage("Web"),
+    "weDiscard": MessageLookupByLibrary.simpleMessage("Verwerpen"),
+    "weDiscardCancel": MessageLookupByLibrary.simpleMessage("Verder bewerken"),
+    "weDiscardConfirm": MessageLookupByLibrary.simpleMessage("Verwerpen"),
+    "weDiscardMessage": MessageLookupByLibrary.simpleMessage(
+      "Elke taal gaat terug naar wat je het laatst hebt opgeslagen. Dit kun je niet ongedaan maken.",
+    ),
+    "weDiscardTitle": MessageLookupByLibrary.simpleMessage(
+      "Niet-opgeslagen wijzigingen verwerpen?",
+    ),
     "weEditingChip": m79,
     "weErrorLoadFailed": MessageLookupByLibrary.simpleMessage(
       "Kon de website-inhoud niet laden",
@@ -2254,6 +2267,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "weLangDutch": MessageLookupByLibrary.simpleMessage("Nederlands"),
     "weLangEnglish": MessageLookupByLibrary.simpleMessage("Engels"),
     "weLangNorwegian": MessageLookupByLibrary.simpleMessage("Noors"),
+    "weLeaveCancel": MessageLookupByLibrary.simpleMessage("Blijven"),
+    "weLeaveConfirm": MessageLookupByLibrary.simpleMessage("Toch weggaan"),
+    "weLeaveMessage": MessageLookupByLibrary.simpleMessage(
+      "Er is nog niets naar de site geschreven. Als je weggaat blijven je wijzigingen hier staan, maar bij het sluiten van het tabblad ben je ze kwijt.",
+    ),
+    "weLeaveTitle": MessageLookupByLibrary.simpleMessage(
+      "Je hebt niet-opgeslagen wijzigingen",
+    ),
     "weLivePreview": MessageLookupByLibrary.simpleMessage("Live voorbeeld"),
     "weLocaleSourceBadge": MessageLookupByLibrary.simpleMessage("bron"),
     "weLockedCounter": m82,
@@ -2284,6 +2305,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePublishModalTitle": MessageLookupByLibrary.simpleMessage(
       "Wat gaat live",
     ),
+    "wePublishNeedsSave": MessageLookupByLibrary.simpleMessage(
+      "Sla je wijzigingen eerst op",
+    ),
     "wePublishReady": MessageLookupByLibrary.simpleMessage("Klaar"),
     "wePublishReadyNote": MessageLookupByLibrary.simpleMessage(
       "Gepubliceerd zoals geschreven",
@@ -2311,14 +2335,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "weRibbonStale": MessageLookupByLibrary.simpleMessage(
       "Eerder voorbeeld — wordt automatisch bijgewerkt bij publiceren.",
     ),
+    "weSave": MessageLookupByLibrary.simpleMessage("Wijzigingen opslaan"),
     "weSaveDirty": MessageLookupByLibrary.simpleMessage(
       "Niet-gepubliceerde wijzigingen · vertaalt automatisch bij publiceren",
     ),
     "weSavePublished": MessageLookupByLibrary.simpleMessage(
       "Gepubliceerd · alle talen",
     ),
-    "weSavedIndicator": MessageLookupByLibrary.simpleMessage("Opgeslagen"),
-    "weSavingIndicator": MessageLookupByLibrary.simpleMessage("Opslaan…"),
     "weSharedPhotosNote": MessageLookupByLibrary.simpleMessage(
       "Foto\'s worden gedeeld over alle talen — bewerk ze in de bron.",
     ),
@@ -2331,9 +2354,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "weStatusCleanTitle": MessageLookupByLibrary.simpleMessage(
       "Alles gepubliceerd",
     ),
-    "weStatusDirtyBody": m90,
-    "weStatusDirtyTitle": MessageLookupByLibrary.simpleMessage(
-      "Niet-gepubliceerde wijzigingen",
+    "weStatusSavedBody": m90,
+    "weStatusSavedTitle": MessageLookupByLibrary.simpleMessage(
+      "Opgeslagen · niet gepubliceerd",
+    ),
+    "weStatusUnsavedBody": MessageLookupByLibrary.simpleMessage(
+      "Er wordt niets bewaard tot je op Wijzigingen opslaan klikt",
+    ),
+    "weStatusUnsavedTitle": MessageLookupByLibrary.simpleMessage(
+      "Niet-opgeslagen wijzigingen",
     ),
     "weUndo": MessageLookupByLibrary.simpleMessage("Ongedaan maken"),
     "weUndoSwitchNotice": m91,

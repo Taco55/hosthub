@@ -141,8 +141,7 @@ Future<SidebarModeCubit> pumpShell(
           builder: (context, sidebarMode) => StyledSideMenuScaffold(
             compact: sidebarMode == StyledSideMenuMode.compact,
             drawerMenuTooltip: context.s.menuTooltip,
-            menuBuilder: (context, placement) =>
-                SideMenu(selectedItem: MenuItem.sites, route: route),
+            menuBuilder: (context, placement) => SideMenu(route: route),
             bodyBuilder: (context, layout) => const PropertySetupGate(
               selectedItem: MenuItem.sites,
               child: Text('body'),

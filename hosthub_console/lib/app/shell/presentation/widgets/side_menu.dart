@@ -17,7 +17,6 @@ import '../../application/sidebar_mode_cubit.dart';
 import '../../navigation/navigation_guard_controller.dart';
 import '../dialogs/own_profile_dialog.dart';
 import 'console_nav_tree.dart';
-import 'menu_item.dart';
 
 /// The console navigation rail, composed from the shared [StyledSideMenu]: logo
 /// header with pin/collapse toggle, then the navigation **tree** — Portfolio
@@ -36,9 +35,7 @@ import 'menu_item.dart';
 /// only says what is in the menu and what tapping it does; the rail geometry
 /// lives in `HosthubThemePreset`.
 class SideMenu extends StatelessWidget {
-  const SideMenu({super.key, required this.selectedItem, required this.route});
-
-  final MenuItem selectedItem;
+  const SideMenu({super.key, required this.route});
 
   /// Where the console is. The tree's expansion and selection come from here.
   final ConsoleRoute route;
@@ -47,7 +44,6 @@ class SideMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     final authState = context.watch<AuthBloc>().state;
     final profile = context.watch<ProfileCubit>().state.profile;
-    final isAdmin = profile?.isAdmin ?? false;
     // Account-wide channel defaults, for the Prijzen override badges. Absent
     // while the settings are still loading, which reads as "no overrides" —
     // the badge appearing a moment later is better than a wrong count.
@@ -116,13 +112,6 @@ class SideMenu extends StatelessWidget {
                     ? null
                     : () => showOwnProfileDialog(context, profile: profile),
               ),
-              if (isAdmin)
-                StyledSideMenuTile(
-                  icon: Icons.admin_panel_settings_outlined,
-                  label: context.s.serverSettingsTitle,
-                  selected: selectedItem == MenuItem.adminOptions,
-                  onTap: () => _select(context, MenuItem.adminOptions),
-                ),
               StyledSideMenuTile(
                 icon: Icons.logout,
                 label: context.s.logoutLabel,
@@ -149,19 +138,6 @@ class SideMenu extends StatelessWidget {
     }
     router.go(path);
   }
-
-  Future<void> _select(BuildContext context, MenuItem item) =>
-      _go(context, _pathOf(item));
-
-  String _pathOf(MenuItem item) => switch (item) {
-    MenuItem.sites => '/sites',
-    MenuItem.reservations => ConsoleRoute.bookingsPath,
-    MenuItem.revenue => ConsoleRoute.revenuePath,
-    MenuItem.settings => ConsoleRoute.accountPath,
-    MenuItem.adminOptions => '/admin-options',
-    MenuItem.pricing => ConsoleRoute.propertiesPath,
-    MenuItem.propertyDetails => ConsoleRoute.propertiesPath,
-  };
 }
 
 /// Leading icon-box width shared by every row (§7: a fixed 44px box).

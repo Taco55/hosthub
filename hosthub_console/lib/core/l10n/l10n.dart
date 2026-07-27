@@ -74,6 +74,26 @@ class S {
     );
   }
 
+  /// `Settings for the whole environment, not for this account.`
+  String get adminOptionsSectionSubtitle {
+    return Intl.message(
+      'Settings for the whole environment, not for this account.',
+      name: 'adminOptionsSectionSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Admins only`
+  String get adminOnlyBadge {
+    return Intl.message(
+      'Admins only',
+      name: 'adminOnlyBadge',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Settings`
   String get adminSettingsTitle {
     return Intl.message(
@@ -9196,36 +9216,147 @@ class S {
     return Intl.message('Undo', name: 'weUndo', desc: '', args: []);
   }
 
-  /// `Saving…`
-  String get weSavingIndicator {
+  /// `Save changes`
+  String get weSave {
     return Intl.message(
-      'Saving…',
-      name: 'weSavingIndicator',
+      'Save changes',
+      name: 'weSave',
+      desc:
+          'Button that commits the editor\'s draft; the only thing that writes',
+      args: [],
+    );
+  }
+
+  /// `Discard`
+  String get weDiscard {
+    return Intl.message(
+      'Discard',
+      name: 'weDiscard',
+      desc: 'Button that throws the editor\'s unsaved draft away',
+      args: [],
+    );
+  }
+
+  /// `Discard your unsaved changes?`
+  String get weDiscardTitle {
+    return Intl.message(
+      'Discard your unsaved changes?',
+      name: 'weDiscardTitle',
       desc: '',
       args: [],
     );
   }
 
-  /// `Saved`
-  String get weSavedIndicator {
-    return Intl.message('Saved', name: 'weSavedIndicator', desc: '', args: []);
+  /// `Every language goes back to what was last saved. This cannot be undone.`
+  String get weDiscardMessage {
+    return Intl.message(
+      'Every language goes back to what was last saved. This cannot be undone.',
+      name: 'weDiscardMessage',
+      desc: '',
+      args: [],
+    );
   }
 
-  /// `Unpublished changes`
-  String get weStatusDirtyTitle {
+  /// `Discard`
+  String get weDiscardConfirm {
     return Intl.message(
-      'Unpublished changes',
-      name: 'weStatusDirtyTitle',
+      'Discard',
+      name: 'weDiscardConfirm',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Keep editing`
+  String get weDiscardCancel {
+    return Intl.message(
+      'Keep editing',
+      name: 'weDiscardCancel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Save your changes first`
+  String get wePublishNeedsSave {
+    return Intl.message(
+      'Save your changes first',
+      name: 'wePublishNeedsSave',
+      desc: 'Tooltip on the dimmed Publish button while a draft exists',
+      args: [],
+    );
+  }
+
+  /// `You have unsaved changes`
+  String get weLeaveTitle {
+    return Intl.message(
+      'You have unsaved changes',
+      name: 'weLeaveTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Nothing has been written to the site yet. Leaving keeps your edits here for now, but closing the tab loses them.`
+  String get weLeaveMessage {
+    return Intl.message(
+      'Nothing has been written to the site yet. Leaving keeps your edits here for now, but closing the tab loses them.',
+      name: 'weLeaveMessage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Leave anyway`
+  String get weLeaveConfirm {
+    return Intl.message(
+      'Leave anyway',
+      name: 'weLeaveConfirm',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Stay`
+  String get weLeaveCancel {
+    return Intl.message('Stay', name: 'weLeaveCancel', desc: '', args: []);
+  }
+
+  /// `Unsaved changes`
+  String get weStatusUnsavedTitle {
+    return Intl.message(
+      'Unsaved changes',
+      name: 'weStatusUnsavedTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Nothing is saved until you press Save changes`
+  String get weStatusUnsavedBody {
+    return Intl.message(
+      'Nothing is saved until you press Save changes',
+      name: 'weStatusUnsavedBody',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Saved · not published`
+  String get weStatusSavedTitle {
+    return Intl.message(
+      'Saved · not published',
+      name: 'weStatusSavedTitle',
       desc: '',
       args: [],
     );
   }
 
   /// `{languages} translate when you open them, or on publish`
-  String weStatusDirtyBody(Object languages) {
+  String weStatusSavedBody(Object languages) {
     return Intl.message(
       '$languages translate when you open them, or on publish',
-      name: 'weStatusDirtyBody',
+      name: 'weStatusSavedBody',
       desc: '',
       args: [languages],
     );

@@ -9,8 +9,8 @@ import 'menu_item.dart';
 /// show, so a fresh account lands on the one screen that can move it forward
 /// instead of on empty dashboards.
 ///
-/// Settings and the admin options stay reachable: that is where the cause of
-/// "no properties" is fixed.
+/// Settings stays reachable — including its admin section: that is where the
+/// cause of "no properties" is fixed.
 class PropertySetupGate extends StatelessWidget {
   const PropertySetupGate({
     super.key,
@@ -27,8 +27,7 @@ class PropertySetupGate extends StatelessWidget {
     final needsSetup =
         state.status == PropertyContextStatus.loaded &&
         state.properties.isEmpty &&
-        selectedItem != MenuItem.settings &&
-        selectedItem != MenuItem.adminOptions;
+        selectedItem != MenuItem.settings;
 
     return needsSetup ? const PropertySetupPage() : child;
   }

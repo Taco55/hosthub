@@ -13,9 +13,11 @@ import 'package:hosthub_console/core/core.dart';
 import 'package:hosthub_console/core/models/models.dart';
 import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
+import 'package:hosthub_console/features/profile/profile.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/server_settings/application/server_settings_cubit.dart';
 import 'package:hosthub_console/features/server_settings/domain/admin_settings.dart';
+import 'package:hosthub_console/features/server_settings/presentation/widgets/admin_options_section.dart';
 import 'package:hosthub_console/features/team/application/site_members_cubit.dart';
 import 'package:hosthub_console/features/team/domain/site_invitation.dart';
 import 'package:hosthub_console/features/team/domain/site_member.dart';
@@ -79,6 +81,31 @@ class _UserSettingsView extends StatelessWidget {
             await showAppError(context, appError);
             if (!context.mounted) return;
             context.read<UserSettingsCubit>().clearError();
+          },
+        ),
+        // Save feedback for every ServerSettingsCubit save on this page — the
+        // channel-fee defaults and the admin section share one cubit, so the
+        // page owns the toast and the error instead of each section claiming
+        // transitions the other caused.
+        BlocListener<ServerSettingsCubit, ServerSettingsState>(
+          listenWhen: (previous, current) =>
+              previous.status == ServerSettingsStatus.mutating &&
+              current.status == ServerSettingsStatus.ready,
+          listener: (context, state) {
+            showStyledToast(
+              context,
+              type: ToastificationType.success,
+              description: context.s.settingsSaved,
+            );
+          },
+        ),
+        BlocListener<ServerSettingsCubit, ServerSettingsState>(
+          listenWhen: (previous, current) =>
+              previous.error != current.error && current.error != null,
+          listener: (context, state) async {
+            final error = state.error;
+            if (error == null) return;
+            await showAppError(context, AppError.fromDomain(context, error));
           },
         ),
         BlocListener<SiteContextCubit, SiteContextState>(
@@ -287,6 +314,11 @@ class _UserSettingsSection extends StatelessWidget {
         const ListingsSection(),
         const _ChannelFeeDefaultsSection(),
         const _TeamSection(),
+        // Admin scope last: everything above is this account's own data, the
+        // admin section is the whole environment's. Absent for a non-admin, so
+        // the page ends at Gebruikers for everyone else.
+        if (context.watch<ProfileCubit>().state.profile?.isAdmin ?? false)
+          const AdminOptionsSection(),
       ],
     );
   }
@@ -648,18 +680,11 @@ class _ChannelFeeDefaultsSectionState
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<ServerSettingsCubit, ServerSettingsState>(
-      listenWhen: (previous, current) =>
-          previous.settings != current.settings ||
-          previous.status != current.status,
+      listenWhen: (previous, current) => previous.settings != current.settings,
       listener: (context, state) {
         final settings = state.settings;
         if (settings != null && !identical(settings, _loadedSettings)) {
           setState(() => _applyDraft(settings));
-        }
-        if (state.status == ServerSettingsStatus.ready &&
-            _loadedSettings != null &&
-            state.settings == _loadedSettings) {
-          // just saved
         }
       },
       builder: (context, state) {
