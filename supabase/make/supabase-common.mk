@@ -237,6 +237,7 @@ functions-logs-local:
 # ============================
 
 ## apply-migrations — Apply all SQL files in supabase/migrations/ to the remote DB.
+## Skips the baseline migration if profiles table already exists.
 .PHONY: apply-migrations
 apply-migrations: preflight check-pg-version
 	$(call confirm-remote,apply-migrations)
@@ -246,7 +247,16 @@ apply-migrations: preflight check-pg-version
 	if [ -z "$$DB_URL" ]; then echo "Missing DB_URL; set SUPABASE_DB_URL in $(ENV_FILE) or pass DB_URL=..."; exit 1; fi; \
 	set -- $(MIGRATIONS_DIR)/*.sql; \
 	if [ -e "$$1" ]; then \
-	  for f in "$$@"; do echo "- Applying $$f"; $(PSQL) "$$DB_URL" -v ON_ERROR_STOP=1 -f "$$f" || exit 1; done; \
+	  for f in "$$@"; do \
+	    if echo "$$f" | grep -q "_baseline.sql$$"; then \
+	      if $(PSQL) "$$DB_URL" -tAc "SELECT to_regclass('public.profiles') IS NOT NULL" | grep -q t; then \
+	        echo "- Skipping $$f (baseline already applied)"; \
+	        continue; \
+	      fi; \
+	    fi; \
+	    echo "- Applying $$f"; \
+	    $(PSQL) "$$DB_URL" -v ON_ERROR_STOP=1 -f "$$f" || exit 1; \
+	  done; \
 	else echo "- No migration files in $(MIGRATIONS_DIR)"; fi; \
 	$(PG_DUMP) --schema=public --schema-only --format=plain \
 	  --dbname="$$DB_URL" --file="$(TMP_SNAPSHOT_FILE)" || exit 1; \
