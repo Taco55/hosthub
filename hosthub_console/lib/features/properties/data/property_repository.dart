@@ -296,9 +296,6 @@ class PropertyRepository extends SupabaseRepository {
         'lodgify_synced_at': (syncedAt ?? DateTime.now())
             .toUtc()
             .toIso8601String(),
-        // `properties` carries no updated_at trigger, so the row's own stamp has
-        // to be set by whoever writes it.
-        'updated_at': DateTime.now().toUtc().toIso8601String(),
       };
 
       final name = details.name?.trim();

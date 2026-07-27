@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict B7CjmR1khe5faR6GGJC00tn3bTZcUAJBVfBeTT6V0qKXSsNGcibvDk0NKfCLjxD
+\restrict JrlFbwOkeZ3febbjX7RcObIZeSZlkK0tVz2h1MvOd4sGjcVSDLzKGdeoe6EJZhF
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -1182,6 +1182,13 @@ CREATE TRIGGER set_profiles_updated_at BEFORE UPDATE ON public.profiles FOR EACH
 
 
 --
+-- Name: properties set_properties_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER set_properties_updated_at BEFORE UPDATE ON public.properties FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
 -- Name: settings set_settings_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -2011,5 +2018,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON T
 -- PostgreSQL database dump complete
 --
 
-\unrestrict B7CjmR1khe5faR6GGJC00tn3bTZcUAJBVfBeTT6V0qKXSsNGcibvDk0NKfCLjxD
+\unrestrict JrlFbwOkeZ3febbjX7RcObIZeSZlkK0tVz2h1MvOd4sGjcVSDLzKGdeoe6EJZhF
 
