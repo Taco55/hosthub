@@ -208,28 +208,46 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m81(number) => "Hoogtepunt ${number}";
 
-  static String m82(locked, total) => "${locked} van ${total} velden van jou";
+  static String m82(number) => "Introductie van sectie ${number}";
 
-  static String m83(language) => "${language} voorbeeld";
+  static String m83(item) => "${item} toevoegen";
 
-  static String m84(count) => "${count} talen publiceren";
+  static String m84(count, max) => "${count} van ${max}";
 
-  static String m85(source) => "Alleen ${source} publiceren";
+  static String m85(item) => "Nog geen ${item}";
 
-  static String m86(language) => "${language} · bron";
+  static String m86(max) => "Maximum van ${max} bereikt";
 
-  static String m87(source) =>
+  static String m87(min) => "Er moeten er minimaal ${min} zijn";
+
+  static String m88(locked, total) => "${locked} van ${total} velden van jou";
+
+  static String m89(min, max) =>
+      "${min} tot ${max} foto\'s. De mediakiezer komt met het beeldbeheer.";
+
+  static String m90(language) => "${language} voorbeeld";
+
+  static String m91(count) => "${count} talen publiceren";
+
+  static String m92(source) => "Alleen ${source} publiceren";
+
+  static String m93(language) => "${language} · bron";
+
+  static String m94(source) =>
       "Je ${source} content publiceert zoals die is. De andere talen worden opnieuw vertaald door AI, met behoud van wat je hebt vergrendeld.";
 
-  static String m88(lang) => "Bron · ${lang}";
+  static String m95(lang) => "Bron · ${lang}";
 
-  static String m89(source, count) =>
+  static String m96(source, count) =>
       "${source} + ${count} vertalingen staan live";
 
-  static String m90(languages) =>
+  static String m97(languages) =>
       "${languages} vertalen zodra je ze opent, of bij publiceren";
 
-  static String m91(source) => "Volgt nu de ${source} bron.";
+  static String m98(language) =>
+      "Rijen wijzigen doe je in de bron (${language})";
+
+  static String m99(source) => "Volgt nu de ${source} bron.";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -2213,17 +2231,98 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "weBannerWritingTitle": m78,
     "weBreadcrumbWebsite": MessageLookupByLibrary.simpleMessage("Website"),
+    "weCardAgreements": MessageLookupByLibrary.simpleMessage(
+      "Afspraken & betaling",
+    ),
+    "weCardAmenities": MessageLookupByLibrary.simpleMessage("Voorzieningen"),
+    "weCardAmenitiesSub": MessageLookupByLibrary.simpleMessage(
+      "Groepen met items.",
+    ),
+    "weCardAreaIntro": MessageLookupByLibrary.simpleMessage("Introductie"),
+    "weCardAreaIntroSub": MessageLookupByLibrary.simpleMessage(
+      "Staat als ondertitel onder de paginatitel.",
+    ),
+    "weCardAreaSections": MessageLookupByLibrary.simpleMessage("Secties"),
+    "weCardAreaSectionsSub": MessageLookupByLibrary.simpleMessage(
+      "Elke sectie is een kaart met titel, tekst en regels.",
+    ),
+    "weCardArrival": MessageLookupByLibrary.simpleMessage("Aankomst & toegang"),
     "weCardContact": MessageLookupByLibrary.simpleMessage("Contact"),
+    "weCardContactHelp": MessageLookupByLibrary.simpleMessage("Contact & hulp"),
+    "weCardContactSub": MessageLookupByLibrary.simpleMessage(
+      "Onderaan de homepage. De vier velden staan vast — alleen de teksten zijn van jou.",
+    ),
     "weCardContent": MessageLookupByLibrary.simpleMessage("Pagina-inhoud"),
+    "weCardDescription": MessageLookupByLibrary.simpleMessage("Beschrijving"),
+    "weCardGalleryAll": MessageLookupByLibrary.simpleMessage("Alle foto\'s"),
+    "weCardGalleryAllSub": MessageLookupByLibrary.simpleMessage(
+      "De volledige set op /gallery. De homepage toont hier een selectie uit.",
+    ),
+    "weCardGalleryHeaderSub": MessageLookupByLibrary.simpleMessage(
+      "De paginatitel komt uit de interfacetaal; de regel eronder is van jou.",
+    ),
+    "weCardGoodToKnow": MessageLookupByLibrary.simpleMessage(
+      "Goed om te weten",
+    ),
+    "weCardHeader": MessageLookupByLibrary.simpleMessage("Kop"),
     "weCardHero": MessageLookupByLibrary.simpleMessage("Hero"),
+    "weCardHeroSub": MessageLookupByLibrary.simpleMessage(
+      "Titel, locatieregel en de wisselende hero-foto\'s.",
+    ),
     "weCardHighlights": MessageLookupByLibrary.simpleMessage("Hoogtepunten"),
+    "weCardHighlightsSub": MessageLookupByLibrary.simpleMessage(
+      "Kaarten met foto onderaan de homepage.",
+    ),
+    "weCardHomeGallery": MessageLookupByLibrary.simpleMessage(
+      "Galerij op de homepage",
+    ),
+    "weCardHomeGallerySub": MessageLookupByLibrary.simpleMessage(
+      "Een selectie uit de bibliotheek; de volledige set staat op de tab Galerij.",
+    ),
+    "weCardHouseRules": MessageLookupByLibrary.simpleMessage("Huisregels"),
+    "weCardHouseRulesSub": MessageLookupByLibrary.simpleMessage(
+      "Staat als sectie op de homepage.",
+    ),
+    "weCardKeyFacts": MessageLookupByLibrary.simpleMessage("Kerncijfers"),
+    "weCardKeyFactsSub": MessageLookupByLibrary.simpleMessage(
+      "De tegels direct onder de hero.",
+    ),
+    "weCardLayout": MessageLookupByLibrary.simpleMessage(
+      "Indeling & faciliteiten",
+    ),
+    "weCardLayoutSub": MessageLookupByLibrary.simpleMessage(
+      "Secties met een korte inleiding en regels.",
+    ),
+    "weCardLocation": MessageLookupByLibrary.simpleMessage(
+      "Locatie & afstanden",
+    ),
+    "weCardParking": MessageLookupByLibrary.simpleMessage("Parkeren & laden"),
+    "weCardQuickFacts": MessageLookupByLibrary.simpleMessage("Snel overzicht"),
+    "weCardQuickFactsSub": MessageLookupByLibrary.simpleMessage(
+      "De strip bovenaan de pagina.",
+    ),
+    "weCardSourceLodgify": MessageLookupByLibrary.simpleMessage("Uit Lodgify"),
+    "weCardTransport": MessageLookupByLibrary.simpleMessage(
+      "Aankomst & vervoer",
+    ),
+    "weCardTransportSub": MessageLookupByLibrary.simpleMessage(
+      "Vaste kolommen met reisopties.",
+    ),
     "weChipAuto": MessageLookupByLibrary.simpleMessage("Auto"),
     "weChipLocked": MessageLookupByLibrary.simpleMessage("Vergrendeld"),
+    "weChipShared": MessageLookupByLibrary.simpleMessage("gedeeld"),
     "weChipTooltipAuto": MessageLookupByLibrary.simpleMessage(
       "Volgt de bron — klik om je eigen tekst te behouden",
     ),
     "weChipTooltipLocked": MessageLookupByLibrary.simpleMessage(
       "Jouw tekst — klik om de bron weer te volgen",
+    ),
+    "weColumnAirports": MessageLookupByLibrary.simpleMessage("Vliegvelden"),
+    "weColumnCar": MessageLookupByLibrary.simpleMessage("Met de auto"),
+    "weColumnNotes": MessageLookupByLibrary.simpleMessage("Let op"),
+    "weColumnParking": MessageLookupByLibrary.simpleMessage("Parkeren"),
+    "weColumnPublicTransport": MessageLookupByLibrary.simpleMessage(
+      "Openbaar vervoer",
     ),
     "weDeviceMobile": MessageLookupByLibrary.simpleMessage("Mobiel"),
     "weDeviceWeb": MessageLookupByLibrary.simpleMessage("Web"),
@@ -2252,19 +2351,83 @@ class MessageLookup extends MessageLookupByLibrary {
     "weErrorTranslateFailed": MessageLookupByLibrary.simpleMessage(
       "Kon de vertaling niet verversen — de laatste goede versie blijft staan",
     ),
+    "weExternalLodgifyNote": MessageLookupByLibrary.simpleMessage(
+      "Betalingsschema, annulering en borg komen uit je Lodgify-instellingen. De console is niet de bron voor boekingsvoorwaarden — pas ze daar aan.",
+    ),
+    "weFieldAlt": MessageLookupByLibrary.simpleMessage("Alt-tekst"),
+    "weFieldAltSummary": MessageLookupByLibrary.simpleMessage(
+      "Alt-tekst (samenvattend)",
+    ),
+    "weFieldCallout": MessageLookupByLibrary.simpleMessage(
+      "Uitgelichte waarschuwing",
+    ),
+    "weFieldCheckIn": MessageLookupByLibrary.simpleMessage("Check-in"),
+    "weFieldCheckInNote": MessageLookupByLibrary.simpleMessage(
+      "Toelichting inchecken",
+    ),
+    "weFieldCheckOut": MessageLookupByLibrary.simpleMessage("Check-out"),
+    "weFieldCleaningNote": MessageLookupByLibrary.simpleMessage(
+      "Schoonmaak en linnen",
+    ),
+    "weFieldError": MessageLookupByLibrary.simpleMessage("Mislukt"),
     "weFieldExperience": m80,
     "weFieldHeadline": MessageLookupByLibrary.simpleMessage("Titel"),
     "weFieldHeroPhotos": MessageLookupByLibrary.simpleMessage("Hero-foto\'s"),
     "weFieldHighlight": m81,
     "weFieldIntro": MessageLookupByLibrary.simpleMessage("Intro"),
+    "weFieldLocationLine": MessageLookupByLibrary.simpleMessage("Locatieregel"),
+    "weFieldMapQuery": MessageLookupByLibrary.simpleMessage(
+      "Zoekterm voor de kaart",
+    ),
+    "weFieldSearchName": MessageLookupByLibrary.simpleMessage(
+      "Naam voor zoekmachines",
+    ),
+    "weFieldSubline": MessageLookupByLibrary.simpleMessage("Onderregel"),
+    "weFieldSubmit": MessageLookupByLibrary.simpleMessage("Knop"),
     "weFieldSubtitle": MessageLookupByLibrary.simpleMessage("Ondertitel"),
+    "weFieldSuccess": MessageLookupByLibrary.simpleMessage("Gelukt"),
     "weFieldTitle": MessageLookupByLibrary.simpleMessage("Titel"),
+    "weFieldWifiNote": MessageLookupByLibrary.simpleMessage("Wifi"),
+    "weFixedColumnsMeta": MessageLookupByLibrary.simpleMessage(
+      "vaste kolommen",
+    ),
+    "weFormFieldEmail": MessageLookupByLibrary.simpleMessage("E-mail"),
+    "weFormFieldMessage": MessageLookupByLibrary.simpleMessage("Bericht"),
+    "weFormFieldName": MessageLookupByLibrary.simpleMessage("Naam"),
+    "weFormFieldPeriod": MessageLookupByLibrary.simpleMessage(
+      "Gewenste periode",
+    ),
     "weFreshNotice": MessageLookupByLibrary.simpleMessage(
       "Nieuw concept, komt overeen met je laatste bron.",
     ),
+    "weGroupIntro": m82,
     "weHidePreview": MessageLookupByLibrary.simpleMessage(
       "Voorbeeld verbergen",
     ),
+    "weHintMap": MessageLookupByLibrary.simpleMessage(
+      "Bepaalt waar de speld op de kaart staat; wordt niet als tekst gelezen.",
+    ),
+    "weHintSeo": MessageLookupByLibrary.simpleMessage(
+      "Dit veld staat niet in de pagina: het is de titel in de browsertab en de omschrijving in Google.",
+    ),
+    "weHintStateError": MessageLookupByLibrary.simpleMessage(
+      "Alleen zichtbaar bij een fout in het formulier.",
+    ),
+    "weHintStateSuccess": MessageLookupByLibrary.simpleMessage(
+      "Alleen zichtbaar na het versturen van het formulier.",
+    ),
+    "weItemAmenity": MessageLookupByLibrary.simpleMessage("Voorziening"),
+    "weItemColumn": MessageLookupByLibrary.simpleMessage("Kolom"),
+    "weItemDistance": MessageLookupByLibrary.simpleMessage("Afstand"),
+    "weItemFact": MessageLookupByLibrary.simpleMessage("Feit"),
+    "weItemFormField": MessageLookupByLibrary.simpleMessage("Veld"),
+    "weItemGroup": MessageLookupByLibrary.simpleMessage("Groep"),
+    "weItemHighlight": MessageLookupByLibrary.simpleMessage("Hoogtepunt"),
+    "weItemKeyFact": MessageLookupByLibrary.simpleMessage("Kerncijfer"),
+    "weItemLine": MessageLookupByLibrary.simpleMessage("Regel"),
+    "weItemParagraph": MessageLookupByLibrary.simpleMessage("Alinea"),
+    "weItemSection": MessageLookupByLibrary.simpleMessage("Sectie"),
+    "weItemTime": MessageLookupByLibrary.simpleMessage("Tijd"),
     "weLangDutch": MessageLookupByLibrary.simpleMessage("Nederlands"),
     "weLangEnglish": MessageLookupByLibrary.simpleMessage("Engels"),
     "weLangNorwegian": MessageLookupByLibrary.simpleMessage("Noors"),
@@ -2276,6 +2439,29 @@ class MessageLookup extends MessageLookupByLibrary {
     "weLeaveTitle": MessageLookupByLibrary.simpleMessage(
       "Je hebt niet-opgeslagen wijzigingen",
     ),
+    "weListAdd": m83,
+    "weListColumns": MessageLookupByLibrary.simpleMessage("Kolommen"),
+    "weListCounter": m84,
+    "weListDistances": MessageLookupByLibrary.simpleMessage("Afstanden"),
+    "weListEmptyMessage": MessageLookupByLibrary.simpleMessage(
+      "Deze lijst verschijnt pas op de website als er iets in staat.",
+    ),
+    "weListEmptyTitle": m85,
+    "weListFacts": MessageLookupByLibrary.simpleMessage("Feiten"),
+    "weListFormFields": MessageLookupByLibrary.simpleMessage("Velden"),
+    "weListGroups": MessageLookupByLibrary.simpleMessage("Groepen"),
+    "weListKeyFacts": MessageLookupByLibrary.simpleMessage("Kerncijfers"),
+    "weListLines": MessageLookupByLibrary.simpleMessage("Regels"),
+    "weListMaxReached": m86,
+    "weListMaxReason": MessageLookupByLibrary.simpleMessage(
+      "Verwijder eerst een rij",
+    ),
+    "weListMinReason": m87,
+    "weListParagraphs": MessageLookupByLibrary.simpleMessage("Alinea\'s"),
+    "weListSections": MessageLookupByLibrary.simpleMessage("Secties"),
+    "weListTimes": MessageLookupByLibrary.simpleMessage(
+      "Check-in en check-out",
+    ),
     "weLivePreview": MessageLookupByLibrary.simpleMessage("Live voorbeeld"),
     "weLoadFailedDescription": MessageLookupByLibrary.simpleMessage(
       "De editor toont geen velden zolang de inhoud van deze website niet geladen is.",
@@ -2284,12 +2470,19 @@ class MessageLookup extends MessageLookupByLibrary {
       "Opnieuw proberen",
     ),
     "weLocaleSourceBadge": MessageLookupByLibrary.simpleMessage("bron"),
-    "weLockedCounter": m82,
+    "weLockedCounter": m88,
+    "weMediaPending": m89,
     "wePageArea": MessageLookupByLibrary.simpleMessage("Omgeving"),
     "wePageGallery": MessageLookupByLibrary.simpleMessage("Galerij"),
     "wePageHome": MessageLookupByLibrary.simpleMessage("Home"),
     "wePagePractical": MessageLookupByLibrary.simpleMessage("Praktisch"),
-    "wePreviewLabel": m83,
+    "wePairDistance": MessageLookupByLibrary.simpleMessage("Afstand"),
+    "wePairLabel": MessageLookupByLibrary.simpleMessage("Label"),
+    "wePairPlaceholder": MessageLookupByLibrary.simpleMessage("Placeholder"),
+    "wePairTime": MessageLookupByLibrary.simpleMessage("Tijd"),
+    "wePairValue": MessageLookupByLibrary.simpleMessage("Waarde"),
+    "wePairWhat": MessageLookupByLibrary.simpleMessage("Wat"),
+    "wePreviewLabel": m90,
     "wePreviewLatest": MessageLookupByLibrary.simpleMessage(
       "Nieuwste bekijken",
     ),
@@ -2301,7 +2494,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Alle talen publiceren",
     ),
     "wePublishCancel": MessageLookupByLibrary.simpleMessage("Annuleren"),
-    "wePublishConfirm": m84,
+    "wePublishConfirm": m91,
     "wePublishDraft": MessageLookupByLibrary.simpleMessage(
       "Concept — nog niet nagekeken",
     ),
@@ -2328,9 +2521,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePublishSkipped": MessageLookupByLibrary.simpleMessage(
       "Overgeslagen · blijft zoals het nu live staat",
     ),
-    "wePublishSourceOnly": m85,
-    "wePublishSourceRole": m86,
-    "wePublishSubtitle": m87,
+    "wePublishSourceOnly": m92,
+    "wePublishSourceRole": m93,
+    "wePublishSubtitle": m94,
     "wePublishTitle": MessageLookupByLibrary.simpleMessage(
       "Alle talen publiceren",
     ),
@@ -2340,6 +2533,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "weRibbonStale": MessageLookupByLibrary.simpleMessage(
       "Eerder voorbeeld — wordt automatisch bijgewerkt bij publiceren.",
+    ),
+    "weRowDeleted": MessageLookupByLibrary.simpleMessage("Regel verwijderd."),
+    "weRowMediaPending": MessageLookupByLibrary.simpleMessage(
+      "Eén afbeelding per rij. De mediakiezer komt met het beeldbeheer.",
     ),
     "weSave": MessageLookupByLibrary.simpleMessage("Wijzigingen opslaan"),
     "weSaveDirty": MessageLookupByLibrary.simpleMessage(
@@ -2351,16 +2548,19 @@ class MessageLookup extends MessageLookupByLibrary {
     "weSharedPhotosNote": MessageLookupByLibrary.simpleMessage(
       "Foto\'s worden gedeeld over alle talen — bewerk ze in de bron.",
     ),
+    "weSharedValueMeta": MessageLookupByLibrary.simpleMessage(
+      "waarde is gedeeld over talen",
+    ),
     "weShowPreview": MessageLookupByLibrary.simpleMessage("Voorbeeld tonen"),
-    "weSourceChip": m88,
+    "weSourceChip": m95,
     "weStaleNotice": MessageLookupByLibrary.simpleMessage(
       "Voorbeeld toont een eerdere bronwijziging.",
     ),
-    "weStatusCleanBody": m89,
+    "weStatusCleanBody": m96,
     "weStatusCleanTitle": MessageLookupByLibrary.simpleMessage(
       "Alles gepubliceerd",
     ),
-    "weStatusSavedBody": m90,
+    "weStatusSavedBody": m97,
     "weStatusSavedTitle": MessageLookupByLibrary.simpleMessage(
       "Opgeslagen · niet gepubliceerd",
     ),
@@ -2370,8 +2570,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "weStatusUnsavedTitle": MessageLookupByLibrary.simpleMessage(
       "Niet-opgeslagen wijzigingen",
     ),
+    "weStructureLocked": m98,
     "weUndo": MessageLookupByLibrary.simpleMessage("Ongedaan maken"),
-    "weUndoSwitchNotice": m91,
+    "weUndoSwitchNotice": m99,
     "wealth": MessageLookupByLibrary.simpleMessage("Welvaart"),
     "websiteLanguagesFooter": MessageLookupByLibrary.simpleMessage(
       "De talen die je publieke website aan gasten aanbiedt. Voeg talen toe of verwijder ze.",

@@ -81,12 +81,16 @@ class EditorFieldLocation {
   String get address => '$contentType/$slug:${path.join('.')}';
 }
 
-/// Marks the position in a path template where a captured row id lands.
-class _RowIdSlot {
-  const _RowIdSlot();
-}
+/// Marks a position in a path template where a captured segment lands.
+///
+/// [_rowId] captures a stable row id (resolved against a list); [_key]
+/// captures a fixed object key (a form field's slot, a document's own key).
+/// A pattern may carry several of both — a nested group list captures the
+/// group's id and then the item's.
+enum _Slot { rowId, key }
 
-const _rowId = _RowIdSlot();
+const _rowId = _Slot.rowId;
+const _key = _Slot.key;
 
 /// Persistence for the website editor. The editor's flat field keys map onto
 /// the site's real CMS documents (the same JSON the public site renders):
@@ -124,6 +128,9 @@ class WebsiteContentRepository extends SupabaseRepository {
     (contentType: 'page', slug: 'practical'),
     (contentType: 'page', slug: 'area'),
     (contentType: 'contact_form', slug: 'main'),
+    // The gallery tab is a route, so it is a document — created on first
+    // write, like every other document this editor may reach first.
+    (contentType: 'page', slug: 'gallery'),
   ];
 
   // -- field <-> document JSON mapping ------------------------------------
@@ -136,23 +143,151 @@ class WebsiteContentRepository extends SupabaseRepository {
   /// stable row id and lands in the path at the [_rowId] position.
   static const List<({String pattern, int document, List<Object> path})>
   _fieldPaths = [
+    // -- Home: hero (README §A.1 card 1) --
     (pattern: 'cabin.hero.title', document: 0, path: ['hero', 'title']),
     (pattern: 'cabin.hero.subtitle', document: 0, path: ['hero', 'subtitle']),
+    (
+      pattern: 'cabin.meta.locationShort',
+      document: 0,
+      path: ['meta', 'locationShort'],
+    ),
+    (pattern: 'cabin.meta.name', document: 0, path: ['meta', 'name']),
+    (
+      pattern: 'cabin.hero.photosAlt',
+      document: 0,
+      path: ['hero', 'photosAlt'],
+    ),
+
+    // -- Home: key facts (card 2) --
+    (
+      pattern: 'home.keyFacts.{id}.label',
+      document: 1,
+      path: ['keyFacts', _rowId, 'label'],
+    ),
+    (
+      pattern: 'home.keyFacts.{id}.value',
+      document: 1,
+      path: ['keyFacts', _rowId, 'value'],
+    ),
+
+    // -- Home: description (card 3) --
     (
       pattern: 'cabin.description.{id}.text',
       document: 0,
       path: ['description', _rowId, 'text'],
     ),
+
+    // -- Home: gallery selection (card 4) --
+    (pattern: 'home.galleryAlt', document: 1, path: ['galleryAlt']),
+
+    // -- Home: amenities (card 5) — two nesting levels, the maximum --
     (
-      pattern: 'cabin.experience.{id}.text',
+      pattern: 'cabin.amenities.title',
       document: 0,
-      path: ['experience', _rowId, 'text'],
+      path: ['amenities', 'title'],
+    ),
+    (
+      pattern: 'cabin.amenities.groups.{id}.title',
+      document: 0,
+      path: ['amenities', 'groups', _rowId, 'title'],
+    ),
+    (
+      pattern: 'cabin.amenities.groups.{id}.items.{id}.text',
+      document: 0,
+      path: ['amenities', 'groups', _rowId, 'items', _rowId, 'text'],
+    ),
+
+    // -- Home: location & distances (card 6) --
+    (
+      pattern: 'cabin.location.title',
+      document: 0,
+      path: ['location', 'title'],
+    ),
+    (
+      pattern: 'cabin.location.distances.{id}.label',
+      document: 0,
+      path: ['location', 'distances', _rowId, 'label'],
+    ),
+    (
+      pattern: 'cabin.location.distances.{id}.value',
+      document: 0,
+      path: ['location', 'distances', _rowId, 'value'],
+    ),
+    (
+      pattern: 'cabin.location.mapQuery',
+      document: 0,
+      path: ['location', 'mapQuery'],
+    ),
+
+    // -- Home: highlights (card 7) --
+    (
+      pattern: 'home.highlights.{id}.title',
+      document: 1,
+      path: ['highlights', _rowId, 'title'],
     ),
     (
       pattern: 'home.highlights.{id}.description',
       document: 1,
       path: ['highlights', _rowId, 'description'],
     ),
+    (
+      pattern: 'home.highlights.{id}.alt',
+      document: 1,
+      path: ['highlights', _rowId, 'alt'],
+    ),
+
+    // -- Home: house rules (card 8) — the section the page did not render --
+    (pattern: 'cabin.rules.title', document: 0, path: ['houseRules', 'title']),
+    (
+      pattern: 'cabin.rules.bullets.{id}.text',
+      document: 0,
+      path: ['houseRules', 'bullets', _rowId, 'text'],
+    ),
+    (
+      pattern: 'cabin.rules.checkIn',
+      document: 0,
+      path: ['houseRules', 'checkIn'],
+    ),
+    (
+      pattern: 'cabin.rules.checkOut',
+      document: 0,
+      path: ['houseRules', 'checkOut'],
+    ),
+    (
+      pattern: 'cabin.rules.checkInNote',
+      document: 0,
+      path: ['houseRules', 'checkInNote'],
+    ),
+    (
+      pattern: 'cabin.rules.cleaningNote',
+      document: 0,
+      path: ['houseRules', 'cleaningNote'],
+    ),
+    (
+      pattern: 'cabin.rules.wifiNote',
+      document: 0,
+      path: ['houseRules', 'wifiNote'],
+    ),
+
+    // -- Home: contact form (card 9). The four fields are fixed — the form
+    // has a backend contract — so the slot is a document key, not a row id.
+    (pattern: 'contact.title', document: 4, path: ['title']),
+    (pattern: 'contact.subtitle', document: 4, path: ['subtitle']),
+    (
+      pattern: 'contact.form.fields.{id}.label',
+      document: 4,
+      path: ['form', _key, 'label'],
+    ),
+    (
+      pattern: 'contact.form.fields.{id}.placeholder',
+      document: 4,
+      path: ['form', _key, 'placeholder'],
+    ),
+    (pattern: 'contact.form.submit', document: 4, path: ['form', 'submit']),
+    (pattern: 'contact.form.success', document: 4, path: ['form', 'success']),
+    (pattern: 'contact.form.error', document: 4, path: ['form', 'error']),
+
+    // -- Practical (§A.2) --
     (
       pattern: 'practical.header.title',
       document: 2,
@@ -163,26 +298,153 @@ class WebsiteContentRepository extends SupabaseRepository {
       document: 2,
       path: ['header', 'subtitle'],
     ),
+    (
+      pattern: 'practical.quickFacts.{id}.label',
+      document: 2,
+      path: ['quickFacts', _rowId, 'label'],
+    ),
+    (
+      pattern: 'practical.quickFacts.{id}.value',
+      document: 2,
+      path: ['quickFacts', _rowId, 'value'],
+    ),
+    (
+      pattern: 'practical.arrival.title',
+      document: 2,
+      path: ['arrivalAccess', 'title'],
+    ),
+    (
+      pattern: 'practical.arrival.checkIn',
+      document: 2,
+      path: ['arrivalAccess', 'checkIn'],
+    ),
+    (
+      pattern: 'practical.arrival.checkOut',
+      document: 2,
+      path: ['arrivalAccess', 'checkOut'],
+    ),
+    (
+      pattern: 'practical.arrival.bullets.{id}.text',
+      document: 2,
+      path: ['arrivalAccess', 'bullets', _rowId, 'text'],
+    ),
+    (
+      pattern: 'practical.parking.title',
+      document: 2,
+      path: ['parkingCharging', 'title'],
+    ),
+    (
+      pattern: 'practical.parking.callout',
+      document: 2,
+      path: ['parkingCharging', 'callout'],
+    ),
+    (
+      pattern: 'practical.parking.bullets.{id}.text',
+      document: 2,
+      path: ['parkingCharging', 'bullets', _rowId, 'text'],
+    ),
+    (
+      pattern: 'practical.layout.title',
+      document: 2,
+      path: ['layoutFacilities', 'title'],
+    ),
+    (
+      pattern: 'practical.layout.sections.{id}.title',
+      document: 2,
+      path: ['layoutFacilities', 'sections', _rowId, 'title'],
+    ),
+    (
+      pattern: 'practical.layout.sections.{id}.intro',
+      document: 2,
+      path: ['layoutFacilities', 'sections', _rowId, 'intro'],
+    ),
+    (
+      pattern: 'practical.layout.sections.{id}.bullets.{id}.text',
+      document: 2,
+      path: ['layoutFacilities', 'sections', _rowId, 'bullets', _rowId, 'text'],
+    ),
+    (
+      pattern: 'practical.transport.title',
+      document: 2,
+      path: ['transport', 'title'],
+    ),
+    (
+      pattern: 'practical.transport.columns.{id}.title',
+      document: 2,
+      path: ['transport', 'columns', _rowId, 'title'],
+    ),
+    (
+      pattern: 'practical.transport.columns.{id}.bullets.{id}.text',
+      document: 2,
+      path: ['transport', 'columns', _rowId, 'bullets', _rowId, 'text'],
+    ),
+    (
+      pattern: 'practical.goodToKnow.title',
+      document: 2,
+      path: ['goodToKnow', 'title'],
+    ),
+    (
+      pattern: 'practical.goodToKnow.bullets.{id}.text',
+      document: 2,
+      path: ['goodToKnow', 'bullets', _rowId, 'text'],
+    ),
+    (
+      pattern: 'practical.contactHelp.title',
+      document: 2,
+      path: ['contactHelp', 'title'],
+    ),
+    (
+      pattern: 'practical.contactHelp.bullets.{id}.text',
+      document: 2,
+      path: ['contactHelp', 'bullets', _rowId, 'text'],
+    ),
+
+    // -- Area (§A.3). The intro of a section is spelled `description` in this
+    // document and `intro` on Practical; the path table is where that lives.
     (pattern: 'area.intro', document: 3, path: ['intro']),
-    (pattern: 'contact.title', document: 4, path: ['title']),
-    (pattern: 'contact.subtitle', document: 4, path: ['subtitle']),
+    (
+      pattern: 'area.sections.{id}.title',
+      document: 3,
+      path: ['sections', _rowId, 'title'],
+    ),
+    (
+      pattern: 'area.sections.{id}.intro',
+      document: 3,
+      path: ['sections', _rowId, 'description'],
+    ),
+    (
+      pattern: 'area.sections.{id}.bullets.{id}.text',
+      document: 3,
+      path: ['sections', _rowId, 'bullets', _rowId, 'text'],
+    ),
+
+    // -- Gallery (§A.4). The tagline lands on more than one page; its hint
+    // says so, because a field that surfaces twice must not be a surprise.
+    (pattern: 'home.tagline', document: 1, path: ['tagline']),
+    (pattern: 'gallery.allAlt', document: 5, path: ['galleryAlt']),
   ];
 
   /// Where one editor field lives: which document, and the path within its JSON.
-  /// Path segments are object keys (String), row-id lookups (a String at a
-  /// list position) or plain list indices (int).
+  /// Path segments are object keys (String), row-id lookups ([RowId]) or plain
+  /// list indices (int).
   static EditorFieldLocation? locationOf(String fieldKey) {
     for (final entry in _fieldPaths) {
-      final match = _match(entry.pattern, fieldKey);
-      if (!match.matched) continue;
+      final captures = _match(entry.pattern, fieldKey);
+      if (captures == null) continue;
       final document = _documents[entry.document];
+      var next = 0;
       return EditorFieldLocation(
         contentType: document.contentType,
         slug: document.slug,
         path: [
+          // Each slot in the table takes the next captured segment, in order.
           for (final segment in entry.path)
-            // The slot in the table is where the captured row id lands.
-            if (segment is _RowIdSlot) RowId(match.rowId!) else segment,
+            if (segment == _rowId)
+              RowId(captures[next++])
+            else if (segment == _key)
+              captures[next++]
+            else
+              segment,
         ],
       );
     }
@@ -190,46 +452,88 @@ class WebsiteContentRepository extends SupabaseRepository {
   }
 
   /// The document and array path a repeatable list lives at, from the same
-  /// table (`<listKey>.{id}...` patterns). Null for an unknown list.
+  /// table. [listKey] is a field-key prefix ending right before the row id;
+  /// for a nested list the enclosing ids are supplied in [enclosingIds], in
+  /// order, and land at their slots. Null for an unknown list.
   static ({
     ({String contentType, String slug}) document,
     List<Object> arrayPath,
   })?
-  _listLocationOf(String listKey) {
+  _listLocationOf(String listKey, {List<String> enclosingIds = const []}) {
     for (final entry in _fieldPaths) {
-      if (!entry.pattern.startsWith('$listKey.{id}')) continue;
-      final slot = entry.path.indexWhere((segment) => segment is _RowIdSlot);
-      if (slot < 0) continue;
+      final prefix = _patternPrefixOf(entry.pattern, enclosingIds.length);
+      if (prefix != listKey) continue;
+      // The array sits at the path up to the slot that takes the row id.
+      var seen = 0;
+      var arrayEnd = -1;
+      for (var i = 0; i < entry.path.length; i++) {
+        if (entry.path[i] != _rowId && entry.path[i] != _key) continue;
+        if (seen == enclosingIds.length) {
+          arrayEnd = i;
+          break;
+        }
+        seen++;
+      }
+      if (arrayEnd < 0) continue;
+      var next = 0;
       return (
         document: _documents[entry.document],
-        arrayPath: entry.path.sublist(0, slot),
+        arrayPath: [
+          for (final segment in entry.path.sublist(0, arrayEnd))
+            if (segment == _rowId)
+              RowId(enclosingIds[next++])
+            else if (segment == _key)
+              enclosingIds[next++]
+            else
+              segment,
+        ],
       );
     }
     return null;
   }
 
-  /// Matches a field key against a pattern. [rowId] carries the captured id
-  /// for a `{id}` pattern and is null for a fixed one.
-  static ({bool matched, String? rowId}) _match(
-    String pattern,
-    String fieldKey,
-  ) {
-    const noMatch = (matched: false, rowId: null);
-    final placeholder = pattern.indexOf('{id}');
-    if (placeholder == -1) {
-      return pattern == fieldKey ? (matched: true, rowId: null) : noMatch;
+  /// The literal part of a pattern up to (but excluding) placeholder
+  /// number [placeholderIndex] — `cabin.amenities.groups.{id}.items.{id}.text`
+  /// with 1 gives `cabin.amenities.groups.{id}.items`, with the earlier
+  /// placeholders left in place so a caller can compare against a list key it
+  /// built from real ids.
+  static String _patternPrefixOf(String pattern, int placeholderIndex) {
+    var from = 0;
+    for (var i = 0; i < placeholderIndex; i++) {
+      final next = pattern.indexOf('{id}', from);
+      if (next == -1) return pattern;
+      from = next + '{id}'.length;
     }
-    final prefix = pattern.substring(0, placeholder);
-    final suffix = pattern.substring(placeholder + '{id}'.length);
-    if (!fieldKey.startsWith(prefix) || !fieldKey.endsWith(suffix)) {
-      return noMatch;
+    final placeholder = pattern.indexOf('{id}', from);
+    if (placeholder == -1) return pattern;
+    // Strip the '.' before the placeholder.
+    return pattern.substring(0, placeholder - 1);
+  }
+
+  /// Matches a field key against a pattern, returning the captured segments in
+  /// order, or null when it does not match. `{id}` captures one dot-free
+  /// segment (a row id or a fixed slot key).
+  static List<String>? _match(String pattern, String fieldKey) {
+    final parts = pattern.split('{id}');
+    if (parts.length == 1) return pattern == fieldKey ? const [] : null;
+
+    final captures = <String>[];
+    var cursor = 0;
+    for (var i = 0; i < parts.length; i++) {
+      final literal = parts[i];
+      if (!fieldKey.startsWith(literal, cursor)) return null;
+      cursor += literal.length;
+      if (i == parts.length - 1) break;
+
+      // The capture runs to the next '.' — segments are dot-free.
+      final end = fieldKey.indexOf('.', cursor);
+      final stop = end == -1 ? fieldKey.length : end;
+      final capture = fieldKey.substring(cursor, stop);
+      if (capture.isEmpty) return null;
+      captures.add(capture);
+      cursor = stop;
     }
-    final rowId = fieldKey.substring(
-      prefix.length,
-      fieldKey.length - suffix.length,
-    );
-    if (rowId.isEmpty || rowId.contains('.')) return noMatch;
-    return (matched: true, rowId: rowId);
+    return cursor == fieldKey.length ? captures : null;
   }
 
   static ({String contentType, String slug}) _documentFor(String fieldKey) {
@@ -254,23 +558,47 @@ class WebsiteContentRepository extends SupabaseRepository {
   /// The stable row ids of a repeatable list in a document's JSON, in array
   /// (= display) order. Rows without an id are skipped: identity is the id,
   /// and a row that has none is not addressable by the editor.
+  ///
+  /// For a nested list (a group's items) [enclosingIds] carries the enclosing
+  /// row ids, outermost first.
   static List<String> listRowIdsIn(
     String listKey,
-    Map<String, dynamic>? content,
-  ) {
+    Map<String, dynamic>? content, {
+    List<String> enclosingIds = const [],
+  }) {
     if (content == null) return const [];
-    final list = _listLocationOf(listKey);
+    final list = _listLocationOf(listKey, enclosingIds: enclosingIds);
     if (list == null) return const [];
-    Object? node = content;
-    for (final segment in list.arrayPath) {
-      if (node is! Map) return const [];
-      node = node[segment];
-    }
+    final node = _resolvePath(content, list.arrayPath);
     if (node is! List) return const [];
     return [
       for (final row in node)
         if (row is Map && row['id'] is String) row['id'] as String,
     ];
+  }
+
+  /// Walks a resolved path without requiring a String at the end, so callers
+  /// can reach a container (a list) rather than a value.
+  static Object? _resolvePath(Object? node, List<Object> path) {
+    var current = node;
+    for (final segment in path) {
+      switch (segment) {
+        case final RowId id:
+          if (current is! List) return null;
+          current = current.firstWhere(
+            (row) => row is Map && row['id'] == id.value,
+            orElse: () => null,
+          );
+          if (current == null) return null;
+        case final int index:
+          if (current is! List || index >= current.length) return null;
+          current = current[index];
+        default:
+          if (current is! Map) return null;
+          current = current[segment];
+      }
+    }
+    return current;
   }
 
   /// Reads a JSON path, stopping at the first segment that is not there.
@@ -359,15 +687,15 @@ class WebsiteContentRepository extends SupabaseRepository {
   static void applyListOrder(
     String listKey,
     Map<String, dynamic> content,
-    List<String> order,
-  ) {
-    final list = _listLocationOf(listKey);
+    List<String> order, {
+    List<String> enclosingIds = const [],
+  }) {
+    final list = _listLocationOf(listKey, enclosingIds: enclosingIds);
     if (list == null) return;
-    Object? parent = content;
-    for (var i = 0; i < list.arrayPath.length - 1; i++) {
-      if (parent is! Map) return;
-      parent = parent[list.arrayPath[i]];
-    }
+    final parent = _resolvePath(
+      content,
+      list.arrayPath.sublist(0, list.arrayPath.length - 1),
+    );
     if (parent is! Map) return;
     final arrayKey = list.arrayPath.last as String;
     final array = parent[arrayKey];
@@ -515,30 +843,36 @@ class WebsiteContentRepository extends SupabaseRepository {
 
       // List rows carry their identity in the row itself; the source-locale
       // document is authoritative for which rows exist and in what order.
+      // Read every list the schema knows, then let the schema expand the
+      // fields — so the enumeration cannot drift from what the editor renders.
+      Map<String, dynamic>? sourceDocumentFor(String listKey) {
+        final document = _listLocationOf(listKey)?.document;
+        if (document == null) return null;
+        return contentByDocLocale['${_documentKeyOf(document)}:$sourceLanguage'];
+      }
+
       final listOrder = <String, List<String>>{};
-      final fieldKeys = <String>[];
-      for (final cards in kPageCards.values) {
-        for (final card in cards) {
-          for (final row in card.rows) {
-            switch (row) {
-              case FieldRow(:final key):
-                fieldKeys.add(key);
-              case ListRow(:final listKey, :final sub):
-                final document = _listLocationOf(listKey)?.document;
-                final ids = document == null
-                    ? const <String>[]
-                    : listRowIdsIn(
-                        listKey,
-                        contentByDocLocale['${_documentKeyOf(document)}:$sourceLanguage'],
-                      );
-                listOrder[listKey] = ids;
-                fieldKeys.addAll([
-                  for (final id in ids) listFieldKey(listKey, id, sub),
-                ]);
-            }
-          }
+      for (final list in kSchemaLists) {
+        final content = sourceDocumentFor(list.listKey);
+        final ids = listRowIdsIn(list.listKey, content);
+        listOrder[list.listKey] = ids;
+        final itemsListKey = list.itemsListKey;
+        if (itemsListKey == null) continue;
+        // A group's items live one level deeper, addressed through the group.
+        for (final groupId in ids) {
+          final key = groupItemsListKey(list.listKey, groupId, itemsListKey);
+          listOrder[key] = listRowIdsIn(
+            '${list.listKey}.$itemsListKey',
+            content,
+            enclosingIds: [groupId],
+          );
         }
       }
+
+      final fieldKeys = <String>[
+        for (final page in kPageCards.keys)
+          for (final field in effectiveFieldsFor(page, listOrder)) field.key,
+      ];
 
       final source = <String, String>{
         for (final key in fieldKeys)

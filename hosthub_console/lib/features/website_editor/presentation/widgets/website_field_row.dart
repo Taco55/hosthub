@@ -21,13 +21,30 @@ class WebsiteFieldRow extends StatelessWidget {
     required this.state,
     required this.field,
     required this.label,
+    this.hint,
     this.autofocus = false,
+    this.numeric = false,
+    this.showStatusChip = true,
   });
 
   final SiteContentState state;
   final EditorField field;
-  final String label;
+
+  /// The field's label. Null when the row it sits in already names it (a
+  /// numbered repeater row, a group title) — a repeated label is noise.
+  final String? label;
+
+  /// The note that says where this field lands when it is not readable as
+  /// text on its own page (README §E).
+  final String? hint;
   final bool autofocus;
+
+  /// Right-aligned, tabular value column (a shared numeric pair value).
+  final bool numeric;
+
+  /// Whether this field carries the auto/locked chip in a target language.
+  /// A pair carries one chip, on its label, so its value sets this to false.
+  final bool showStatusChip;
 
   @override
   Widget build(BuildContext context) {
@@ -39,8 +56,24 @@ class WebsiteFieldRow extends StatelessWidget {
         value: state.valueFor(lang, field.key),
         onChanged: (v) => cubit.editSourceField(field.key, v),
         label: label,
+        hint: hint,
         multiline: field.multiline,
         autofocus: autofocus,
+        numeric: numeric,
+      );
+    }
+
+    // A language-independent value is not this language's to write: it shows
+    // the source value, read-only, with the shared micro chip (§B.2).
+    if (field.sharedValue) {
+      return EditableContentField(
+        value: state.valueFor(state.sourceLanguage, field.key),
+        onChanged: (_) {},
+        label: label,
+        hint: hint,
+        multiline: field.multiline,
+        numeric: numeric,
+        sharedValueLabel: context.s.weChipShared,
       );
     }
 
@@ -51,8 +84,12 @@ class WebsiteFieldRow extends StatelessWidget {
       value: state.valueFor(lang, field.key),
       onChanged: (v) => cubit.editTranslationField(lang, field.key, v),
       label: label,
+      hint: hint,
       multiline: field.multiline,
-      labelTrailing: _statusChip(context, cubit, locked),
+      numeric: numeric,
+      labelTrailing: showStatusChip
+          ? _statusChip(context, cubit, locked)
+          : null,
       footer: _footer(context, cubit, locked),
     );
   }
@@ -135,19 +172,13 @@ class WebsiteFieldRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-          decoration: BoxDecoration(
-            color: context.colors.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Text(
-            languageShort(state.sourceLanguage),
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: context.colors.onSurfaceVariant,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+        // The source-language tag is the library's micro chip: same treatment
+        // as the `gedeeld` tag, so the two tiny tags in this form cannot
+        // drift apart (and no hand-rolled box lives here).
+        StyledChip(
+          label: languageShort(state.sourceLanguage),
+          size: StyledChipSize.micro,
+          borderColor: Colors.transparent,
         ),
         const SizedBox(width: 8),
         Expanded(

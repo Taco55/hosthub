@@ -169,26 +169,33 @@ void main() {
           'cabin.hero.title',
           'home.highlights.h1.description',
           'cabin.description.d1.text',
-          'cabin.experience.e1.text',
           'contact.title',
         ]),
       );
       expect(
-        cubit.state.valueFor('nl', 'cabin.experience.e1.text'),
-        'Ski-in/ski-out via de transportpiste.',
+        cubit.state.valueFor('nl', 'cabin.description.d1.text'),
+        startsWith('Vrijstaand chalet in Fageråsen'),
       );
 
       cubit.selectPage('practical');
-      expect(cubit.state.fields.map((f) => f.key), <String>[
-        'practical.header.title',
-        'practical.header.subtitle',
-      ]);
+      expect(
+        cubit.state.fields.map((f) => f.key),
+        containsAll(<String>[
+          'practical.header.title',
+          'practical.header.subtitle',
+        ]),
+      );
+      // Home's fields are not on Practical.
+      expect(
+        cubit.state.fields.map((f) => f.key),
+        isNot(contains('cabin.hero.title')),
+      );
     });
 
     test('publish scope covers fields of every page', () async {
       final cubit = build();
-      // Editing a chalet source field marks EN stale even while Home is open.
-      cubit.editSourceField('cabin.experience.e1.text', 'Nieuwe ervaring');
+      // Editing an off-page source field marks EN stale while Home is open.
+      cubit.editSourceField('practical.header.title', 'Nieuwe kop');
       await cubit.save();
       expect(cubit.state.pageKey, 'home');
       expect(cubit.state.isLanguageStale('en'), isTrue);
@@ -200,16 +207,13 @@ void main() {
     test('addRow appends an empty repeatable row in every language', () {
       final cubit = build();
       expect(
-        cubit.state.fields.where((f) => f.listKey == 'home.highlights'),
+        cubit.state.rowIdsOfList('home.highlights'),
         hasLength(2),
       );
 
       cubit.addRow('home.highlights');
 
-      final highlights = cubit.state.fields
-          .where((f) => f.listKey == 'home.highlights')
-          .toList();
-      expect(highlights, hasLength(3));
+      expect(cubit.state.rowIdsOfList('home.highlights'), hasLength(3));
       expect(cubit.state.valueFor('nl', 'home.highlights.r1.description'), '');
       expect(
         cubit.state.translatedField('en', 'home.highlights.r1.description')!.status,
@@ -230,7 +234,7 @@ void main() {
       cubit.editSourceField('home.highlights.r1.description', '');
 
       expect(
-        cubit.state.fields.where((f) => f.listKey == 'home.highlights'),
+        cubit.state.rowIdsOfList('home.highlights'),
         hasLength(3),
       );
       expect(cubit.state.unsavedChanges, isTrue);
@@ -255,12 +259,7 @@ void main() {
         'h2',
         'h1',
       ]);
-      expect(
-        cubit.state.fields
-            .where((f) => f.listKey == 'home.highlights')
-            .map((f) => f.key),
-        ['home.highlights.h2.description', 'home.highlights.h1.description'],
-      );
+      expect(cubit.state.rowIdsOfList('home.highlights'), ['h2', 'h1']);
       // …and nothing else: source text and the locked EN translation are
       // keyed by the row's id and traveled with it.
       expect(

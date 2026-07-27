@@ -207,28 +207,45 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m81(number) => "Highlight ${number}";
 
-  static String m82(locked, total) => "${locked} of ${total} fields yours";
+  static String m82(number) => "Introduction of section ${number}";
 
-  static String m83(language) => "${language} preview";
+  static String m83(item) => "Add ${item}";
 
-  static String m84(count) => "Publish ${count} languages";
+  static String m84(count, max) => "${count} of ${max}";
 
-  static String m85(source) => "Publish ${source} only";
+  static String m85(item) => "No ${item} yet";
 
-  static String m86(language) => "${language} · source";
+  static String m86(max) => "Maximum of ${max} reached";
 
-  static String m87(source) =>
+  static String m87(min) => "There must be at least ${min}";
+
+  static String m88(locked, total) => "${locked} of ${total} fields yours";
+
+  static String m89(min, max) =>
+      "${min} to ${max} photos. The media picker arrives with image management.";
+
+  static String m90(language) => "${language} preview";
+
+  static String m91(count) => "Publish ${count} languages";
+
+  static String m92(source) => "Publish ${source} only";
+
+  static String m93(language) => "${language} · source";
+
+  static String m94(source) =>
       "Your ${source} content publishes as-is. The other languages are re-translated by AI, keeping anything you\'ve locked.";
 
-  static String m88(lang) => "Source · ${lang}";
+  static String m95(lang) => "Source · ${lang}";
 
-  static String m89(source, count) =>
+  static String m96(source, count) =>
       "${source} + ${count} translations are live";
 
-  static String m90(languages) =>
+  static String m97(languages) =>
       "${languages} translate when you open them, or on publish";
 
-  static String m91(source) => "Now following the ${source} source.";
+  static String m98(language) => "You change rows in the source (${language})";
+
+  static String m99(source) => "Now following the ${source} source.";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -2112,17 +2129,90 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "weBannerWritingTitle": m78,
     "weBreadcrumbWebsite": MessageLookupByLibrary.simpleMessage("Website"),
+    "weCardAgreements": MessageLookupByLibrary.simpleMessage("Terms & payment"),
+    "weCardAmenities": MessageLookupByLibrary.simpleMessage("Amenities"),
+    "weCardAmenitiesSub": MessageLookupByLibrary.simpleMessage(
+      "Groups with items.",
+    ),
+    "weCardAreaIntro": MessageLookupByLibrary.simpleMessage("Introduction"),
+    "weCardAreaIntroSub": MessageLookupByLibrary.simpleMessage(
+      "Renders as the subtitle under the page title.",
+    ),
+    "weCardAreaSections": MessageLookupByLibrary.simpleMessage("Sections"),
+    "weCardAreaSectionsSub": MessageLookupByLibrary.simpleMessage(
+      "Each section is a card with a title, text and lines.",
+    ),
+    "weCardArrival": MessageLookupByLibrary.simpleMessage("Arrival & access"),
     "weCardContact": MessageLookupByLibrary.simpleMessage("Contact"),
+    "weCardContactHelp": MessageLookupByLibrary.simpleMessage("Contact & help"),
+    "weCardContactSub": MessageLookupByLibrary.simpleMessage(
+      "At the bottom of the homepage. The four fields are fixed — only the copy is yours.",
+    ),
     "weCardContent": MessageLookupByLibrary.simpleMessage("Page content"),
+    "weCardDescription": MessageLookupByLibrary.simpleMessage("Description"),
+    "weCardGalleryAll": MessageLookupByLibrary.simpleMessage("All photos"),
+    "weCardGalleryAllSub": MessageLookupByLibrary.simpleMessage(
+      "The full set on /gallery. The homepage shows a selection from it.",
+    ),
+    "weCardGalleryHeaderSub": MessageLookupByLibrary.simpleMessage(
+      "The page title comes from the interface language; the line below it is yours.",
+    ),
+    "weCardGoodToKnow": MessageLookupByLibrary.simpleMessage("Good to know"),
+    "weCardHeader": MessageLookupByLibrary.simpleMessage("Header"),
     "weCardHero": MessageLookupByLibrary.simpleMessage("Hero"),
+    "weCardHeroSub": MessageLookupByLibrary.simpleMessage(
+      "Title, location line and the rotating hero photos.",
+    ),
     "weCardHighlights": MessageLookupByLibrary.simpleMessage("Highlights"),
+    "weCardHighlightsSub": MessageLookupByLibrary.simpleMessage(
+      "Cards with a photo at the bottom of the homepage.",
+    ),
+    "weCardHomeGallery": MessageLookupByLibrary.simpleMessage(
+      "Gallery on the homepage",
+    ),
+    "weCardHomeGallerySub": MessageLookupByLibrary.simpleMessage(
+      "A selection from the library; the full set is on the Gallery tab.",
+    ),
+    "weCardHouseRules": MessageLookupByLibrary.simpleMessage("House rules"),
+    "weCardHouseRulesSub": MessageLookupByLibrary.simpleMessage(
+      "Renders as a section on the homepage.",
+    ),
+    "weCardKeyFacts": MessageLookupByLibrary.simpleMessage("Key facts"),
+    "weCardKeyFactsSub": MessageLookupByLibrary.simpleMessage(
+      "The tiles right below the hero.",
+    ),
+    "weCardLayout": MessageLookupByLibrary.simpleMessage("Layout & facilities"),
+    "weCardLayoutSub": MessageLookupByLibrary.simpleMessage(
+      "Sections with a short introduction and lines.",
+    ),
+    "weCardLocation": MessageLookupByLibrary.simpleMessage(
+      "Location & distances",
+    ),
+    "weCardParking": MessageLookupByLibrary.simpleMessage("Parking & charging"),
+    "weCardQuickFacts": MessageLookupByLibrary.simpleMessage("Quick overview"),
+    "weCardQuickFactsSub": MessageLookupByLibrary.simpleMessage(
+      "The strip at the top of the page.",
+    ),
+    "weCardSourceLodgify": MessageLookupByLibrary.simpleMessage("From Lodgify"),
+    "weCardTransport": MessageLookupByLibrary.simpleMessage("Getting here"),
+    "weCardTransportSub": MessageLookupByLibrary.simpleMessage(
+      "Fixed columns with travel options.",
+    ),
     "weChipAuto": MessageLookupByLibrary.simpleMessage("Auto"),
     "weChipLocked": MessageLookupByLibrary.simpleMessage("Locked"),
+    "weChipShared": MessageLookupByLibrary.simpleMessage("shared"),
     "weChipTooltipAuto": MessageLookupByLibrary.simpleMessage(
       "Following the source — click to keep your own wording",
     ),
     "weChipTooltipLocked": MessageLookupByLibrary.simpleMessage(
       "Your wording — click to follow the source again",
+    ),
+    "weColumnAirports": MessageLookupByLibrary.simpleMessage("Airports"),
+    "weColumnCar": MessageLookupByLibrary.simpleMessage("By car"),
+    "weColumnNotes": MessageLookupByLibrary.simpleMessage("Note"),
+    "weColumnParking": MessageLookupByLibrary.simpleMessage("Parking"),
+    "weColumnPublicTransport": MessageLookupByLibrary.simpleMessage(
+      "Public transport",
     ),
     "weDeviceMobile": MessageLookupByLibrary.simpleMessage("Mobile"),
     "weDeviceWeb": MessageLookupByLibrary.simpleMessage("Web"),
@@ -2151,17 +2241,77 @@ class MessageLookup extends MessageLookupByLibrary {
     "weErrorTranslateFailed": MessageLookupByLibrary.simpleMessage(
       "Couldn\'t refresh the translation — the last good version is kept",
     ),
+    "weExternalLodgifyNote": MessageLookupByLibrary.simpleMessage(
+      "Payment schedule, cancellation and deposit come from your Lodgify settings. The console is not the source for booking terms — change them there.",
+    ),
+    "weFieldAlt": MessageLookupByLibrary.simpleMessage("Alt text"),
+    "weFieldAltSummary": MessageLookupByLibrary.simpleMessage(
+      "Alt text (summarizing)",
+    ),
+    "weFieldCallout": MessageLookupByLibrary.simpleMessage(
+      "Highlighted warning",
+    ),
+    "weFieldCheckIn": MessageLookupByLibrary.simpleMessage("Check-in"),
+    "weFieldCheckInNote": MessageLookupByLibrary.simpleMessage("Check-in note"),
+    "weFieldCheckOut": MessageLookupByLibrary.simpleMessage("Check-out"),
+    "weFieldCleaningNote": MessageLookupByLibrary.simpleMessage(
+      "Cleaning and linen",
+    ),
+    "weFieldError": MessageLookupByLibrary.simpleMessage("Failure"),
     "weFieldExperience": m80,
     "weFieldHeadline": MessageLookupByLibrary.simpleMessage("Headline"),
     "weFieldHeroPhotos": MessageLookupByLibrary.simpleMessage("Hero photos"),
     "weFieldHighlight": m81,
     "weFieldIntro": MessageLookupByLibrary.simpleMessage("Intro"),
+    "weFieldLocationLine": MessageLookupByLibrary.simpleMessage(
+      "Location line",
+    ),
+    "weFieldMapQuery": MessageLookupByLibrary.simpleMessage("Map search term"),
+    "weFieldSearchName": MessageLookupByLibrary.simpleMessage(
+      "Name for search engines",
+    ),
+    "weFieldSubline": MessageLookupByLibrary.simpleMessage("Subline"),
+    "weFieldSubmit": MessageLookupByLibrary.simpleMessage("Button"),
     "weFieldSubtitle": MessageLookupByLibrary.simpleMessage("Subtitle"),
+    "weFieldSuccess": MessageLookupByLibrary.simpleMessage("Success"),
     "weFieldTitle": MessageLookupByLibrary.simpleMessage("Title"),
+    "weFieldWifiNote": MessageLookupByLibrary.simpleMessage("Wi-Fi"),
+    "weFixedColumnsMeta": MessageLookupByLibrary.simpleMessage("fixed columns"),
+    "weFormFieldEmail": MessageLookupByLibrary.simpleMessage("Email"),
+    "weFormFieldMessage": MessageLookupByLibrary.simpleMessage("Message"),
+    "weFormFieldName": MessageLookupByLibrary.simpleMessage("Name"),
+    "weFormFieldPeriod": MessageLookupByLibrary.simpleMessage(
+      "Preferred dates",
+    ),
     "weFreshNotice": MessageLookupByLibrary.simpleMessage(
       "Fresh draft, matches your latest source.",
     ),
+    "weGroupIntro": m82,
     "weHidePreview": MessageLookupByLibrary.simpleMessage("Hide preview"),
+    "weHintMap": MessageLookupByLibrary.simpleMessage(
+      "Decides where the pin sits on the map; it is not read as text.",
+    ),
+    "weHintSeo": MessageLookupByLibrary.simpleMessage(
+      "This field is not on the page: it is the title in the browser tab and the description in Google.",
+    ),
+    "weHintStateError": MessageLookupByLibrary.simpleMessage(
+      "Only visible when the form fails.",
+    ),
+    "weHintStateSuccess": MessageLookupByLibrary.simpleMessage(
+      "Only visible after the form has been submitted.",
+    ),
+    "weItemAmenity": MessageLookupByLibrary.simpleMessage("Amenity"),
+    "weItemColumn": MessageLookupByLibrary.simpleMessage("Column"),
+    "weItemDistance": MessageLookupByLibrary.simpleMessage("Distance"),
+    "weItemFact": MessageLookupByLibrary.simpleMessage("Fact"),
+    "weItemFormField": MessageLookupByLibrary.simpleMessage("Field"),
+    "weItemGroup": MessageLookupByLibrary.simpleMessage("Group"),
+    "weItemHighlight": MessageLookupByLibrary.simpleMessage("Highlight"),
+    "weItemKeyFact": MessageLookupByLibrary.simpleMessage("Key fact"),
+    "weItemLine": MessageLookupByLibrary.simpleMessage("Line"),
+    "weItemParagraph": MessageLookupByLibrary.simpleMessage("Paragraph"),
+    "weItemSection": MessageLookupByLibrary.simpleMessage("Section"),
+    "weItemTime": MessageLookupByLibrary.simpleMessage("Time"),
     "weLangDutch": MessageLookupByLibrary.simpleMessage("Dutch"),
     "weLangEnglish": MessageLookupByLibrary.simpleMessage("English"),
     "weLangNorwegian": MessageLookupByLibrary.simpleMessage("Norwegian"),
@@ -2173,18 +2323,48 @@ class MessageLookup extends MessageLookupByLibrary {
     "weLeaveTitle": MessageLookupByLibrary.simpleMessage(
       "You have unsaved changes",
     ),
+    "weListAdd": m83,
+    "weListColumns": MessageLookupByLibrary.simpleMessage("Columns"),
+    "weListCounter": m84,
+    "weListDistances": MessageLookupByLibrary.simpleMessage("Distances"),
+    "weListEmptyMessage": MessageLookupByLibrary.simpleMessage(
+      "This list only appears on the website once it holds something.",
+    ),
+    "weListEmptyTitle": m85,
+    "weListFacts": MessageLookupByLibrary.simpleMessage("Facts"),
+    "weListFormFields": MessageLookupByLibrary.simpleMessage("Fields"),
+    "weListGroups": MessageLookupByLibrary.simpleMessage("Groups"),
+    "weListKeyFacts": MessageLookupByLibrary.simpleMessage("Key facts"),
+    "weListLines": MessageLookupByLibrary.simpleMessage("Lines"),
+    "weListMaxReached": m86,
+    "weListMaxReason": MessageLookupByLibrary.simpleMessage(
+      "Remove a row first",
+    ),
+    "weListMinReason": m87,
+    "weListParagraphs": MessageLookupByLibrary.simpleMessage("Paragraphs"),
+    "weListSections": MessageLookupByLibrary.simpleMessage("Sections"),
+    "weListTimes": MessageLookupByLibrary.simpleMessage(
+      "Check-in and check-out",
+    ),
     "weLivePreview": MessageLookupByLibrary.simpleMessage("Live preview"),
     "weLoadFailedDescription": MessageLookupByLibrary.simpleMessage(
       "The editor shows no fields until this website\'s content has loaded.",
     ),
     "weLoadFailedRetry": MessageLookupByLibrary.simpleMessage("Try again"),
     "weLocaleSourceBadge": MessageLookupByLibrary.simpleMessage("source"),
-    "weLockedCounter": m82,
+    "weLockedCounter": m88,
+    "weMediaPending": m89,
     "wePageArea": MessageLookupByLibrary.simpleMessage("Area"),
     "wePageGallery": MessageLookupByLibrary.simpleMessage("Gallery"),
     "wePageHome": MessageLookupByLibrary.simpleMessage("Home"),
     "wePagePractical": MessageLookupByLibrary.simpleMessage("Practical"),
-    "wePreviewLabel": m83,
+    "wePairDistance": MessageLookupByLibrary.simpleMessage("Distance"),
+    "wePairLabel": MessageLookupByLibrary.simpleMessage("Label"),
+    "wePairPlaceholder": MessageLookupByLibrary.simpleMessage("Placeholder"),
+    "wePairTime": MessageLookupByLibrary.simpleMessage("Time"),
+    "wePairValue": MessageLookupByLibrary.simpleMessage("Value"),
+    "wePairWhat": MessageLookupByLibrary.simpleMessage("What"),
+    "wePreviewLabel": m90,
     "wePreviewLatest": MessageLookupByLibrary.simpleMessage("Preview latest"),
     "wePreviewTranslation": MessageLookupByLibrary.simpleMessage(
       "Preview translation",
@@ -2194,7 +2374,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Publish all languages",
     ),
     "wePublishCancel": MessageLookupByLibrary.simpleMessage("Cancel"),
-    "wePublishConfirm": m84,
+    "wePublishConfirm": m91,
     "wePublishDraft": MessageLookupByLibrary.simpleMessage(
       "Draft — not reviewed yet",
     ),
@@ -2221,9 +2401,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePublishSkipped": MessageLookupByLibrary.simpleMessage(
       "Skipped · stays as it is live now",
     ),
-    "wePublishSourceOnly": m85,
-    "wePublishSourceRole": m86,
-    "wePublishSubtitle": m87,
+    "wePublishSourceOnly": m92,
+    "wePublishSourceRole": m93,
+    "wePublishSubtitle": m94,
     "wePublishTitle": MessageLookupByLibrary.simpleMessage(
       "Publish all languages",
     ),
@@ -2233,6 +2413,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "weRibbonStale": MessageLookupByLibrary.simpleMessage(
       "Earlier preview — updates automatically on publish.",
+    ),
+    "weRowDeleted": MessageLookupByLibrary.simpleMessage("Row deleted."),
+    "weRowMediaPending": MessageLookupByLibrary.simpleMessage(
+      "One image per row. The media picker arrives with image management.",
     ),
     "weSave": MessageLookupByLibrary.simpleMessage("Save changes"),
     "weSaveDirty": MessageLookupByLibrary.simpleMessage(
@@ -2244,16 +2428,19 @@ class MessageLookup extends MessageLookupByLibrary {
     "weSharedPhotosNote": MessageLookupByLibrary.simpleMessage(
       "Photos are shared across all languages — edit them in the source.",
     ),
+    "weSharedValueMeta": MessageLookupByLibrary.simpleMessage(
+      "value is shared across languages",
+    ),
     "weShowPreview": MessageLookupByLibrary.simpleMessage("Show preview"),
-    "weSourceChip": m88,
+    "weSourceChip": m95,
     "weStaleNotice": MessageLookupByLibrary.simpleMessage(
       "Preview reflects an earlier source edit.",
     ),
-    "weStatusCleanBody": m89,
+    "weStatusCleanBody": m96,
     "weStatusCleanTitle": MessageLookupByLibrary.simpleMessage(
       "Everything published",
     ),
-    "weStatusSavedBody": m90,
+    "weStatusSavedBody": m97,
     "weStatusSavedTitle": MessageLookupByLibrary.simpleMessage(
       "Saved · not published",
     ),
@@ -2263,8 +2450,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "weStatusUnsavedTitle": MessageLookupByLibrary.simpleMessage(
       "Unsaved changes",
     ),
+    "weStructureLocked": m98,
     "weUndo": MessageLookupByLibrary.simpleMessage("Undo"),
-    "weUndoSwitchNotice": m91,
+    "weUndoSwitchNotice": m99,
     "wealth": MessageLookupByLibrary.simpleMessage("Wealth"),
     "websiteLanguagesFooter": MessageLookupByLibrary.simpleMessage(
       "The languages your public website offers to guests. Add or remove any language.",

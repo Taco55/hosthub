@@ -57,6 +57,7 @@ class SiteContentState extends Equatable {
     this.saving = false,
     this.reviewedLanguages = const {},
     this.pendingAutoSwitch,
+    this.pendingRowDelete,
     this.loadStatus = ContentLoadStatus.ready,
   });
 
@@ -132,6 +133,11 @@ class SiteContentState extends Equatable {
   /// owner's previous wording until they navigate away or publish.
   final PendingAutoSwitch? pendingAutoSwitch;
 
+  /// The one in-session undo for a deleted list row — same shape and same
+  /// promise as [pendingAutoSwitch]: one misclick is undoable, and the row
+  /// comes back on its original position.
+  final PendingRowDelete? pendingRowDelete;
+
   /// Whether [source]/[translations] hold this site's content. The editor form
   /// only renders when this is [ContentLoadStatus.ready]; the demo seed is
   /// [ContentLoadStatus.ready] from the start, because there the seed *is* the
@@ -176,6 +182,23 @@ class SiteContentState extends Equatable {
     for (final page in kPageCards.keys)
       ...effectiveFieldsFor(page, effectiveListOrder),
   ];
+
+  /// The field with this key on the current page, or null when the schema and
+  /// the content disagree (a row that is not there).
+  EditorField? fieldFor(String key) {
+    for (final field in fields) {
+      if (field.key == key) return field;
+    }
+    return null;
+  }
+
+  /// The fields of one repeatable list on this page, in display order.
+  List<EditorField> fieldsOfList(String listKey) =>
+      fields.where((field) => field.listKey == listKey).toList();
+
+  /// The row ids of one repeatable list, in display order.
+  List<String> rowIdsOfList(String listKey) =>
+      effectiveListOrder[listKey] ?? const [];
 
   /// Hash of the **saved** source text. Translation reads the saved layer, so
   /// staleness is measured against it too (§11i): a field the owner is still
@@ -261,9 +284,11 @@ class SiteContentState extends Equatable {
     bool? saving,
     Set<String>? reviewedLanguages,
     PendingAutoSwitch? pendingAutoSwitch,
+    PendingRowDelete? pendingRowDelete,
     ContentLoadStatus? loadStatus,
     bool clearDraft = false,
     bool clearPendingAutoSwitch = false,
+    bool clearPendingRowDelete = false,
     bool clearError = false,
     bool clearLoadError = false,
   }) {
@@ -297,6 +322,9 @@ class SiteContentState extends Equatable {
       pendingAutoSwitch: clearPendingAutoSwitch
           ? null
           : (pendingAutoSwitch ?? this.pendingAutoSwitch),
+      pendingRowDelete: clearPendingRowDelete
+          ? null
+          : (pendingRowDelete ?? this.pendingRowDelete),
       loadStatus: loadStatus ?? this.loadStatus,
     );
   }
@@ -326,6 +354,7 @@ class SiteContentState extends Equatable {
     saving,
     reviewedLanguages,
     pendingAutoSwitch,
+    pendingRowDelete,
     loadStatus,
   ];
 }
@@ -346,6 +375,44 @@ class PendingAutoSwitch extends Equatable {
 
   @override
   List<Object?> get props => [language, fieldKey, previousValue];
+}
+
+/// A list row the owner just deleted, kept in memory so one misclick is
+/// undoable. Carries the row's position so undo puts it back where it was —
+/// not at the end, which would be a second surprise.
+class PendingRowDelete extends Equatable {
+  const PendingRowDelete({
+    required this.listKey,
+    required this.rowId,
+    required this.index,
+    required this.sourceValues,
+    required this.translations,
+    required this.nestedOrder,
+  });
+
+  final String listKey;
+  final String rowId;
+  final int index;
+
+  /// The row's source-language values, keyed by field key.
+  final Map<String, String> sourceValues;
+
+  /// The row's translated fields, per language.
+  final Map<String, Map<String, TranslatedField>> translations;
+
+  /// Row orders of lists nested inside this row (a group's items), so undo
+  /// brings the whole group back and not just its title.
+  final Map<String, List<String>> nestedOrder;
+
+  @override
+  List<Object?> get props => [
+    listKey,
+    rowId,
+    index,
+    sourceValues,
+    translations,
+    nestedOrder,
+  ];
 }
 
 /// Drives the website editor: the source-language + auto/locked translation
@@ -636,29 +703,153 @@ class SiteContentCubit extends Cubit<SiteContentState> {
   /// start as fresh empty auto fields so they translate on publish). A draft,
   /// like every edit — the new row's id goes into the draft order.
   void addRow(String listKey) {
-    final sub = _listSubOf(listKey);
+    assert(
+      state.isSourceMode,
+      'Structure belongs to the source language: addRow must not be reachable '
+      'from a translation lane (README fase 2 §B.4).',
+    );
     final rowId = _rowIdGenerator();
-    final key = listFieldKey(listKey, rowId, sub);
+    final keys = _rowFieldKeys(listKey, rowId);
 
     final order = [...?state.effectiveListOrder[listKey], rowId];
     final draftListOrder = Map<String, List<String>>.from(
       state.draftListOrder,
     )..[listKey] = order;
+    // A new group starts with an empty item list, so its nested list exists.
+    for (final nested in _nestedListKeys(listKey, rowId)) {
+      draftListOrder[nested] = const [];
+    }
 
-    final draftSource = Map<String, String>.from(state.draftSource)..[key] = '';
+    final draftSource = Map<String, String>.from(state.draftSource);
     final draftTranslations = _cloneDraftTranslations();
-    for (final language in state.targetLanguages) {
-      (draftTranslations[language] ??= {})[key] = TranslatedField(
-        value: '',
-        status: FieldTranslationStatus.auto,
-        sourceHash: sourceHashOf(''),
-      );
+    for (final key in keys) {
+      draftSource[key] = '';
+      for (final language in state.targetLanguages) {
+        // A row added in the source shows up in every target language as a
+        // fresh *auto* field, never as an empty locked one — a blank string
+        // must not pass for "the owner's words" (§B.4).
+        (draftTranslations[language] ??= {})[key] = TranslatedField(
+          value: '',
+          status: FieldTranslationStatus.auto,
+          sourceHash: sourceHashOf(''),
+        );
+      }
     }
     emit(
       state.copyWith(
         draftSource: draftSource,
         draftTranslations: draftTranslations,
         draftListOrder: draftListOrder,
+        clearPendingRowDelete: true,
+      ),
+    );
+  }
+
+  /// Deletes the row at [index] of a repeatable list, in every language, with
+  /// one in-session undo that restores it on its original position.
+  void removeRow(String listKey, int index) {
+    final order = [...?state.effectiveListOrder[listKey]];
+    if (index < 0 || index >= order.length) return;
+    removeRowById(listKey, order[index]);
+  }
+
+  /// Deletes one row by its stable id.
+  void removeRowById(String listKey, String rowId) {
+    assert(
+      state.isSourceMode,
+      'Structure belongs to the source language: removeRow must not be '
+      'reachable from a translation lane (README fase 2 §B.4).',
+    );
+    final order = [...?state.effectiveListOrder[listKey]];
+    final index = order.indexOf(rowId);
+    if (index < 0) return;
+
+    final keys = _rowFieldKeys(listKey, rowId);
+    final nested = _nestedListKeys(listKey, rowId);
+    // Everything the row owns, held for the undo: its own fields, its
+    // translations, and — for a group — the rows nested inside it.
+    final nestedKeys = <String>[];
+    final nestedOrder = <String, List<String>>{};
+    for (final key in nested) {
+      final ids = [...?state.effectiveListOrder[key]];
+      nestedOrder[key] = ids;
+      for (final id in ids) {
+        nestedKeys.addAll(_rowFieldKeys(key, id));
+      }
+    }
+    final allKeys = [...keys, ...nestedKeys];
+
+    final pending = PendingRowDelete(
+      listKey: listKey,
+      rowId: rowId,
+      index: index,
+      sourceValues: {
+        for (final key in allKeys) key: state.valueFor(state.sourceLanguage, key),
+      },
+      translations: {
+        for (final language in state.targetLanguages)
+          language: {
+            for (final key in allKeys)
+              if (state.translatedField(language, key) case final field?)
+                key: field,
+          },
+      },
+      nestedOrder: nestedOrder,
+    );
+
+    order.removeAt(index);
+    final draftListOrder = Map<String, List<String>>.from(state.draftListOrder)
+      ..[listKey] = order;
+    for (final key in nested) {
+      draftListOrder.remove(key);
+    }
+
+    // The row's values leave the draft with it; the saved layer still holds
+    // them until the save, which is what makes the undo cheap.
+    final draftSource = Map<String, String>.from(state.draftSource)
+      ..removeWhere((key, _) => allKeys.contains(key));
+    final draftTranslations = _cloneDraftTranslations();
+    for (final fields in draftTranslations.values) {
+      fields.removeWhere((key, _) => allKeys.contains(key));
+    }
+
+    emit(
+      state.copyWith(
+        draftSource: draftSource,
+        draftTranslations: draftTranslations,
+        draftListOrder: draftListOrder,
+        pendingRowDelete: pending,
+      ),
+    );
+  }
+
+  /// Puts the last deleted row back, on its original position, with its text
+  /// and its translations (§B.4: undo brings the row *and* its translations).
+  void undoRowDelete() {
+    final pending = state.pendingRowDelete;
+    if (pending == null) return;
+
+    final order = [...?state.effectiveListOrder[pending.listKey]];
+    final at = pending.index.clamp(0, order.length);
+    order.insert(at, pending.rowId);
+
+    final draftListOrder = Map<String, List<String>>.from(state.draftListOrder)
+      ..[pending.listKey] = order
+      ..addAll(pending.nestedOrder);
+
+    final draftSource = Map<String, String>.from(state.draftSource)
+      ..addAll(pending.sourceValues);
+    final draftTranslations = _cloneDraftTranslations();
+    pending.translations.forEach((language, fields) {
+      (draftTranslations[language] ??= {}).addAll(fields);
+    });
+
+    emit(
+      state.copyWith(
+        draftSource: draftSource,
+        draftTranslations: draftTranslations,
+        draftListOrder: draftListOrder,
+        clearPendingRowDelete: true,
       ),
     );
   }
@@ -667,6 +858,11 @@ class SiteContentCubit extends Cubit<SiteContentState> {
   /// every value — source text, translations, locked/auto status — is keyed
   /// by the row's stable id and travels with it untouched.
   void moveRow(String listKey, int oldIndex, int newIndex) {
+    assert(
+      state.isSourceMode,
+      'Structure belongs to the source language: moveRow must not be reachable '
+      'from a translation lane (README fase 2 §B.4).',
+    );
     final order = [...?state.effectiveListOrder[listKey]];
     if (oldIndex < 0 || oldIndex >= order.length) return;
     if (newIndex > oldIndex) newIndex -= 1;
@@ -696,16 +892,47 @@ class SiteContentCubit extends Cubit<SiteContentState> {
     return true;
   }
 
-  /// The schema's subfield for a list (`text`, `description`).
-  static String? _listSubOf(String listKey) {
-    for (final cards in kPageCards.values) {
-      for (final card in cards) {
-        for (final row in card.rows) {
-          if (row is ListRow && row.listKey == listKey) return row.sub;
+  /// Every field key a row of [listKey] owns, for the row id given.
+  List<String> _rowFieldKeys(String listKey, String rowId) {
+    final row = schemaRowForList(listKey);
+    switch (row) {
+      case ListRow(:final sub):
+        return [listFieldKey(listKey, rowId, sub)];
+      case PairListRow(:final labelSub, :final valueSub):
+        return [
+          listFieldKey(listKey, rowId, labelSub),
+          listFieldKey(listKey, rowId, valueSub),
+        ];
+      case RowListRow(:final subs, :final media):
+        return [
+          for (final sub in subs) listFieldKey(listKey, rowId, sub.sub),
+          if (media) listFieldKey(listKey, rowId, 'alt'),
+        ];
+      case GroupListRow(
+        :final titleSub,
+        :final introSub,
+        :final itemsSub,
+        :final itemsListKey,
+      ):
+        // A group's own list key ends in the items suffix; its rows are items.
+        if (listKey.endsWith('.$itemsListKey')) {
+          return [listFieldKey(listKey, rowId, itemsSub)];
         }
-      }
+        return [
+          listFieldKey(listKey, rowId, titleSub),
+          if (introSub != null) listFieldKey(listKey, rowId, introSub),
+        ];
+      case FieldRow() || MediaRow() || ExternalRow() || null:
+        return const [];
     }
-    return null;
+  }
+
+  /// The nested list keys a row of [listKey] encloses (a group's items).
+  List<String> _nestedListKeys(String listKey, String rowId) {
+    final row = schemaRowForList(listKey);
+    if (row is! GroupListRow) return const [];
+    if (listKey.endsWith('.${row.itemsListKey}')) return const [];
+    return [groupItemsListKey(listKey, rowId, row.itemsListKey)];
   }
 
   // -- save / discard --------------------------------------------------------

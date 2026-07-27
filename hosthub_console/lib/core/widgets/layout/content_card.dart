@@ -16,11 +16,20 @@ class ContentCard extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.children,
+    this.subtitle,
+    this.headerTrailing,
   });
 
   final IconData icon;
   final String title;
   final List<Widget> children;
+
+  /// The line under the title, where a card has one. Null keeps the header to
+  /// its title: a subtitle that restates the title is noise.
+  final String? subtitle;
+
+  /// Right-hand slot in the header — a `N gewijzigd` rollup, a source badge.
+  final Widget? headerTrailing;
 
   /// `.card{padding:18px}` — the card's own inset, on all four sides.
   static const double _cardPadding = 18;
@@ -57,12 +66,30 @@ class ContentCard extends StatelessWidget {
         children: [
           StyledIconBadge(icon: icon, size: 34),
           const SizedBox(width: 12),
-          Text(
-            title,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (subtitle != null)
+                  Text(
+                    subtitle!,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+              ],
+            ),
           ),
+          if (headerTrailing != null) ...[
+            const SizedBox(width: 12),
+            headerTrailing!,
+          ],
         ],
       ),
       showDividers: false,

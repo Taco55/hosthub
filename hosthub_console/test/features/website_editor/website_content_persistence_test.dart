@@ -257,12 +257,7 @@ void main() {
       cubit.state.valueFor('en', 'home.highlights.hA.description'),
       '[en] home.highlights.hA.description',
     );
-    expect(
-      cubit.state.fields
-          .where((f) => f.listKey == 'home.highlights')
-          .map((f) => f.rowId),
-      ['hB', 'hA'],
-    );
+    expect(cubit.state.rowIdsOfList('home.highlights'), ['hB', 'hA']);
     await cubit.close();
   });
 
@@ -450,16 +445,18 @@ void main() {
       expect((content['meta'] as Map)['name'], 'x');
     });
 
-    test('description/experience rows resolve by their stable id', () {
+    test('list rows resolve by their stable id', () {
       final content = <String, dynamic>{
         'description': <dynamic>[
           <String, dynamic>{'id': 'dA', 'text': 'Eerste alinea'},
           <String, dynamic>{'id': 'dB', 'text': 'Tweede alinea'},
         ],
-        'experience': <dynamic>[
-          <String, dynamic>{'id': 'eA', 'text': 'Ski-in'},
-          <String, dynamic>{'id': 'eB', 'text': 'Sauna'},
-        ],
+        'houseRules': <String, dynamic>{
+          'bullets': <dynamic>[
+            <String, dynamic>{'id': 'eA', 'text': 'Ski-in'},
+            <String, dynamic>{'id': 'eB', 'text': 'Sauna'},
+          ],
+        },
       };
 
       expect(
@@ -472,7 +469,7 @@ void main() {
       );
       expect(
         WebsiteContentRepository.readField(
-          'cabin.experience.eB.text',
+          'cabin.rules.bullets.eB.text',
           'cabin',
           content,
         ),
@@ -480,13 +477,14 @@ void main() {
       );
 
       WebsiteContentRepository.writeField(
-        'cabin.experience.eA.text',
+        'cabin.rules.bullets.eA.text',
         'cabin',
         content,
         'Nieuw',
       );
-      expect(((content['experience'] as List)[0] as Map)['text'], 'Nieuw');
-      expect(((content['experience'] as List)[1] as Map)['text'], 'Sauna');
+      final bullets = (content['houseRules'] as Map)['bullets'] as List;
+      expect((bullets[0] as Map)['text'], 'Nieuw');
+      expect((bullets[1] as Map)['text'], 'Sauna');
       expect(
         ((content['description'] as List)[0] as Map)['text'],
         'Eerste alinea',
@@ -636,15 +634,16 @@ void main() {
         'Titel',
       );
       WebsiteContentRepository.writeField(
-        'cabin.experience.eZ.text',
+        'cabin.rules.bullets.eZ.text',
         'cabin',
         content,
         'Derde',
       );
 
       expect((content['hero'] as Map)['title'], 'Titel');
-      // A write for an unknown row id appends a fresh, usable row.
-      expect(content['experience'], [
+      // A write for an unknown row id appends a fresh, usable row, creating
+      // the containers on the way.
+      expect((content['houseRules'] as Map)['bullets'], [
         {'id': 'eZ', 'text': 'Derde'},
       ]);
     });
@@ -672,6 +671,11 @@ void main() {
       expect(
         addressOf('cabin.description.dA.text'),
         'cabin/main:description.dA.text',
+      );
+      // Two nesting levels: a group id and then an item id.
+      expect(
+        addressOf('cabin.amenities.groups.gA.items.iB.text'),
+        'cabin/main:amenities.groups.gA.items.iB.text',
       );
       expect(
         addressOf('home.highlights.a1b2c3d4.description'),

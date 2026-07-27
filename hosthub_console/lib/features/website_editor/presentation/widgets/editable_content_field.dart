@@ -12,8 +12,11 @@ class EditableContentField extends StatefulWidget {
     this.label,
     this.labelTrailing,
     this.footer,
+    this.hint,
     this.multiline = false,
     this.autofocus = false,
+    this.numeric = false,
+    this.sharedValueLabel,
   });
 
   final String value;
@@ -21,8 +24,19 @@ class EditableContentField extends StatefulWidget {
   final String? label;
   final Widget? labelTrailing;
   final Widget? footer;
+
+  /// Helper line under the field — the note that says where a field lands
+  /// when it is not readable as text on its own page.
+  final String? hint;
   final bool multiline;
   final bool autofocus;
+
+  /// Right-aligned, tabular value column (a shared numeric pair value).
+  final bool numeric;
+
+  /// When set, the field is read-only and carries the shared micro chip: its
+  /// value is language-independent.
+  final String? sharedValueLabel;
 
   @override
   State<EditableContentField> createState() => _EditableContentFieldState();
@@ -68,9 +82,20 @@ class _EditableContentFieldState extends State<EditableContentField> {
       label: widget.label,
       labelTrailing: widget.labelTrailing,
       footer: widget.footer,
+      helperText: widget.hint,
+      sharedValueLabel: widget.sharedValueLabel,
       autofocus: widget.autofocus,
       maxLines: widget.multiline ? 3 : 1,
       minLines: widget.multiline ? 2 : 1,
+      // A shared numeric value reads as a figure: right-aligned and tabular,
+      // so a column of them lines up (README §B.2).
+      textAlign: widget.numeric ? TextAlign.end : TextAlign.start,
+      style: widget.numeric
+          ? const TextStyle(
+              fontFeatures: [FontFeature.tabularFigures()],
+              fontWeight: FontWeight.w600,
+            )
+          : null,
       onChanged: widget.onChanged,
     );
   }

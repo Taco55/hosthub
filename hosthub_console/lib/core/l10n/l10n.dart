@@ -9006,6 +9006,876 @@ class S {
     return Intl.message('Contact', name: 'weCardContact', desc: '', args: []);
   }
 
+  /// `Key facts`
+  String get weCardKeyFacts {
+    return Intl.message(
+      'Key facts',
+      name: 'weCardKeyFacts',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Description`
+  String get weCardDescription {
+    return Intl.message(
+      'Description',
+      name: 'weCardDescription',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Gallery on the homepage`
+  String get weCardHomeGallery {
+    return Intl.message(
+      'Gallery on the homepage',
+      name: 'weCardHomeGallery',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Amenities`
+  String get weCardAmenities {
+    return Intl.message(
+      'Amenities',
+      name: 'weCardAmenities',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Location & distances`
+  String get weCardLocation {
+    return Intl.message(
+      'Location & distances',
+      name: 'weCardLocation',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `House rules`
+  String get weCardHouseRules {
+    return Intl.message(
+      'House rules',
+      name: 'weCardHouseRules',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Header`
+  String get weCardHeader {
+    return Intl.message('Header', name: 'weCardHeader', desc: '', args: []);
+  }
+
+  /// `Quick overview`
+  String get weCardQuickFacts {
+    return Intl.message(
+      'Quick overview',
+      name: 'weCardQuickFacts',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Arrival & access`
+  String get weCardArrival {
+    return Intl.message(
+      'Arrival & access',
+      name: 'weCardArrival',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Parking & charging`
+  String get weCardParking {
+    return Intl.message(
+      'Parking & charging',
+      name: 'weCardParking',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Layout & facilities`
+  String get weCardLayout {
+    return Intl.message(
+      'Layout & facilities',
+      name: 'weCardLayout',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Getting here`
+  String get weCardTransport {
+    return Intl.message(
+      'Getting here',
+      name: 'weCardTransport',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Good to know`
+  String get weCardGoodToKnow {
+    return Intl.message(
+      'Good to know',
+      name: 'weCardGoodToKnow',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Contact & help`
+  String get weCardContactHelp {
+    return Intl.message(
+      'Contact & help',
+      name: 'weCardContactHelp',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Terms & payment`
+  String get weCardAgreements {
+    return Intl.message(
+      'Terms & payment',
+      name: 'weCardAgreements',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Introduction`
+  String get weCardAreaIntro {
+    return Intl.message(
+      'Introduction',
+      name: 'weCardAreaIntro',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Sections`
+  String get weCardAreaSections {
+    return Intl.message(
+      'Sections',
+      name: 'weCardAreaSections',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `All photos`
+  String get weCardGalleryAll {
+    return Intl.message(
+      'All photos',
+      name: 'weCardGalleryAll',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Title, location line and the rotating hero photos.`
+  String get weCardHeroSub {
+    return Intl.message(
+      'Title, location line and the rotating hero photos.',
+      name: 'weCardHeroSub',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The tiles right below the hero.`
+  String get weCardKeyFactsSub {
+    return Intl.message(
+      'The tiles right below the hero.',
+      name: 'weCardKeyFactsSub',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `A selection from the library; the full set is on the Gallery tab.`
+  String get weCardHomeGallerySub {
+    return Intl.message(
+      'A selection from the library; the full set is on the Gallery tab.',
+      name: 'weCardHomeGallerySub',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Groups with items.`
+  String get weCardAmenitiesSub {
+    return Intl.message(
+      'Groups with items.',
+      name: 'weCardAmenitiesSub',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Cards with a photo at the bottom of the homepage.`
+  String get weCardHighlightsSub {
+    return Intl.message(
+      'Cards with a photo at the bottom of the homepage.',
+      name: 'weCardHighlightsSub',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Renders as a section on the homepage.`
+  String get weCardHouseRulesSub {
+    return Intl.message(
+      'Renders as a section on the homepage.',
+      name: 'weCardHouseRulesSub',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `At the bottom of the homepage. The four fields are fixed — only the copy is yours.`
+  String get weCardContactSub {
+    return Intl.message(
+      'At the bottom of the homepage. The four fields are fixed — only the copy is yours.',
+      name: 'weCardContactSub',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The strip at the top of the page.`
+  String get weCardQuickFactsSub {
+    return Intl.message(
+      'The strip at the top of the page.',
+      name: 'weCardQuickFactsSub',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Sections with a short introduction and lines.`
+  String get weCardLayoutSub {
+    return Intl.message(
+      'Sections with a short introduction and lines.',
+      name: 'weCardLayoutSub',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Fixed columns with travel options.`
+  String get weCardTransportSub {
+    return Intl.message(
+      'Fixed columns with travel options.',
+      name: 'weCardTransportSub',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Renders as the subtitle under the page title.`
+  String get weCardAreaIntroSub {
+    return Intl.message(
+      'Renders as the subtitle under the page title.',
+      name: 'weCardAreaIntroSub',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Each section is a card with a title, text and lines.`
+  String get weCardAreaSectionsSub {
+    return Intl.message(
+      'Each section is a card with a title, text and lines.',
+      name: 'weCardAreaSectionsSub',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The page title comes from the interface language; the line below it is yours.`
+  String get weCardGalleryHeaderSub {
+    return Intl.message(
+      'The page title comes from the interface language; the line below it is yours.',
+      name: 'weCardGalleryHeaderSub',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The full set on /gallery. The homepage shows a selection from it.`
+  String get weCardGalleryAllSub {
+    return Intl.message(
+      'The full set on /gallery. The homepage shows a selection from it.',
+      name: 'weCardGalleryAllSub',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `From Lodgify`
+  String get weCardSourceLodgify {
+    return Intl.message(
+      'From Lodgify',
+      name: 'weCardSourceLodgify',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Payment schedule, cancellation and deposit come from your Lodgify settings. The console is not the source for booking terms — change them there.`
+  String get weExternalLodgifyNote {
+    return Intl.message(
+      'Payment schedule, cancellation and deposit come from your Lodgify settings. The console is not the source for booking terms — change them there.',
+      name: 'weExternalLodgifyNote',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Location line`
+  String get weFieldLocationLine {
+    return Intl.message(
+      'Location line',
+      name: 'weFieldLocationLine',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Name for search engines`
+  String get weFieldSearchName {
+    return Intl.message(
+      'Name for search engines',
+      name: 'weFieldSearchName',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Map search term`
+  String get weFieldMapQuery {
+    return Intl.message(
+      'Map search term',
+      name: 'weFieldMapQuery',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Check-in`
+  String get weFieldCheckIn {
+    return Intl.message('Check-in', name: 'weFieldCheckIn', desc: '', args: []);
+  }
+
+  /// `Check-out`
+  String get weFieldCheckOut {
+    return Intl.message(
+      'Check-out',
+      name: 'weFieldCheckOut',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Check-in note`
+  String get weFieldCheckInNote {
+    return Intl.message(
+      'Check-in note',
+      name: 'weFieldCheckInNote',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Cleaning and linen`
+  String get weFieldCleaningNote {
+    return Intl.message(
+      'Cleaning and linen',
+      name: 'weFieldCleaningNote',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Wi-Fi`
+  String get weFieldWifiNote {
+    return Intl.message('Wi-Fi', name: 'weFieldWifiNote', desc: '', args: []);
+  }
+
+  /// `Highlighted warning`
+  String get weFieldCallout {
+    return Intl.message(
+      'Highlighted warning',
+      name: 'weFieldCallout',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Button`
+  String get weFieldSubmit {
+    return Intl.message('Button', name: 'weFieldSubmit', desc: '', args: []);
+  }
+
+  /// `Success`
+  String get weFieldSuccess {
+    return Intl.message('Success', name: 'weFieldSuccess', desc: '', args: []);
+  }
+
+  /// `Failure`
+  String get weFieldError {
+    return Intl.message('Failure', name: 'weFieldError', desc: '', args: []);
+  }
+
+  /// `Subline`
+  String get weFieldSubline {
+    return Intl.message('Subline', name: 'weFieldSubline', desc: '', args: []);
+  }
+
+  /// `Alt text`
+  String get weFieldAlt {
+    return Intl.message('Alt text', name: 'weFieldAlt', desc: '', args: []);
+  }
+
+  /// `Alt text (summarizing)`
+  String get weFieldAltSummary {
+    return Intl.message(
+      'Alt text (summarizing)',
+      name: 'weFieldAltSummary',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Name`
+  String get weFormFieldName {
+    return Intl.message('Name', name: 'weFormFieldName', desc: '', args: []);
+  }
+
+  /// `Email`
+  String get weFormFieldEmail {
+    return Intl.message('Email', name: 'weFormFieldEmail', desc: '', args: []);
+  }
+
+  /// `Preferred dates`
+  String get weFormFieldPeriod {
+    return Intl.message(
+      'Preferred dates',
+      name: 'weFormFieldPeriod',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Message`
+  String get weFormFieldMessage {
+    return Intl.message(
+      'Message',
+      name: 'weFormFieldMessage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This field is not on the page: it is the title in the browser tab and the description in Google.`
+  String get weHintSeo {
+    return Intl.message(
+      'This field is not on the page: it is the title in the browser tab and the description in Google.',
+      name: 'weHintSeo',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Decides where the pin sits on the map; it is not read as text.`
+  String get weHintMap {
+    return Intl.message(
+      'Decides where the pin sits on the map; it is not read as text.',
+      name: 'weHintMap',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Only visible after the form has been submitted.`
+  String get weHintStateSuccess {
+    return Intl.message(
+      'Only visible after the form has been submitted.',
+      name: 'weHintStateSuccess',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Only visible when the form fails.`
+  String get weHintStateError {
+    return Intl.message(
+      'Only visible when the form fails.',
+      name: 'weHintStateError',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Key facts`
+  String get weListKeyFacts {
+    return Intl.message(
+      'Key facts',
+      name: 'weListKeyFacts',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Paragraphs`
+  String get weListParagraphs {
+    return Intl.message(
+      'Paragraphs',
+      name: 'weListParagraphs',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Groups`
+  String get weListGroups {
+    return Intl.message('Groups', name: 'weListGroups', desc: '', args: []);
+  }
+
+  /// `Distances`
+  String get weListDistances {
+    return Intl.message(
+      'Distances',
+      name: 'weListDistances',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Lines`
+  String get weListLines {
+    return Intl.message('Lines', name: 'weListLines', desc: '', args: []);
+  }
+
+  /// `Check-in and check-out`
+  String get weListTimes {
+    return Intl.message(
+      'Check-in and check-out',
+      name: 'weListTimes',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Fields`
+  String get weListFormFields {
+    return Intl.message('Fields', name: 'weListFormFields', desc: '', args: []);
+  }
+
+  /// `Facts`
+  String get weListFacts {
+    return Intl.message('Facts', name: 'weListFacts', desc: '', args: []);
+  }
+
+  /// `Sections`
+  String get weListSections {
+    return Intl.message('Sections', name: 'weListSections', desc: '', args: []);
+  }
+
+  /// `Columns`
+  String get weListColumns {
+    return Intl.message('Columns', name: 'weListColumns', desc: '', args: []);
+  }
+
+  /// `Key fact`
+  String get weItemKeyFact {
+    return Intl.message('Key fact', name: 'weItemKeyFact', desc: '', args: []);
+  }
+
+  /// `Paragraph`
+  String get weItemParagraph {
+    return Intl.message(
+      'Paragraph',
+      name: 'weItemParagraph',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Group`
+  String get weItemGroup {
+    return Intl.message('Group', name: 'weItemGroup', desc: '', args: []);
+  }
+
+  /// `Distance`
+  String get weItemDistance {
+    return Intl.message('Distance', name: 'weItemDistance', desc: '', args: []);
+  }
+
+  /// `Highlight`
+  String get weItemHighlight {
+    return Intl.message(
+      'Highlight',
+      name: 'weItemHighlight',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Time`
+  String get weItemTime {
+    return Intl.message('Time', name: 'weItemTime', desc: '', args: []);
+  }
+
+  /// `Field`
+  String get weItemFormField {
+    return Intl.message('Field', name: 'weItemFormField', desc: '', args: []);
+  }
+
+  /// `Fact`
+  String get weItemFact {
+    return Intl.message('Fact', name: 'weItemFact', desc: '', args: []);
+  }
+
+  /// `Section`
+  String get weItemSection {
+    return Intl.message('Section', name: 'weItemSection', desc: '', args: []);
+  }
+
+  /// `Column`
+  String get weItemColumn {
+    return Intl.message('Column', name: 'weItemColumn', desc: '', args: []);
+  }
+
+  /// `Line`
+  String get weItemLine {
+    return Intl.message('Line', name: 'weItemLine', desc: '', args: []);
+  }
+
+  /// `Amenity`
+  String get weItemAmenity {
+    return Intl.message('Amenity', name: 'weItemAmenity', desc: '', args: []);
+  }
+
+  /// `Label`
+  String get wePairLabel {
+    return Intl.message('Label', name: 'wePairLabel', desc: '', args: []);
+  }
+
+  /// `Value`
+  String get wePairValue {
+    return Intl.message('Value', name: 'wePairValue', desc: '', args: []);
+  }
+
+  /// `What`
+  String get wePairWhat {
+    return Intl.message('What', name: 'wePairWhat', desc: '', args: []);
+  }
+
+  /// `Distance`
+  String get wePairDistance {
+    return Intl.message('Distance', name: 'wePairDistance', desc: '', args: []);
+  }
+
+  /// `Time`
+  String get wePairTime {
+    return Intl.message('Time', name: 'wePairTime', desc: '', args: []);
+  }
+
+  /// `Placeholder`
+  String get wePairPlaceholder {
+    return Intl.message(
+      'Placeholder',
+      name: 'wePairPlaceholder',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `By car`
+  String get weColumnCar {
+    return Intl.message('By car', name: 'weColumnCar', desc: '', args: []);
+  }
+
+  /// `Airports`
+  String get weColumnAirports {
+    return Intl.message(
+      'Airports',
+      name: 'weColumnAirports',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Public transport`
+  String get weColumnPublicTransport {
+    return Intl.message(
+      'Public transport',
+      name: 'weColumnPublicTransport',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Parking`
+  String get weColumnParking {
+    return Intl.message('Parking', name: 'weColumnParking', desc: '', args: []);
+  }
+
+  /// `Note`
+  String get weColumnNotes {
+    return Intl.message('Note', name: 'weColumnNotes', desc: '', args: []);
+  }
+
+  /// `value is shared across languages`
+  String get weSharedValueMeta {
+    return Intl.message(
+      'value is shared across languages',
+      name: 'weSharedValueMeta',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `fixed columns`
+  String get weFixedColumnsMeta {
+    return Intl.message(
+      'fixed columns',
+      name: 'weFixedColumnsMeta',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Remove a row first`
+  String get weListMaxReason {
+    return Intl.message(
+      'Remove a row first',
+      name: 'weListMaxReason',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This list only appears on the website once it holds something.`
+  String get weListEmptyMessage {
+    return Intl.message(
+      'This list only appears on the website once it holds something.',
+      name: 'weListEmptyMessage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Row deleted.`
+  String get weRowDeleted {
+    return Intl.message(
+      'Row deleted.',
+      name: 'weRowDeleted',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `One image per row. The media picker arrives with image management.`
+  String get weRowMediaPending {
+    return Intl.message(
+      'One image per row. The media picker arrives with image management.',
+      name: 'weRowMediaPending',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count} of {max}`
+  String weListCounter(Object count, Object max) {
+    return Intl.message(
+      '$count of $max',
+      name: 'weListCounter',
+      desc: '',
+      args: [count, max],
+    );
+  }
+
+  /// `Add {item}`
+  String weListAdd(Object item) {
+    return Intl.message('Add $item', name: 'weListAdd', desc: '', args: [item]);
+  }
+
+  /// `There must be at least {min}`
+  String weListMinReason(Object min) {
+    return Intl.message(
+      'There must be at least $min',
+      name: 'weListMinReason',
+      desc: '',
+      args: [min],
+    );
+  }
+
+  /// `Maximum of {max} reached`
+  String weListMaxReached(Object max) {
+    return Intl.message(
+      'Maximum of $max reached',
+      name: 'weListMaxReached',
+      desc: '',
+      args: [max],
+    );
+  }
+
+  /// `No {item} yet`
+  String weListEmptyTitle(Object item) {
+    return Intl.message(
+      'No $item yet',
+      name: 'weListEmptyTitle',
+      desc: '',
+      args: [item],
+    );
+  }
+
+  /// `You change rows in the source ({language})`
+  String weStructureLocked(Object language) {
+    return Intl.message(
+      'You change rows in the source ($language)',
+      name: 'weStructureLocked',
+      desc: '',
+      args: [language],
+    );
+  }
+
+  /// `Introduction of section {number}`
+  String weGroupIntro(Object number) {
+    return Intl.message(
+      'Introduction of section $number',
+      name: 'weGroupIntro',
+      desc: '',
+      args: [number],
+    );
+  }
+
+  /// `{min} to {max} photos. The media picker arrives with image management.`
+  String weMediaPending(Object min, Object max) {
+    return Intl.message(
+      '$min to $max photos. The media picker arrives with image management.',
+      name: 'weMediaPending',
+      desc: '',
+      args: [min, max],
+    );
+  }
+
+  /// `shared`
+  String get weChipShared {
+    return Intl.message('shared', name: 'weChipShared', desc: '', args: []);
+  }
+
   /// `Hero`
   String get weCardHero {
     return Intl.message('Hero', name: 'weCardHero', desc: '', args: []);

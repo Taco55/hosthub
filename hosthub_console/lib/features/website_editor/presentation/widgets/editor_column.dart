@@ -3,13 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
 import 'package:hosthub_console/core/widgets/foundation/foundation.dart';
-import 'package:hosthub_console/core/widgets/layout/layout.dart';
 
 import '../../application/site_content_cubit.dart';
 import '../../domain/website_content.dart';
 import '../website_editor_status_colors.dart';
 import '../website_editor_strings.dart';
-import 'website_field_row.dart';
+import 'editor_card_view.dart';
 
 /// The center editor column: top bar, page tabs, a state-dependent banner, the
 /// content cards (Hero, Highlights) and the save bar. Renders source mode
@@ -52,7 +51,7 @@ class EditorColumn extends StatelessWidget {
               ],
               const SizedBox(height: 16),
               for (final card in kPageCards[state.pageKey] ?? const []) ...[
-                _EditorCardView(state: state, card: card),
+                EditorCardView(state: state, card: card),
                 const SizedBox(height: 16),
               ],
             ],
@@ -281,208 +280,7 @@ class _TranslationStatusToolbar extends StatelessWidget {
   }
 }
 
-/// One schema card: the renderer knows the row types, the schema says what
-/// this card holds. A new card is a schema entry, not a widget.
-class _EditorCardView extends StatelessWidget {
-  const _EditorCardView({required this.state, required this.card});
-  final SiteContentState state;
-  final EditorCard card;
-
-  @override
-  Widget build(BuildContext context) {
-    return ContentCard(
-      icon: cardIcon(card.id),
-      title: cardTitle(context, card.id),
-      children: [
-        for (final row in card.rows)
-          switch (row) {
-            FieldRow(:final key) => Padding(
-              padding: EdgeInsets.only(bottom: context.styledSpacing.lg),
-              child: WebsiteFieldRow(
-                state: state,
-                field: state.fields.firstWhere((f) => f.key == key),
-                label: fieldLabel(context, key),
-                autofocus: key == 'cabin.hero.title' && state.isSourceMode,
-              ),
-            ),
-            ListRow(:final listKey, :final repeatable) => _FieldListView(
-              state: state,
-              listKey: listKey,
-              repeatable: repeatable,
-            ),
-          },
-        // The hero photo strip is a fase-2 media row; until MediaRow exists in
-        // the schema it stays a presentation detail of the hero card.
-        if (card.id == 'hero') _HeroPhotos(state: state),
-      ],
-    );
-  }
-}
-
-class _HeroPhotos extends StatelessWidget {
-  const _HeroPhotos({required this.state});
-  final SiteContentState state;
-
-  @override
-  Widget build(BuildContext context) {
-    final label = Text(
-      context.s.weFieldHeroPhotos,
-      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-        fontWeight: FontWeight.w600,
-        color: context.colors.onSurface,
-      ),
-    );
-
-    if (!state.isSourceMode) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          label,
-          const SizedBox(height: 6),
-          StyledNotice(
-            tone: StyledNoticeTone.neutral,
-            icon: Icons.photo_library_outlined,
-            message: context.s.weSharedPhotosNote,
-          ),
-        ],
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        label,
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 64,
-          child: Row(
-            children: [
-              for (var i = 0; i < 3; i++) ...[
-                _photoTile(context.colors),
-                const SizedBox(width: 8),
-              ],
-              _addPhotoTile(context, context.colors),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _photoTile(ColorScheme scheme) => StyledContainer(
-    borderRadius: BorderRadius.circular(11),
-    backgroundColor: scheme.surfaceContainerHighest,
-    padding: EdgeInsets.zero,
-    child: const SizedBox(width: 88, height: 64),
-  );
-
-  Widget _addPhotoTile(BuildContext context, ColorScheme scheme) =>
-      StyledContainer(
-        borderRadius: BorderRadius.circular(11),
-        border: Border.all(color: scheme.outlineVariant),
-        backgroundColor: scheme.surface,
-        padding: EdgeInsets.zero,
-        child: SizedBox(
-          width: 88,
-          height: 64,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.add, color: scheme.primary, size: 20),
-              Text(
-                context.s.weAddPhoto,
-                style: Theme.of(
-                  context,
-                ).textTheme.labelSmall?.copyWith(color: scheme.primary),
-              ),
-            ],
-          ),
-        ),
-      );
-}
-
-/// A schema [ListRow]: the list's rows as fields; a repeatable list adds the
-/// drag-reorder grip and the add action in source mode.
-class _FieldListView extends StatelessWidget {
-  const _FieldListView({
-    required this.state,
-    required this.listKey,
-    required this.repeatable,
-  });
-
-  final SiteContentState state;
-  final String listKey;
-  final bool repeatable;
-
-  @override
-  Widget build(BuildContext context) {
-    final cubit = context.read<SiteContentCubit>();
-    final rowFields = state.fields.where((f) => f.listKey == listKey).toList();
-    // Reordering rearranges the source rows (all languages move along); in
-    // translation mode the rows are fixed and carry their status chips.
-    final canReorder =
-        repeatable && state.isSourceMode && rowFields.length > 1;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (canReorder)
-          StyledReorderableList(
-            itemCount: rowFields.length,
-            onReorder: (from, to) => cubit.moveRow(listKey, from, to),
-            itemBuilder: (context, index) => Padding(
-              key: ValueKey(rowFields[index].key),
-              padding: const EdgeInsets.only(bottom: 14),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ReorderableDragStartListener(
-                    index: index,
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 34, right: 8),
-                      child: Icon(
-                        Icons.drag_indicator,
-                        size: 20,
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: WebsiteFieldRow(
-                      state: state,
-                      field: rowFields[index],
-                      label: listRowLabel(context, listKey, index + 1),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          )
-        else
-          for (final (index, field) in rowFields.indexed) ...[
-            WebsiteFieldRow(
-              state: state,
-              field: field,
-              label: listRowLabel(context, listKey, index + 1),
-            ),
-            // §11e: field-to-field spacing inside a section is one token; the
-            // section's own padding supplies the outer breathing room.
-            SizedBox(height: context.styledSpacing.lg),
-          ],
-        if (repeatable && state.isSourceMode)
-          Align(
-            alignment: Alignment.centerLeft,
-            child: StyledTextButton(
-              title: context.s.weAddHighlight,
-              showLeftIcon: true,
-              leftIconData: Icons.add,
-              onPressed: () => cubit.addRow(listKey),
-            ),
-          ),
-      ],
-    );
-  }
-}
+// Card and row rendering lives in editor_card_view.dart.
 
 class _SaveBar extends StatelessWidget {
   const _SaveBar({required this.state});
