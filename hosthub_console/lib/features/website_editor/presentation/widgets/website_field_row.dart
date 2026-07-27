@@ -25,7 +25,7 @@ class WebsiteFieldRow extends StatelessWidget {
   });
 
   final SiteContentState state;
-  final EditorFieldDef field;
+  final EditorField field;
   final String label;
   final bool autofocus;
 

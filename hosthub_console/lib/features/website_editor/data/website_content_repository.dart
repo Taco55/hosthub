@@ -96,10 +96,10 @@ class WebsiteContentRepository extends SupabaseRepository {
 
   /// Resolves an editor field key to the document and the JSON path inside it.
   ///
-  /// One table, one lookup: adding a field is a line here plus its
-  /// [EditorFieldDef], not a branch in a read function and a matching branch in
-  /// a write function. `{n}` in a pattern captures the row index of a
-  /// repeatable field and lands in the path at the same position.
+  /// One table, one lookup: adding a field is a line here plus its row in
+  /// the page schema ([kPageCards]), not a branch in a read function and a
+  /// matching branch in a write function. `{n}` in a pattern captures the row
+  /// index of a repeatable field and lands in the path at the same position.
   static const List<({String pattern, int document, List<Object> path})>
   _fieldPaths = [
     (pattern: 'hero.headline', document: 0, path: ['hero', 'title']),
@@ -177,6 +177,27 @@ class WebsiteContentRepository extends SupabaseRepository {
     final location = locationOf(fieldKey);
     if (location == null || location.contentType != contentType) return null;
     return _readPath(content, location.path);
+  }
+
+  /// How many rows a repeatable list has in a document's JSON: the length of
+  /// the array the list's row index runs over. 0 when the document or the
+  /// array is missing.
+  static int _listLengthIn(String listKey, Map<String, dynamic>? content) {
+    if (content == null) return 0;
+    final location = locationOf('$listKey.0');
+    if (location == null) return 0;
+    // The first int segment is where the row index lands (the `{n}` in the
+    // path table); the array itself lives at the path up to that segment.
+    final indexPosition = location.path.indexWhere(
+      (segment) => segment is int,
+    );
+    if (indexPosition < 0) return 0;
+    Object? node = content;
+    for (final segment in location.path.sublist(0, indexPosition)) {
+      if (node is! Map) return 0;
+      node = node[segment];
+    }
+    return node is List ? node.length : 0;
   }
 
   /// Reads a JSON path, stopping at the first segment that is not there.
@@ -356,17 +377,26 @@ class WebsiteContentRepository extends SupabaseRepository {
         return readField(fieldKey, doc.contentType, content);
       }
 
-      // Highlight rows are repeatable: derive the actual count from the
-      // source document so extra rows survive a reload.
-      final homeDoc = contentByDocLocale['page:home:$sourceLanguage'];
-      final highlightCount = math.max(
-        2,
-        (homeDoc?['highlights'] as List<dynamic>?)?.length ?? 0,
-      );
+      // List rows are repeatable: derive each list's actual row count from
+      // the source-locale document so extra rows survive a reload.
+      int listCount(String listKey, int minRows) {
+        final doc = _documentFor('$listKey.0');
+        final content =
+            contentByDocLocale['${_documentKeyOf(doc)}:$sourceLanguage'];
+        return math.max(minRows, _listLengthIn(listKey, content));
+      }
+
       final fieldKeys = <String>[
-        for (final field in kAllFields)
-          if (!field.key.startsWith('highlights.')) field.key,
-        for (var i = 0; i < highlightCount; i++) 'highlights.$i',
+        for (final cards in kPageCards.values)
+          for (final card in cards)
+            for (final row in card.rows)
+              ...switch (row) {
+                FieldRow(:final key) => [key],
+                ListRow(:final listKey, :final minRows) => [
+                  for (var i = 0; i < listCount(listKey, minRows); i++)
+                    '$listKey.$i',
+                ],
+              },
       ];
 
       final source = <String, String>{

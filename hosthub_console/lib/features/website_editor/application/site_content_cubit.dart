@@ -151,14 +151,13 @@ class SiteContentState extends Equatable {
   List<String> get targetLanguages =>
       locales.where((l) => l != sourceLanguage).toList();
 
-  /// The editable fields for the current page (highlight rows are repeatable
+  /// The editable fields for the current page (list rows are repeatable
   /// and derived from the content the owner sees, drafts included).
-  List<EditorFieldDef> get fields =>
-      effectiveFieldsFor(pageKey, effectiveSource);
+  List<EditorField> get fields => effectiveFieldsFor(pageKey, effectiveSource);
 
   /// Every editable field across all pages (translate/publish scope).
-  List<EditorFieldDef> get allFields => [
-    for (final page in kPageFields.keys)
+  List<EditorField> get allFields => [
+    for (final page in kPageCards.keys)
       ...effectiveFieldsFor(page, effectiveSource),
   ];
 
@@ -597,13 +596,12 @@ class SiteContentCubit extends Cubit<SiteContentState> {
     }
   }
 
-  /// Appends an empty highlight row (source language; targets start as fresh
-  /// empty auto fields so they translate on publish). A draft, like every edit.
-  void addHighlight() {
-    final index = state.fields
-        .where((f) => f.card == EditorCard.highlights)
-        .length;
-    final key = 'highlights.$index';
+  /// Appends an empty row to a repeatable list (source language; targets
+  /// start as fresh empty auto fields so they translate on publish). A draft,
+  /// like every edit.
+  void addRow(String listKey) {
+    final index = state.fields.where((f) => f.listKey == listKey).length;
+    final key = '$listKey.$index';
     final draftSource = Map<String, String>.from(state.draftSource)..[key] = '';
     final draftTranslations = _cloneDraftTranslations();
     for (final language in state.targetLanguages) {
@@ -621,12 +619,12 @@ class SiteContentCubit extends Cubit<SiteContentState> {
     );
   }
 
-  /// Reorders the highlight rows (drag grip). Values move in every language,
-  /// including their locked/auto status, so translations stay attached to
-  /// their row.
-  void reorderHighlights(int oldIndex, int newIndex) {
+  /// Reorders a repeatable list's rows (drag grip). Values move in every
+  /// language, including their locked/auto status, so translations stay
+  /// attached to their row.
+  void moveRow(String listKey, int oldIndex, int newIndex) {
     final keys = state.fields
-        .where((f) => f.card == EditorCard.highlights)
+        .where((f) => f.listKey == listKey)
         .map((f) => f.key)
         .toList();
     if (oldIndex < 0 || oldIndex >= keys.length) return;

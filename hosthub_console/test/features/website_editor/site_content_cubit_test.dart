@@ -153,21 +153,28 @@ void main() {
 
     test('selecting a page exposes that page\'s fields', () {
       final cubit = build();
-      expect(cubit.state.fields, kHomeFields);
-
-      cubit.selectPage('chalet');
+      // Home carries the chalet description/experience and contact fields:
+      // that content renders on the homepage (fase 2 §0).
       expect(
         cubit.state.fields.map((f) => f.key),
-        containsAll(<String>['chalet.description.0', 'chalet.experience.0']),
+        containsAll(<String>[
+          'hero.headline',
+          'highlights.0',
+          'chalet.description.0',
+          'chalet.experience.0',
+          'contact.title',
+        ]),
       );
       expect(
         cubit.state.valueFor('nl', 'chalet.experience.0'),
         'Ski-in/ski-out via de transportpiste.',
       );
-      expect(
-        cubit.state.valueFor('en', 'chalet.experience.0'),
-        'Ski-in/ski-out via the transport track.',
-      );
+
+      cubit.selectPage('practical');
+      expect(cubit.state.fields.map((f) => f.key), <String>[
+        'practical.header.title',
+        'practical.header.subtitle',
+      ]);
     });
 
     test('publish scope covers fields of every page', () async {
@@ -182,17 +189,17 @@ void main() {
       expect(cubit.state.staleLanguages, isEmpty);
     });
 
-    test('addHighlight appends an empty repeatable row in every language', () {
+    test('addRow appends an empty repeatable row in every language', () {
       final cubit = build();
       expect(
-        cubit.state.fields.where((f) => f.card == EditorCard.highlights),
+        cubit.state.fields.where((f) => f.listKey == 'highlights'),
         hasLength(2),
       );
 
-      cubit.addHighlight();
+      cubit.addRow('highlights');
 
       final highlights = cubit.state.fields
-          .where((f) => f.card == EditorCard.highlights)
+          .where((f) => f.listKey == 'highlights')
           .toList();
       expect(highlights, hasLength(3));
       expect(cubit.state.valueFor('nl', 'highlights.2'), '');
@@ -209,25 +216,25 @@ void main() {
       // The row only exists in the draft, so "back to the saved value" must not
       // be allowed to delete a key the saved layer never had.
       final cubit = build();
-      cubit.addHighlight();
+      cubit.addRow('highlights');
 
       cubit.editSourceField('highlights.2', 'Iets');
       cubit.editSourceField('highlights.2', '');
 
       expect(
-        cubit.state.fields.where((f) => f.card == EditorCard.highlights),
+        cubit.state.fields.where((f) => f.listKey == 'highlights'),
         hasLength(3),
       );
       expect(cubit.state.unsavedChanges, isTrue);
     });
 
-    test('reorderHighlights moves rows in every language incl. status', () {
+    test('moveRow moves rows in every language incl. status', () {
       final cubit = build();
       cubit.editTranslationField('en', 'highlights.0', 'Locked first');
 
       // Drag row 0 below row 1 (ReorderableListView semantics: newIndex is
       // the insertion point before removal).
-      cubit.reorderHighlights(0, 2);
+      cubit.moveRow('highlights', 0, 2);
 
       expect(
         cubit.state.valueFor('nl', 'highlights.0'),

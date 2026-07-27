@@ -8861,11 +8861,6 @@ class S {
     return Intl.message('Home', name: 'wePageHome', desc: '', args: []);
   }
 
-  /// `The chalet`
-  String get wePageChalet {
-    return Intl.message('The chalet', name: 'wePageChalet', desc: '', args: []);
-  }
-
   /// `Practical`
   String get wePagePractical {
     return Intl.message(
@@ -8876,14 +8871,14 @@ class S {
     );
   }
 
+  /// `Gallery`
+  String get wePageGallery {
+    return Intl.message('Gallery', name: 'wePageGallery', desc: '', args: []);
+  }
+
   /// `Area`
   String get wePageArea {
     return Intl.message('Area', name: 'wePageArea', desc: '', args: []);
-  }
-
-  /// `Contact`
-  String get wePageContact {
-    return Intl.message('Contact', name: 'wePageContact', desc: '', args: []);
   }
 
   /// `Source · {lang}`
@@ -9004,6 +8999,11 @@ class S {
       desc: '',
       args: [],
     );
+  }
+
+  /// `Contact`
+  String get weCardContact {
+    return Intl.message('Contact', name: 'weCardContact', desc: '', args: []);
   }
 
   /// `Hero`

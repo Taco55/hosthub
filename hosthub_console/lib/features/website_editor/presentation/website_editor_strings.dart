@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 
 import 'package:hosthub_console/core/widgets/foundation/foundation.dart';
 
@@ -56,15 +56,41 @@ String pageName(BuildContext context, String pageKey) {
   switch (pageKey) {
     case 'home':
       return context.s.wePageHome;
-    case 'chalet':
-      return context.s.wePageChalet;
     case 'practical':
       return context.s.wePagePractical;
     case 'area':
       return context.s.wePageArea;
-    case 'contact':
-      return context.s.wePageContact;
+    case 'gallery':
+      return context.s.wePageGallery;
     default:
       return pageKey;
+  }
+}
+
+/// Localized card title for a schema card id.
+String cardTitle(BuildContext context, String cardId) {
+  switch (cardId) {
+    case 'hero':
+      return context.s.weCardHero;
+    case 'highlights':
+      return context.s.weCardHighlights;
+    case 'contact':
+      return context.s.weCardContact;
+    default:
+      return context.s.weCardContent;
+  }
+}
+
+/// Icon for a schema card id.
+IconData cardIcon(String cardId) {
+  switch (cardId) {
+    case 'hero':
+      return Icons.auto_awesome;
+    case 'highlights':
+      return Icons.star_outline;
+    case 'contact':
+      return Icons.mail_outline;
+    default:
+      return Icons.notes_outlined;
   }
 }

@@ -82,9 +82,14 @@ WebsitePageContent _remoteContent() => WebsitePageContent(
   translations: {
     for (final lang in ['en', 'no'])
       lang: {
-        for (final field in kHomeFields)
-          field.key: TranslatedField(
-            value: '[$lang] ${field.key}',
+        for (final key in const [
+          'hero.headline',
+          'hero.subtitle',
+          'highlights.0',
+          'highlights.1',
+        ])
+          key: TranslatedField(
+            value: '[$lang] $key',
             status: FieldTranslationStatus.auto,
             sourceHash: sourceHashOf(
               {
@@ -92,7 +97,7 @@ WebsitePageContent _remoteContent() => WebsitePageContent(
                 'hero.subtitle': 'Ondertitel uit database',
                 'highlights.0': 'Hoogtepunt A',
                 'highlights.1': 'Hoogtepunt B',
-              }[field.key]!,
+              }[key]!,
             ),
           ),
       },
