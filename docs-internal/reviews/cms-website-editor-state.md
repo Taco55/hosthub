@@ -400,7 +400,7 @@ deze repo) gaat eerst en is door deze sessie geclaimd.
 |---|-------|-------|--------|----------|
 | F-pre | Voorwerk: mapping · B1–B15 · migratieplan | docs | done | `website-editor-fase2-plan.md`; mapping geverifieerd tegen prd (site d2744793), veldsleutels uit het prototype-SCHEMA; 2 vastgelegde afwijkingen (hero.badges zonder kaart; transport 5 vaste slots) |
 | F0 | Padgebaseerde veldmapping (gedragsbehoudend; kWebsitePages → home/practical/area/gallery; Part D-schema vervangt kPageFields) | console | done | cea67db; sealed EditorRow (FieldRow/ListRow) + EditorCard-schema + één kaartrenderer; tabs home/practical/area/gallery (chalet/contact-velden → home); addRow/moveRow generiek per listKey; repo leidt lijstlengtes af via de padtabel; ARB wePageGallery/weCardContact in, chalet/contact uit; goldens geregenereerd; 415 tests groen, analyze clean. Bouwt voort op de padtabel uit 4427f1b (2e sessie) |
-| F1 | Stabiele rij-ids + migratie (documenten, site_translations, highlights-fusie, web-lezers) + regressietest reorder→vertaling reist mee | console+supabase+web | in_progress (deze sessie) | — |
+| F1 | Stabiele rij-ids + migratie (documenten, site_translations, highlights-fusie, web-lezers) + regressietest reorder→vertaling reist mee | console+supabase+web | done | a4bdf42; migratie `20260727150000_cms_stable_row_ids.sql` (deterministische md5-ids, idempotent, cross-locale identiek; highlights+highlightImages gefuseerd; field_key-hernoeming via de gemigreerde brontaal; dode `chalet.experience.*`-rijen weg; versie-snapshots bewust ongemoeid). Console: `RowId`-padsegmenten (lookup op id, write appendt een onbekende rij), `listOrder`/`draftListOrder` als eigen laag — `moveRow` wijzigt alléén de orde. Web: `normalize-content.ts` slikt beide vormen op de providergrens, dus de datamigratie is los deploybaar. **Geverifieerd tegen een volledige kopie van de echte prd-documenten in de lokale DB** (alle 13 lijsten van ids voorzien, idempotent, geen tekst verloren) + rij naar het eind gesleept: NL-tekst én EN-vertaling reisden mee. 418 tests groen, analyze clean, web typecheck+build clean. Lokale DB daarna teruggezet |
 | F2 | Library: B3–B9 + `repeaters:`/`fieldLists:`-themegroepen, elk met test | styled_widgets | done | sw@8dc36a9 = v0.10.0 (tag lokaal; push user-gated: SSH-key met passphrase, agent leeg). StyledFieldList/StyledRepeaterRow/StyledFieldGroup/StyledSectionSubheader/StyledEmptyState.inline/StyledChipSize.micro/sharedValueLabel + repeaters:/fieldLists:-themegroepen en sharedChip-tokens; 31 nieuwe tests, volle suite 897 groen; guide + CHANGELOG bijgewerkt. B6 en B8-B9 bewust in deze stap meegenomen (stap 3 mag geen lib-werk nodig hebben) |
 | F3 | De kaarten als schema (README §A.1–A.4; nieuwe kaart = schemaregel, geen widget) + B2 | console | todo | — |
 | F4 | Vertaalmodus op schaal (structuur alleen in bron mét assert, `Nieuw`-badge, kaart-rollup B1, `Alleen gewijzigd` B10; tellers afgeleid uit veldpaden) | console (+lib) | todo | — |
@@ -409,8 +409,21 @@ deze repo) gaat eerst en is door deze sessie geclaimd.
 | F7 | Opruimen: HouseRules.tsx mounten, voorzieningen-items uit het document renderen, dode sleutels weg | web+supabase | todo | — |
 
 ## next_lens
-RUN 7 GESTART (fase 2-handoff). Voorwerk done; F2 (library) loopt in deze sessie; F0/F1/F3+
-wachten op het ongecommitte werk van de tweede sessie in website_editor/** + web/**.
+RUN 7 (fase 2-handoff): F-pre, F0, F1 en F2 done. Volgende: **F3** (de kaarten uit README
+§A.1–A.4 als schema, op de library uit F2), daarna F4–F7.
+
+**Twee dingen die vóór prd moeten** (user-gated):
+1. `styled_widgets` v0.10.0 staat gecommit + getagd maar is **niet gepusht** — de SSH-key heeft
+   een passphrase en de agent is leeg. HostHub consumeert de lib per pad, dus lokaal werkt alles;
+   andere repos zien v0.10.0 pas na `git push origin main --tags` in
+   `~/Documents/projects/shared/libraries/styled_widgets`.
+2. De migratie `20260727150000_cms_stable_row_ids.sql` staat **alleen lokaal**. Prd-aanpak zoals
+   eerder: dit ene bestand via `psql "$SUPABASE_DB_URL"` uit `hosthub-prd-server.env` (niet
+   `make apply-migrations ENV=prd` — die replayt de baseline), daarna `NOTIFY pgrst, 'reload
+   schema'`. **Let op de orde:** deze migratie en de console/web-deploy horen samen te gaan. De
+   web-kant slikt beide vormen (normalize-content), dus de site blijft renderen als de migratie
+   vóór de deploy landt; de nu live console schrijft nog index-sleutels, dus draai hem niet lang
+   op prd zonder de nieuwe console.
 RUN 6 KLAAR: M1–M7 done (2026-07-26), elk met review-stop. Open, user-gated: visuele verificatie in
 de app (vraagt een ingelogde sessie, zelfde blokkade als E3) en de **console-deploy naar prd** —
 de migratie staat er wel op (zie M7). Niet gebouwd omdat het buiten de zes stappen viel: de Accountinstellingen-editor voor
