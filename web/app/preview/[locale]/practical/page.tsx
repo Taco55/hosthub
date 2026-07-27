@@ -4,6 +4,7 @@ import { Car, Clock, PhoneCall, ShieldCheck } from "lucide-react";
 import { QuickFactsRow } from "@/components/practical/QuickFactsRow";
 import { TransportCard } from "@/components/practical/TransportCard";
 import { SectionHeading } from "@/components/section-heading";
+import { cmsFieldAddress } from "@/lib/cms-field";
 import { Container } from "@/components/site/Container";
 import { Policies } from "@/components/site/Policies";
 import { LayoutFacilitiesCard } from "@/components/sections/LayoutFacilitiesCard";
@@ -40,6 +41,8 @@ export default async function PreviewPracticalPage({ params }: PageProps) {
         <SectionHeading
           title={practical.header.title}
           subtitle={practical.header.subtitle}
+          titleField={cmsFieldAddress("page/practical", "header", "title")}
+          subtitleField={cmsFieldAddress("page/practical", "header", "subtitle")}
         />
         <QuickFactsRow items={practical.quickFacts} />
         <div className="space-y-8">

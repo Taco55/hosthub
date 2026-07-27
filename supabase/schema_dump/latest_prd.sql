@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict JrlFbwOkeZ3febbjX7RcObIZeSZlkK0tVz2h1MvOd4sGjcVSDLzKGdeoe6EJZhF
+\restrict qzc5NZZn51M6nHHuW18lNTKfA4fmsnTddrUe5mn9j1NoU4DaMAxp7QAIGH3cdtj
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -324,8 +324,10 @@ CREATE FUNCTION public.get_site_lodgify_api_key(p_site_id uuid) RETURNS text
     AS $$
   select lak.api_key
   from public.sites s
-  join public.lodgify_api_keys lak on lak.profile_id = s.owner_profile_id
-  where s.id = p_site_id and btrim(lak.api_key) <> ''
+  join public.lodgify_api_keys lak
+    on lak.profile_id = s.owner_profile_id
+  where s.id = p_site_id
+    and btrim(lak.api_key) <> ''
   limit 1;
 $$;
 
@@ -555,11 +557,26 @@ CREATE TABLE public.cms_documents (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_by uuid,
+    draft_content jsonb,
     CONSTRAINT cms_documents_status_check CHECK ((status = ANY (ARRAY['draft'::text, 'published'::text])))
 );
 
 
 ALTER TABLE public.cms_documents OWNER TO postgres;
+
+--
+-- Name: COLUMN cms_documents.content; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.cms_documents.content IS 'The published content. Editing does not touch it — see draft_content.';
+
+
+--
+-- Name: COLUMN cms_documents.draft_content; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.cms_documents.draft_content IS 'Unpublished work in progress. Null when there is none. The public site never reads this; publishing moves it into content and clears it.';
+
 
 --
 -- Name: cms_media; Type: TABLE; Schema: public; Owner: postgres
@@ -2018,5 +2035,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON T
 -- PostgreSQL database dump complete
 --
 
-\unrestrict JrlFbwOkeZ3febbjX7RcObIZeSZlkK0tVz2h1MvOd4sGjcVSDLzKGdeoe6EJZhF
+\unrestrict qzc5NZZn51M6nHHuW18lNTKfA4fmsnTddrUe5mn9j1NoU4DaMAxp7QAIGH3cdtj
 

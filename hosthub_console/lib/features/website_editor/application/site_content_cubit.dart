@@ -9,6 +9,15 @@ import '../domain/website_content.dart';
 /// Preview device frame.
 enum PreviewDevice { web, mobile }
 
+/// Whether the state holds the site's own content.
+///
+/// A persistent editor starts [loading] with empty fields and only reaches
+/// [ready] once the site's documents are in. It must never show the demo seed
+/// while it waits or after it fails: seed copy in a form that says "Trysil"
+/// above it reads as this site's content, and saving it would write the demo
+/// text over the owner's pages.
+enum ContentLoadStatus { loading, ready, failed }
+
 /// State for the website editor: the source content, per-language translations
 /// (each field `auto`/`locked` with a source hash), the uncommitted draft on
 /// top of both, and preview UI state.
@@ -46,6 +55,7 @@ class SiteContentState extends Equatable {
     this.saving = false,
     this.reviewedLanguages = const {},
     this.pendingAutoSwitch,
+    this.loadStatus = ContentLoadStatus.ready,
   });
 
   final String propertyName;
@@ -112,6 +122,12 @@ class SiteContentState extends Equatable {
   /// only genuinely destructive action on this screen (§11g). Holds the
   /// owner's previous wording until they navigate away or publish.
   final PendingAutoSwitch? pendingAutoSwitch;
+
+  /// Whether [source]/[translations] hold this site's content. The editor form
+  /// only renders when this is [ContentLoadStatus.ready]; the demo seed is
+  /// [ContentLoadStatus.ready] from the start, because there the seed *is* the
+  /// content.
+  final ContentLoadStatus loadStatus;
 
   bool get isSourceMode => previewLanguage == sourceLanguage;
 
@@ -197,6 +213,16 @@ class SiteContentState extends Equatable {
   /// Translatable fields on this page — the denominator of that counter.
   int get translatableFieldCount => fields.length;
 
+  /// Every field's value for the previewed language, keyed by CMS address
+  /// (`cabin/main:hero.title`). This is what the live preview renders: the
+  /// draft included, so the frame shows what is in the fields and not what was
+  /// last saved. Fields across all pages, because the preview is the whole site.
+  Map<String, String> get previewFieldValues => {
+    for (final field in allFields)
+      if (WebsiteContentRepository.locationOf(field.key) case final location?)
+        location.address: valueFor(previewLanguage, field.key),
+  };
+
   SiteContentState copyWith({
     String? sourceLanguage,
     List<String>? locales,
@@ -218,6 +244,7 @@ class SiteContentState extends Equatable {
     bool? saving,
     Set<String>? reviewedLanguages,
     PendingAutoSwitch? pendingAutoSwitch,
+    ContentLoadStatus? loadStatus,
     bool clearDraft = false,
     bool clearPendingAutoSwitch = false,
     bool clearError = false,
@@ -249,6 +276,7 @@ class SiteContentState extends Equatable {
       pendingAutoSwitch: clearPendingAutoSwitch
           ? null
           : (pendingAutoSwitch ?? this.pendingAutoSwitch),
+      loadStatus: loadStatus ?? this.loadStatus,
     );
   }
 
@@ -275,6 +303,7 @@ class SiteContentState extends Equatable {
     saving,
     reviewedLanguages,
     pendingAutoSwitch,
+    loadStatus,
   ];
 }
 
@@ -323,7 +352,11 @@ class SiteContentCubit extends Cubit<SiteContentState> {
   }) : _translationService = translationService,
        _repository = repository,
        _siteId = siteId,
-       super(_seedState());
+       // A persistent editor has no content until loadContent brings it in.
+       // Starting it on the seed would put demo copy in the owner's fields.
+       super(
+         repository != null && siteId != null ? _pendingState() : _seedState(),
+       );
 
   final TranslationService _translationService;
   final WebsiteContentRepository? _repository;
@@ -332,10 +365,13 @@ class SiteContentCubit extends Cubit<SiteContentState> {
   bool get _persistent => _repository != null && _siteId != null;
 
   /// Hydrates the state from the repository. No-op without persistence; on
-  /// failure the seed state stays and the [DomainError] is surfaced as a
-  /// blocking error — what is on screen then belongs to no site at all.
+  /// failure the state stays empty, [loadStatus] becomes
+  /// [ContentLoadStatus.failed] and the [DomainError] is surfaced as a blocking
+  /// error — the editor shows why it is empty instead of a form full of content
+  /// that belongs to no site.
   Future<void> loadContent() async {
     if (!_persistent) return;
+    emit(state.copyWith(loadStatus: ContentLoadStatus.loading));
     try {
       final content = await _repository!.loadPageContent(
         siteId: _siteId!,
@@ -356,6 +392,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
           translations: content.translations,
           previewDomain: content.previewDomain,
           dirty: false,
+          loadStatus: ContentLoadStatus.ready,
           clearDraft: true,
           clearError: true,
           clearLoadError: true,
@@ -364,6 +401,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
     } catch (error, stack) {
       emit(
         state.copyWith(
+          loadStatus: ContentLoadStatus.failed,
           loadError: error is DomainError
               ? error
               : DomainError.from(error, stack: stack),
@@ -371,6 +409,26 @@ class SiteContentCubit extends Cubit<SiteContentState> {
       );
     }
   }
+
+  /// The state of a persistent editor before its content arrives: no fields, no
+  /// translations, no property name — nothing to mistake for the site's own
+  /// copy. Language and locales are placeholders until the site's row says what
+  /// they are.
+  static SiteContentState _pendingState() => const SiteContentState(
+    propertyName: '',
+    sourceLanguage: kDefaultSourceLanguage,
+    locales: [kDefaultSourceLanguage],
+    pageKey: 'home',
+    previewLanguage: kDefaultSourceLanguage,
+    previewDevice: PreviewDevice.web,
+    previewVisible: true,
+    source: {},
+    translations: {},
+    dirty: false,
+    publishOpen: false,
+    translating: {},
+    loadStatus: ContentLoadStatus.loading,
+  );
 
   static SiteContentState _seedState() {
     final source = Map<String, String>.from(WebsiteSeed.home['nl']!);
@@ -628,6 +686,9 @@ class SiteContentCubit extends Cubit<SiteContentState> {
   /// retries the same work.
   Future<void> save() async {
     if (!state.unsavedChanges || state.saving) return;
+    // Nothing on screen is this site's content yet; writing it back would
+    // overwrite the owner's pages with an empty or borrowed form.
+    if (state.loadStatus != ContentLoadStatus.ready) return;
 
     final mergedSource = {...state.source, ...state.draftSource};
     final changedFields = <(String, String, TranslatedField)>[
@@ -812,6 +873,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
   /// never saves on the owner's behalf (§11i).
   Future<void> publishAll({Set<String> skipLanguages = const {}}) async {
     if (state.unsavedChanges) return;
+    if (state.loadStatus != ContentLoadStatus.ready) return;
     final targets = state.targetLanguages
         .where((language) => !skipLanguages.contains(language))
         .toList();

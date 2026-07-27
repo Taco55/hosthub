@@ -1715,6 +1715,8 @@
   "versionFooter": "v{version}",
   "@versionFooter": { "placeholders": { "version": {} } },
   "weErrorLoadFailed": "Couldn't load the website content",
+  "weLoadFailedDescription": "The editor shows no fields until this website's content has loaded.",
+  "weLoadFailedRetry": "Try again",
   "weErrorSaveFailed": "Couldn't save your changes — they are kept in the editor",
   "weErrorTranslateFailed": "Couldn't refresh the translation — the last good version is kept",
   "weErrorResetFailed": "Couldn't reset this field to AI",

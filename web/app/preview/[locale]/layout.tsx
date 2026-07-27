@@ -3,8 +3,9 @@ import { notFound } from "next/navigation";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { PreviewBanner } from "@/components/preview-banner";
+import { PreviewDraftBridge } from "@/components/preview/PreviewDraftBridge";
 import { resolveBookingUrl } from "@/lib/booking-url";
-import { getSiteConfig } from "@/lib/content-provider";
+import { getPreviewContentStatus, getSiteConfig } from "@/lib/content-provider";
 import { isLocale } from "@/lib/i18n";
 import {
   resolveRuntimeSiteContext,
@@ -23,15 +24,19 @@ export default async function PreviewLocaleLayout({ children, params }: LayoutPr
   }
 
   const runtimeSite = await resolveRuntimeSiteContext();
-  const siteConfig = await getSiteConfig(
-    locale,
-    toSiteContentOptions(runtimeSite, true),
-  );
+  const contentOptions = toSiteContentOptions(runtimeSite, true);
+  const [siteConfig, contentStatus] = await Promise.all([
+    getSiteConfig(locale, contentOptions),
+    // What the pages below are really rendering — the banner says so out loud.
+    getPreviewContentStatus(locale, contentOptions),
+  ]);
   const bookingHref = resolveBookingUrl(siteConfig);
 
   return (
     <div className="flex min-h-screen flex-col">
-      <PreviewBanner locale={locale} />
+      <PreviewBanner locale={locale} status={contentStatus} />
+      {/* Applies the editor's unsaved draft to what is on screen. */}
+      <PreviewDraftBridge locale={locale} />
       <Header
         locale={locale}
         siteName={siteConfig.name}

@@ -15,9 +15,11 @@ function usage() {
     "Usage: npm run cms:snapshot -- [options]",
     "",
     "Options:",
-    "  --site-id <uuid>        CMS site id (default: NEXT_PUBLIC_CMS_SITE_ID)",
+    "  --site-id <uuid>        CMS site id (skip it and pass --domain instead)",
+    "  --domain <host>         Resolve the site id from site_domains, the way the",
+    "                          runtime does (default: host of NEXT_PUBLIC_SITE_URL)",
     "  --supabase-url <url>    Supabase project URL (default: NEXT_PUBLIC_SUPABASE_URL)",
-    "  --api-key <key>         Supabase API key (default: SUPABASE_SERVICE_ROLE_KEY, fallback NEXT_PUBLIC_SUPABASE_ANON_KEY)",
+    "  --api-key <key>         Supabase API key (default: SUPABASE_SECRET_KEY, fallback NEXT_PUBLIC_SUPABASE_ANON_KEY)",
     "  --out <path>            Output file (default: web/lib/content.generated.ts)",
     "  --help                  Show this help",
     "",
@@ -179,6 +181,36 @@ async function fetchPublishedDocuments({ supabaseUrl, apiKey, siteId }) {
   return payload;
 }
 
+/** The bare host of a url, without scheme, port or path. */
+function hostOf(value) {
+  if (!value) return "";
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  try {
+    return new URL(trimmed.includes("://") ? trimmed : `https://${trimmed}`).hostname;
+  } catch {
+    return "";
+  }
+}
+
+/** The same lookup the running site does: domain -> site_domains -> site id. */
+async function fetchSiteIdByDomain({ supabaseUrl, apiKey, domain }) {
+  const url =
+    `${supabaseUrl}/rest/v1/site_domains` +
+    `?select=site_id&domain=eq.${encodeURIComponent(domain)}` +
+    `&order=is_primary.desc&limit=1`;
+  const response = await fetch(url, {
+    headers: { apikey: apiKey, Authorization: `Bearer ${apiKey}` },
+  });
+  if (!response.ok) {
+    throw new Error(
+      `site_domains lookup failed (${response.status}): ${await response.text()}`,
+    );
+  }
+  const rows = await response.json();
+  return Array.isArray(rows) && rows.length > 0 ? (rows[0].site_id ?? "") : "";
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.help) {
@@ -186,18 +218,15 @@ async function main() {
     return;
   }
 
-  const siteId = args["site-id"] ?? process.env.NEXT_PUBLIC_CMS_SITE_ID ?? "";
+  let siteId = args["site-id"] ?? "";
   const supabaseUrl = args["supabase-url"] ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   const apiKey =
     args["api-key"] ??
-    process.env.SUPABASE_SERVICE_ROLE_KEY ??
+    process.env.SUPABASE_SECRET_KEY ??
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
     "";
   const outPath = resolveOutPath(args.out);
 
-  if (!siteId) {
-    throw new Error("Missing site id. Set --site-id or NEXT_PUBLIC_CMS_SITE_ID.");
-  }
   if (!supabaseUrl) {
     throw new Error(
       "Missing Supabase URL. Set --supabase-url or NEXT_PUBLIC_SUPABASE_URL.",
@@ -205,11 +234,26 @@ async function main() {
   }
   if (!apiKey) {
     throw new Error(
-      "Missing API key. Set --api-key or SUPABASE_SERVICE_ROLE_KEY (preferred).",
+      "Missing API key. Set --api-key or SUPABASE_SECRET_KEY (preferred).",
     );
   }
 
   const normalizedUrl = supabaseUrl.replace(/\/+$/, "");
+
+  if (!siteId) {
+    const domain = args.domain ?? hostOf(process.env.NEXT_PUBLIC_SITE_URL);
+    if (!domain) {
+      throw new Error(
+        "Missing site. Pass --site-id, or --domain / NEXT_PUBLIC_SITE_URL so the " +
+          "site can be resolved from site_domains the way the runtime does.",
+      );
+    }
+    siteId = await fetchSiteIdByDomain({ supabaseUrl: normalizedUrl, apiKey, domain });
+    if (!siteId) {
+      throw new Error(`No site in site_domains for domain: ${domain}`);
+    }
+  }
+
   const rows = await fetchPublishedDocuments({
     supabaseUrl: normalizedUrl,
     apiKey,

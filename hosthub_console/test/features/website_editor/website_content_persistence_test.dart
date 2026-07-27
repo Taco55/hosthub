@@ -16,6 +16,9 @@ class FakeWebsiteContentRepository implements WebsiteContentRepository {
   /// When set, the next [saveSourceDraft] throws it (once).
   Object? nextSourceDraftError;
 
+  /// When set, [loadPageContent] throws it instead of returning content.
+  Object? loadError;
+
   @override
   Future<WebsitePageContent> loadPageContent({
     required String siteId,
@@ -23,6 +26,8 @@ class FakeWebsiteContentRepository implements WebsiteContentRepository {
     required List<String> locales,
   }) async {
     loadCalls++;
+    final error = loadError;
+    if (error != null) throw error;
     return content;
   }
 
@@ -64,6 +69,10 @@ class FakeWebsiteContentRepository implements WebsiteContentRepository {
 }
 
 WebsitePageContent _remoteContent() => WebsitePageContent(
+  // The site row carries the authoring language and the enabled locales; a
+  // persistent editor has none of its own until this arrives.
+  sourceLanguage: 'nl',
+  locales: const ['nl', 'en', 'no'],
   source: {
     'hero.headline': 'Titel uit database',
     'hero.subtitle': 'Ondertitel uit database',
@@ -98,6 +107,47 @@ SiteContentCubit _build(FakeWebsiteContentRepository repository) =>
     );
 
 void main() {
+  test('a persistent editor holds no seed content before it loads', () async {
+    final repo = FakeWebsiteContentRepository(content: _remoteContent());
+    final cubit = _build(repo);
+
+    expect(cubit.state.loadStatus, ContentLoadStatus.loading);
+    expect(cubit.state.source, isEmpty);
+    expect(cubit.state.translations, isEmpty);
+    expect(cubit.state.propertyName, isEmpty);
+    // Not the seed's 'Jouw bergwoning in Trysil'.
+    expect(cubit.state.valueFor('nl', 'hero.headline'), isEmpty);
+    await cubit.close();
+  });
+
+  test('a failed load leaves no content to save', () async {
+    final repo = FakeWebsiteContentRepository(content: _remoteContent())
+      ..loadError = StateError('column cms_documents.draft_content missing');
+    final cubit = _build(repo);
+
+    await cubit.loadContent();
+
+    expect(cubit.state.loadStatus, ContentLoadStatus.failed);
+    expect(cubit.state.loadError, isNotNull);
+    expect(cubit.state.source, isEmpty);
+
+    // Whatever the editor does next must not reach the site's documents: the
+    // fields belong to no site, so a save would overwrite the owner's pages.
+    cubit.editSourceField('hero.headline', 'Iets');
+    await cubit.save();
+    expect(repo.sourceDraftSaves, isEmpty);
+
+    await cubit.publishAll();
+    expect(repo.publishes, isEmpty);
+
+    // A retry that succeeds puts the site's own content in.
+    repo.loadError = null;
+    await cubit.loadContent();
+    expect(cubit.state.loadStatus, ContentLoadStatus.ready);
+    expect(cubit.state.valueFor('nl', 'hero.headline'), 'Titel uit database');
+    await cubit.close();
+  });
+
   test(
     'loadContent hydrates source + translations from the repository',
     () async {
@@ -467,6 +517,58 @@ void main() {
       expect((highlights[0] as Map)['description'], 'Direct de pistes op');
       // Titles are not touched by the editor.
       expect((highlights[0] as Map)['title'], 'Ski-in / ski-out');
+    });
+
+    test('a write reaches a path whose containers do not exist yet', () {
+      final content = <String, dynamic>{};
+
+      WebsiteContentRepository.writeField(
+        'hero.headline',
+        'cabin',
+        content,
+        'Titel',
+      );
+      WebsiteContentRepository.writeField(
+        'chalet.experience.2',
+        'cabin',
+        content,
+        'Derde',
+      );
+
+      expect((content['hero'] as Map)['title'], 'Titel');
+      // Rows before the written one exist and are usable, not missing.
+      expect(content['experience'], ['', '', 'Derde']);
+    });
+
+    test('a field key that is not in the mapping is left alone', () {
+      final content = <String, dynamic>{'hero': <String, dynamic>{}};
+
+      WebsiteContentRepository.writeField('nope.at.all', 'cabin', content, 'X');
+      // Also refuses a real field against the wrong document.
+      WebsiteContentRepository.writeField('area.intro', 'cabin', content, 'X');
+
+      expect(content, {'hero': <String, dynamic>{}});
+      expect(
+        WebsiteContentRepository.readField('area.intro', 'cabin', content),
+        isNull,
+      );
+    });
+
+    test('addresses are what the live preview and the site agree on', () {
+      String? addressOf(String fieldKey) =>
+          WebsiteContentRepository.locationOf(fieldKey)?.address;
+
+      expect(addressOf('hero.headline'), 'cabin/main:hero.title');
+      expect(addressOf('hero.subtitle'), 'cabin/main:hero.subtitle');
+      expect(addressOf('chalet.description.0'), 'cabin/main:description.0');
+      expect(addressOf('highlights.2'), 'page/home:highlights.2.description');
+      expect(
+        addressOf('practical.header.title'),
+        'page/practical:header.title',
+      );
+      expect(addressOf('area.intro'), 'page/area:intro');
+      expect(addressOf('contact.title'), 'contact_form/main:title');
+      expect(addressOf('nope'), isNull);
     });
   });
 }

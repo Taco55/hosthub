@@ -77,6 +77,26 @@ class _WebsiteEditorView extends StatelessWidget {
         if (confirmed != true) cubit.closePublish();
       },
       builder: (context, state) {
+        // Until the site's content is in, there is no form to show: an editor
+        // rendering its fallback content beside the real website is how a
+        // failed load turns into copy the owner never wrote (§11i).
+        if (state.loadStatus != ContentLoadStatus.ready) {
+          return StyledWebPageScaffold(
+            decorateLeftPane: true,
+            title: context.s.weBreadcrumbWebsite,
+            showHeader: false,
+            leftChild: state.loadStatus == ContentLoadStatus.loading
+                ? const Center(child: CircularProgressIndicator())
+                : StyledEmptyState(
+                    iconData: Icons.cloud_off_outlined,
+                    title: context.s.weErrorLoadFailed,
+                    description: context.s.weLoadFailedDescription,
+                    actionLabel: context.s.weLoadFailedRetry,
+                    onAction: () =>
+                        context.read<SiteContentCubit>().loadContent(),
+                  ),
+          );
+        }
         return StyledWebPageScaffold(
           // White editor column (design .editcol); preview stays bare.
           decorateLeftPane: true,

@@ -1,11 +1,11 @@
 import "server-only";
 
 import { headers } from "next/headers";
-import { createClient } from "@supabase/supabase-js";
 
 import { getSiteBaseUrl } from "./site-url";
+import { getServiceClient } from "./supabase/service";
 
-export type RuntimeSiteContextSource = "domain_lookup" | "env_default" | "unresolved";
+export type RuntimeSiteContextSource = "domain_lookup" | "unresolved";
 
 export type RuntimeSiteContext = {
   siteId: string | null;
@@ -13,28 +13,6 @@ export type RuntimeSiteContext = {
   baseUrl: string;
   source: RuntimeSiteContextSource;
 };
-
-const DEFAULT_SITE_ID = process.env.NEXT_PUBLIC_CMS_SITE_ID?.trim() ?? "";
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ?? "";
-// Secret key for the server-side domain lookup. Prefer the new Supabase naming
-// (sb_secret_… via SUPABASE_SECRET_KEY); fall back to the legacy service-role env
-// var name for backward compatibility.
-const SUPABASE_SECRET_KEY =
-  process.env.SUPABASE_SECRET_KEY?.trim() ||
-  process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ||
-  "";
-const CMS_DOMAIN_LOOKUP_ENABLED =
-  (process.env.CMS_DOMAIN_LOOKUP_ENABLED ?? "true").toLowerCase() !== "false";
-
-const lookupClient =
-  SUPABASE_URL && SUPABASE_SECRET_KEY
-    ? createClient(SUPABASE_URL, SUPABASE_SECRET_KEY, {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      })
-    : null;
 
 function normalizeForwardedValue(value: string | null): string | null {
   if (!value) return null;
@@ -87,9 +65,8 @@ function resolveProtocol(domain: string | null, forwardedProto: string | null) {
 }
 
 async function findSiteIdByDomain(domain: string): Promise<string | null> {
-  if (!lookupClient || !CMS_DOMAIN_LOOKUP_ENABLED) {
-    return null;
-  }
+  const lookupClient = getServiceClient();
+  if (!lookupClient) return null;
 
   try {
     const { data, error } = await lookupClient
@@ -137,15 +114,10 @@ export async function resolveRuntimeSiteContext(): Promise<RuntimeSiteContext> {
     };
   }
 
-  if (DEFAULT_SITE_ID) {
-    return {
-      siteId: DEFAULT_SITE_ID,
-      domain,
-      baseUrl,
-      source: "env_default",
-    };
-  }
-
+  // No env default any more: the host is what identifies a site, in production
+  // and locally alike (`localhost` is a row in site_domains). A second way to
+  // arrive at a site id is how a console and a preview end up editing and
+  // rendering different sites without anything saying so.
   return {
     siteId: null,
     domain,

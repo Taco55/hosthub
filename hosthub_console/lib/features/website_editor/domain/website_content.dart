@@ -163,11 +163,15 @@ List<EditorFieldDef> effectiveFieldsFor(
 String sourceHashOf(String text) =>
     sha256.convert(utf8.encode(text)).toString();
 
+/// The authoring language assumed before a site has said what its own is
+/// (`sites.default_locale` is authoritative and arrives with the content).
+const String kDefaultSourceLanguage = 'nl';
+
 /// Seed content for the Trysil Panorama Home page (from the design prototype).
 /// Source = `nl`; `en`/`no` are the reference AI translations.
 class WebsiteSeed {
   static const String propertyName = 'Trysil Panorama';
-  static const String sourceLanguage = 'nl';
+  static const String sourceLanguage = kDefaultSourceLanguage;
   static const List<String> locales = ['nl', 'en', 'no'];
 
   static const Map<String, String> languageNames = {

@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Container } from "@/components/site/Container";
 import { HeroCrossfadeBackground } from "@/components/site/HeroCrossfadeBackground";
 import { ParallaxImage } from "@/components/site/Parallax";
+import { cmsField } from "@/lib/cms-field";
 import { getDictionary, type Locale } from "@/lib/i18n";
 import { heroImageSizes, type ResponsiveImage } from "@/lib/responsive-images";
 
@@ -66,11 +67,17 @@ export function Hero({
             <div className="text-xs uppercase tracking-[0.3em] text-white/70">
               {locationShort}
             </div>
-            <h1 className="font-sans text-4xl font-semibold tracking-tight text-[color:rgb(var(--hero-text))] md:text-5xl">
+            <h1
+              className="font-sans text-4xl font-semibold tracking-tight text-[color:rgb(var(--hero-text))] md:text-5xl"
+              {...cmsField("cabin/main", "hero", "title")}
+            >
               {title}
             </h1>
             {subtitle ? (
-              <p className="mx-auto max-w-xl text-base leading-7 text-[color:rgb(var(--hero-subtext))]">
+              <p
+                className="mx-auto max-w-xl text-base leading-7 text-[color:rgb(var(--hero-subtext))]"
+                {...cmsField("cabin/main", "hero", "subtitle")}
+              >
                 {subtitle}
               </p>
             ) : null}

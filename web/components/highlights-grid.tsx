@@ -2,6 +2,7 @@ import Image from "next/image";
 import type { LucideIcon } from "lucide-react";
 
 import { IconBadge } from "@/components/ui/IconBadge";
+import { cmsField } from "@/lib/cms-field";
 import type { ResponsiveImage } from "@/lib/responsive-images";
 
 type HighlightImage = ResponsiveImage & {
@@ -44,7 +45,12 @@ export function HighlightsGrid({ highlights, icons, images }: HighlightsGridProp
                   {highlight.title}
                 </div>
                 {highlight.description ? (
-                  <p className="text-sm text-muted-foreground">{highlight.description}</p>
+                  <p
+                    className="text-sm text-muted-foreground"
+                    {...cmsField("page/home", "highlights", index, "description")}
+                  >
+                    {highlight.description}
+                  </p>
                 ) : null}
               </div>
             </div>

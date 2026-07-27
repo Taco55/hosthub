@@ -9977,6 +9977,26 @@ class S {
     );
   }
 
+  /// `The editor shows no fields until this website's content has loaded.`
+  String get weLoadFailedDescription {
+    return Intl.message(
+      'The editor shows no fields until this website\'s content has loaded.',
+      name: 'weLoadFailedDescription',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Try again`
+  String get weLoadFailedRetry {
+    return Intl.message(
+      'Try again',
+      name: 'weLoadFailedRetry',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Couldn't save your changes — they are kept in the editor`
   String get weErrorSaveFailed {
     return Intl.message(

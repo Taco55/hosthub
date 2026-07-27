@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Snowflake, Sun } from "lucide-react";
 
 import { SectionHeading } from "@/components/section-heading";
+import { cmsFieldAddress } from "@/lib/cms-field";
 import { Container } from "@/components/site/Container";
 import { Card, CardContent } from "@/components/ui/card";
 import { IconBadge } from "@/components/ui/IconBadge";
@@ -34,7 +35,11 @@ export default async function PreviewAreaPage({ params }: PageProps) {
   return (
     <Container className="py-10 lg:py-14">
       <div className="space-y-10">
-        <SectionHeading title={t.pages.area} subtitle={area.intro} />
+        <SectionHeading
+          title={t.pages.area}
+          subtitle={area.intro}
+          subtitleField={cmsFieldAddress("page/area", "intro")}
+        />
         <div className="grid gap-6 md:grid-cols-2">
           {area.sections.map((section, index) => {
             const Icon = icons[index % icons.length];

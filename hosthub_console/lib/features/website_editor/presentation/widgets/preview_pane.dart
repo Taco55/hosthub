@@ -58,7 +58,15 @@ class PreviewPane extends StatelessWidget {
           ? SitePreviewFrameDevice.mobile
           : SitePreviewFrameDevice.desktop,
       expandContent: isLive,
-      child: isLive ? LiveSiteFrame(url: liveUrl) : _SitePreview(state: state),
+      child: isLive
+          ? LiveSiteFrame(
+              url: liveUrl,
+              locale: state.previewLanguage,
+              // The unsaved draft included — the pane says "live preview" and
+              // this is what makes that true.
+              fields: state.previewFieldValues,
+            )
+          : _SitePreview(state: state),
     );
 
     return ColoredBox(

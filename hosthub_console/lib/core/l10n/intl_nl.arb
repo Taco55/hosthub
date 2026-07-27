@@ -1719,6 +1719,8 @@
   "versionFooter": "v{version}",
   "@versionFooter": { "placeholders": { "version": {} } },
   "weErrorLoadFailed": "Kon de website-inhoud niet laden",
+  "weLoadFailedDescription": "De editor toont geen velden zolang de inhoud van deze website niet geladen is.",
+  "weLoadFailedRetry": "Opnieuw proberen",
   "weErrorSaveFailed": "Kon je wijzigingen niet opslaan — ze blijven in de editor staan",
   "weErrorTranslateFailed": "Kon de vertaling niet verversen — de laatste goede versie blijft staan",
   "weErrorResetFailed": "Kon dit veld niet terugzetten naar AI",

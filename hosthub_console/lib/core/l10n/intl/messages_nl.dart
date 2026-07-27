@@ -2276,6 +2276,12 @@ class MessageLookup extends MessageLookupByLibrary {
       "Je hebt niet-opgeslagen wijzigingen",
     ),
     "weLivePreview": MessageLookupByLibrary.simpleMessage("Live voorbeeld"),
+    "weLoadFailedDescription": MessageLookupByLibrary.simpleMessage(
+      "De editor toont geen velden zolang de inhoud van deze website niet geladen is.",
+    ),
+    "weLoadFailedRetry": MessageLookupByLibrary.simpleMessage(
+      "Opnieuw proberen",
+    ),
     "weLocaleSourceBadge": MessageLookupByLibrary.simpleMessage("bron"),
     "weLockedCounter": m82,
     "wePageArea": MessageLookupByLibrary.simpleMessage("Omgeving"),

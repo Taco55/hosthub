@@ -1,39 +1,89 @@
 import type { Locale } from "../i18n";
 import { supabase } from "./client";
+import { getServiceClient } from "./service";
 
-const DEFAULT_CMS_QUERY_TIMEOUT_MS = 1200;
+/**
+ * How long a page waits for the CMS before rendering its fallback content.
+ * A constant, not a setting: it is a rendering deadline, and no deployment has
+ * ever wanted a different one.
+ */
+const CMS_QUERY_TIMEOUT_MS = 1200;
 
-function getCmsQueryTimeoutMs(): number {
-  const raw = process.env.CMS_QUERY_TIMEOUT_MS;
-  if (!raw) return DEFAULT_CMS_QUERY_TIMEOUT_MS;
-
-  const parsed = Number.parseInt(raw, 10);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    return DEFAULT_CMS_QUERY_TIMEOUT_MS;
-  }
-  return parsed;
-}
+const TIMED_OUT = Symbol("cms-query-timeout");
 
 async function raceWithTimeout<T>(
   promise: PromiseLike<T>,
   timeoutMs: number,
-): Promise<T | null> {
+): Promise<T | typeof TIMED_OUT> {
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<null>((resolve) => {
-    timer = setTimeout(() => resolve(null), timeoutMs);
+  const timeout = new Promise<typeof TIMED_OUT>((resolve) => {
+    timer = setTimeout(() => resolve(TIMED_OUT), timeoutMs);
   });
 
   try {
-    return (await Promise.race([promise, timeout])) as T | null;
+    return await Promise.race([promise, timeout]);
   } finally {
     if (timer) clearTimeout(timer);
   }
 }
 
+/** Why a document could not be read. */
+export type DocumentUnavailableReason =
+  | "not_configured"
+  | "no_preview_key"
+  | "timeout"
+  | "error";
+
 /**
- * Fetches a single published CMS document's content from Supabase.
- * Returns `null` when the Supabase client is not configured, the document
- * does not exist, times out, or the query fails.
+ * The outcome of one document read. A miss is not the same thing as a failure:
+ * "there is no document" means the site's fallback content is the right answer,
+ * while "the query failed" means we do not know — and in the preview that
+ * difference is the whole point, so the caller gets to tell them apart instead
+ * of receiving null for both.
+ */
+export type DocumentOutcome<T> =
+  | { status: "ok"; content: T; source: "published" | "draft" }
+  | { status: "missing" }
+  | { status: "unavailable"; reason: DocumentUnavailableReason; detail?: string };
+
+/** One row of the site's document set, as the reading client can see it. */
+export type DocumentIndexEntry = {
+  contentType: string;
+  slug: string;
+  status: string;
+  hasDraft: boolean;
+};
+
+export type DocumentIndexOutcome =
+  | { status: "ok"; entries: DocumentIndexEntry[] }
+  | { status: "unavailable"; reason: DocumentUnavailableReason; detail?: string };
+
+/**
+ * Picks the client for a read.
+ *
+ * Public reads use the anon key. Preview reads need the server-side key: RLS
+ * only exposes `status = 'published'`, so a document the owner never published
+ * is invisible to the anon key — which is exactly what the preview exists to
+ * show. Same shared client as the rest of the server-side reads.
+ */
+function clientFor(includeDrafts: boolean) {
+  if (includeDrafts) {
+    const client = getServiceClient();
+    return client
+      ? { client, reason: null as null }
+      : { client: null, reason: "no_preview_key" as const };
+  }
+  return supabase
+    ? { client: supabase, reason: null as null }
+    : { client: null, reason: "not_configured" as const };
+}
+
+/**
+ * Reads one CMS document from Supabase.
+ *
+ * Public reads see published content only. Preview reads (`includeDrafts`)
+ * prefer the document's `draft_content` when it has one — that is the copy the
+ * owner saved but has not published yet.
  */
 export async function fetchDocument<T>(
   siteId: string,
@@ -41,11 +91,13 @@ export async function fetchDocument<T>(
   slug: string,
   locale: Locale,
   options?: { includeDrafts?: boolean },
-): Promise<T | null> {
-  if (!supabase) return null;
+): Promise<DocumentOutcome<T>> {
+  const includeDrafts = Boolean(options?.includeDrafts);
+  const { client, reason } = clientFor(includeDrafts);
+  if (!client) return { status: "unavailable", reason };
 
   try {
-    let query = supabase
+    let query = client
       .from("cms_documents")
       .select("content, draft_content")
       .eq("site_id", siteId)
@@ -53,27 +105,89 @@ export async function fetchDocument<T>(
       .eq("slug", slug)
       .eq("locale", locale);
 
-    if (!options?.includeDrafts) {
+    if (!includeDrafts) {
       query = query.eq("status", "published");
     }
 
     const result = await raceWithTimeout(
       Promise.resolve(query.maybeSingle()),
-      getCmsQueryTimeoutMs(),
+      CMS_QUERY_TIMEOUT_MS,
     );
-    if (!result) return null;
+    if (result === TIMED_OUT) return { status: "unavailable", reason: "timeout" };
 
     const { data, error } = result;
-    if (error || !data) return null;
+    if (error) {
+      return { status: "unavailable", reason: "error", detail: error.message };
+    }
+    if (!data) return { status: "missing" };
     // A document keeps its unpublished work in `draft_content`; only the
     // preview reads it. Live pages render what was published, which is why a
     // save in the console can no longer change what a guest sees.
-    if (options?.includeDrafts && data.draft_content) {
-      return data.draft_content as T;
+    if (includeDrafts && data.draft_content) {
+      return { status: "ok", content: data.draft_content as T, source: "draft" };
     }
-    return data.content as T;
-  } catch {
-    return null;
+    if (!data.content) return { status: "missing" };
+    return { status: "ok", content: data.content as T, source: "published" };
+  } catch (error) {
+    return {
+      status: "unavailable",
+      reason: "error",
+      detail: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+/**
+ * Lists the site's documents for one locale, as the reading client can see
+ * them. The preview banner uses this to state what it is actually showing:
+ * with the same client and the same RLS path as the reads themselves, so it
+ * cannot claim "loaded from CMS" while the pages render fallback content.
+ */
+export async function fetchDocumentIndex(
+  siteId: string,
+  locale: Locale,
+  options?: { includeDrafts?: boolean },
+): Promise<DocumentIndexOutcome> {
+  const includeDrafts = Boolean(options?.includeDrafts);
+  const { client, reason } = clientFor(includeDrafts);
+  if (!client) return { status: "unavailable", reason };
+
+  try {
+    let query = client
+      .from("cms_documents")
+      .select("content_type, slug, status, draft_content")
+      .eq("site_id", siteId)
+      .eq("locale", locale);
+
+    if (!includeDrafts) {
+      query = query.eq("status", "published");
+    }
+
+    const result = await raceWithTimeout(
+      Promise.resolve(query),
+      CMS_QUERY_TIMEOUT_MS,
+    );
+    if (result === TIMED_OUT) return { status: "unavailable", reason: "timeout" };
+
+    const { data, error } = result;
+    if (error) {
+      return { status: "unavailable", reason: "error", detail: error.message };
+    }
+    return {
+      status: "ok",
+      entries: (data ?? []).map((row) => ({
+        contentType: row.content_type as string,
+        slug: row.slug as string,
+        status: row.status as string,
+        hasDraft: Boolean(row.draft_content),
+      })),
+    };
+  } catch (error) {
+    return {
+      status: "unavailable",
+      reason: "error",
+      detail: error instanceof Error ? error.message : String(error),
+    };
   }
 }
 
@@ -99,10 +213,10 @@ export async function fetchDocuments<T>(
           .eq("locale", locale)
           .eq("status", "published"),
       ),
-      getCmsQueryTimeoutMs(),
+      CMS_QUERY_TIMEOUT_MS,
     );
 
-    if (!result) return [];
+    if (result === TIMED_OUT) return [];
     const { data, error } = result;
     if (error || !data) return [];
     return data.map((row) => row.content as T);

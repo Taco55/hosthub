@@ -36,6 +36,28 @@ class WebsitePageContent {
   final String? previewDomain;
 }
 
+/// Where an editor field lives in the site's content: which document, and the
+/// path inside that document's JSON (object keys as String, list indices as int).
+class EditorFieldLocation {
+  const EditorFieldLocation({
+    required this.contentType,
+    required this.slug,
+    required this.path,
+  });
+
+  final String contentType;
+  final String slug;
+  final List<Object> path;
+
+  /// The field's address as the website knows it, e.g.
+  /// `cabin/main:hero.title` or `page/home:highlights.0.description`.
+  ///
+  /// The live preview speaks this: the console sends values keyed by address,
+  /// and the rendered page carries the same address on the element the value is
+  /// bound to. Neither side needs to know the other's field names.
+  String get address => '$contentType/$slug:${path.join('.')}';
+}
+
 /// Persistence for the website editor. The editor's flat field keys map onto
 /// the site's real CMS documents (the same JSON the public site renders):
 ///
@@ -72,15 +94,76 @@ class WebsiteContentRepository extends SupabaseRepository {
 
   // -- field <-> document JSON mapping ------------------------------------
 
-  static ({String contentType, String slug}) _documentFor(String fieldKey) {
-    if (fieldKey.startsWith('hero.') || fieldKey.startsWith('chalet.')) {
-      return _documents[0];
+  /// Resolves an editor field key to the document and the JSON path inside it.
+  ///
+  /// One table, one lookup: adding a field is a line here plus its
+  /// [EditorFieldDef], not a branch in a read function and a matching branch in
+  /// a write function. `{n}` in a pattern captures the row index of a
+  /// repeatable field and lands in the path at the same position.
+  static const List<({String pattern, int document, List<Object> path})>
+  _fieldPaths = [
+    (pattern: 'hero.headline', document: 0, path: ['hero', 'title']),
+    (pattern: 'hero.subtitle', document: 0, path: ['hero', 'subtitle']),
+    (pattern: 'chalet.description.{n}', document: 0, path: ['description', 0]),
+    (pattern: 'chalet.experience.{n}', document: 0, path: ['experience', 0]),
+    (
+      pattern: 'highlights.{n}',
+      document: 1,
+      path: ['highlights', 0, 'description'],
+    ),
+    (
+      pattern: 'practical.header.title',
+      document: 2,
+      path: ['header', 'title'],
+    ),
+    (
+      pattern: 'practical.header.subtitle',
+      document: 2,
+      path: ['header', 'subtitle'],
+    ),
+    (pattern: 'area.intro', document: 3, path: ['intro']),
+    (pattern: 'contact.title', document: 4, path: ['title']),
+    (pattern: 'contact.subtitle', document: 4, path: ['subtitle']),
+  ];
+
+  /// Where one editor field lives: which document, and the path within its JSON.
+  /// Path segments are object keys (String) or list indices (int).
+  static EditorFieldLocation? locationOf(String fieldKey) {
+    for (final entry in _fieldPaths) {
+      final match = _match(entry.pattern, fieldKey);
+      if (!match.matched) continue;
+      final document = _documents[entry.document];
+      return EditorFieldLocation(
+        contentType: document.contentType,
+        slug: document.slug,
+        path: [
+          for (final segment in entry.path)
+            // The int placeholder in the table is where the row index lands.
+            if (segment is int) match.index ?? segment else segment,
+        ],
+      );
     }
-    if (fieldKey.startsWith('highlights.')) return _documents[1];
-    if (fieldKey.startsWith('practical.')) return _documents[2];
-    if (fieldKey.startsWith('area.')) return _documents[3];
-    if (fieldKey.startsWith('contact.')) return _documents[4];
-    return _documents[1];
+    return null;
+  }
+
+  /// Matches a field key against a pattern. [index] carries the captured row
+  /// number for a `{n}` pattern and is null for a fixed one.
+  static ({bool matched, int? index}) _match(String pattern, String fieldKey) {
+    const noMatch = (matched: false, index: null);
+    final placeholder = pattern.indexOf('{n}');
+    if (placeholder == -1) {
+      return pattern == fieldKey ? (matched: true, index: null) : noMatch;
+    }
+    final prefix = pattern.substring(0, placeholder);
+    if (!fieldKey.startsWith(prefix)) return noMatch;
+    final index = int.tryParse(fieldKey.substring(prefix.length));
+    return index == null ? noMatch : (matched: true, index: index);
+  }
+
+  static ({String contentType, String slug}) _documentFor(String fieldKey) {
+    final location = locationOf(fieldKey);
+    if (location == null) return _documents[1];
+    return (contentType: location.contentType, slug: location.slug);
   }
 
   static String _documentKeyOf(({String contentType, String slug}) doc) =>
@@ -91,40 +174,75 @@ class WebsiteContentRepository extends SupabaseRepository {
     String contentType,
     Map<String, dynamic> content,
   ) {
-    if (fieldKey == 'hero.headline' && contentType == 'cabin') {
-      return ((content['hero'] as Map<String, dynamic>?)?['title']) as String?;
-    }
-    if (fieldKey == 'hero.subtitle' && contentType == 'cabin') {
-      return ((content['hero'] as Map<String, dynamic>?)?['subtitle'])
-          as String?;
-    }
-    if (fieldKey.startsWith('highlights.') && contentType == 'page') {
-      final index = int.tryParse(fieldKey.split('.').last);
-      final highlights = content['highlights'] as List<dynamic>?;
-      if (index == null || highlights == null || index >= highlights.length) {
-        return null;
+    final location = locationOf(fieldKey);
+    if (location == null || location.contentType != contentType) return null;
+    return _readPath(content, location.path);
+  }
+
+  /// Reads a JSON path, stopping at the first segment that is not there.
+  static String? _readPath(Object? node, List<Object> path) {
+    var current = node;
+    for (final segment in path) {
+      if (segment is int) {
+        if (current is! List || segment >= current.length) return null;
+        current = current[segment];
+      } else {
+        if (current is! Map) return null;
+        current = current[segment];
       }
-      return (highlights[index] as Map<String, dynamic>?)?['description']
-          as String?;
     }
-    if (fieldKey.startsWith('chalet.') && contentType == 'cabin') {
-      final parts = fieldKey.split('.'); // chalet.<list>.<index>
-      final list = content[parts[1]] as List<dynamic>?;
-      final index = int.tryParse(parts[2]);
-      if (list == null || index == null || index >= list.length) return null;
-      return list[index] as String?;
+    return current is String ? current : null;
+  }
+
+  /// Writes a JSON path, creating the objects and list entries it runs through.
+  /// Lists grow to fit the index; the filler matches what the next segment
+  /// needs, so a row added at the end is a usable row and not a type error.
+  static void _writePath(
+    Map<String, dynamic> content,
+    List<Object> path,
+    String value,
+  ) {
+    Object container = content;
+    for (var i = 0; i < path.length - 1; i++) {
+      final segment = path[i];
+      final nextIsIndex = path[i + 1] is int;
+      final child = nextIsIndex ? <dynamic>[] : <String, dynamic>{};
+      if (segment is int) {
+        final list = container as List<dynamic>;
+        while (list.length <= segment) {
+          list.add(nextIsIndex ? <dynamic>[] : <String, dynamic>{});
+        }
+        list[segment] = _coerce(list[segment], child);
+        container = list[segment] as Object;
+      } else {
+        final key = segment as String;
+        final map = container as Map<String, dynamic>;
+        map[key] = _coerce(map[key], child);
+        container = map[key] as Object;
+      }
     }
-    if (fieldKey.startsWith('practical.header.') && contentType == 'page') {
-      final header = content['header'] as Map<String, dynamic>?;
-      return header?[fieldKey.split('.').last] as String?;
+
+    final last = path.last;
+    if (last is int) {
+      final list = container as List<dynamic>;
+      while (list.length <= last) {
+        list.add('');
+      }
+      list[last] = value;
+    } else {
+      (container as Map<String, dynamic>)[last as String] = value;
     }
-    if (fieldKey == 'area.intro' && contentType == 'page') {
-      return content['intro'] as String?;
+  }
+
+  /// Keeps an existing container of the right shape, replaces anything else.
+  static Object _coerce(Object? existing, Object empty) {
+    if (empty is List<dynamic> && existing is List) {
+      return List<dynamic>.from(existing);
     }
-    if (fieldKey.startsWith('contact.') && contentType == 'contact_form') {
-      return content[fieldKey.split('.').last] as String?;
+    if (empty is Map<String, dynamic> && existing is Map) {
+      return Map<String, dynamic>.from(existing);
     }
-    return null;
+    return empty;
   }
 
   /// The fields a write carries when the document has to be created.
@@ -176,61 +294,9 @@ class WebsiteContentRepository extends SupabaseRepository {
     Map<String, dynamic> content,
     String value,
   ) {
-    if (contentType == 'cabin' && fieldKey.startsWith('hero.')) {
-      final hero = Map<String, dynamic>.from(
-        content['hero'] as Map<String, dynamic>? ?? {},
-      );
-      hero[fieldKey == 'hero.headline' ? 'title' : 'subtitle'] = value;
-      content['hero'] = hero;
-      return;
-    }
-    if (contentType == 'page' && fieldKey.startsWith('highlights.')) {
-      final index = int.tryParse(fieldKey.split('.').last);
-      if (index == null) return;
-      final highlights = List<dynamic>.from(
-        content['highlights'] as List<dynamic>? ?? [],
-      );
-      while (highlights.length <= index) {
-        highlights.add(<String, dynamic>{});
-      }
-      final item = Map<String, dynamic>.from(
-        highlights[index] as Map<String, dynamic>? ?? {},
-      );
-      item['description'] = value;
-      highlights[index] = item;
-      content['highlights'] = highlights;
-      return;
-    }
-    if (contentType == 'cabin' && fieldKey.startsWith('chalet.')) {
-      final parts = fieldKey.split('.'); // chalet.<list>.<index>
-      final index = int.tryParse(parts[2]);
-      if (index == null) return;
-      final list = List<dynamic>.from(
-        content[parts[1]] as List<dynamic>? ?? [],
-      );
-      while (list.length <= index) {
-        list.add('');
-      }
-      list[index] = value;
-      content[parts[1]] = list;
-      return;
-    }
-    if (contentType == 'page' && fieldKey.startsWith('practical.header.')) {
-      final header = Map<String, dynamic>.from(
-        content['header'] as Map<String, dynamic>? ?? {},
-      );
-      header[fieldKey.split('.').last] = value;
-      content['header'] = header;
-      return;
-    }
-    if (contentType == 'page' && fieldKey == 'area.intro') {
-      content['intro'] = value;
-      return;
-    }
-    if (contentType == 'contact_form' && fieldKey.startsWith('contact.')) {
-      content[fieldKey.split('.').last] = value;
-      return;
-    }
+    final location = locationOf(fieldKey);
+    if (location == null || location.contentType != contentType) return;
+    _writePath(content, location.path, value);
   }
 
   // -- loading -------------------------------------------------------------

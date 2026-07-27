@@ -2173,6 +2173,10 @@ class MessageLookup extends MessageLookupByLibrary {
       "You have unsaved changes",
     ),
     "weLivePreview": MessageLookupByLibrary.simpleMessage("Live preview"),
+    "weLoadFailedDescription": MessageLookupByLibrary.simpleMessage(
+      "The editor shows no fields until this website\'s content has loaded.",
+    ),
+    "weLoadFailedRetry": MessageLookupByLibrary.simpleMessage("Try again"),
     "weLocaleSourceBadge": MessageLookupByLibrary.simpleMessage("source"),
     "weLockedCounter": m82,
     "wePageArea": MessageLookupByLibrary.simpleMessage("Area"),

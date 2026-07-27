@@ -4,6 +4,7 @@ import { useRef, useState, type FormEvent } from "react";
 
 import { SectionHeading } from "@/components/section-heading";
 import { Container } from "@/components/site/Container";
+import { cmsFieldAddress } from "@/lib/cms-field";
 import type { ContactFormSectionContent } from "@/lib/content";
 
 type ContactFormSectionProps = {
@@ -75,7 +76,13 @@ export function ContactFormSection({ content }: ContactFormSectionProps) {
       <Container>
         <div className="space-y-8">
           <div className="mx-auto max-w-3xl space-y-3 text-center">
-            <SectionHeading title={content.title} align="center" />
+            <SectionHeading
+              title={content.title}
+              align="center"
+              titleField={cmsFieldAddress("contact_form/main", "title")}
+            />
+            {/* The subtitle carries a linked email address, so it is not a
+                single text node — the live preview leaves it to a save. */}
             <div className="prose mx-auto text-base leading-7 text-slate-600">
               <p>{subtitleNodes}</p>
             </div>
