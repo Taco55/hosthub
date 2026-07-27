@@ -87,7 +87,8 @@ class _SiteContentBody extends StatelessWidget {
         pickByLocale(state.selectedLocale) ??
         pickByLocale(state.site?.defaultLocale) ??
         siteConfigDocs.first;
-    final rawName = preferredDoc.content['name'];
+    // The page title follows what the owner is editing, draft included.
+    final rawName = preferredDoc.editableContent['name'];
     if (rawName is! String) return null;
     final trimmed = rawName.trim();
     return trimmed.isEmpty ? null : trimmed;
@@ -450,7 +451,7 @@ class _ContentSection extends StatelessWidget {
                   ),
                 Padding(
                   padding: const EdgeInsets.only(left: 8),
-                  child: _StatusBadge(status: doc.status),
+                  child: _StatusBadge(document: doc),
                 ),
                 // Version history button
                 Padding(
@@ -489,12 +490,16 @@ class _ContentSection extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _StatusBadge extends StatelessWidget {
-  const _StatusBadge({required this.status});
-  final String status;
+  const _StatusBadge({required this.document});
+  final ContentDocument document;
 
   @override
   Widget build(BuildContext context) {
-    final isPublished = status == 'published';
+    // "Published" means there is nothing waiting: a document that is live but
+    // carries a saved draft still has work the reader has not seen. That used
+    // to be the same thing as `status`, because saving flipped the status —
+    // now the draft lives in its own column, so the badge asks for both.
+    final isPublished = document.status == 'published' && !document.hasDraft;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(

@@ -47,7 +47,7 @@ export async function fetchDocument<T>(
   try {
     let query = supabase
       .from("cms_documents")
-      .select("content")
+      .select("content, draft_content")
       .eq("site_id", siteId)
       .eq("content_type", contentType)
       .eq("slug", slug)
@@ -65,6 +65,12 @@ export async function fetchDocument<T>(
 
     const { data, error } = result;
     if (error || !data) return null;
+    // A document keeps its unpublished work in `draft_content`; only the
+    // preview reads it. Live pages render what was published, which is why a
+    // save in the console can no longer change what a guest sees.
+    if (options?.includeDrafts && data.draft_content) {
+      return data.draft_content as T;
+    }
     return data.content as T;
   } catch {
     return null;

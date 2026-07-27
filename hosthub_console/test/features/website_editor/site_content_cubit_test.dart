@@ -14,31 +14,39 @@ void main() {
       expect(s.previewLanguage, 'nl');
       expect(s.isSourceMode, isTrue);
       expect(s.dirty, isFalse);
+      expect(s.unsavedChanges, isFalse);
       expect(s.staleLanguages, isEmpty);
       expect(s.valueFor('en', 'hero.headline'), 'Your mountain home in Trysil');
       expect(s.lockedFieldCount('en'), 0);
     });
 
-    test('editing source marks dependent auto fields stale, leaves locked', () {
-      final cubit = build();
-      // Lock the subtitle in EN so it must survive a source edit.
-      cubit.editTranslationField('en', 'hero.subtitle', 'Locked subtitle');
+    test(
+      'editing source marks dependent auto fields stale, leaves locked',
+      () async {
+        final cubit = build();
+        // Lock the subtitle in EN so it must survive a source edit.
+        cubit.editTranslationField('en', 'hero.subtitle', 'Locked subtitle');
 
-      cubit.editSourceField('hero.headline', 'Nieuwe titel');
+        cubit.editSourceField('hero.headline', 'Nieuwe titel');
+        // Staleness follows the *saved* source: what is still in the fields has
+        // not been translated from, so it cannot have made anything stale.
+        expect(cubit.state.staleLanguages, isEmpty);
+        await cubit.save();
 
-      final s = cubit.state;
-      expect(s.dirty, isTrue);
-      // The auto headline is now stale in every target language.
-      expect(s.isFieldStale('en', 'hero.headline'), isTrue);
-      expect(s.isFieldStale('no', 'hero.headline'), isTrue);
-      expect(s.staleLanguages, containsAll(<String>['en', 'no']));
-      // The locked subtitle is never stale.
-      expect(s.isFieldStale('en', 'hero.subtitle'), isFalse);
-      expect(
-        s.translatedField('en', 'hero.subtitle')!.status,
-        FieldTranslationStatus.locked,
-      );
-    });
+        final s = cubit.state;
+        expect(s.dirty, isTrue);
+        // The auto headline is now stale in every target language.
+        expect(s.isFieldStale('en', 'hero.headline'), isTrue);
+        expect(s.isFieldStale('no', 'hero.headline'), isTrue);
+        expect(s.staleLanguages, containsAll(<String>['en', 'no']));
+        // The locked subtitle is never stale.
+        expect(s.isFieldStale('en', 'hero.subtitle'), isFalse);
+        expect(
+          s.translatedField('en', 'hero.subtitle')!.status,
+          FieldTranslationStatus.locked,
+        );
+      },
+    );
 
     test('editing a translation field locks it', () {
       final cubit = build();
@@ -48,13 +56,16 @@ void main() {
       final field = cubit.state.translatedField('en', 'hero.headline')!;
       expect(field.status, FieldTranslationStatus.locked);
       expect(field.value, 'My own headline');
-      expect(cubit.state.dirty, isTrue);
+      // Typing is a draft, not a save and not a publishable change.
+      expect(cubit.state.unsavedChanges, isTrue);
+      expect(cubit.state.dirty, isFalse);
     });
 
     test('translateNow refreshes only auto fields and clears stale', () async {
       final cubit = build();
       cubit.editTranslationField('en', 'hero.subtitle', 'Locked subtitle');
       cubit.editSourceField('hero.headline', 'Nieuwe titel');
+      await cubit.save();
       expect(cubit.state.isLanguageStale('en'), isTrue);
 
       await cubit.translateNow(['en']);
@@ -93,6 +104,7 @@ void main() {
     test('publishAll clears dirty and stale for all languages', () async {
       final cubit = build();
       cubit.editSourceField('hero.headline', 'Nieuwe titel');
+      await cubit.save();
       expect(cubit.state.dirty, isTrue);
       expect(cubit.state.staleLanguages, isNotEmpty);
 
@@ -137,6 +149,7 @@ void main() {
       final cubit = build();
       // Editing a chalet source field marks EN stale even while Home is open.
       cubit.editSourceField('chalet.experience.0', 'Nieuwe ervaring');
+      await cubit.save();
       expect(cubit.state.pageKey, 'home');
       expect(cubit.state.isLanguageStale('en'), isTrue);
 
@@ -162,9 +175,25 @@ void main() {
         cubit.state.translatedField('en', 'highlights.2')!.status,
         FieldTranslationStatus.auto,
       );
-      expect(cubit.state.dirty, isTrue);
+      expect(cubit.state.unsavedChanges, isTrue);
       // The new empty row is fresh, not stale.
       expect(cubit.state.isFieldStale('en', 'highlights.2'), isFalse);
+    });
+
+    test('an added row survives being typed into and emptied again', () {
+      // The row only exists in the draft, so "back to the saved value" must not
+      // be allowed to delete a key the saved layer never had.
+      final cubit = build();
+      cubit.addHighlight();
+
+      cubit.editSourceField('highlights.2', 'Iets');
+      cubit.editSourceField('highlights.2', '');
+
+      expect(
+        cubit.state.fields.where((f) => f.card == EditorCard.highlights),
+        hasLength(3),
+      );
+      expect(cubit.state.unsavedChanges, isTrue);
     });
 
     test('reorderHighlights moves rows in every language incl. status', () {
@@ -187,10 +216,10 @@ void main() {
       final moved = cubit.state.translatedField('en', 'highlights.1')!;
       expect(moved.value, 'Locked first');
       expect(moved.status, FieldTranslationStatus.locked);
-      expect(cubit.state.dirty, isTrue);
+      expect(cubit.state.unsavedChanges, isTrue);
     });
 
-    test('the locked counter is what the lane header reports', () {
+    test('the locked counter is what the lane header reports', () async {
       // §11g: "% translated" can only read 100% once translation is automatic,
       // so the lane counts the fields the owner took over instead.
       final cubit = build();
@@ -203,6 +232,7 @@ void main() {
       // Editing the source makes a field stale; it does not make it "not
       // yours" — the counter is about ownership, not freshness.
       cubit.editSourceField('hero.subtitle', 'Nieuwe ondertitel');
+      await cubit.save();
       expect(cubit.state.lockedFieldCount('en'), 1);
       expect(cubit.state.isLanguageStale('en'), isTrue);
     });
@@ -242,6 +272,7 @@ void main() {
       // trigger to press, and no eager translate on every source save.
       final cubit = build();
       cubit.editSourceField('hero.headline', 'Nieuwe titel');
+      await cubit.save();
       expect(cubit.state.isLanguageStale('en'), isTrue);
 
       cubit.setPreviewLanguage('en');
@@ -258,6 +289,7 @@ void main() {
       // that is stale or empty.
       final cubit = build();
       cubit.editSourceField('hero.headline', 'Nieuwe titel');
+      await cubit.save();
       expect(cubit.state.staleLanguages, {'en', 'no'});
       expect(cubit.state.reviewedLanguages, isEmpty);
 
@@ -286,6 +318,131 @@ void main() {
       final field = cubit.state.translatedField('en', 'hero.subtitle')!;
       expect(field.status, FieldTranslationStatus.locked);
       expect(field.value, before);
+    });
+  });
+
+  group('SiteContentCubit — explicit save (§11i)', () {
+    test('editField writes the draft only and leaves saved untouched', () {
+      final cubit = build();
+      final savedSource = cubit.state.source['hero.headline'];
+
+      cubit.editSourceField('hero.headline', 'Half getypte zin');
+      cubit.editTranslationField('en', 'hero.subtitle', 'Half typed line');
+
+      final s = cubit.state;
+      // What the fields show.
+      expect(s.valueFor('nl', 'hero.headline'), 'Half getypte zin');
+      expect(s.valueFor('en', 'hero.subtitle'), 'Half typed line');
+      // What publish and translation would read.
+      expect(s.source['hero.headline'], savedSource);
+      expect(s.savedValueFor('en', 'hero.subtitle'), isNot('Half typed line'));
+      expect(
+        s.savedTranslatedField('en', 'hero.subtitle')!.status,
+        FieldTranslationStatus.auto,
+      );
+      expect(s.unsavedChanges, isTrue);
+      expect(s.dirty, isFalse);
+    });
+
+    test('typing a value back to the saved one is not an unsaved change', () {
+      final cubit = build();
+      final saved = cubit.state.source['hero.headline']!;
+
+      cubit.editSourceField('hero.headline', 'Iets anders');
+      expect(cubit.state.unsavedChanges, isTrue);
+
+      cubit.editSourceField('hero.headline', saved);
+      expect(cubit.state.unsavedChanges, isFalse);
+    });
+
+    test(
+      'save merges the draft into saved, clears it and sets dirty',
+      () async {
+        final cubit = build();
+        cubit.editSourceField('hero.headline', 'Nieuwe titel');
+        cubit.editTranslationField('en', 'hero.subtitle', 'Mine');
+
+        await cubit.save();
+
+        final s = cubit.state;
+        expect(s.unsavedChanges, isFalse);
+        expect(s.draftSource, isEmpty);
+        expect(s.draftTranslations, isEmpty);
+        expect(s.source['hero.headline'], 'Nieuwe titel');
+        expect(s.savedValueFor('en', 'hero.subtitle'), 'Mine');
+        expect(
+          s.savedTranslatedField('en', 'hero.subtitle')!.status,
+          FieldTranslationStatus.locked,
+        );
+        expect(s.dirty, isTrue);
+        expect(s.saving, isFalse);
+        expect(s.lastSavedAt, isNotNull);
+      },
+    );
+
+    test('saving one language also commits a draft left in another', () async {
+      final cubit = build();
+      cubit.editTranslationField('en', 'hero.headline', 'English draft');
+      cubit.setPreviewLanguage('no');
+      cubit.editTranslationField('no', 'hero.headline', 'Norsk utkast');
+
+      await cubit.save();
+
+      expect(cubit.state.unsavedChanges, isFalse);
+      expect(cubit.state.savedValueFor('en', 'hero.headline'), 'English draft');
+      expect(cubit.state.savedValueFor('no', 'hero.headline'), 'Norsk utkast');
+    });
+
+    test('discard drops the draft for every language', () {
+      final cubit = build();
+      final savedHeadline = cubit.state.valueFor('nl', 'hero.headline');
+      final savedEnglish = cubit.state.valueFor('en', 'hero.headline');
+      cubit.editSourceField('hero.headline', 'Weg hiermee');
+      cubit.editTranslationField('en', 'hero.headline', 'Gone');
+      cubit.editTranslationField('no', 'hero.subtitle', 'Borte');
+
+      cubit.discardDraft();
+
+      final s = cubit.state;
+      expect(s.unsavedChanges, isFalse);
+      expect(s.valueFor('nl', 'hero.headline'), savedHeadline);
+      expect(s.valueFor('en', 'hero.headline'), savedEnglish);
+      expect(
+        s.translatedField('en', 'hero.headline')!.status,
+        FieldTranslationStatus.auto,
+      );
+      expect(s.dirty, isFalse);
+    });
+
+    test('publish is rejected while a draft exists', () async {
+      final cubit = build();
+      cubit.editSourceField('hero.headline', 'Nog niet af');
+
+      cubit.openPublish();
+      expect(cubit.state.publishOpen, isFalse);
+
+      await cubit.publishAll();
+
+      // Nothing shipped, nothing saved on the owner's behalf.
+      expect(cubit.state.unsavedChanges, isTrue);
+      expect(cubit.state.source['hero.headline'], isNot('Nog niet af'));
+      expect(cubit.state.lastSavedAt, isNull);
+    });
+
+    test('translation reads the saved layer, never the draft', () async {
+      final cubit = build();
+      // A draft in EN must not be overwritten by machine output, and the source
+      // it would be translated from is the saved text, not what is being typed.
+      cubit.editTranslationField('en', 'hero.headline', 'My own headline');
+      cubit.editSourceField('hero.subtitle', 'Half getypte ondertitel');
+
+      await cubit.translateNow(['en']);
+
+      expect(cubit.state.valueFor('en', 'hero.headline'), 'My own headline');
+      expect(
+        cubit.state.savedValueFor('en', 'hero.subtitle'),
+        isNot(contains('Half getypte')),
+      );
     });
   });
 }

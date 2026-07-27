@@ -127,6 +127,49 @@ class WebsiteContentRepository extends SupabaseRepository {
     return null;
   }
 
+  /// The fields a write carries when the document has to be created.
+  ///
+  /// Blank values are dropped: a document that exists shadows the site's
+  /// fallback content, so creating one out of empty fields would replace the
+  /// live page with empty headings. A document only comes into existence once
+  /// there is something to put in it.
+  static Map<String, String> fieldsForNewDocument(Map<String, String> fields) =>
+      {
+        for (final entry in fields.entries)
+          if (entry.value.trim().isNotEmpty) entry.key: entry.value,
+      };
+
+  /// The columns a save or a publish writes.
+  ///
+  /// Saving touches `draft_content` and nothing else: `content` and `status`
+  /// stay exactly as they are, so the page a guest sees does not change while
+  /// the owner is working. Publishing promotes the draft into `content`, clears
+  /// the draft layer and marks the document published.
+  ///
+  /// A document being created ([isNewDocument]) also needs a `content` and a
+  /// `status`: it starts unpublished, because the public site reads `status`
+  /// and a half-filled new document must not shadow the site's fallback
+  /// content before anyone published it.
+  static Map<String, dynamic> documentWrite({
+    required Map<String, dynamic> content,
+    required bool publish,
+    required String? userId,
+    bool isNewDocument = false,
+  }) {
+    return {
+      if (publish) ...{
+        'content': content,
+        'draft_content': null,
+        'status': 'published',
+        'published_at': DateTime.now().toUtc().toIso8601String(),
+      } else ...{
+        'draft_content': content,
+        if (isNewDocument) ...{'content': content, 'status': 'draft'},
+      },
+      'updated_by': userId,
+    };
+  }
+
   static void writeField(
     String fieldKey,
     String contentType,
@@ -227,13 +270,17 @@ class WebsiteContentRepository extends SupabaseRepository {
 
       final documentRows = await supabase
           .from('cms_documents')
-          .select('content_type, slug, locale, content')
+          .select('content_type, slug, locale, content, draft_content')
           .eq('site_id', siteId)
           .inFilter('locale', locales);
+      // The editor edits the draft when there is one: what the owner saved but
+      // has not published yet is what they expect to find in the fields.
       final contentByDocLocale = <String, Map<String, dynamic>>{
         for (final row in documentRows as List<dynamic>)
           '${row['content_type']}:${row['slug']}:${row['locale']}':
-              Map<String, dynamic>.from(row['content'] as Map),
+              Map<String, dynamic>.from(
+                (row['draft_content'] ?? row['content']) as Map,
+              ),
       };
 
       String? documentValue(String fieldKey, String locale) {
@@ -317,7 +364,11 @@ class WebsiteContentRepository extends SupabaseRepository {
 
   // -- drafts --------------------------------------------------------------
 
-  /// Writes the source-language fields back into their documents as drafts.
+  /// Writes the source-language fields into their documents' draft layer.
+  ///
+  /// The live page is untouched: the copy goes into `draft_content` and the
+  /// document keeps whatever it is publishing. Saving is not publishing, and it
+  /// is not unpublishing either.
   Future<void> saveSourceDraft({
     required String siteId,
     required String sourceLanguage,
@@ -328,7 +379,7 @@ class WebsiteContentRepository extends SupabaseRepository {
         siteId: siteId,
         locale: sourceLanguage,
         fields: fields,
-        status: 'draft',
+        publish: false,
       );
     } catch (error, stack) {
       throw mapError(
@@ -377,20 +428,28 @@ class WebsiteContentRepository extends SupabaseRepository {
   // -- publish -------------------------------------------------------------
 
   /// Publishes every locale's documents: folds the given values into each
-  /// document's JSON, inserts a version snapshot and marks it published
-  /// (same flow as CmsRepository.publishDocument).
+  /// document's JSON, inserts a version snapshot, marks it published and clears
+  /// the draft layer (same flow as CmsRepository.publishDocument).
+  ///
+  /// The source locale is written first, so a target locale whose document
+  /// does not exist yet can be created from it.
   Future<void> publishAll({
     required String siteId,
+    required String sourceLocale,
     required Map<String, Map<String, String>> valuesByLocale,
   }) async {
     try {
-      for (final entry in valuesByLocale.entries) {
+      final locales = [
+        if (valuesByLocale.containsKey(sourceLocale)) sourceLocale,
+        ...valuesByLocale.keys.where((locale) => locale != sourceLocale),
+      ];
+      for (final locale in locales) {
         await _mergeFieldsIntoDocuments(
           siteId: siteId,
-          locale: entry.key,
-          fields: entry.value,
-          status: 'published',
-          snapshotVersion: true,
+          locale: locale,
+          fields: valuesByLocale[locale]!,
+          publish: true,
+          seedLocale: locale == sourceLocale ? null : sourceLocale,
         );
       }
     } catch (error, stack) {
@@ -403,37 +462,92 @@ class WebsiteContentRepository extends SupabaseRepository {
     }
   }
 
+  /// Folds [fields] into each document's JSON for one locale.
+  ///
+  /// With [publish] false the result lands in `draft_content` and the document
+  /// keeps publishing whatever it publishes now; with [publish] true it becomes
+  /// the document's `content`, gets a version snapshot, and the draft layer is
+  /// cleared. Those two are the whole difference between saving and publishing.
   Future<void> _mergeFieldsIntoDocuments({
     required String siteId,
     required String locale,
     required Map<String, String> fields,
-    required String status,
-    bool snapshotVersion = false,
+    required bool publish,
+    String? seedLocale,
   }) async {
     for (final doc in _documents) {
-      final docFields = {
+      var docFields = {
         for (final entry in fields.entries)
           if (_documentFor(entry.key) == doc) entry.key: entry.value,
       };
       if (docFields.isEmpty) continue;
 
-      final row = await supabase
-          .from('cms_documents')
-          .select('id, content')
-          .eq('site_id', siteId)
-          .eq('content_type', doc.contentType)
-          .eq('slug', doc.slug)
-          .eq('locale', locale)
-          .maybeSingle();
-      if (row == null) continue;
-
-      final content = Map<String, dynamic>.from(row['content'] as Map);
+      final row = await _documentRow(siteId: siteId, doc: doc, locale: locale);
+      // A site whose documents were never provisioned — or a locale enabled
+      // after provisioning — has no row for this document yet. The row is
+      // created rather than skipped: silently dropping the edit is what made
+      // the editor look like it did nothing.
+      if (row == null) {
+        docFields = fieldsForNewDocument(docFields);
+        if (docFields.isEmpty) continue;
+      }
+      // A new target-locale row starts from the source locale's document (as
+      // provisioning does when cloning a site), so it is a complete document
+      // and not just the edited fields.
+      final baseRow =
+          row ??
+          (seedLocale == null
+              ? null
+              : await _documentRow(
+                  siteId: siteId,
+                  doc: doc,
+                  locale: seedLocale,
+                ));
+      // Edits build on the draft when there is one, so two saves in a row do
+      // not lose the first; publishing builds on the same draft.
+      final content = baseRow == null
+          ? <String, dynamic>{}
+          : Map<String, dynamic>.from(
+              (baseRow['draft_content'] ?? baseRow['content']) as Map,
+            );
       docFields.forEach(
         (key, value) => writeField(key, doc.contentType, content, value),
       );
 
-      final documentId = row['id'] as String;
-      if (snapshotVersion) {
+      final String documentId;
+      if (row == null) {
+        final created = await supabase
+            .from('cms_documents')
+            .insert({
+              'site_id': siteId,
+              'content_type': doc.contentType,
+              'slug': doc.slug,
+              'locale': locale,
+              ...documentWrite(
+                content: content,
+                publish: publish,
+                userId: supabase.auth.currentUser?.id,
+                isNewDocument: true,
+              ),
+            })
+            .select('id')
+            .single();
+        documentId = created['id'] as String;
+      } else {
+        documentId = row['id'] as String;
+        await supabase
+            .from('cms_documents')
+            .update(
+              documentWrite(
+                content: content,
+                publish: publish,
+                userId: supabase.auth.currentUser?.id,
+              ),
+            )
+            .eq('id', documentId);
+      }
+
+      if (publish) {
         await supabase.from('cms_document_versions').insert({
           'document_id': documentId,
           'version': 0, // trigger auto-increments
@@ -441,16 +555,22 @@ class WebsiteContentRepository extends SupabaseRepository {
           'published_by': supabase.auth.currentUser?.id,
         });
       }
-      await supabase
-          .from('cms_documents')
-          .update({
-            'content': content,
-            'status': status,
-            'updated_by': supabase.auth.currentUser?.id,
-            if (status == 'published')
-              'published_at': DateTime.now().toUtc().toIso8601String(),
-          })
-          .eq('id', documentId);
     }
+  }
+
+  Future<Map<String, dynamic>?> _documentRow({
+    required String siteId,
+    required ({String contentType, String slug}) doc,
+    required String locale,
+  }) async {
+    final row = await supabase
+        .from('cms_documents')
+        .select('id, content, draft_content')
+        .eq('site_id', siteId)
+        .eq('content_type', doc.contentType)
+        .eq('slug', doc.slug)
+        .eq('locale', locale)
+        .maybeSingle();
+    return row;
   }
 }

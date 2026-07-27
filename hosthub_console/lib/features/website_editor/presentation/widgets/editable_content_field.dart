@@ -42,9 +42,13 @@ class _EditableContentFieldState extends State<EditableContentField> {
   @override
   void didUpdateWidget(covariant EditableContentField oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Adopt external changes only when the field isn't being edited, so a
-    // reset-to-AI / retranslate updates the text without fighting typing.
-    if (widget.value != _controller.text && !_focusNode.hasFocus) {
+    // Adopt a value the cubit changed underneath us — a reset-to-AI, a
+    // retranslate, or a discard that puts the saved text back while the field
+    // still has focus. Typing is never fought: the draft echoes back exactly
+    // what was typed, so the controller already holds it.
+    final changedElsewhere = widget.value != oldWidget.value;
+    if (widget.value != _controller.text &&
+        (changedElsewhere || !_focusNode.hasFocus)) {
       _controller.text = widget.value;
     }
   }

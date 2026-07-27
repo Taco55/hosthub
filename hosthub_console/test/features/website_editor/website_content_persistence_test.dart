@@ -13,6 +13,9 @@ class FakeWebsiteContentRepository implements WebsiteContentRepository {
   final List<(String, String, TranslatedField)> translationSaves = [];
   final List<Map<String, Map<String, String>>> publishes = [];
 
+  /// When set, the next [saveSourceDraft] throws it (once).
+  Object? nextSourceDraftError;
+
   @override
   Future<WebsitePageContent> loadPageContent({
     required String siteId,
@@ -29,6 +32,11 @@ class FakeWebsiteContentRepository implements WebsiteContentRepository {
     required String sourceLanguage,
     required Map<String, String> fields,
   }) async {
+    final error = nextSourceDraftError;
+    if (error != null) {
+      nextSourceDraftError = null;
+      throw error;
+    }
     sourceDraftSaves.add(Map.of(fields));
   }
 
@@ -45,6 +53,7 @@ class FakeWebsiteContentRepository implements WebsiteContentRepository {
   @override
   Future<void> publishAll({
     required String siteId,
+    required String sourceLocale,
     required Map<String, Map<String, String>> valuesByLocale,
   }) async {
     publishes.add(valuesByLocale);
@@ -86,10 +95,7 @@ SiteContentCubit _build(FakeWebsiteContentRepository repository) =>
       translationService: const SeedTranslationService(),
       repository: repository,
       siteId: 'site-1',
-      autosaveDebounce: Duration.zero,
     );
-
-Future<void> _settle() => Future<void>.delayed(const Duration(milliseconds: 5));
 
 void main() {
   test(
@@ -109,26 +115,63 @@ void main() {
     },
   );
 
-  test('source edits autosave a draft (debounced)', () async {
+  test('editing writes nothing until save is called', () async {
     final repo = FakeWebsiteContentRepository(content: _remoteContent());
     final cubit = _build(repo);
     await cubit.loadContent();
 
     cubit.editSourceField('hero.headline', 'Nieuwe titel');
-    await _settle();
+
+    expect(cubit.state.unsavedChanges, isTrue);
+    expect(repo.sourceDraftSaves, isEmpty);
+
+    await cubit.save();
 
     expect(repo.sourceDraftSaves, hasLength(1));
     expect(repo.sourceDraftSaves.single['hero.headline'], 'Nieuwe titel');
+    expect(cubit.state.unsavedChanges, isFalse);
     await cubit.close();
   });
 
-  test('translation edits persist as locked rows', () async {
+  test('closing the editor does not save silently', () async {
+    final repo = FakeWebsiteContentRepository(content: _remoteContent());
+    final cubit = _build(repo);
+    await cubit.loadContent();
+
+    cubit.editSourceField('hero.headline', 'Nieuwe titel');
+    await cubit.close();
+
+    expect(repo.sourceDraftSaves, isEmpty);
+  });
+
+  test('a failed save keeps the edit pending for a retry', () async {
+    final repo = FakeWebsiteContentRepository(content: _remoteContent());
+    final cubit = _build(repo);
+    await cubit.loadContent();
+
+    cubit.editSourceField('hero.headline', 'Nieuwe titel');
+    repo.nextSourceDraftError = StateError('offline');
+    await cubit.save();
+
+    expect(repo.sourceDraftSaves, isEmpty);
+    expect(cubit.state.errorMessage, 'save_failed');
+    expect(cubit.state.saving, isFalse);
+    expect(cubit.state.unsavedChanges, isTrue);
+
+    await cubit.save();
+
+    expect(repo.sourceDraftSaves, hasLength(1));
+    expect(cubit.state.unsavedChanges, isFalse);
+    await cubit.close();
+  });
+
+  test('translation edits persist as locked rows on save', () async {
     final repo = FakeWebsiteContentRepository(content: _remoteContent());
     final cubit = _build(repo);
     await cubit.loadContent();
 
     cubit.editTranslationField('en', 'hero.headline', 'My headline');
-    await _settle();
+    await cubit.save();
 
     expect(repo.translationSaves, hasLength(1));
     final (language, key, field) = repo.translationSaves.single;
@@ -144,6 +187,8 @@ void main() {
     final cubit = _build(repo);
     await cubit.loadContent();
     cubit.editSourceField('hero.headline', 'Nieuwe titel');
+    // Publish ships the saved layer, so there has to be one (§11i).
+    await cubit.save();
 
     await cubit.publishAll();
 
@@ -186,7 +231,7 @@ void main() {
   );
 
   test(
-    'loadContent adopts the preview domain; autosave bumps lastSavedAt',
+    'loadContent adopts the preview domain; saving bumps lastSavedAt',
     () async {
       final base = _remoteContent();
       final repo = FakeWebsiteContentRepository(
@@ -203,10 +248,10 @@ void main() {
       expect(cubit.state.lastSavedAt, isNull);
 
       cubit.editSourceField('hero.headline', 'Nieuwe titel');
-      await _settle();
+      await cubit.save();
 
-      // The debounced autosave flushed and marked the save moment, which the
-      // embedded live preview uses as a cache-busting reload key.
+      // The save marked its moment, which the embedded live preview uses as a
+      // cache-busting reload key.
       expect(cubit.state.lastSavedAt, isNotNull);
       await cubit.close();
     },
@@ -219,11 +264,62 @@ void main() {
     expect(cubit.state.isLanguageStale('en'), isFalse);
 
     cubit.editSourceField('hero.headline', 'Nieuwe titel');
+    // Staleness is measured against the saved source: the translations still
+    // match what was translated from until the edit is committed.
+    expect(cubit.state.isFieldStale('en', 'hero.headline'), isFalse);
+    await cubit.save();
 
     // sha256 source hashes survive hydration, so staleness is detected.
     expect(cubit.state.isFieldStale('en', 'hero.headline'), isTrue);
     expect(cubit.state.isFieldStale('en', 'hero.subtitle'), isFalse);
     await cubit.close();
+  });
+
+  group('what a save and a publish write', () {
+    // The bug this pins: saving used to write the new copy into `content` and
+    // flip `status` to 'draft'. The public site reads `status = published`, so
+    // pressing Save took the live page offline until the owner published.
+    test('a save touches the draft layer only', () {
+      final write = WebsiteContentRepository.documentWrite(
+        content: {'hero': 'Nieuwe titel'},
+        publish: false,
+        userId: 'user-1',
+      );
+
+      expect(write['draft_content'], {'hero': 'Nieuwe titel'});
+      expect(write.containsKey('content'), isFalse);
+      expect(write.containsKey('status'), isFalse);
+      expect(write.containsKey('published_at'), isFalse);
+    });
+
+    test('a publish promotes the draft and clears it', () {
+      final write = WebsiteContentRepository.documentWrite(
+        content: {'hero': 'Nieuwe titel'},
+        publish: true,
+        userId: 'user-1',
+      );
+
+      expect(write['content'], {'hero': 'Nieuwe titel'});
+      expect(write['draft_content'], isNull);
+      expect(write['status'], 'published');
+      expect(write['published_at'], isNotNull);
+    });
+
+    test('a document created by a save starts unpublished', () {
+      final write = WebsiteContentRepository.documentWrite(
+        content: {'hero': 'Nieuwe titel'},
+        publish: false,
+        userId: 'user-1',
+        isNewDocument: true,
+      );
+
+      // The row needs a content and a status to exist at all, but it must not
+      // start out published — that would shadow the site's fallback content
+      // with copy nobody published.
+      expect(write['status'], 'draft');
+      expect(write['content'], {'hero': 'Nieuwe titel'});
+      expect(write['draft_content'], {'hero': 'Nieuwe titel'});
+    });
   });
 
   group('field <-> document JSON mapping', () {
@@ -329,6 +425,23 @@ void main() {
         'Nieuw',
       );
       expect(contact['title'], 'Nieuw');
+    });
+
+    test('a document is only created for fields that carry content', () {
+      // Documents the site never provisioned are created on save — but not out
+      // of blank fields, which would shadow the site's fallback content with
+      // empty headings.
+      expect(
+        WebsiteContentRepository.fieldsForNewDocument({
+          'practical.header.title': 'Praktisch',
+          'practical.header.subtitle': '   ',
+        }),
+        {'practical.header.title': 'Praktisch'},
+      );
+      expect(
+        WebsiteContentRepository.fieldsForNewDocument({'area.intro': ''}),
+        isEmpty,
+      );
     });
 
     test('highlight fields map to page highlights[N].description', () {

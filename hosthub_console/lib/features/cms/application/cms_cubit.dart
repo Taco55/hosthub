@@ -74,9 +74,10 @@ class CmsState extends Equatable {
     );
   }
 
-  /// The effective content for a document: dirty (edited) or persisted.
+  /// The effective content for a document: what is being edited, else the
+  /// saved draft, else what is live.
   Map<String, dynamic> effectiveContent(ContentDocument doc) {
-    return dirtyContent[doc.id] ?? doc.content;
+    return dirtyContent[doc.id] ?? doc.editableContent;
   }
 
   /// Preview URL for opening the website with CMS content.
@@ -354,7 +355,9 @@ class CmsCubit extends Cubit<CmsState> {
   /// Publish a single document (creates version snapshot).
   Future<void> publishDoc(String documentId) async {
     final doc = state.documents.firstWhere((d) => d.id == documentId);
-    final content = state.dirtyContent[documentId] ?? doc.content;
+    // Publishing ships the draft when there is one — that is what the editor
+    // has been showing.
+    final content = state.dirtyContent[documentId] ?? doc.editableContent;
 
     emit(
       state.copyWith(

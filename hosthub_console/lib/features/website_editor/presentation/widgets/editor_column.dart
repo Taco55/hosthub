@@ -503,24 +503,39 @@ class _SaveBar extends StatelessWidget {
     final cubit = context.read<SiteContentCubit>();
     final spacing = context.styledSpacing;
 
-    // §11b: the status line says what *is*, the button says what *happens*.
-    // The old bar could read "Published · all languages" while the banner above
-    // said there were unpublished changes; one of them was lying.
-    final dotColor = state.dirty
-        ? WebsiteStatusColors.auto(context.theme.brightness).foreground
-        : WebsiteStatusColors.locked(context.theme.brightness).foreground;
+    // §11b: the status line says what *is*, the buttons say what *happens*.
+    // Three states, not two: nothing saved yet, saved but not published, and
+    // live. Saving is the owner's action now, so "unsaved" is the one the bar
+    // has to name first — and it is never allowed to read "saved" while the
+    // draft differs from what was written.
+    final unsaved = state.unsavedChanges;
+    final dotColor = switch ((unsaved, state.dirty)) {
+      // Amber while there is something to save, the console's own blue once it
+      // is written but not live, green when everything is published.
+      (true, _) => WebsiteStatusColors.auto(
+        context.theme.brightness,
+      ).foreground,
+      (false, true) => context.colors.primary,
+      (false, false) => WebsiteStatusColors.locked(
+        context.theme.brightness,
+      ).foreground,
+    };
     final targets = state.targetLanguages
         .map((l) => languageName(context, l))
         .join(' & ');
-    final title = state.dirty
-        ? context.s.weStatusDirtyTitle
-        : context.s.weStatusCleanTitle;
-    final body = state.dirty
-        ? context.s.weStatusDirtyBody(targets)
-        : context.s.weStatusCleanBody(
-            languageName(context, state.sourceLanguage),
-            state.targetLanguages.length,
-          );
+    final title = switch ((unsaved, state.dirty)) {
+      (true, _) => context.s.weStatusUnsavedTitle,
+      (false, true) => context.s.weStatusSavedTitle,
+      (false, false) => context.s.weStatusCleanTitle,
+    };
+    final body = switch ((unsaved, state.dirty)) {
+      (true, _) => context.s.weStatusUnsavedBody,
+      (false, true) => context.s.weStatusSavedBody(targets),
+      (false, false) => context.s.weStatusCleanBody(
+        languageName(context, state.sourceLanguage),
+        state.targetLanguages.length,
+      ),
+    };
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -528,71 +543,131 @@ class _SaveBar extends StatelessWidget {
       ),
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 22, vertical: spacing.md),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: EdgeInsets.only(top: spacing.xs + 1),
-              child: Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: dotColor,
-                  shape: BoxShape.circle,
+        child: LayoutBuilder(
+          builder: (context, constraints) => Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: EdgeInsets.only(top: spacing.xs + 1),
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: dotColor,
+                    shape: BoxShape.circle,
+                  ),
                 ),
               ),
-            ),
-            SizedBox(width: spacing.sm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: context.theme.textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: context.colors.onSurface,
+              SizedBox(width: spacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: context.colors.onSurface,
+                      ),
                     ),
-                  ),
-                  Text(
-                    body,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: context.theme.textTheme.bodySmall?.copyWith(
-                      color: context.colors.outline,
+                    Text(
+                      body,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.theme.textTheme.bodySmall?.copyWith(
+                        color: context.colors.outline,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            // §11h: the lock/auto mode is editorial metadata that saves with
-            // the page'context.s autosave, not at publish — so the bar has to show
-            // save state, which it previously didn't at all.
-            if (state.saving || state.lastSavedAt != null) ...[
-              Text(
-                state.saving
-                    ? context.s.weSavingIndicator
-                    : context.s.weSavedIndicator,
-                style: context.theme.textTheme.bodySmall?.copyWith(
-                  color: context.colors.outline,
+                  ],
                 ),
               ),
-              SizedBox(width: spacing.md),
+              // The actions keep their natural size and the status line takes
+              // what is left; when even the actions do not fit — a long
+              // translation in a narrow column — they share the row and their
+              // labels ellipsize, rather than the bar overflowing.
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: (constraints.maxWidth - 8 - spacing.sm).clamp(
+                    0,
+                    double.infinity,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // §11i: while there is a draft the bar offers the two
+                    // actions that resolve it. Both are the owner's — the
+                    // editor neither saves nor discards on its own.
+                    if (unsaved) ...[
+                      Flexible(
+                        child: StyledButton(
+                          title: context.s.weDiscard,
+                          variant: StyledButtonVariant.secondary,
+                          size: StyledButtonSize.compact,
+                          enabled: !state.saving,
+                          onPressed: () => _confirmDiscard(context, cubit),
+                        ),
+                      ),
+                      SizedBox(width: spacing.sm),
+                      Flexible(
+                        child: StyledButton(
+                          title: context.s.weSave,
+                          size: StyledButtonSize.compact,
+                          showLeftIcon: true,
+                          leftIconData: Icons.save_outlined,
+                          enabled: !state.saving,
+                          showProgressIndicatorWhenDisabled: state.saving,
+                          keepEnabledStyleWhenDisabled: true,
+                          onPressed: cubit.save,
+                        ),
+                      ),
+                      SizedBox(width: spacing.sm),
+                    ],
+                    Flexible(
+                      child: Tooltip(
+                        // Dimmed rather than hidden: the owner needs to see
+                        // that publish is the next step, and why it is not
+                        // available yet.
+                        message: unsaved ? context.s.wePublishNeedsSave : '',
+                        child: StyledButton(
+                          // §11a: one button. A split button forced the reader
+                          // to parse the difference between two options, and
+                          // the difference is what *doesn't* happen — the
+                          // hardest thing to put in a label.
+                          title: context.s.wePublish,
+                          size: StyledButtonSize.compact,
+                          showLeftIcon: true,
+                          leftIconData: Icons.publish_outlined,
+                          enabled: !unsaved,
+                          onPressed: cubit.openPublish,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
-            StyledButton(
-              // §11a: one button. A split button forced the reader to parse
-              // the difference between two options, and the difference is what
-              // *doesn't* happen — the hardest thing to put in a label.
-              title: context.s.wePublish,
-              showLeftIcon: true,
-              leftIconData: Icons.publish_outlined,
-              onPressed: cubit.openPublish,
-            ),
-          ],
+          ),
         ),
       ),
+    );
+  }
+
+  /// Discarding throws away wording the owner typed and cannot be undone —
+  /// exactly what the explicit-save model exists to protect — so it asks first.
+  void _confirmDiscard(BuildContext context, SiteContentCubit cubit) {
+    // ignore: discarded_futures — the dialog carries out the discard itself;
+    // there is nothing for the caller to await.
+    showStyledAlertDialog(
+      context,
+      title: context.s.weDiscardTitle,
+      message: context.s.weDiscardMessage,
+      actionText: context.s.weDiscardConfirm,
+      dismissText: context.s.weDiscardCancel,
+      isDestructiveAction: true,
+      onAction: cubit.discardDraft,
     );
   }
 }

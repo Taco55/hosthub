@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 2zsQx3hq4M1ep9EVk6446GbeehkU8LB1geVQglO8h4Iqz6JchzHjGXimPp5YNw2
+\restrict 6EddShIe6QIprFqsXIE5VXBIz0XOIVsTu5BUSEkpyltOgKfdZbXG8mTKGyDSyW7
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -557,11 +557,26 @@ CREATE TABLE public.cms_documents (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_by uuid,
+    draft_content jsonb,
     CONSTRAINT cms_documents_status_check CHECK ((status = ANY (ARRAY['draft'::text, 'published'::text])))
 );
 
 
 ALTER TABLE public.cms_documents OWNER TO postgres;
+
+--
+-- Name: COLUMN cms_documents.content; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.cms_documents.content IS 'The published content. Editing does not touch it — see draft_content.';
+
+
+--
+-- Name: COLUMN cms_documents.draft_content; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.cms_documents.draft_content IS 'Unpublished work in progress. Null when there is none. The public site never reads this; publishing moves it into content and clears it.';
+
 
 --
 -- Name: cms_media; Type: TABLE; Schema: public; Owner: postgres
@@ -1181,6 +1196,13 @@ CREATE TRIGGER set_lodgify_api_keys_updated_at BEFORE UPDATE ON public.lodgify_a
 --
 
 CREATE TRIGGER set_profiles_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- Name: properties set_properties_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER set_properties_updated_at BEFORE UPDATE ON public.properties FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
 
 --
@@ -2014,5 +2036,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON T
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 2zsQx3hq4M1ep9EVk6446GbeehkU8LB1geVQglO8h4Iqz6JchzHjGXimPp5YNw2
+\unrestrict 6EddShIe6QIprFqsXIE5VXBIz0XOIVsTu5BUSEkpyltOgKfdZbXG8mTKGyDSyW7
 

@@ -71,6 +71,7 @@ class ContentDocument {
     required this.content,
     required this.status,
     required this.updatedAt,
+    this.draftContent,
     this.publishedAt,
     this.updatedBy,
   });
@@ -80,11 +81,23 @@ class ContentDocument {
   final String contentType;
   final String slug;
   final String locale;
+
+  /// The published content — what the public site renders.
   final Map<String, dynamic> content;
+
+  /// Unpublished work in progress, or null when there is none. Editors show
+  /// this over [content]; publishing promotes it and clears it.
+  final Map<String, dynamic>? draftContent;
   final String status;
   final DateTime updatedAt;
   final DateTime? publishedAt;
   final String? updatedBy;
+
+  /// What an editor opens: the draft when there is one, else what is live.
+  Map<String, dynamic> get editableContent => draftContent ?? content;
+
+  /// Whether this document has saved changes that are not live yet.
+  bool get hasDraft => draftContent != null;
 
   factory ContentDocument.fromMap(Map<String, dynamic> map) {
     return ContentDocument(
@@ -94,6 +107,9 @@ class ContentDocument {
       slug: map['slug'] as String,
       locale: map['locale'] as String,
       content: Map<String, dynamic>.from(map['content'] as Map),
+      draftContent: map['draft_content'] == null
+          ? null
+          : Map<String, dynamic>.from(map['draft_content'] as Map),
       status: map['status'] as String,
       updatedAt: DateTime.parse(map['updated_at'] as String),
       publishedAt: map['published_at'] == null
@@ -450,7 +466,11 @@ class CmsRepository extends SupabaseRepository {
   // Save / Publish / Versions
   // ---------------------------------------------------------------------------
 
-  /// Saves content as a draft (updates content + sets status to 'draft').
+  /// Saves content into the document's draft layer.
+  ///
+  /// The live page is untouched: saving is not publishing, and it is not
+  /// unpublishing either. Writing the draft into `content` and flipping the
+  /// status is what used to take a published page offline mid-edit.
   Future<void> saveDocumentDraft({
     required String documentId,
     required Map<String, dynamic> content,
@@ -459,8 +479,7 @@ class CmsRepository extends SupabaseRepository {
       await supabase
           .from('cms_documents')
           .update({
-            'content': content,
-            'status': 'draft',
+            'draft_content': content,
             'updated_by': supabase.auth.currentUser?.id,
           })
           .eq('id', documentId);
@@ -474,8 +493,9 @@ class CmsRepository extends SupabaseRepository {
     }
   }
 
-  /// Publishes a document: creates a version snapshot, then sets status to
-  /// 'published'. The version number is auto-incremented by a database trigger.
+  /// Publishes a document: creates a version snapshot, then promotes the
+  /// content and clears the draft layer. The version number is auto-incremented
+  /// by a database trigger.
   Future<void> publishDocument({
     required String documentId,
     required Map<String, dynamic> content,
@@ -495,6 +515,7 @@ class CmsRepository extends SupabaseRepository {
           .from('cms_documents')
           .update({
             'content': content,
+            'draft_content': null,
             'status': 'published',
             'published_at': DateTime.now().toUtc().toIso8601String(),
             'updated_by': userId,

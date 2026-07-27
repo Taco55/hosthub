@@ -20,7 +20,7 @@ class PreviewPane extends StatelessWidget {
   final SiteContentState state;
 
   /// The real website's draft-preview URL for the selected language, with a
-  /// cache-busting save marker so autosaves reload the frame. Null in demo
+  /// cache-busting save marker so a save reloads the frame. Null in demo
   /// mode (no linked site) — the schematic mock renders instead.
   String? get _liveUrl {
     final domain = kCmsPreviewDomain.trim().isNotEmpty

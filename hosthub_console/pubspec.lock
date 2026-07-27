@@ -86,7 +86,7 @@ packages:
       path: "../../../shared/libraries/auth_ui_flutter"
       relative: true
     source: path
-    version: "0.6.2"
+    version: "0.6.3"
   barcode:
     dependency: transitive
     description:
@@ -1078,7 +1078,7 @@ packages:
       path: "../../../shared/libraries/styled_widgets"
       relative: true
     source: path
-    version: "0.9.4+70"
+    version: "0.9.4+71"
   supabase:
     dependency: transitive
     description:

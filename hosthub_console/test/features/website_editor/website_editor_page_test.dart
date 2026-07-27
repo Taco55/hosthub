@@ -263,6 +263,8 @@ void main() {
     );
 
     cubit.editSourceField('hero.headline', 'Nieuwe titel');
+    // Translation follows the saved source, so the ribbon does too.
+    await cubit.save();
     await tester.pumpAndSettle();
 
     // Stale → warning ribbon with a Preview latest action.
@@ -278,6 +280,7 @@ void main() {
   ) async {
     final cubit = await pumpEditor(tester);
     cubit.editSourceField('hero.headline', 'Nieuwe titel');
+    await cubit.save();
     // Opening a language is what reviewing it means.
     cubit.setPreviewLanguage('en');
     cubit.setPreviewLanguage('nl');
@@ -312,6 +315,7 @@ void main() {
   testWidgets('a skipped language is not published', (tester) async {
     final cubit = await pumpEditor(tester);
     cubit.editSourceField('hero.headline', 'Nieuwe titel');
+    await cubit.save();
     await tester.pumpAndSettle();
 
     await cubit.publishAll(skipLanguages: {'no'});
@@ -325,6 +329,7 @@ void main() {
   testWidgets('confirm publish clears dirty + stale', (tester) async {
     final cubit = await pumpEditor(tester);
     cubit.editSourceField('hero.headline', 'Nieuwe titel');
+    await cubit.save();
     await tester.pumpAndSettle();
     expect(cubit.state.dirty, isTrue);
     expect(cubit.state.staleLanguages, isNotEmpty);
@@ -337,5 +342,91 @@ void main() {
     // §11b: the status line says what is — never "published" while dirty.
     expect(find.text('Everything published'), findsOneWidget);
     expect(find.text('Dutch + 2 translations are live'), findsOneWidget);
+  });
+
+  testWidgets('the save bar walks the three states in order', (tester) async {
+    final cubit = await pumpEditor(tester);
+
+    // Clean: publish is the only action.
+    expect(find.text('Everything published'), findsOneWidget);
+    expect(find.text('Save changes'), findsNothing);
+    expect(find.text('Discard'), findsNothing);
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Jouw bergwoning in Trysil'),
+      'Nieuwe titel',
+    );
+    await tester.pumpAndSettle();
+
+    // Unsaved: both actions appear and publish is dimmed, not hidden.
+    expect(find.text('Unsaved changes'), findsOneWidget);
+    expect(
+      find.text('Nothing is saved until you press Save changes'),
+      findsOneWidget,
+    );
+    expect(find.text('Discard'), findsOneWidget);
+    final publish = tester.widget<StyledButton>(
+      find.widgetWithText(StyledButton, 'Publish'),
+    );
+    expect(publish.enabled, isFalse);
+
+    await tester.tap(find.widgetWithText(StyledButton, 'Save changes'));
+    await tester.pumpAndSettle();
+
+    // Saved, not published: the draft actions are gone, publish is live again.
+    expect(find.text('Saved · not published'), findsOneWidget);
+    expect(find.text('Save changes'), findsNothing);
+    expect(
+      tester
+          .widget<StyledButton>(find.widgetWithText(StyledButton, 'Publish'))
+          .enabled,
+      isTrue,
+    );
+    expect(cubit.state.dirty, isTrue);
+  });
+
+  testWidgets('discard asks first, then puts the saved text back', (
+    tester,
+  ) async {
+    final cubit = await pumpEditor(tester);
+    final headline = find.widgetWithText(
+      TextFormField,
+      'Jouw bergwoning in Trysil',
+    );
+    await tester.enterText(headline, 'Toch maar niet');
+    await tester.pumpAndSettle();
+    expect(cubit.state.unsavedChanges, isTrue);
+
+    await tester.tap(find.widgetWithText(StyledButton, 'Discard'));
+    await tester.pumpAndSettle();
+    // Losing typed copy is exactly what this screen protects against, so the
+    // one action that destroys it confirms.
+    expect(find.text('Discard your unsaved changes?'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(StyledButton, 'Discard').last);
+    await tester.pumpAndSettle();
+
+    expect(cubit.state.unsavedChanges, isFalse);
+    // The field shows the saved text again — not just the state behind it.
+    expect(find.text('Jouw bergwoning in Trysil'), findsWidgets);
+    expect(find.text('Toch maar niet'), findsNothing);
+  });
+
+  testWidgets('publish cannot be opened while a draft exists', (tester) async {
+    final cubit = await pumpEditor(tester);
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Jouw bergwoning in Trysil'),
+      'Half af',
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.widgetWithText(StyledButton, 'Publish'),
+      warnIfMissed: false,
+    );
+    await tester.pumpAndSettle();
+
+    expect(cubit.state.publishOpen, isFalse);
+    expect(find.text('What goes live'), findsNothing);
   });
 }

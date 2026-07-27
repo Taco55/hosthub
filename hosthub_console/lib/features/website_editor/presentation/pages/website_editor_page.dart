@@ -4,11 +4,13 @@ import 'package:styled_widgets/styled_widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:hosthub_console/app/shell/application/site_context_cubit.dart';
+import 'package:hosthub_console/app/shell/navigation/navigation_guard_controller.dart';
 import 'package:hosthub_console/core/core.dart';
 import 'package:hosthub_console/core/widgets/foundation/foundation.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 
 import '../../application/site_content_cubit.dart';
+import '../../application/unsaved_changes_warning.dart';
 import '../../data/edge_function_translation_service.dart';
 import '../../data/translation_service.dart';
 import '../../data/website_content_repository.dart';
@@ -25,9 +27,9 @@ class WebsiteEditorPage extends StatelessWidget {
   const WebsiteEditorPage({super.key, this.siteId});
 
   /// When set, the editor is persistent: content hydrates from the site's
-  /// documents + `site_translations`, edits autosave, and translation runs
-  /// through the translate-content Edge Function. Without it the editor runs
-  /// on the in-memory demo seed.
+  /// documents + `site_translations`, edits are written when the owner saves,
+  /// and translation runs through the translate-content Edge Function. Without
+  /// it the editor runs on the in-memory demo seed.
   final String? siteId;
 
   @override
@@ -137,7 +139,11 @@ class _WebsiteEditorView extends StatelessWidget {
       child: view,
     );
 
-    if (siteId == null) return withErrorToasts;
+    // §11i: the draft lives in the cubit and nothing writes it behind the
+    // owner's back, so leaving is the one moment it can be lost silently.
+    final guarded = _UnsavedChangesGuard(child: withErrorToasts);
+
+    if (siteId == null) return guarded;
 
     // The rail's source-language switcher changes sites.default_locale; reload
     // the editor content so the authoring language follows it.
@@ -146,7 +152,81 @@ class _WebsiteEditorView extends StatelessWidget {
           prev.site?.defaultLocale != next.site?.defaultLocale &&
           next.site?.id == siteId,
       listener: (context, _) => context.read<SiteContentCubit>().loadContent(),
-      child: withErrorToasts,
+      child: guarded,
+    );
+  }
+}
+
+/// Keeps an unsaved draft from disappearing without the owner deciding to lose
+/// it (§11i). Three exits, one answer: the side menu asks through
+/// [NavigationGuardController], a route pop asks through [PopScope], and the
+/// browser's own close/back gets the native prompt. None of them saves — the
+/// draft stays in the cubit either way, so "Leave" costs nothing until the tab
+/// itself goes.
+class _UnsavedChangesGuard extends StatefulWidget {
+  const _UnsavedChangesGuard({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_UnsavedChangesGuard> createState() => _UnsavedChangesGuardState();
+}
+
+class _UnsavedChangesGuardState extends State<_UnsavedChangesGuard> {
+  NavigationGuardController? _navigationGuard;
+
+  /// Set once the owner has answered "leave" — the pop that follows must not
+  /// ask the same question again.
+  bool _leaving = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final controller = context.read<NavigationGuardController>();
+    if (identical(controller, _navigationGuard)) return;
+    _navigationGuard?.setGuard(null);
+    _navigationGuard = controller..setGuard(_confirmLeave);
+  }
+
+  @override
+  void dispose() {
+    _navigationGuard?.setGuard(null);
+    setUnsavedChangesWarning(enabled: false);
+    super.dispose();
+  }
+
+  Future<bool> _confirmLeave() async {
+    if (!mounted) return true;
+    if (!context.read<SiteContentCubit>().state.unsavedChanges) return true;
+    final leave = await showStyledAlertDialog(
+      context,
+      title: context.s.weLeaveTitle,
+      message: context.s.weLeaveMessage,
+      actionText: context.s.weLeaveConfirm,
+      dismissText: context.s.weLeaveCancel,
+      isDestructiveAction: true,
+    );
+    return leave ?? false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocListener<SiteContentCubit, SiteContentState>(
+      listenWhen: (prev, next) => prev.unsavedChanges != next.unsavedChanges,
+      listener: (context, state) =>
+          setUnsavedChangesWarning(enabled: state.unsavedChanges),
+      child: BlocBuilder<SiteContentCubit, SiteContentState>(
+        buildWhen: (prev, next) => prev.unsavedChanges != next.unsavedChanges,
+        builder: (context, state) => PopScope(
+          canPop: !state.unsavedChanges || _leaving,
+          onPopInvokedWithResult: (didPop, _) async {
+            if (didPop || !await _confirmLeave() || !mounted) return;
+            setState(() => _leaving = true);
+            Navigator.of(context).pop();
+          },
+          child: widget.child,
+        ),
+      ),
     );
   }
 }
