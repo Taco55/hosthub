@@ -3,11 +3,11 @@
 Config consumed by the `/build-loop` command.
 
 ```
-state: docs-internal/reviews/daily-release-readiness-state.md
-review_prompt: docs-internal/review-prompts/release-readiness-review.md
-analyze_cmd: melos run analyze
-test_cmd: melos run test
-branch: develop
+state: docs-internal/reviews/cms-website-editor-state.md
+review_prompt: docs-internal/review-prompts/cms-website-editor-review.md
+analyze_cmd: cd hosthub_console && fvm flutter analyze
+test_cmd: cd hosthub_console && fvm flutter test
+branch: main
 severities: P0-P2
 fix_skill: regression-first-fix
 ```
