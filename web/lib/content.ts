@@ -3,7 +3,12 @@ import type { Locale } from "./i18n";
 type Localized<T> = Record<Locale, T>;
 
 export type DistanceItem = { label: string; value: string };
-export type AmenityGroup = { title: string; items: string[] };
+export type AmenityGroup = {
+  /** Stable row id (post row-id migration); addresses editor bindings. */
+  id?: string;
+  title: string;
+  items: string[];
+};
 export type PolicyBlock = { title: string; items: string[] };
 
 export type CabinContent = {

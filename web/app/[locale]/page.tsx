@@ -3,6 +3,7 @@ import { Eye, Flame, MountainSnow, Users } from "lucide-react";
 
 import { GalleryPreview } from "@/components/gallery-preview";
 import { HighlightsGrid } from "@/components/highlights-grid";
+import { HouseRules } from "@/components/site/HouseRules";
 import { ContactFormSection } from "@/components/home/ContactFormSection";
 import { SectionHeading } from "@/components/section-heading";
 import { AmenitiesGrouped } from "@/components/site/AmenitiesGrouped";
@@ -157,7 +158,11 @@ export default async function HomePage({ params }: PageProps) {
             href={`/${locale}/gallery`}
             images={images}
           />
-          <AmenitiesGrouped title={content.amenities.title} locale={locale} />
+          <AmenitiesGrouped
+            title={content.amenities.title}
+            locale={locale}
+            groups={content.amenities.groups}
+          />
           <LocationBlock
             title={content.location.title}
             locationShort={content.meta.locationShort}
@@ -179,6 +184,17 @@ export default async function HomePage({ params }: PageProps) {
               images={highlightImages}
             />
           </section>
+          {/* README fase 2 par. 0.1: the content and the component were both
+              already here; the page just never showed them. */}
+          <HouseRules
+            title={content.houseRules.title}
+            bullets={content.houseRules.bullets}
+            checkIn={content.houseRules.checkIn}
+            checkOut={content.houseRules.checkOut}
+            cleaningNote={content.houseRules.cleaningNote}
+            wifiNote={content.houseRules.wifiNote}
+            labels={{ checkIn: t.labels.checkIn, checkOut: t.labels.checkOut }}
+          />
         </div>
       </Container>
       <ContactFormSection content={contactForm} />

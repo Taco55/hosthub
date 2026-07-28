@@ -2,11 +2,27 @@ import { SectionHeading } from "@/components/section-heading";
 import { AmenityTile } from "@/components/site/AmenityTile";
 import { amenityRegistry } from "@/lib/amenities/amenityRegistry";
 import { homeAmenityGroups } from "@/lib/amenities/homeAmenities";
+import { cmsField } from "@/lib/cms-field";
 import { getDictionary, type Dictionary, type Locale } from "@/lib/i18n";
+
+type AmenityGroupContent = {
+  id?: string;
+  title: string;
+  items: string[];
+};
 
 type AmenitiesGroupedProps = {
   title: string;
   locale: Locale;
+  /**
+   * Groups from the CMS document. The owner writes these (README fase 2
+   * par. 0.1: the items moved out of the repo so the card is editable and not
+   * just its heading), and `homeAmenities.ts` is what seeded them.
+   *
+   * Empty or absent falls back to that seed, so a site whose document has not
+   * been filled yet still renders.
+   */
+  groups?: AmenityGroupContent[];
 };
 
 function resolveLabel(dictionary: Dictionary, key: string) {
@@ -14,29 +30,44 @@ function resolveLabel(dictionary: Dictionary, key: string) {
   return typeof value === "string" ? value : key;
 }
 
-export function AmenitiesGrouped({ title, locale }: AmenitiesGroupedProps) {
+export function AmenitiesGrouped({ title, locale, groups }: AmenitiesGroupedProps) {
   const t = getDictionary(locale);
+
+  const resolved: AmenityGroupContent[] =
+    groups && groups.length > 0
+      ? groups
+      : homeAmenityGroups.map((group) => ({
+          title: resolveLabel(t, group.titleKey),
+          items: group.items.map((itemId) =>
+            resolveLabel(t, amenityRegistry[itemId].labelKey),
+          ),
+        }));
 
   return (
     <section className="space-y-6 text-center">
       <SectionHeading title={title} align="center" />
       <div className="space-y-8">
-        {homeAmenityGroups.map((group) => (
-          <div key={group.titleKey} className="space-y-4">
-            <h3 className="text-lg font-semibold text-[color:rgb(var(--heading-warm-light))]">
-              {resolveLabel(t, group.titleKey)}
+        {resolved.map((group, groupIndex) => (
+          <div key={group.id ?? group.title} className="space-y-4">
+            <h3
+              className="text-lg font-semibold text-[color:rgb(var(--heading-warm-light))]"
+              {...cmsField(
+                "cabin/main",
+                "amenities",
+                "groups",
+                group.id ?? groupIndex,
+                "title",
+              )}
+            >
+              {group.title}
             </h3>
             <div className="mx-auto grid w-full max-w-3xl grid-cols-2 gap-4 md:grid-cols-4">
-              {group.items.map((itemId) => {
-                const amenity = amenityRegistry[itemId];
-                return (
-                  <AmenityTile
-                    key={amenity.id}
-                    icon={amenity.icon}
-                    label={resolveLabel(t, amenity.labelKey)}
-                  />
-                );
-              })}
+              {group.items.map((item) => (
+                // An item the owner typed cannot carry an icon from a registry
+                // keyed by ids, so every tile gets the same neutral mark. That
+                // is the price of the items being editable at all.
+                <AmenityTile key={item} label={item} />
+              ))}
             </div>
           </div>
         ))}
