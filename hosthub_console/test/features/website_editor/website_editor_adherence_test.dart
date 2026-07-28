@@ -89,4 +89,42 @@ void main() {
           '${offenders.join('\n')}',
     );
   });
+
+  test('raw chrome stays inside the two files that draw a picture', () {
+    // CONFORMANCE fase 2 par. 9: Container/BoxDecoration/Border.all in
+    // features/website_editor/** must be empty outside the existing
+    // exceptions. Those exceptions are the browser and phone bezel
+    // (site_preview_frame) and the schematic site mock (preview_pane): both
+    // draw a picture of something that is not this app's UI, which is exactly
+    // what should not be a product component.
+    const allowed = ['preview_pane.dart', 'site_preview_frame.dart'];
+    final offenders = <String>[];
+    for (final file in dartFiles(featureDir)) {
+      if (allowed.any(file.path.endsWith)) continue;
+      final source = File(file.path).readAsStringSync();
+      final raw = RegExp(r'BoxDecoration\(|Border\.all\(|[^d]Container\(');
+      if (raw.hasMatch(source)) offenders.add(file.path);
+    }
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'Chrome must come from StyledWidgets:\n${offenders.join('\n')}',
+    );
+  });
+
+  test('the fase-2 theme groups are stated in the app preset', () {
+    // Mapping part C: every number the handoff states lives in the preset, so
+    // no card, row or picker in the app repeats one.
+    final preset = File(
+      'lib/core/widgets/foundation/theme/hosthub_diplora_v1_theme_preset.dart',
+    ).readAsStringSync();
+    for (final group in ['repeaters:', 'fieldLists:', 'media:', 'uploads:']) {
+      expect(
+        preset.contains(group),
+        isTrue,
+        reason: 'The preset does not state the $group theme group',
+      );
+    }
+  });
 }

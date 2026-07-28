@@ -453,6 +453,77 @@ abstract final class HosthubThemePreset {
       searchFields: (t) => t.copyWith(
         placeholderColor: HosthubDiploraV1Palette.searchPlaceholder,
       ),
+      // -- fase 2: the field-list pattern (mapping part C) ------------------
+      // Every number the handoff states lives here, so no card, row or picker
+      // in the app repeats one.
+      //
+      // `.repeat{border:1px solid;border-radius:12px;padding:11px 13px;
+      // margin-bottom:9px}` — the same 11/13 the input fields use, so a row
+      // and the field inside it share one rhythm.
+      repeaters: (t) => t.copyWith(
+        rowRadius: 12,
+        rowBorderColor: HosthubDiploraV1Palette.softGrey,
+        rowBackgroundColor: Colors.white,
+        rowPadding: const EdgeInsets.symmetric(vertical: 11, horizontal: 13),
+        rowGap: 9,
+        // `.repeat .grip{color:#b3c2d4}`.
+        handleColor: HosthubDiploraV1Palette.darkGrey,
+        // `.repeat.dragging{opacity:.5}` is the row; a blocked action is
+        // dimmer still, so it reads as unavailable rather than as moving.
+        disabledActionOpacity: 0.30,
+      ),
+      // `.lhd .lt{600 12.5px}` / `.lc{11px}`, the group header on
+      // `--jo-surface-low`, and `.emptylist{border:1.5px dashed #dbe4ee;
+      // background:#FBFCFE;padding:16px}`.
+      fieldLists: (t) => t.copyWith(
+        subheaderTextStyle: const TextStyle(
+          fontSize: 12.5,
+          fontWeight: FontWeight.w600,
+          color: HosthubDiploraV1Palette.textVariant,
+        ),
+        counterTextStyle: const TextStyle(
+          fontSize: 11,
+          color: HosthubDiploraV1Palette.outlineGrey,
+        ),
+        addLabelStyle: const TextStyle(
+          fontSize: 12.5,
+          fontWeight: FontWeight.w600,
+          color: HosthubDiploraV1Palette.primary,
+        ),
+        groupHeaderBackground: HosthubDiploraV1Palette.backgroundWhite,
+        groupBorderColor: HosthubDiploraV1Palette.softGrey,
+        groupRadius: 12,
+        indent: 16,
+        emptyBorderColor: HosthubDiploraV1Palette.softGrey,
+        emptyBackgroundColor: HosthubDiploraV1Palette.backgroundWhite,
+        emptyBorderWidth: 1.5,
+      ),
+      // `88 × 64` tiles, `radius:11`, `gap:10`, and the add tile's dashed
+      // primary at 35% (mapping B11).
+      media: (t) => t.copyWith(
+        tileSize: const Size(88, 64),
+        tileRadius: 11,
+        gap: 10,
+        addTileBorderColor: HosthubDiploraV1Palette.primary.withValues(
+          alpha: 0.35,
+        ),
+        badgeBackgroundColor: HosthubDiploraV1Palette.primary,
+        gridCrossAxisCount: 4,
+        gridTileHeight: 88,
+        selectedBorderColor: HosthubDiploraV1Palette.primary,
+      ),
+      // A 3px progress track, and the two colours an upload row can end in
+      // (mapping B13). The failure colour is the palette's, not a second red.
+      uploads: (t) => t.copyWith(
+        trackHeight: 3,
+        trackColor: HosthubDiploraV1Palette.softGrey,
+        progressColor: HosthubDiploraV1Palette.primary,
+        doneColor: HosthubDiploraV1Palette.success,
+        failedColor: HosthubDiploraV1Palette.error,
+        dropzoneBorderColor: HosthubDiploraV1Palette.softGrey,
+        dropzoneBackgroundColor: HosthubDiploraV1Palette.backgroundWhite,
+        dropzoneHoverBackgroundColor: HosthubDiploraV1Palette.ice,
+      ),
       // Also the home of menu-overlay styling, which dropdowns and
       // `StyledToolbarButton.menu` share — hence the check colours for the
       // Filter / Kolommen / Weergave menus living here rather than on

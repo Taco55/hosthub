@@ -347,10 +347,10 @@ class _SaveBar extends StatelessWidget {
       ),
     };
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: context.colors.outlineVariant)),
-      ),
+    return StyledContainer(
+      border: Border(top: BorderSide(color: context.colors.outlineVariant)),
+      borderRadius: BorderRadius.zero,
+      padding: EdgeInsets.zero,
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 22, vertical: spacing.md),
         child: LayoutBuilder(
@@ -359,13 +359,11 @@ class _SaveBar extends StatelessWidget {
             children: [
               Padding(
                 padding: EdgeInsets.only(top: spacing.xs + 1),
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: dotColor,
-                    shape: BoxShape.circle,
-                  ),
+                child: StyledContainer(
+                  backgroundColor: dotColor,
+                  borderRadius: BorderRadius.circular(4),
+                  padding: EdgeInsets.zero,
+                  child: const SizedBox(width: 8, height: 8),
                 ),
               ),
               SizedBox(width: spacing.sm),
