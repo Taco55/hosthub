@@ -1,41 +1,31 @@
--- INSERT
-create policy "Authenticated users may upload to their lists"
-on storage.objects
-for insert
-to authenticated
-with check (
-  bucket_id = 'uploads'
-  AND exists (
-    select 1 from public.list_access
-    where list_access.profile_id = auth.uid()
-    and list_access.list_id = (storage.foldername(name))[1]::uuid
-  )
-);
-
--- SELECT
-create policy "Authenticated users may view files from lists they have access to"
-on storage.objects
-for select
-to authenticated
-using (
-  bucket_id = 'uploads'
-  AND exists (
-    select 1 from public.list_access
-    where list_access.profile_id = auth.uid()
-    and list_access.list_id = (storage.foldername(name))[1]::uuid
-  )
-);
-
--- DELETE
-create policy "Authenticated users may delete files from lists they have access to"
-on storage.objects
-for delete
-to authenticated
-using (
-  bucket_id = 'uploads'
-  AND exists (
-    select 1 from public.list_access
-    where list_access.profile_id = auth.uid()
-    and list_access.list_id = (storage.foldername(name))[1]::uuid
-  )
-);
+-- Reference copy of the storage policies this project applies. The migration
+-- `20260727210000_add_site_media_storage.sql` is what creates them; this file
+-- exists so the intent is readable next to `admin_access.sql`.
+--
+-- Until 2026-07-27 this file held JustOrganize's policies verbatim — they join
+-- `public.list_access`, a table HostHub does not have, so nothing in it could
+-- ever have been applied. The pattern was worth keeping, the content was not:
+-- one bucket, and the first path segment names the tenant.
+--
+-- HostHub: bucket `site-media`, path `<site_id>/<uuid>.<ext>`, and every policy
+-- resolves the tenant out of the path and asks
+-- `public.has_site_access(site_id, auth.uid(), <min role>)`:
+--
+--   SELECT  viewer  — reading through the API is scoped to the site. Objects
+--                     are *also* served publicly by URL, which is how the
+--                     website renders them; that is deliberate (a public
+--                     site's photos are public by definition), and it is why
+--                     the API path is scoped instead of relying on secrecy.
+--   INSERT  editor  — uploading into a site's folder.
+--   UPDATE  editor  — replacing a file.
+--   DELETE  editor  — removing one.
+--
+-- The predicate, for reference:
+--
+--   bucket_id = 'site-media'
+--   AND public.has_site_access(
+--         ((storage.foldername(name))[1])::uuid, auth.uid(), 'editor')
+--
+-- Verified by `supabase/tests/site_media_rls_test.sql`, which acts as two
+-- non-admin site owners and asserts that every cross-site read and write is
+-- refused.
