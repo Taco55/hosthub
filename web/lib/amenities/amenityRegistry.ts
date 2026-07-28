@@ -1,4 +1,3 @@
-import type * as React from "react";
 import {
   AirVent,
   Bath,
@@ -21,13 +20,14 @@ import {
   Wifi,
   Zap,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import type { AmenityId } from "@/lib/amenities/homeAmenities";
 
 export type AmenityDef = {
   id: AmenityId;
   labelKey: string;
-  icon: React.ComponentType<any>;
+  icon: LucideIcon;
 };
 
 export const amenityRegistry: Record<AmenityId, AmenityDef> = {

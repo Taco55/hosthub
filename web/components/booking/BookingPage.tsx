@@ -182,8 +182,20 @@ export function BookingPage({
       setGuestsOpen(false);
     };
 
+    // The guests popover carries role="dialog", so Escape has to close it —
+    // clicking away was the only way out.
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setGuestsOpen(false);
+      }
+    };
+
     document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, [guestsOpen]);
 
   return (
@@ -242,7 +254,6 @@ export function BookingPage({
                 locale={locale}
                 open={guestsOpen}
                 value={guests}
-                onOpenChange={setGuestsOpen}
                 onConfirm={setGuests}
               />
             </div>

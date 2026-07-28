@@ -77,7 +77,6 @@ export function ParallaxImage({
 
     let frame = 0;
     let isInView = true;
-    let viewportHeight = Math.max(window.innerHeight, 1);
 
     const resolveIntensity = () =>
       window.innerWidth < MOBILE_BREAKPOINT ? intensityMobile : intensityDesktop;
@@ -141,7 +140,6 @@ export function ParallaxImage({
     };
 
     const handleResize = () => {
-      viewportHeight = Math.max(window.innerHeight, 1);
       intensity = resolveIntensity();
       contentIntensity = resolveContentIntensity();
       marginTop = resolveMarginTop();

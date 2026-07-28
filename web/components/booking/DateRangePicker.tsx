@@ -149,6 +149,9 @@ export function DateRangePicker({
           if (!active || controller.signal.aborted) {
             return;
           }
+          // Worth a line in the console: without it a calendar that shows the
+          // error state gives nobody a way to tell a 429 from a bad response.
+          console.error("[DateRangePicker] availability fetch failed", error);
           setStatus("error");
           onErrorChange?.(true);
         }

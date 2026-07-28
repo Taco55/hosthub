@@ -16,7 +16,6 @@ type GuestsModalProps = {
   locale: Locale;
   open: boolean;
   value: Guests;
-  onOpenChange: (open: boolean) => void;
   onConfirm: (value: Guests) => void;
   className?: string;
 };
@@ -25,7 +24,6 @@ export function GuestsModal({
   locale,
   open,
   value,
-  onOpenChange,
   onConfirm,
   className,
 }: GuestsModalProps) {
