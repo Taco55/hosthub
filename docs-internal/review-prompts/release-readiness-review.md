@@ -475,7 +475,7 @@ Lees eerst:
 - `.fvmrc`
 - `Makefile` en `supabase/make/supabase-common.mk` (welke targets bestaan echt)
 - `docs/multi-site-platform.md` en `docs/preview_and_routing.md`
-- `hosthub_console/CMS_PLAN.md` waar de CMS geraakt wordt
+- `docs-internal/reviews/cms-website-editor-state.md` waar de CMS geraakt wordt
 - de design-handoffs in `../hosthub-design/` wanneer UI beoordeeld wordt
   (`design_handoff_hosthub_cms*/README.md`, `CONFORMANCE.md`,
   `TRANSLATION.md`, `STYLED_WIDGETS_MAPPING.md`) — die map wordt tussendoor

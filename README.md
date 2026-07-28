@@ -126,4 +126,9 @@ Required env vars:
 - `NEXT_PUBLIC_SUPABASE_URL` (or `SUPABASE_URL`)
 - `SUPABASE_SERVICE_ROLE_KEY`
 
-See `hosthub_console/CMS_PLAN.md` for the full content model, RLS strategy, and roadmap toward releases/CRM.
+The content model and the RLS strategy are what the code and the migrations
+say (`supabase/migrations/`, `hosthub_console/lib/features/website_editor/`);
+the design the CMS is built to lives in `../hosthub-design/`
+(`design_handoff_hosthub_cms/` and `design_handoff_hosthub_cms_fase2/`), and
+what has been built against it is tracked in
+`docs-internal/reviews/cms-website-editor-state.md`.
