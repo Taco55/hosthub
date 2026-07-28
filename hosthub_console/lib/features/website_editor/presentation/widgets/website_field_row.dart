@@ -78,6 +78,10 @@ class WebsiteFieldRow extends StatelessWidget {
       );
     }
 
+    // §B.4: a row the source just gained shows as `Nieuw`, never as an empty
+    // locked field — an empty string must not pass for the owner's words. It
+    // translates when the language is opened or at publish.
+    final isNew = state.isFieldNew(lang, field.key);
     final translated = state.translatedField(lang, field.key);
     final locked = translated?.isLocked ?? false;
 
@@ -88,12 +92,21 @@ class WebsiteFieldRow extends StatelessWidget {
       hint: hint,
       multiline: field.multiline,
       numeric: numeric,
-      labelTrailing: showStatusChip
-          ? _statusChip(context, cubit, locked)
-          : null,
+      labelTrailing: !showStatusChip
+          ? null
+          : (isNew ? _newBadge(context) : _statusChip(context, cubit, locked)),
       footer: _footer(context, cubit, locked),
     );
   }
+
+  /// The badge on a row this language has never had text for.
+  Widget _newBadge(BuildContext context) => StyledChip(
+    label: context.s.weChipNew,
+    size: StyledChipSize.display,
+    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+    labelColor: Theme.of(context).colorScheme.primary,
+    borderColor: Colors.transparent,
+  );
 
   /// The micro tag that says a value is shared across every language — the
   /// app's own vocabulary, styled with the library's label-tag tokens.

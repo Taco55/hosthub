@@ -50,7 +50,10 @@ class EditorColumn extends StatelessWidget {
                 _TranslationStatusToolbar(state: state),
               ],
               const SizedBox(height: 16),
-              for (final card in kPageCards[state.pageKey] ?? const []) ...[
+              // §B.4: with the filter on, a card without a single changed
+              // field is gone entirely — the cubit decides which cards the
+              // lane shows, so the count and the list cannot disagree.
+              for (final card in state.visibleCards) ...[
                 EditorCardView(state: state, card: card),
                 const SizedBox(height: 16),
               ],
@@ -219,23 +222,42 @@ class _Banner extends StatelessWidget {
       );
     }
 
-    // §11g: one line — `Editing the <language> translation` plus the one
-    // figure that varies per language. A "% translated" meter can only read
-    // 100% once translation is automatic, so it told the owner nothing.
+    // §D.1: two figures, two meanings — what there is to review, and how much
+    // of this language the owner wrote themselves. At 250 fields the second
+    // one alone said nothing about where to look, and a coverage percentage
+    // said less.
+    final cubit = context.read<SiteContentCubit>();
     final lang = languageName(context, state.previewLanguage);
     final locked = state.lockedFieldCount(state.previewLanguage);
+    final changed = state.changedFieldCount(state.previewLanguage);
     return StyledNotice(
       icon: Icons.translate,
-      trailing: StyledChip(
-        label: context.s.weLockedCounter(locked, state.translatableFieldCount),
-        size: StyledChipSize.display,
+      // §B.4: the filter belongs in the lane header, next to the count it
+      // acts on.
+      trailing: StyledFilterChip(
+        label: context.s.weFilterOnlyChanged,
+        isSelected: state.onlyChangedFields,
+        onChanged: cubit.setOnlyChangedFields,
       ),
-      child: Text(
-        context.s.weBannerEditingTitle(lang),
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          fontWeight: FontWeight.w600,
-          color: Theme.of(context).colorScheme.primary,
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.s.weBannerEditingTitle(lang),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          SizedBox(height: context.styledSpacing.xs),
+          Text(
+            '${context.s.weLaneChanged(changed)} · '
+            '${context.s.weLockedCounter(locked, state.translatableFieldCount)}',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+        ],
       ),
     );
   }

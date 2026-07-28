@@ -8941,10 +8941,10 @@ class S {
     );
   }
 
-  /// `Editing the {language} translation`
+  /// `You are editing the {language} translation`
   String weBannerEditingTitle(Object language) {
     return Intl.message(
-      'Editing the $language translation',
+      'You are editing the $language translation',
       name: 'weBannerEditingTitle',
       desc: '',
       args: [language],
@@ -10041,10 +10041,35 @@ class S {
     );
   }
 
-  /// `{locked} of {total} fields yours`
+  /// `{count} changed`
+  String weLaneChanged(Object count) {
+    return Intl.message(
+      '$count changed',
+      name: 'weLaneChanged',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Only changed`
+  String get weFilterOnlyChanged {
+    return Intl.message(
+      'Only changed',
+      name: 'weFilterOnlyChanged',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `New`
+  String get weChipNew {
+    return Intl.message('New', name: 'weChipNew', desc: '', args: []);
+  }
+
+  /// `{locked} of {total} fields in your own words`
   String weLockedCounter(Object locked, Object total) {
     return Intl.message(
-      '$locked of $total fields yours',
+      '$locked of $total fields in your own words',
       name: 'weLockedCounter',
       desc: '',
       args: [locked, total],

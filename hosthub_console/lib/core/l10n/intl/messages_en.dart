@@ -194,7 +194,7 @@ class MessageLookup extends MessageLookupByLibrary {
   static String m75(source) =>
       "Type over any field to lock it; untouched fields stay auto and follow the ${source} source.";
 
-  static String m76(language) => "Editing the ${language} translation";
+  static String m76(language) => "You are editing the ${language} translation";
 
   static String m77(languages) =>
       "${languages} update automatically on publish. Locked fields keep your wording.";
@@ -209,43 +209,46 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m82(number) => "Introduction of section ${number}";
 
-  static String m83(item) => "Add ${item}";
+  static String m83(count) => "${count} changed";
 
-  static String m84(count, max) => "${count} of ${max}";
+  static String m84(item) => "Add ${item}";
 
-  static String m85(item) => "No ${item} yet";
+  static String m85(count, max) => "${count} of ${max}";
 
-  static String m86(max) => "Maximum of ${max} reached";
+  static String m86(item) => "No ${item} yet";
 
-  static String m87(min) => "There must be at least ${min}";
+  static String m87(max) => "Maximum of ${max} reached";
 
-  static String m88(locked, total) => "${locked} of ${total} fields yours";
+  static String m88(min) => "There must be at least ${min}";
 
-  static String m89(min, max) =>
+  static String m89(locked, total) =>
+      "${locked} of ${total} fields in your own words";
+
+  static String m90(min, max) =>
       "${min} to ${max} photos. The media picker arrives with image management.";
 
-  static String m90(language) => "${language} preview";
+  static String m91(language) => "${language} preview";
 
-  static String m91(count) => "Publish ${count} languages";
+  static String m92(count) => "Publish ${count} languages";
 
-  static String m92(source) => "Publish ${source} only";
+  static String m93(source) => "Publish ${source} only";
 
-  static String m93(language) => "${language} · source";
+  static String m94(language) => "${language} · source";
 
-  static String m94(source) =>
+  static String m95(source) =>
       "Your ${source} content publishes as-is. The other languages are re-translated by AI, keeping anything you\'ve locked.";
 
-  static String m95(lang) => "Source · ${lang}";
+  static String m96(lang) => "Source · ${lang}";
 
-  static String m96(source, count) =>
+  static String m97(source, count) =>
       "${source} + ${count} translations are live";
 
-  static String m97(languages) =>
+  static String m98(languages) =>
       "${languages} translate when you open them, or on publish";
 
-  static String m98(language) => "You change rows in the source (${language})";
+  static String m99(language) => "You change rows in the source (${language})";
 
-  static String m99(source) => "Now following the ${source} source.";
+  static String m100(source) => "Now following the ${source} source.";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -2200,6 +2203,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "weChipAuto": MessageLookupByLibrary.simpleMessage("Auto"),
     "weChipLocked": MessageLookupByLibrary.simpleMessage("Locked"),
+    "weChipNew": MessageLookupByLibrary.simpleMessage("New"),
     "weChipShared": MessageLookupByLibrary.simpleMessage("shared"),
     "weChipTooltipAuto": MessageLookupByLibrary.simpleMessage(
       "Following the source — click to keep your own wording",
@@ -2276,6 +2280,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "weFieldSuccess": MessageLookupByLibrary.simpleMessage("Success"),
     "weFieldTitle": MessageLookupByLibrary.simpleMessage("Title"),
     "weFieldWifiNote": MessageLookupByLibrary.simpleMessage("Wi-Fi"),
+    "weFilterOnlyChanged": MessageLookupByLibrary.simpleMessage("Only changed"),
     "weFixedColumnsMeta": MessageLookupByLibrary.simpleMessage("fixed columns"),
     "weFormFieldEmail": MessageLookupByLibrary.simpleMessage("Email"),
     "weFormFieldMessage": MessageLookupByLibrary.simpleMessage("Message"),
@@ -2312,6 +2317,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "weItemParagraph": MessageLookupByLibrary.simpleMessage("Paragraph"),
     "weItemSection": MessageLookupByLibrary.simpleMessage("Section"),
     "weItemTime": MessageLookupByLibrary.simpleMessage("Time"),
+    "weLaneChanged": m83,
     "weLangDutch": MessageLookupByLibrary.simpleMessage("Dutch"),
     "weLangEnglish": MessageLookupByLibrary.simpleMessage("English"),
     "weLangNorwegian": MessageLookupByLibrary.simpleMessage("Norwegian"),
@@ -2323,24 +2329,24 @@ class MessageLookup extends MessageLookupByLibrary {
     "weLeaveTitle": MessageLookupByLibrary.simpleMessage(
       "You have unsaved changes",
     ),
-    "weListAdd": m83,
+    "weListAdd": m84,
     "weListColumns": MessageLookupByLibrary.simpleMessage("Columns"),
-    "weListCounter": m84,
+    "weListCounter": m85,
     "weListDistances": MessageLookupByLibrary.simpleMessage("Distances"),
     "weListEmptyMessage": MessageLookupByLibrary.simpleMessage(
       "This list only appears on the website once it holds something.",
     ),
-    "weListEmptyTitle": m85,
+    "weListEmptyTitle": m86,
     "weListFacts": MessageLookupByLibrary.simpleMessage("Facts"),
     "weListFormFields": MessageLookupByLibrary.simpleMessage("Fields"),
     "weListGroups": MessageLookupByLibrary.simpleMessage("Groups"),
     "weListKeyFacts": MessageLookupByLibrary.simpleMessage("Key facts"),
     "weListLines": MessageLookupByLibrary.simpleMessage("Lines"),
-    "weListMaxReached": m86,
+    "weListMaxReached": m87,
     "weListMaxReason": MessageLookupByLibrary.simpleMessage(
       "Remove a row first",
     ),
-    "weListMinReason": m87,
+    "weListMinReason": m88,
     "weListParagraphs": MessageLookupByLibrary.simpleMessage("Paragraphs"),
     "weListSections": MessageLookupByLibrary.simpleMessage("Sections"),
     "weListTimes": MessageLookupByLibrary.simpleMessage(
@@ -2352,8 +2358,8 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "weLoadFailedRetry": MessageLookupByLibrary.simpleMessage("Try again"),
     "weLocaleSourceBadge": MessageLookupByLibrary.simpleMessage("source"),
-    "weLockedCounter": m88,
-    "weMediaPending": m89,
+    "weLockedCounter": m89,
+    "weMediaPending": m90,
     "wePageArea": MessageLookupByLibrary.simpleMessage("Area"),
     "wePageGallery": MessageLookupByLibrary.simpleMessage("Gallery"),
     "wePageHome": MessageLookupByLibrary.simpleMessage("Home"),
@@ -2364,7 +2370,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePairTime": MessageLookupByLibrary.simpleMessage("Time"),
     "wePairValue": MessageLookupByLibrary.simpleMessage("Value"),
     "wePairWhat": MessageLookupByLibrary.simpleMessage("What"),
-    "wePreviewLabel": m90,
+    "wePreviewLabel": m91,
     "wePreviewLatest": MessageLookupByLibrary.simpleMessage("Preview latest"),
     "wePreviewTranslation": MessageLookupByLibrary.simpleMessage(
       "Preview translation",
@@ -2374,7 +2380,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Publish all languages",
     ),
     "wePublishCancel": MessageLookupByLibrary.simpleMessage("Cancel"),
-    "wePublishConfirm": m91,
+    "wePublishConfirm": m92,
     "wePublishDraft": MessageLookupByLibrary.simpleMessage(
       "Draft — not reviewed yet",
     ),
@@ -2401,9 +2407,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePublishSkipped": MessageLookupByLibrary.simpleMessage(
       "Skipped · stays as it is live now",
     ),
-    "wePublishSourceOnly": m92,
-    "wePublishSourceRole": m93,
-    "wePublishSubtitle": m94,
+    "wePublishSourceOnly": m93,
+    "wePublishSourceRole": m94,
+    "wePublishSubtitle": m95,
     "wePublishTitle": MessageLookupByLibrary.simpleMessage(
       "Publish all languages",
     ),
@@ -2432,15 +2438,15 @@ class MessageLookup extends MessageLookupByLibrary {
       "value is shared across languages",
     ),
     "weShowPreview": MessageLookupByLibrary.simpleMessage("Show preview"),
-    "weSourceChip": m95,
+    "weSourceChip": m96,
     "weStaleNotice": MessageLookupByLibrary.simpleMessage(
       "Preview reflects an earlier source edit.",
     ),
-    "weStatusCleanBody": m96,
+    "weStatusCleanBody": m97,
     "weStatusCleanTitle": MessageLookupByLibrary.simpleMessage(
       "Everything published",
     ),
-    "weStatusSavedBody": m97,
+    "weStatusSavedBody": m98,
     "weStatusSavedTitle": MessageLookupByLibrary.simpleMessage(
       "Saved · not published",
     ),
@@ -2450,9 +2456,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "weStatusUnsavedTitle": MessageLookupByLibrary.simpleMessage(
       "Unsaved changes",
     ),
-    "weStructureLocked": m98,
+    "weStructureLocked": m99,
     "weUndo": MessageLookupByLibrary.simpleMessage("Undo"),
-    "weUndoSwitchNotice": m99,
+    "weUndoSwitchNotice": m100,
     "wealth": MessageLookupByLibrary.simpleMessage("Wealth"),
     "websiteLanguagesFooter": MessageLookupByLibrary.simpleMessage(
       "The languages your public website offers to guests. Add or remove any language.",

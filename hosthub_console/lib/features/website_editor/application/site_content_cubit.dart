@@ -59,6 +59,7 @@ class SiteContentState extends Equatable {
     this.pendingAutoSwitch,
     this.pendingRowDelete,
     this.loadStatus = ContentLoadStatus.ready,
+    this.onlyChangedFields = false,
   });
 
   final String propertyName;
@@ -143,6 +144,11 @@ class SiteContentState extends Equatable {
   /// [ContentLoadStatus.ready] from the start, because there the seed *is* the
   /// content.
   final ContentLoadStatus loadStatus;
+
+  /// Whether the review lane shows only what changed (§B.4). Off by default;
+  /// `Openen` in the publish dialog turns it on, because that is the one route
+  /// where the owner already said which changes they came for.
+  final bool onlyChangedFields;
 
   bool get isSourceMode => previewLanguage == sourceLanguage;
 
@@ -241,15 +247,74 @@ class SiteContentState extends Equatable {
   Set<String> get staleLanguages =>
       targetLanguages.where(isLanguageStale).toSet();
 
-  /// How many of this page's fields the owner has taken over (§11g). This is
-  /// the figure that actually varies per language — a "% translated" meter can
-  /// only ever read 100% once translation is automatic.
-  int lockedFieldCount(String language) => fields
+  /// Whether a field is **new** in this language: the row exists in the source
+  /// but this language has never had a translation for it (§B.4). It shows as
+  /// `Nieuw` rather than as an empty locked field — an empty string must never
+  /// pass for "the owner's words".
+  bool isFieldNew(String language, String key) {
+    if (language == sourceLanguage) return false;
+    // Nothing to translate is not something to review: an empty optional
+    // field would otherwise sit in the changed count forever. The *effective*
+    // source, because a row the owner just added and typed into is on screen
+    // and its target counterpart is visibly empty — that is exactly the row
+    // the design wants badged `Nieuw` (§B.4).
+    if ((effectiveSource[key] ?? '').isEmpty) return false;
+    final field = translatedField(language, key);
+    if (field == null) return true;
+    return field.isAuto && field.value.isEmpty;
+  }
+
+  /// Whether a field is worth reviewing in this language: its source moved
+  /// since the machine translated it, or it was never translated at all.
+  ///
+  /// This is the number the lane and the card rollups report — "what changed",
+  /// not "how much is translated" (§D.1).
+  bool isFieldChanged(String language, String key) =>
+      isFieldStale(language, key) || isFieldNew(language, key);
+
+  /// Changed fields across the **whole site** for one language. Site-wide on
+  /// purpose: it answers "what is there to review in this language", which
+  /// does not depend on which tab happens to be open.
+  int changedFieldCount(String language) =>
+      allFields.where((f) => isFieldChanged(language, f.key)).length;
+
+  /// Changed fields of one card on the current page — the `N gewijzigd`
+  /// rollup in its header (§B.4). Derived from the built field paths, so a
+  /// key without a field cannot be counted.
+  int changedCountForCard(String language, String cardId) => fields
+      .where((f) => f.cardId == cardId && isFieldChanged(language, f.key))
+      .length;
+
+  /// Pages of the site that have at least one changed field in this language
+  /// — what the publish dialog reports per language (§D.2).
+  List<String> changedPages(String language) => [
+    for (final page in kPageCards.keys)
+      if (effectiveFieldsFor(page, effectiveListOrder)
+          .any((f) => isFieldChanged(language, f.key)))
+        page,
+  ];
+
+  /// How many of the site's fields the owner has taken over in this language
+  /// (§D.1, the second figure). Site-wide, like [changedFieldCount].
+  int lockedFieldCount(String language) => allFields
       .where((f) => translatedField(language, f.key)?.isLocked ?? false)
       .length;
 
-  /// Translatable fields on this page — the denominator of that counter.
-  int get translatableFieldCount => fields.length;
+  /// Translatable fields of the site — the denominator of that counter.
+  int get translatableFieldCount => allFields.length;
+
+  /// The cards of the current page the review lane shows. With
+  /// [onlyChangedFields] on, a card without a single changed field is gone
+  /// entirely — header included (CONFORMANCE §5): a card kept as an empty
+  /// husk is what makes a filtered lane unreadable.
+  List<EditorCard> get visibleCards {
+    final cards = kPageCards[pageKey] ?? const <EditorCard>[];
+    if (!onlyChangedFields || isSourceMode) return cards;
+    return [
+      for (final card in cards)
+        if (changedCountForCard(previewLanguage, card.id) > 0) card,
+    ];
+  }
 
   /// Every field's value for the previewed language, keyed by CMS address
   /// (`cabin/main:hero.title`). This is what the live preview renders: the
@@ -286,6 +351,7 @@ class SiteContentState extends Equatable {
     PendingAutoSwitch? pendingAutoSwitch,
     PendingRowDelete? pendingRowDelete,
     ContentLoadStatus? loadStatus,
+    bool? onlyChangedFields,
     bool clearDraft = false,
     bool clearPendingAutoSwitch = false,
     bool clearPendingRowDelete = false,
@@ -326,6 +392,7 @@ class SiteContentState extends Equatable {
           ? null
           : (pendingRowDelete ?? this.pendingRowDelete),
       loadStatus: loadStatus ?? this.loadStatus,
+      onlyChangedFields: onlyChangedFields ?? this.onlyChangedFields,
     );
   }
 
@@ -356,6 +423,7 @@ class SiteContentState extends Equatable {
     pendingAutoSwitch,
     pendingRowDelete,
     loadStatus,
+    onlyChangedFields,
   ];
 }
 
@@ -594,6 +662,10 @@ class SiteContentCubit extends Cubit<SiteContentState> {
     }
   }
 
+  /// Turns the review lane's `Alleen gewijzigd` filter on or off (§B.4).
+  void setOnlyChangedFields(bool value) =>
+      emit(state.copyWith(onlyChangedFields: value));
+
   void setPreviewDevice(PreviewDevice device) =>
       emit(state.copyWith(previewDevice: device));
 
@@ -703,6 +775,15 @@ class SiteContentCubit extends Cubit<SiteContentState> {
   /// start as fresh empty auto fields so they translate on publish). A draft,
   /// like every edit — the new row's id goes into the draft order.
   void addRow(String listKey) {
+    // §B.4: structure is the source language's. The UI turns these actions off
+    // in a target language, but an assert is the rule — a convention that only
+    // lives in a widget is one refactor away from being gone.
+    assert(
+      state.isSourceMode,
+      'Rows are added, removed and reordered in the source language only; '
+      'a target language owns its text, not the structure.',
+    );
+
     assert(
       state.isSourceMode,
       'Structure belongs to the source language: addRow must not be reachable '
@@ -755,6 +836,15 @@ class SiteContentCubit extends Cubit<SiteContentState> {
 
   /// Deletes one row by its stable id.
   void removeRowById(String listKey, String rowId) {
+    // §B.4: structure is the source language's. The UI turns these actions off
+    // in a target language, but an assert is the rule — a convention that only
+    // lives in a widget is one refactor away from being gone.
+    assert(
+      state.isSourceMode,
+      'Rows are added, removed and reordered in the source language only; '
+      'a target language owns its text, not the structure.',
+    );
+
     assert(
       state.isSourceMode,
       'Structure belongs to the source language: removeRow must not be '
@@ -858,6 +948,15 @@ class SiteContentCubit extends Cubit<SiteContentState> {
   /// every value — source text, translations, locked/auto status — is keyed
   /// by the row's stable id and travels with it untouched.
   void moveRow(String listKey, int oldIndex, int newIndex) {
+    // §B.4: structure is the source language's. The UI turns these actions off
+    // in a target language, but an assert is the rule — a convention that only
+    // lives in a widget is one refactor away from being gone.
+    assert(
+      state.isSourceMode,
+      'Rows are added, removed and reordered in the source language only; '
+      'a target language owns its text, not the structure.',
+    );
+
     assert(
       state.isSourceMode,
       'Structure belongs to the source language: moveRow must not be reachable '

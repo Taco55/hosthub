@@ -195,7 +195,7 @@ class MessageLookup extends MessageLookupByLibrary {
   static String m75(source) =>
       "Typ over een veld om het te vergrendelen; ongewijzigde velden blijven automatisch en volgen de ${source} bron.";
 
-  static String m76(language) => "De ${language} vertaling bewerken";
+  static String m76(language) => "Je bewerkt de ${language} vertaling";
 
   static String m77(languages) =>
       "${languages} worden automatisch bijgewerkt bij publiceren. Vergrendelde velden behouden je tekst.";
@@ -210,44 +210,47 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m82(number) => "Introductie van sectie ${number}";
 
-  static String m83(item) => "${item} toevoegen";
+  static String m83(count) => "${count} gewijzigd";
 
-  static String m84(count, max) => "${count} van ${max}";
+  static String m84(item) => "${item} toevoegen";
 
-  static String m85(item) => "Nog geen ${item}";
+  static String m85(count, max) => "${count} van ${max}";
 
-  static String m86(max) => "Maximum van ${max} bereikt";
+  static String m86(item) => "Nog geen ${item}";
 
-  static String m87(min) => "Er moeten er minimaal ${min} zijn";
+  static String m87(max) => "Maximum van ${max} bereikt";
 
-  static String m88(locked, total) => "${locked} van ${total} velden van jou";
+  static String m88(min) => "Er moeten er minimaal ${min} zijn";
 
-  static String m89(min, max) =>
+  static String m89(locked, total) =>
+      "${locked} van ${total} velden in jouw woorden";
+
+  static String m90(min, max) =>
       "${min} tot ${max} foto\'s. De mediakiezer komt met het beeldbeheer.";
 
-  static String m90(language) => "${language} voorbeeld";
+  static String m91(language) => "${language} voorbeeld";
 
-  static String m91(count) => "${count} talen publiceren";
+  static String m92(count) => "${count} talen publiceren";
 
-  static String m92(source) => "Alleen ${source} publiceren";
+  static String m93(source) => "Alleen ${source} publiceren";
 
-  static String m93(language) => "${language} · bron";
+  static String m94(language) => "${language} · bron";
 
-  static String m94(source) =>
+  static String m95(source) =>
       "Je ${source} content publiceert zoals die is. De andere talen worden opnieuw vertaald door AI, met behoud van wat je hebt vergrendeld.";
 
-  static String m95(lang) => "Bron · ${lang}";
+  static String m96(lang) => "Bron · ${lang}";
 
-  static String m96(source, count) =>
+  static String m97(source, count) =>
       "${source} + ${count} vertalingen staan live";
 
-  static String m97(languages) =>
+  static String m98(languages) =>
       "${languages} vertalen zodra je ze opent, of bij publiceren";
 
-  static String m98(language) =>
+  static String m99(language) =>
       "Rijen wijzigen doe je in de bron (${language})";
 
-  static String m99(source) => "Volgt nu de ${source} bron.";
+  static String m100(source) => "Volgt nu de ${source} bron.";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -2310,6 +2313,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "weChipAuto": MessageLookupByLibrary.simpleMessage("Auto"),
     "weChipLocked": MessageLookupByLibrary.simpleMessage("Vergrendeld"),
+    "weChipNew": MessageLookupByLibrary.simpleMessage("Nieuw"),
     "weChipShared": MessageLookupByLibrary.simpleMessage("gedeeld"),
     "weChipTooltipAuto": MessageLookupByLibrary.simpleMessage(
       "Volgt de bron — klik om je eigen tekst te behouden",
@@ -2388,6 +2392,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "weFieldSuccess": MessageLookupByLibrary.simpleMessage("Gelukt"),
     "weFieldTitle": MessageLookupByLibrary.simpleMessage("Titel"),
     "weFieldWifiNote": MessageLookupByLibrary.simpleMessage("Wifi"),
+    "weFilterOnlyChanged": MessageLookupByLibrary.simpleMessage(
+      "Alleen gewijzigd",
+    ),
     "weFixedColumnsMeta": MessageLookupByLibrary.simpleMessage(
       "vaste kolommen",
     ),
@@ -2428,6 +2435,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "weItemParagraph": MessageLookupByLibrary.simpleMessage("Alinea"),
     "weItemSection": MessageLookupByLibrary.simpleMessage("Sectie"),
     "weItemTime": MessageLookupByLibrary.simpleMessage("Tijd"),
+    "weLaneChanged": m83,
     "weLangDutch": MessageLookupByLibrary.simpleMessage("Nederlands"),
     "weLangEnglish": MessageLookupByLibrary.simpleMessage("Engels"),
     "weLangNorwegian": MessageLookupByLibrary.simpleMessage("Noors"),
@@ -2439,24 +2447,24 @@ class MessageLookup extends MessageLookupByLibrary {
     "weLeaveTitle": MessageLookupByLibrary.simpleMessage(
       "Je hebt niet-opgeslagen wijzigingen",
     ),
-    "weListAdd": m83,
+    "weListAdd": m84,
     "weListColumns": MessageLookupByLibrary.simpleMessage("Kolommen"),
-    "weListCounter": m84,
+    "weListCounter": m85,
     "weListDistances": MessageLookupByLibrary.simpleMessage("Afstanden"),
     "weListEmptyMessage": MessageLookupByLibrary.simpleMessage(
       "Deze lijst verschijnt pas op de website als er iets in staat.",
     ),
-    "weListEmptyTitle": m85,
+    "weListEmptyTitle": m86,
     "weListFacts": MessageLookupByLibrary.simpleMessage("Feiten"),
     "weListFormFields": MessageLookupByLibrary.simpleMessage("Velden"),
     "weListGroups": MessageLookupByLibrary.simpleMessage("Groepen"),
     "weListKeyFacts": MessageLookupByLibrary.simpleMessage("Kerncijfers"),
     "weListLines": MessageLookupByLibrary.simpleMessage("Regels"),
-    "weListMaxReached": m86,
+    "weListMaxReached": m87,
     "weListMaxReason": MessageLookupByLibrary.simpleMessage(
       "Verwijder eerst een rij",
     ),
-    "weListMinReason": m87,
+    "weListMinReason": m88,
     "weListParagraphs": MessageLookupByLibrary.simpleMessage("Alinea\'s"),
     "weListSections": MessageLookupByLibrary.simpleMessage("Secties"),
     "weListTimes": MessageLookupByLibrary.simpleMessage(
@@ -2470,8 +2478,8 @@ class MessageLookup extends MessageLookupByLibrary {
       "Opnieuw proberen",
     ),
     "weLocaleSourceBadge": MessageLookupByLibrary.simpleMessage("bron"),
-    "weLockedCounter": m88,
-    "weMediaPending": m89,
+    "weLockedCounter": m89,
+    "weMediaPending": m90,
     "wePageArea": MessageLookupByLibrary.simpleMessage("Omgeving"),
     "wePageGallery": MessageLookupByLibrary.simpleMessage("Galerij"),
     "wePageHome": MessageLookupByLibrary.simpleMessage("Home"),
@@ -2482,7 +2490,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePairTime": MessageLookupByLibrary.simpleMessage("Tijd"),
     "wePairValue": MessageLookupByLibrary.simpleMessage("Waarde"),
     "wePairWhat": MessageLookupByLibrary.simpleMessage("Wat"),
-    "wePreviewLabel": m90,
+    "wePreviewLabel": m91,
     "wePreviewLatest": MessageLookupByLibrary.simpleMessage(
       "Nieuwste bekijken",
     ),
@@ -2494,7 +2502,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Alle talen publiceren",
     ),
     "wePublishCancel": MessageLookupByLibrary.simpleMessage("Annuleren"),
-    "wePublishConfirm": m91,
+    "wePublishConfirm": m92,
     "wePublishDraft": MessageLookupByLibrary.simpleMessage(
       "Concept — nog niet nagekeken",
     ),
@@ -2521,9 +2529,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePublishSkipped": MessageLookupByLibrary.simpleMessage(
       "Overgeslagen · blijft zoals het nu live staat",
     ),
-    "wePublishSourceOnly": m92,
-    "wePublishSourceRole": m93,
-    "wePublishSubtitle": m94,
+    "wePublishSourceOnly": m93,
+    "wePublishSourceRole": m94,
+    "wePublishSubtitle": m95,
     "wePublishTitle": MessageLookupByLibrary.simpleMessage(
       "Alle talen publiceren",
     ),
@@ -2552,15 +2560,15 @@ class MessageLookup extends MessageLookupByLibrary {
       "waarde is gedeeld over talen",
     ),
     "weShowPreview": MessageLookupByLibrary.simpleMessage("Voorbeeld tonen"),
-    "weSourceChip": m95,
+    "weSourceChip": m96,
     "weStaleNotice": MessageLookupByLibrary.simpleMessage(
       "Voorbeeld toont een eerdere bronwijziging.",
     ),
-    "weStatusCleanBody": m96,
+    "weStatusCleanBody": m97,
     "weStatusCleanTitle": MessageLookupByLibrary.simpleMessage(
       "Alles gepubliceerd",
     ),
-    "weStatusSavedBody": m97,
+    "weStatusSavedBody": m98,
     "weStatusSavedTitle": MessageLookupByLibrary.simpleMessage(
       "Opgeslagen · niet gepubliceerd",
     ),
@@ -2570,9 +2578,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "weStatusUnsavedTitle": MessageLookupByLibrary.simpleMessage(
       "Niet-opgeslagen wijzigingen",
     ),
-    "weStructureLocked": m98,
+    "weStructureLocked": m99,
     "weUndo": MessageLookupByLibrary.simpleMessage("Ongedaan maken"),
-    "weUndoSwitchNotice": m99,
+    "weUndoSwitchNotice": m100,
     "wealth": MessageLookupByLibrary.simpleMessage("Welvaart"),
     "websiteLanguagesFooter": MessageLookupByLibrary.simpleMessage(
       "De talen die je publieke website aan gasten aanbiedt. Voeg talen toe of verwijder ze.",

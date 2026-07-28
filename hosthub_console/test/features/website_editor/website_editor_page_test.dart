@@ -5,6 +5,7 @@ import 'package:styled_widgets/styled_widgets.dart';
 
 import 'package:hosthub_console/core/l10n/l10n.dart';
 import 'package:hosthub_console/core/widgets/foundation/foundation.dart';
+import 'package:hosthub_console/core/widgets/layout/layout.dart';
 import 'package:hosthub_console/features/website_editor/presentation/widgets/editor_column.dart';
 import 'package:hosthub_console/features/website_editor/presentation/widgets/preview_pane.dart';
 import 'package:hosthub_console/features/website_editor/presentation/widgets/publish_modal.dart';
@@ -13,8 +14,13 @@ import 'package:hosthub_console/features/website_editor/website_editor.dart';
 /// Pumps the full editor (editor column + preview) inside a BlocProvider at a
 /// desktop-like size, under the app's real Material + StyledWidgets theming
 /// (mirrors `app.dart`).
-Future<SiteContentCubit> pumpEditor(WidgetTester tester) async {
-  await tester.binding.setSurfaceSize(const Size(1360, 880));
+Future<SiteContentCubit> pumpEditor(
+  WidgetTester tester, {
+  /// A tall surface builds every card instead of only what fits: the editor's
+  /// card list is lazy, so counting or finding a card further down needs room.
+  Size surfaceSize = const Size(1360, 880),
+}) async {
+  await tester.binding.setSurfaceSize(surfaceSize);
   addTearDown(() => tester.binding.setSurfaceSize(null));
 
   final cubit = SiteContentCubit(
@@ -188,27 +194,125 @@ void main() {
     );
   });
 
-  testWidgets('the lane header counts the fields the owner took over', (
+  testWidgets('the lane header states what changed and what is the owner\'s', (
     tester,
   ) async {
     final cubit = await pumpEditor(tester);
     cubit.setPreviewLanguage('en');
     await tester.pumpAndSettle();
 
-    // No coverage percentage — that figure can only ever read 100%.
+    // §D.1: two figures, no coverage percentage — that can only read 100%.
     expect(find.textContaining('%'), findsNothing);
-    expect(find.textContaining('fields yours'), findsOneWidget);
-    final before = tester
-        .widget<Text>(find.textContaining('fields yours'))
-        .data!;
-    expect(before, startsWith('0 of '));
+    final line = find.textContaining('in your own words');
+    expect(line, findsOneWidget);
+    expect(tester.widget<Text>(line).data, startsWith('0 changed · 0 of '));
 
     cubit.editTranslationField('en', 'cabin.hero.title', 'Mine');
     await tester.pumpAndSettle();
     expect(
-      tester.widget<Text>(find.textContaining('fields yours')).data,
-      startsWith('1 of '),
+      tester.widget<Text>(find.textContaining('in your own words')).data,
+      startsWith('0 changed · 1 of '),
     );
+
+    // Moving the source on makes that field reviewable again: the first
+    // figure counts what to look at, the second what the owner wrote.
+    cubit.editSourceField('cabin.hero.subtitle', 'Nieuwe ondertitel');
+    await cubit.save();
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<Text>(find.textContaining('in your own words')).data,
+      startsWith('1 changed · 1 of '),
+    );
+  });
+
+
+  testWidgets('the filter hides every card without a changed field', (
+    tester,
+  ) async {
+    final cubit = await pumpEditor(
+      tester,
+      surfaceSize: const Size(1360, 4000),
+    );
+    // Opening a language translates what is stale (lazy translation, par.
+    // 11a), so the change has to happen *after* EN is open — which is also
+    // the real review flow: you are in EN and the source moves on.
+    cubit.setPreviewLanguage('en');
+    await tester.pumpAndSettle();
+    cubit.editSourceField('cabin.hero.subtitle', 'Nieuwe ondertitel');
+    await cubit.save();
+    await tester.pumpAndSettle();
+
+    // Off by default (CONFORMANCE par. 5): every card is there.
+    expect(find.byType(ContentCard), findsWidgets);
+    final allCards = tester.widgetList<ContentCard>(find.byType(ContentCard));
+    expect(allCards.length, greaterThan(1));
+
+    cubit.setOnlyChangedFields(true);
+    await tester.pumpAndSettle();
+
+    // Only the card holding that field survives — header included, so no
+    // empty husks are left behind.
+    final filtered = tester.widgetList<ContentCard>(find.byType(ContentCard));
+    expect(filtered.length, 1);
+    // It is the Hero card: the field whose source moved lives there.
+    expect(find.text('Subtitle'), findsOneWidget);
+
+    cubit.setOnlyChangedFields(false);
+    await tester.pumpAndSettle();
+    expect(
+      tester.widgetList<ContentCard>(find.byType(ContentCard)).length,
+      allCards.length,
+    );
+  });
+
+  testWidgets('a card head carries its own changed count', (tester) async {
+    final cubit = await pumpEditor(
+      tester,
+      surfaceSize: const Size(1360, 4000),
+    );
+    cubit.setPreviewLanguage('en');
+    await tester.pumpAndSettle();
+    cubit.editSourceField('cabin.hero.subtitle', 'Nieuwe ondertitel');
+    await cubit.save();
+    await tester.pumpAndSettle();
+
+    // The rollup states the number per card; absent where nothing changed.
+    expect(find.text('1 changed'), findsOneWidget);
+
+    cubit.editSourceField('cabin.hero.title', 'Nieuwe titel');
+    await cubit.save();
+    await tester.pumpAndSettle();
+    expect(find.text('2 changed'), findsOneWidget);
+    expect(find.text('1 changed'), findsNothing);
+  });
+
+  testWidgets('a row the source just gained reads New, not Locked', (
+    tester,
+  ) async {
+    final cubit = await pumpEditor(
+      tester,
+      surfaceSize: const Size(1360, 4000),
+    );
+    cubit.addRow('home.highlights');
+    // The row carries a generated id for life; ask the state which one.
+    final rowId = cubit.state.rowIdsOfList('home.highlights').last;
+    cubit.editSourceField(
+      'home.highlights.$rowId.description',
+      'Een nieuw hoogtepunt',
+    );
+    cubit.setPreviewLanguage('en');
+    await tester.pumpAndSettle();
+
+    // The row is on screen, its English counterpart is empty: `New`, and not
+    // an empty `Locked` field.
+    expect(find.text('New'), findsOneWidget);
+    expect(find.text('Locked'), findsNothing);
+    // Never an empty locked field: an empty string is not the owner's words.
+    final field = cubit.state.translatedField(
+      'en',
+      'home.highlights.$rowId.description',
+    )!;
+    expect(field.status, FieldTranslationStatus.auto);
   });
 
   testWidgets('hiding the preview widens the editor but keeps the line short', (

@@ -532,4 +532,85 @@ void main() {
       expect(cubit.state.loadError, isNull);
     });
   });
+
+  group('translation mode at scale (par. B.4 / D.1)', () {
+    test('the changed count is derived from the schema, never from keys', () {
+      final cubit = build();
+      cubit.setPreviewLanguage('en');
+      // A key nobody has a field for — a leftover from an earlier schema, or
+      // a document key the editor does not expose. It must not be reviewable:
+      // the owner cannot see it, so it cannot be counted.
+      cubit.editSourceField('ghost.key.nobody.renders', 'Spook');
+
+      expect(
+        cubit.state.allFields.any((f) => f.key == 'ghost.key.nobody.renders'),
+        isFalse,
+      );
+      expect(cubit.state.changedFieldCount('en'), 0);
+      expect(cubit.state.changedCountForCard('en', 'hero'), 0);
+    });
+
+    test('a card rollup counts only its own fields', () {
+      final cubit = build();
+      cubit.setPreviewLanguage('en');
+      cubit.editSourceField('cabin.hero.subtitle', 'Nieuwe ondertitel');
+      // Saving is what makes a translation stale (par. 11i).
+      cubit.save();
+
+      expect(cubit.state.changedCountForCard('en', 'hero'), 1);
+      expect(cubit.state.changedCountForCard('en', 'highlights'), 0);
+      expect(cubit.state.changedFieldCount('en'), 1);
+    });
+
+    test('structure actions refuse to run outside the source language', () {
+      final cubit = build();
+      cubit.setPreviewLanguage('en');
+
+      // par. B.4: structure belongs to the source. The UI turns these off, but
+      // the rule lives on the cubit — a convention that only exists in a
+      // widget is one refactor away from being gone.
+      expect(() => cubit.addRow('home.highlights'), throwsAssertionError);
+      expect(
+        () => cubit.moveRow('home.highlights', 0, 2),
+        throwsAssertionError,
+      );
+      expect(
+        () => cubit.removeRowById('home.highlights', 'h1'),
+        throwsAssertionError,
+      );
+    });
+
+    test('the filter is off until something turns it on', () {
+      final cubit = build();
+      expect(cubit.state.onlyChangedFields, isFalse);
+
+      cubit.setOnlyChangedFields(true);
+      expect(cubit.state.onlyChangedFields, isTrue);
+
+      // With nothing changed, an on filter empties the lane rather than
+      // leaving card heads behind (CONFORMANCE par. 5).
+      cubit.setPreviewLanguage('en');
+      expect(cubit.state.changedFieldCount('en'), 0);
+      expect(cubit.state.visibleCards, isEmpty);
+
+      cubit.setOnlyChangedFields(false);
+      expect(cubit.state.visibleCards, isNotEmpty);
+    });
+
+    test('a row added in the source is new in every target, never locked', () {
+      final cubit = build();
+      cubit.addRow('home.highlights');
+      final rowId = cubit.state.rowIdsOfList('home.highlights').last;
+      final key = 'home.highlights.$rowId.description';
+      cubit.editSourceField(key, 'Een nieuw hoogtepunt');
+
+      for (final language in cubit.state.targetLanguages) {
+        expect(cubit.state.isFieldNew(language, key), isTrue);
+        expect(cubit.state.translatedField(language, key)!.status,
+            FieldTranslationStatus.auto);
+      }
+      // And it is what the counters count.
+      expect(cubit.state.changedFieldCount('en'), greaterThan(0));
+    });
+  });
 }

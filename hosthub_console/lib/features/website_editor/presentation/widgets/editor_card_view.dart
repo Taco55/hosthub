@@ -21,18 +21,37 @@ class EditorCardView extends StatelessWidget {
   final SiteContentState state;
   final EditorCard card;
 
+  /// The card's right-hand header slot: where the copy comes from when the
+  /// card is read-only, and otherwise the `N gewijzigd` rollup (§B.4) — one
+  /// number per card, so a 60-field page stays scannable without reading 60
+  /// per-field chips. Absent when nothing changed: a card head full of zeroes
+  /// is noise.
+  Widget? _headerTrailing(BuildContext context) {
+    if (card.readOnly) {
+      return StyledChip(
+        label: context.s.weCardSourceLodgify,
+        size: StyledChipSize.micro,
+      );
+    }
+    if (state.isSourceMode) return null;
+    final changed = state.changedCountForCard(state.previewLanguage, card.id);
+    if (changed == 0) return null;
+    return StyledChip(
+      label: context.s.weLaneChanged(changed),
+      size: StyledChipSize.display,
+      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+      labelColor: Theme.of(context).colorScheme.primary,
+      borderColor: Colors.transparent,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ContentCard(
       icon: cardIcon(card.id),
       title: cardTitle(context, card.id),
       subtitle: cardSubtitle(context, card.id),
-      headerTrailing: card.readOnly
-          ? StyledChip(
-              label: context.s.weCardSourceLodgify,
-              size: StyledChipSize.micro,
-            )
-          : null,
+      headerTrailing: _headerTrailing(context),
       children: [
         for (final row in card.rows)
           _RowView(state: state, card: card, row: row),
