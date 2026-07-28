@@ -357,7 +357,7 @@ void main() {
       cubit.editSourceField('cabin.hero.title', 'Nieuwe titel');
       await cubit.save();
       expect(cubit.state.staleLanguages, {'en', 'no'});
-      expect(cubit.state.reviewedLanguages, isEmpty);
+      expect(cubit.state.reviewedPages, isEmpty);
 
       await cubit.publishAll();
 
@@ -611,6 +611,91 @@ void main() {
       }
       // And it is what the counters count.
       expect(cubit.state.changedFieldCount('en'), greaterThan(0));
+    });
+  });
+
+  group('publishing at scale (par. D.2)', () {
+    test('changed counts what publish will put on the live pages', () {
+      final cubit = build();
+      // Nothing published-vs-saved differs yet: the seed is what is live.
+      expect(cubit.state.changedFieldCount('en'), 0);
+      expect(cubit.state.changedPages('en'), isEmpty);
+
+      cubit.editSourceField('cabin.hero.title', 'Nieuwe titel');
+      cubit.save();
+
+      // The English auto field is stale, so publish will rewrite it: that is a
+      // change to the live English page even though nobody typed in it.
+      expect(cubit.state.changedFieldCount('en'), 1);
+      expect(cubit.state.changedPages('en'), ['home']);
+
+      // Re-translating refreshes the wording; the live page still shows the
+      // old text, so the delta stays. A counter a background job can reset
+      // answers no question.
+      cubit.translateNow(['en']);
+      expect(cubit.state.changedFieldCount('en'), 1);
+    });
+
+    test('reviewing is page-granular', () async {
+      // The test the design calls for (CONFORMANCE par. 10.6): change a field
+      // on Practical, open EN on Home only, and EN must not read as reviewed.
+      final cubit = build();
+      cubit.editSourceField('practical.header.title', 'Nieuwe kop');
+      await cubit.save();
+
+      expect(cubit.state.changedPages('en'), ['practical']);
+
+      cubit.setPreviewLanguage('en');
+      expect(cubit.state.pageKey, 'home');
+      expect(cubit.state.isLanguageReviewed('en'), isFalse);
+      expect(cubit.state.reviewedChangedPageCount('en'), 0);
+
+      cubit.selectPage('practical');
+      expect(cubit.state.isLanguageReviewed('en'), isTrue);
+      expect(cubit.state.reviewedChangedPageCount('en'), 1);
+    });
+
+    test('a partly reviewed language says how far it got', () async {
+      final cubit = build();
+      cubit.editSourceField('cabin.hero.title', 'Nieuwe titel');
+      cubit.editSourceField('practical.header.title', 'Nieuwe kop');
+      await cubit.save();
+      expect(cubit.state.changedPages('en'), ['home', 'practical']);
+
+      cubit.setPreviewLanguage('en');
+      expect(cubit.state.reviewedChangedPageCount('en'), 1);
+      expect(cubit.state.isLanguageReviewed('en'), isFalse);
+    });
+
+    test('Openen lands in the language, the page, and the filter', () {
+      final cubit = build();
+      expect(cubit.state.onlyChangedFields, isFalse);
+
+      cubit.openReview('en', 'practical');
+
+      expect(cubit.state.previewLanguage, 'en');
+      expect(cubit.state.pageKey, 'practical');
+      expect(cubit.state.onlyChangedFields, isTrue);
+      // Landing there is reviewing that page.
+      expect(cubit.state.reviewedPages['en'], contains('practical'));
+    });
+
+    test('publishing moves the baseline; a skipped language keeps its own',
+        () async {
+      final cubit = build();
+      cubit.editSourceField('cabin.hero.title', 'Nieuwe titel');
+      await cubit.save();
+      expect(cubit.state.changedFieldCount('en'), 1);
+      expect(cubit.state.changedFieldCount('no'), 1);
+
+      await cubit.publishAll(skipLanguages: {'no'});
+
+      // What went out is live now, so its delta is empty; the language that
+      // stayed behind still has something waiting, because its pages did not
+      // change either.
+      expect(cubit.state.changedFieldCount('en'), 0);
+      expect(cubit.state.changedFieldCount('no'), 1);
+      await cubit.close();
     });
   });
 }

@@ -242,29 +242,44 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m96(count) => "${count} talen publiceren";
 
-  static String m97(source) => "Alleen ${source} publiceren";
+  static String m97(count) =>
+      "${count} gewijzigde velden · vergrendelde velden houden jouw woorden";
 
-  static String m98(language) => "${language} · bron";
+  static String m98(count) => "${count} gewijzigde velden · bekeken";
 
-  static String m99(source) =>
+  static String m99(count) => "${count} gewijzigde velden · nog niet bekeken";
+
+  static String m100(seen, total) => "${seen} van ${total} bekeken";
+
+  static String m101(count) =>
+      "${count} velden gewijzigd sinds de vorige publicatie";
+
+  static String m102(source) => "Alleen ${source} publiceren";
+
+  static String m103(language) => "${language} · bron";
+
+  static String m104(source) =>
       "Je ${source} content publiceert zoals die is. De andere talen worden opnieuw vertaald door AI, met behoud van wat je hebt vergrendeld.";
 
-  static String m100(lang) => "Bron · ${lang}";
+  static String m105(count, pages) =>
+      "${count} gewijzigde velden op ${pages} pagina\'s";
 
-  static String m101(source, count) =>
+  static String m106(lang) => "Bron · ${lang}";
+
+  static String m107(source, count) =>
       "${source} + ${count} vertalingen staan live";
 
-  static String m102(languages) =>
+  static String m108(languages) =>
       "${languages} vertalen zodra je ze opent, of bij publiceren";
 
-  static String m103(language) =>
+  static String m109(language) =>
       "Rijen wijzigen doe je in de bron (${language})";
 
-  static String m104(source) => "Volgt nu de ${source} bron.";
+  static String m110(source) => "Volgt nu de ${source} bron.";
 
-  static String m105(width, height) => "${width} × ${height}";
+  static String m111(width, height) => "${width} × ${height}";
 
-  static String m106(width, height) =>
+  static String m112(width, height) =>
       "Te klein (${width} × ${height}). Minimaal 1600 × 1200.";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
@@ -2550,12 +2565,22 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePublishDraftTranslatesNow": MessageLookupByLibrary.simpleMessage(
       "Nog niet nagekeken · wordt nu vertaald",
     ),
+    "wePublishFooter": m97,
     "wePublishModalTitle": MessageLookupByLibrary.simpleMessage(
       "Wat gaat live",
     ),
     "wePublishNeedsSave": MessageLookupByLibrary.simpleMessage(
       "Sla je wijzigingen eerst op",
     ),
+    "wePublishNotSeen": MessageLookupByLibrary.simpleMessage("Niet bekeken"),
+    "wePublishNothingChanged": MessageLookupByLibrary.simpleMessage(
+      "Niets gewijzigd",
+    ),
+    "wePublishOpen": MessageLookupByLibrary.simpleMessage("Openen"),
+    "wePublishPageSeen": m98,
+    "wePublishPageUnseen": m99,
+    "wePublishPartlySeen": m100,
+    "wePublishPerPage": MessageLookupByLibrary.simpleMessage("Per pagina"),
     "wePublishReady": MessageLookupByLibrary.simpleMessage("Klaar"),
     "wePublishReadyNote": MessageLookupByLibrary.simpleMessage(
       "Gepubliceerd zoals geschreven",
@@ -2567,12 +2592,16 @@ class MessageLookup extends MessageLookupByLibrary {
       "Verouderd — wordt vernieuwd",
     ),
     "wePublishReviewed": MessageLookupByLibrary.simpleMessage("Nagekeken"),
-    "wePublishSkipped": MessageLookupByLibrary.simpleMessage(
-      "Overgeslagen · blijft zoals het nu live staat",
+    "wePublishSeen": MessageLookupByLibrary.simpleMessage("Bekeken"),
+    "wePublishSkipped": MessageLookupByLibrary.simpleMessage("Overgeslagen"),
+    "wePublishSkippedNote": MessageLookupByLibrary.simpleMessage(
+      "blijft staan zoals hij nu live is",
     ),
-    "wePublishSourceOnly": m97,
-    "wePublishSourceRole": m98,
-    "wePublishSubtitle": m99,
+    "wePublishSourceDelta": m101,
+    "wePublishSourceOnly": m102,
+    "wePublishSourceRole": m103,
+    "wePublishSubtitle": m104,
+    "wePublishTargetDelta": m105,
     "wePublishTitle": MessageLookupByLibrary.simpleMessage(
       "Alle talen publiceren",
     ),
@@ -2601,15 +2630,15 @@ class MessageLookup extends MessageLookupByLibrary {
       "waarde is gedeeld over talen",
     ),
     "weShowPreview": MessageLookupByLibrary.simpleMessage("Voorbeeld tonen"),
-    "weSourceChip": m100,
+    "weSourceChip": m106,
     "weStaleNotice": MessageLookupByLibrary.simpleMessage(
       "Voorbeeld toont een eerdere bronwijziging.",
     ),
-    "weStatusCleanBody": m101,
+    "weStatusCleanBody": m107,
     "weStatusCleanTitle": MessageLookupByLibrary.simpleMessage(
       "Alles gepubliceerd",
     ),
-    "weStatusSavedBody": m102,
+    "weStatusSavedBody": m108,
     "weStatusSavedTitle": MessageLookupByLibrary.simpleMessage(
       "Opgeslagen · niet gepubliceerd",
     ),
@@ -2619,10 +2648,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "weStatusUnsavedTitle": MessageLookupByLibrary.simpleMessage(
       "Niet-opgeslagen wijzigingen",
     ),
-    "weStructureLocked": m103,
+    "weStructureLocked": m109,
     "weUndo": MessageLookupByLibrary.simpleMessage("Ongedaan maken"),
-    "weUndoSwitchNotice": m104,
-    "weUploadDone": m105,
+    "weUndoSwitchNotice": m110,
+    "weUploadDone": m111,
     "weUploadDropTitle": MessageLookupByLibrary.simpleMessage(
       "Sleep foto\'s hierheen of kies bestanden",
     ),
@@ -2636,7 +2665,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "weUploadRejectedTooLarge": MessageLookupByLibrary.simpleMessage(
       "Te groot. Maximaal 8 MB.",
     ),
-    "weUploadRejectedTooSmall": m106,
+    "weUploadRejectedTooSmall": m112,
     "weUploadRejectedType": MessageLookupByLibrary.simpleMessage(
       "Dit bestandstype wordt niet ondersteund. Exporteer als JPG of WebP.",
     ),

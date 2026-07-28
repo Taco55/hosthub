@@ -220,8 +220,11 @@ void main() {
     await cubit.save();
     await tester.pumpAndSettle();
     expect(
+      // Two: the field the owner took over reads differently on the live site
+      // too, so it is part of the delta — "changed" is about what publish will
+      // put on the pages, not only about what went stale.
       tester.widget<Text>(find.textContaining('in your own words')).data,
-      startsWith('1 changed · 1 of '),
+      startsWith('2 changed · 1 of '),
     );
   });
 
@@ -398,15 +401,18 @@ void main() {
 
     expect(find.text('What goes live'), findsWidgets);
     expect(find.text('Dutch · source'), findsOneWidget);
-    // The opened language is reviewed; the untouched one is still a draft.
+    // par. D.2: reviewing is page-granular. The owner opened EN while Home was
+    // the page with changes, so EN is reviewed; NO was never opened.
     expect(find.text('Reviewed'), findsOneWidget);
-    expect(find.text('Not reviewed yet · translates now'), findsOneWidget);
+    expect(find.text('Not reviewed'), findsOneWidget);
+    // And the row states the delta, not the total.
+    expect(find.textContaining('changed fields on 1 pages'), findsWidgets);
     expect(find.text('Publish 3 languages'), findsOneWidget);
 
     // Unchecking a target says what happens to it and drops the count.
     await tester.tap(find.byType(StyledCheckbox).first);
     await tester.pumpAndSettle();
-    expect(find.text('Skipped · stays as it is live now'), findsOneWidget);
+    expect(find.text('Skipped'), findsOneWidget);
     expect(find.text('Publish 2 languages'), findsOneWidget);
 
     // With every target skipped the label names the source instead of
@@ -428,6 +434,45 @@ void main() {
     // EN was translated and shipped; NO kept whatever is live.
     expect(cubit.state.isLanguageStale('en'), isFalse);
     expect(cubit.state.isLanguageStale('no'), isTrue);
+  });
+
+
+  testWidgets('the publish dialog breaks a language down per page', (
+    tester,
+  ) async {
+    final cubit = await pumpEditor(tester);
+    cubit.editSourceField('cabin.hero.title', 'Nieuwe titel');
+    cubit.editSourceField('practical.header.title', 'Nieuwe kop');
+    await cubit.save();
+    await tester.pumpAndSettle();
+
+    final opened = <(String, String)>[];
+    final context = tester.element(find.byType(EditorColumn));
+    showPublishModal(
+      context,
+      state: cubit.state,
+      onOpenReview: (language, page) => opened.add((language, page)),
+    );
+    await tester.pumpAndSettle();
+
+    // Collapsed by default: the dialog answers "what goes live" first. The
+    // page names also appear in the tabs behind the dialog, so the page rows
+    // are identified by their own note instead.
+    expect(find.textContaining('not reviewed yet'), findsNothing);
+    expect(find.text('Per page'), findsWidgets);
+
+    await tester.tap(find.text('Per page').first);
+    await tester.pumpAndSettle();
+
+    // One row per changed page — and only those: Area has no changes.
+    expect(find.textContaining('not reviewed yet'), findsNWidgets(2));
+    expect(find.text('Open'), findsNWidgets(2));
+
+    await tester.tap(find.text('Open').first);
+    await tester.pumpAndSettle();
+    expect(opened, isNotEmpty);
+    expect(opened.first.$1, 'en');
+    expect(opened.first.$2, 'home');
   });
 
   testWidgets('confirm publish clears dirty + stale', (tester) async {

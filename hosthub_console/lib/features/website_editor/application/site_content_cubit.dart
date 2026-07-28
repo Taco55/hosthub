@@ -48,6 +48,7 @@ class SiteContentState extends Equatable {
     required this.translating,
     this.listOrder = const {},
     this.mediaKeys = const {},
+    this.publishedByLocale = const {},
     this.draftSource = const {},
     this.draftTranslations = const {},
     this.draftListOrder = const {},
@@ -57,7 +58,7 @@ class SiteContentState extends Equatable {
     this.previewDomain,
     this.lastSavedAt,
     this.saving = false,
-    this.reviewedLanguages = const {},
+    this.reviewedPages = const {},
     this.pendingAutoSwitch,
     this.pendingRowDelete,
     this.loadStatus = ContentLoadStatus.ready,
@@ -85,6 +86,12 @@ class SiteContentState extends Equatable {
   /// Saved `listKey -> row ids` in display order. Identity lives in the id,
   /// order lives here — reordering changes this and nothing else.
   final Map<String, List<String>> listOrder;
+
+  /// What is live per locale (`language -> fieldKey -> text`). The delta the
+  /// lane header and the publish dialog report is measured against this:
+  /// "changed since the last publish" is the question, and a re-translation
+  /// refreshing the wording does not answer it.
+  final Map<String, Map<String, String>> publishedByLocale;
 
   /// Uncommitted source-language edits. Only holds fields whose value differs
   /// from [source].
@@ -133,10 +140,14 @@ class SiteContentState extends Equatable {
   /// Whether a save is in flight, for the save button's progress state.
   final bool saving;
 
-  /// Target languages the owner opened this session. Opening a language *is*
-  /// reviewing it (§11a), so this is what the publish dialog reports as
-  /// `Reviewed` rather than a separate flag nobody sets.
-  final Set<String> reviewedLanguages;
+  /// Which pages the owner opened, per target language, this session.
+  ///
+  /// With 14 fields "have you seen this language?" was a fair question; with
+  /// 250 it is not (§D.2). Reviewing is page-granular because that is how
+  /// reading works — you read a page, not a field — and it is cheap to measure
+  /// honestly. Opening a page *is* reviewing it; there is no separate flag for
+  /// somebody to forget to set.
+  final Map<String, Set<String>> reviewedPages;
 
   /// The one in-session undo for switching a field back to automatic — the
   /// only genuinely destructive action on this screen (§11g). Holds the
@@ -283,13 +294,31 @@ class SiteContentState extends Equatable {
     return field.isAuto && field.value.isEmpty;
   }
 
-  /// Whether a field is worth reviewing in this language: its source moved
-  /// since the machine translated it, or it was never translated at all.
+  /// Whether this field will read differently on the live site after the next
+  /// publish — the delta the lane header, the card rollups and the publish
+  /// dialog report (§D.1: "changed since the last publish").
   ///
-  /// This is the number the lane and the card rollups report — "what changed",
-  /// not "how much is translated" (§D.1).
-  bool isFieldChanged(String language, String key) =>
-      isFieldStale(language, key) || isFieldNew(language, key);
+  /// Three ways that happens, and all three count:
+  ///
+  /// * the row is new in this language (nothing to compare, everything to see);
+  /// * the saved value differs from what is live (the owner wrote it, or a
+  ///   translation already refreshed it);
+  /// * the value is stale — machine output behind its source, which publish
+  ///   *will* rewrite, so the live page changes even though nothing has been
+  ///   typed.
+  ///
+  /// Measuring against what is live rather than against staleness alone is what
+  /// keeps the number honest: a background re-translation refreshes wording the
+  /// owner still has not seen, and a counter it can reset answers no question.
+  bool isFieldChanged(String language, String key) {
+    if (isFieldNew(language, key)) return true;
+    if (isFieldStale(language, key)) return true;
+    final published = publishedByLocale[language];
+    // Nothing published yet means there is nothing to compare with; the two
+    // checks above have already answered for the cases that matter.
+    if (published == null) return false;
+    return savedValueFor(language, key) != (published[key] ?? '');
+  }
 
   /// Changed fields across the **whole site** for one language. Site-wide on
   /// purpose: it answers "what is there to review in this language", which
@@ -303,6 +332,27 @@ class SiteContentState extends Equatable {
   int changedCountForCard(String language, String cardId) => fields
       .where((f) => f.cardId == cardId && isFieldChanged(language, f.key))
       .length;
+
+  /// The changed fields of one page in one language — the number the publish
+  /// dialog's per-page breakdown reports.
+  List<EditorField> changedFieldsOnPage(String language, String page) => [
+    for (final field in effectiveFieldsFor(page, effectiveListOrder))
+      if (isFieldChanged(language, field.key)) field,
+  ];
+
+  /// The changed pages of a language the owner has opened this session.
+  int reviewedChangedPageCount(String language) {
+    final seen = reviewedPages[language] ?? const <String>{};
+    return changedPages(language).where(seen.contains).length;
+  }
+
+  /// Whether every page with changes has been opened in this language — what
+  /// the publish dialog reports as `Bekeken` (§D.2).
+  bool isLanguageReviewed(String language) {
+    final changed = changedPages(language);
+    if (changed.isEmpty) return true;
+    return reviewedChangedPageCount(language) == changed.length;
+  }
 
   /// Pages of the site that have at least one changed field in this language
   /// — what the publish dialog reports per language (§D.2).
@@ -356,6 +406,7 @@ class SiteContentState extends Equatable {
     Map<String, Map<String, TranslatedField>>? translations,
     Map<String, List<String>>? listOrder,
     Map<String, List<String>>? mediaKeys,
+    Map<String, Map<String, String>>? publishedByLocale,
     Map<String, List<String>>? draftMediaKeys,
     Map<String, String>? draftSource,
     Map<String, Map<String, TranslatedField>>? draftTranslations,
@@ -368,7 +419,7 @@ class SiteContentState extends Equatable {
     String? previewDomain,
     DateTime? lastSavedAt,
     bool? saving,
-    Set<String>? reviewedLanguages,
+    Map<String, Set<String>>? reviewedPages,
     PendingAutoSwitch? pendingAutoSwitch,
     PendingRowDelete? pendingRowDelete,
     ContentLoadStatus? loadStatus,
@@ -391,6 +442,7 @@ class SiteContentState extends Equatable {
       translations: translations ?? this.translations,
       listOrder: listOrder ?? this.listOrder,
       mediaKeys: mediaKeys ?? this.mediaKeys,
+      publishedByLocale: publishedByLocale ?? this.publishedByLocale,
       draftMediaKeys: clearDraft
           ? const {}
           : (draftMediaKeys ?? this.draftMediaKeys),
@@ -409,7 +461,7 @@ class SiteContentState extends Equatable {
       previewDomain: previewDomain ?? this.previewDomain,
       lastSavedAt: lastSavedAt ?? this.lastSavedAt,
       saving: saving ?? this.saving,
-      reviewedLanguages: reviewedLanguages ?? this.reviewedLanguages,
+      reviewedPages: reviewedPages ?? this.reviewedPages,
       pendingAutoSwitch: clearPendingAutoSwitch
           ? null
           : (pendingAutoSwitch ?? this.pendingAutoSwitch),
@@ -434,6 +486,7 @@ class SiteContentState extends Equatable {
     translations,
     listOrder,
     mediaKeys,
+    publishedByLocale,
     draftMediaKeys,
     draftSource,
     draftTranslations,
@@ -446,7 +499,7 @@ class SiteContentState extends Equatable {
     previewDomain,
     lastSavedAt,
     saving,
-    reviewedLanguages,
+    reviewedPages,
     pendingAutoSwitch,
     pendingRowDelete,
     loadStatus,
@@ -583,6 +636,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
           translations: content.translations,
           listOrder: content.listOrder,
           mediaKeys: content.mediaKeys,
+          publishedByLocale: content.publishedByLocale,
           previewDomain: content.previewDomain,
           dirty: false,
           loadStatus: ContentLoadStatus.ready,
@@ -652,14 +706,63 @@ class SiteContentCubit extends Cubit<SiteContentState> {
       source: source,
       translations: translations,
       listOrder: WebsiteSeed.listOrder,
+      // The demo site presents itself as published (nothing dirty, nothing
+      // stale), so what it starts with *is* what is live: the delta counters
+      // then measure the same thing they measure against a real site.
+      publishedByLocale: {
+        for (final language in WebsiteSeed.locales)
+          language: {
+            for (final field in seedFields)
+              field.key: language == WebsiteSeed.sourceLanguage
+                  ? (source[field.key] ?? '')
+                  : (translations[language]?[field.key]?.value ?? ''),
+          },
+      },
       dirty: false,
       publishOpen: false,
       translating: const {},
     );
   }
 
-  void selectPage(String pageKey) =>
-      emit(state.copyWith(pageKey: pageKey, clearPendingAutoSwitch: true));
+  void selectPage(String pageKey) => emit(
+    state.copyWith(
+      pageKey: pageKey,
+      // Opening a page in a target language is reviewing that page.
+      reviewedPages: state.isSourceMode
+          ? state.reviewedPages
+          : _withPageSeen(state.previewLanguage, pageKey),
+      clearPendingAutoSwitch: true,
+    ),
+  );
+
+  /// The reviewed map with one more (language, page) recorded.
+  Map<String, Set<String>> _withPageSeen(String language, String page) => {
+    ...state.reviewedPages,
+    language: {...?state.reviewedPages[language], page},
+  };
+
+  /// Opens the review lane exactly where the publish dialog pointed: this
+  /// language, this page, with the changed-only filter on (§D.2). That route is
+  /// the only one that makes reviewing 250 fields tractable, so it sets all
+  /// three at once instead of leaving the owner to.
+  void openReview(String language, String page) {
+    final isTarget = language != state.sourceLanguage;
+    emit(
+      state.copyWith(
+        previewLanguage: language,
+        pageKey: page,
+        onlyChangedFields: isTarget,
+        reviewedPages: isTarget
+            ? _withPageSeen(language, page)
+            : state.reviewedPages,
+        clearPendingAutoSwitch: true,
+      ),
+    );
+    if (isTarget && state.isLanguageStale(language)) {
+      // ignore: discarded_futures — the lane renders the result when it lands.
+      translateNow([language]);
+    }
+  }
 
   /// Opens a language for editing — and translates it if it needs it (§11a).
   ///
@@ -677,9 +780,9 @@ class SiteContentCubit extends Cubit<SiteContentState> {
     emit(
       state.copyWith(
         previewLanguage: language,
-        reviewedLanguages: isTarget
-            ? {...state.reviewedLanguages, language}
-            : state.reviewedLanguages,
+        reviewedPages: isTarget
+            ? _withPageSeen(language, state.pageKey)
+            : state.reviewedPages,
         clearPendingAutoSwitch: true,
       ),
     );
@@ -1343,10 +1446,27 @@ class SiteContentCubit extends Cubit<SiteContentState> {
         return;
       }
     }
+    // What just went out *is* live now, so the delta starts from here. A
+    // skipped language keeps its old baseline, because its live pages did not
+    // change either.
+    final published = {
+      for (final entry in state.publishedByLocale.entries) entry.key: entry.value,
+      state.sourceLanguage: {
+        for (final field in state.allFields)
+          field.key: state.savedValueFor(state.sourceLanguage, field.key),
+      },
+      for (final language in targets)
+        language: {
+          for (final field in state.allFields)
+            field.key: state.savedValueFor(language, field.key),
+        },
+    };
+
     emit(
       state.copyWith(
         dirty: false,
         publishOpen: false,
+        publishedByLocale: published,
         lastSavedAt: DateTime.now(),
         clearPendingAutoSwitch: true,
         clearError: true,

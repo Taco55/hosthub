@@ -86,6 +86,15 @@ class _WebsiteEditorView extends StatelessWidget {
           state: state,
           onConfirm: (skipLanguages) =>
               cubit.publishAll(skipLanguages: skipLanguages),
+          // §D.2: `Openen` is the one route that makes reviewing 250 fields
+          // tractable, so it lands in the language *and* the page with the
+          // filter on — and closes the dialog, because the owner is going to
+          // read now, not publish.
+          onOpenReview: (language, page) {
+            cubit.openReview(language, page);
+            cubit.closePublish();
+            Navigator.of(context).pop();
+          },
         );
         if (confirmed != true) cubit.closePublish();
       },

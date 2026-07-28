@@ -241,28 +241,42 @@ class MessageLookup extends MessageLookupByLibrary {
 
   static String m96(count) => "Publish ${count} languages";
 
-  static String m97(source) => "Publish ${source} only";
+  static String m97(count) =>
+      "${count} changed fields · locked fields keep your words";
 
-  static String m98(language) => "${language} · source";
+  static String m98(count) => "${count} changed fields · reviewed";
 
-  static String m99(source) =>
+  static String m99(count) => "${count} changed fields · not reviewed yet";
+
+  static String m100(seen, total) => "${seen} of ${total} reviewed";
+
+  static String m101(count) => "${count} fields changed since the last publish";
+
+  static String m102(source) => "Publish ${source} only";
+
+  static String m103(language) => "${language} · source";
+
+  static String m104(source) =>
       "Your ${source} content publishes as-is. The other languages are re-translated by AI, keeping anything you\'ve locked.";
 
-  static String m100(lang) => "Source · ${lang}";
+  static String m105(count, pages) =>
+      "${count} changed fields on ${pages} pages";
 
-  static String m101(source, count) =>
+  static String m106(lang) => "Source · ${lang}";
+
+  static String m107(source, count) =>
       "${source} + ${count} translations are live";
 
-  static String m102(languages) =>
+  static String m108(languages) =>
       "${languages} translate when you open them, or on publish";
 
-  static String m103(language) => "You change rows in the source (${language})";
+  static String m109(language) => "You change rows in the source (${language})";
 
-  static String m104(source) => "Now following the ${source} source.";
+  static String m110(source) => "Now following the ${source} source.";
 
-  static String m105(width, height) => "${width} × ${height}";
+  static String m111(width, height) => "${width} × ${height}";
 
-  static String m106(width, height) =>
+  static String m112(width, height) =>
       "Too small (${width} × ${height}). At least 1600 × 1200.";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
@@ -2426,12 +2440,22 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePublishDraftTranslatesNow": MessageLookupByLibrary.simpleMessage(
       "Not reviewed yet · translates now",
     ),
+    "wePublishFooter": m97,
     "wePublishModalTitle": MessageLookupByLibrary.simpleMessage(
       "What goes live",
     ),
     "wePublishNeedsSave": MessageLookupByLibrary.simpleMessage(
       "Save your changes first",
     ),
+    "wePublishNotSeen": MessageLookupByLibrary.simpleMessage("Not reviewed"),
+    "wePublishNothingChanged": MessageLookupByLibrary.simpleMessage(
+      "Nothing changed",
+    ),
+    "wePublishOpen": MessageLookupByLibrary.simpleMessage("Open"),
+    "wePublishPageSeen": m98,
+    "wePublishPageUnseen": m99,
+    "wePublishPartlySeen": m100,
+    "wePublishPerPage": MessageLookupByLibrary.simpleMessage("Per page"),
     "wePublishReady": MessageLookupByLibrary.simpleMessage("Ready"),
     "wePublishReadyNote": MessageLookupByLibrary.simpleMessage(
       "Published as written",
@@ -2443,12 +2467,16 @@ class MessageLookup extends MessageLookupByLibrary {
       "Out of date — will refresh",
     ),
     "wePublishReviewed": MessageLookupByLibrary.simpleMessage("Reviewed"),
-    "wePublishSkipped": MessageLookupByLibrary.simpleMessage(
-      "Skipped · stays as it is live now",
+    "wePublishSeen": MessageLookupByLibrary.simpleMessage("Reviewed"),
+    "wePublishSkipped": MessageLookupByLibrary.simpleMessage("Skipped"),
+    "wePublishSkippedNote": MessageLookupByLibrary.simpleMessage(
+      "stays as it is live now",
     ),
-    "wePublishSourceOnly": m97,
-    "wePublishSourceRole": m98,
-    "wePublishSubtitle": m99,
+    "wePublishSourceDelta": m101,
+    "wePublishSourceOnly": m102,
+    "wePublishSourceRole": m103,
+    "wePublishSubtitle": m104,
+    "wePublishTargetDelta": m105,
     "wePublishTitle": MessageLookupByLibrary.simpleMessage(
       "Publish all languages",
     ),
@@ -2477,15 +2505,15 @@ class MessageLookup extends MessageLookupByLibrary {
       "value is shared across languages",
     ),
     "weShowPreview": MessageLookupByLibrary.simpleMessage("Show preview"),
-    "weSourceChip": m100,
+    "weSourceChip": m106,
     "weStaleNotice": MessageLookupByLibrary.simpleMessage(
       "Preview reflects an earlier source edit.",
     ),
-    "weStatusCleanBody": m101,
+    "weStatusCleanBody": m107,
     "weStatusCleanTitle": MessageLookupByLibrary.simpleMessage(
       "Everything published",
     ),
-    "weStatusSavedBody": m102,
+    "weStatusSavedBody": m108,
     "weStatusSavedTitle": MessageLookupByLibrary.simpleMessage(
       "Saved · not published",
     ),
@@ -2495,10 +2523,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "weStatusUnsavedTitle": MessageLookupByLibrary.simpleMessage(
       "Unsaved changes",
     ),
-    "weStructureLocked": m103,
+    "weStructureLocked": m109,
     "weUndo": MessageLookupByLibrary.simpleMessage("Undo"),
-    "weUndoSwitchNotice": m104,
-    "weUploadDone": m105,
+    "weUndoSwitchNotice": m110,
+    "weUploadDone": m111,
     "weUploadDropTitle": MessageLookupByLibrary.simpleMessage(
       "Drag photos here or choose files",
     ),
@@ -2512,7 +2540,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "weUploadRejectedTooLarge": MessageLookupByLibrary.simpleMessage(
       "Too large. At most 8 MB.",
     ),
-    "weUploadRejectedTooSmall": m106,
+    "weUploadRejectedTooSmall": m112,
     "weUploadRejectedType": MessageLookupByLibrary.simpleMessage(
       "This file type is not supported. Export as JPG or WebP.",
     ),

@@ -13,6 +13,7 @@ class WebsitePageContent {
     required this.translations,
     this.listOrder = const {},
     this.mediaKeys = const {},
+    this.publishedByLocale = const {},
     this.sourceLanguage,
     this.locales,
     this.previewDomain,
@@ -26,6 +27,13 @@ class WebsitePageContent {
 
   /// `images.<slot> -> storage paths` in display order, from `site_config`.
   final Map<String, List<String>> mediaKeys;
+
+  /// What is **live** right now, per locale: `language -> (fieldKey -> text)`
+  /// read from each document's published `content`. The delta the publish
+  /// dialog reports is measured against this, not against translation
+  /// freshness — "changed since the last publish" is the question an owner
+  /// reviewing a site actually has.
+  final Map<String, Map<String, String>> publishedByLocale;
 
   /// `language -> (fieldKey -> TranslatedField)` for the target languages.
   final Map<String, Map<String, TranslatedField>> translations;
@@ -832,6 +840,14 @@ class WebsiteContentRepository extends SupabaseRepository {
           .select('content_type, slug, locale, content, draft_content')
           .eq('site_id', siteId)
           .inFilter('locale', locales);
+      // What is live, per locale: the published column only.
+      final publishedByDocLocale = <String, Map<String, dynamic>>{
+        for (final row in documentRows as List<dynamic>)
+          if (row['content'] is Map)
+            '${row['content_type']}:${row['slug']}:${row['locale']}':
+                Map<String, dynamic>.from(row['content'] as Map),
+      };
+
       // The editor edits the draft when there is one: what the owner saved but
       // has not published yet is what they expect to find in the fields.
       final contentByDocLocale = <String, Map<String, dynamic>>{
@@ -939,11 +955,28 @@ class WebsiteContentRepository extends SupabaseRepository {
               ],
       };
 
+      String? publishedValue(String fieldKey, String locale) {
+        final doc = _documentFor(fieldKey);
+        final content =
+            publishedByDocLocale['${_documentKeyOf(doc)}:$locale'];
+        if (content == null) return null;
+        return readField(fieldKey, doc.contentType, content);
+      }
+
+      final publishedByLocale = <String, Map<String, String>>{
+        for (final locale in locales)
+          locale: {
+            for (final key in fieldKeys)
+              if (publishedValue(key, locale) case final value?) key: value,
+          },
+      };
+
       return WebsitePageContent(
         source: source,
         translations: translations,
         listOrder: listOrder,
         mediaKeys: mediaKeys,
+        publishedByLocale: publishedByLocale,
         sourceLanguage: sourceLanguage,
         locales: locales,
         previewDomain: domainRow?['domain'] as String?,

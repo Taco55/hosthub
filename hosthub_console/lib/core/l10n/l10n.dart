@@ -10657,11 +10657,21 @@ class S {
     );
   }
 
-  /// `Skipped · stays as it is live now`
+  /// `Skipped`
   String get wePublishSkipped {
     return Intl.message(
-      'Skipped · stays as it is live now',
+      'Skipped',
       name: 'wePublishSkipped',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `stays as it is live now`
+  String get wePublishSkippedNote {
+    return Intl.message(
+      'stays as it is live now',
+      name: 'wePublishSkippedNote',
       desc: '',
       args: [],
     );
@@ -10704,6 +10714,106 @@ class S {
       name: 'wePublishDraftTranslatesNow',
       desc: '',
       args: [],
+    );
+  }
+
+  /// `{count} fields changed since the last publish`
+  String wePublishSourceDelta(Object count) {
+    return Intl.message(
+      '$count fields changed since the last publish',
+      name: 'wePublishSourceDelta',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `{count} changed fields on {pages} pages`
+  String wePublishTargetDelta(Object count, Object pages) {
+    return Intl.message(
+      '$count changed fields on $pages pages',
+      name: 'wePublishTargetDelta',
+      desc: '',
+      args: [count, pages],
+    );
+  }
+
+  /// `Per page`
+  String get wePublishPerPage {
+    return Intl.message(
+      'Per page',
+      name: 'wePublishPerPage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Reviewed`
+  String get wePublishSeen {
+    return Intl.message('Reviewed', name: 'wePublishSeen', desc: '', args: []);
+  }
+
+  /// `{seen} of {total} reviewed`
+  String wePublishPartlySeen(Object seen, Object total) {
+    return Intl.message(
+      '$seen of $total reviewed',
+      name: 'wePublishPartlySeen',
+      desc: '',
+      args: [seen, total],
+    );
+  }
+
+  /// `Not reviewed`
+  String get wePublishNotSeen {
+    return Intl.message(
+      'Not reviewed',
+      name: 'wePublishNotSeen',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Nothing changed`
+  String get wePublishNothingChanged {
+    return Intl.message(
+      'Nothing changed',
+      name: 'wePublishNothingChanged',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Open`
+  String get wePublishOpen {
+    return Intl.message('Open', name: 'wePublishOpen', desc: '', args: []);
+  }
+
+  /// `{count} changed fields · reviewed`
+  String wePublishPageSeen(Object count) {
+    return Intl.message(
+      '$count changed fields · reviewed',
+      name: 'wePublishPageSeen',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `{count} changed fields · not reviewed yet`
+  String wePublishPageUnseen(Object count) {
+    return Intl.message(
+      '$count changed fields · not reviewed yet',
+      name: 'wePublishPageUnseen',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `{count} changed fields · locked fields keep your words`
+  String wePublishFooter(Object count) {
+    return Intl.message(
+      '$count changed fields · locked fields keep your words',
+      name: 'wePublishFooter',
+      desc: '',
+      args: [count],
     );
   }
 

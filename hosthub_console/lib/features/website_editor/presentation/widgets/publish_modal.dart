@@ -21,6 +21,7 @@ Future<bool?> showPublishModal(
   BuildContext context, {
   required SiteContentState state,
   Future<void> Function(Set<String> skipLanguages)? onConfirm,
+  void Function(String language, String page)? onOpenReview,
 }) {
   final skipped = <String>{};
   // The confirm label counts what is actually going out, so it has to follow
@@ -36,6 +37,7 @@ Future<bool?> showPublishModal(
       builder: (context, setState) => _PublishContent(
         state: state,
         skipped: skipped,
+        onOpenReview: onOpenReview,
         onToggle: (code, include) => setState(() {
           if (include) {
             skipped.remove(code);
@@ -73,19 +75,31 @@ String publishConfirmLabel(
   return context.s.wePublishConfirm(count);
 }
 
-class _PublishContent extends StatelessWidget {
+class _PublishContent extends StatefulWidget {
   const _PublishContent({
     required this.state,
     required this.skipped,
     required this.onToggle,
+    this.onOpenReview,
   });
 
   final SiteContentState state;
   final Set<String> skipped;
   final void Function(String code, bool include) onToggle;
+  final void Function(String language, String page)? onOpenReview;
+
+  @override
+  State<_PublishContent> createState() => _PublishContentState();
+}
+
+class _PublishContentState extends State<_PublishContent> {
+  /// Languages whose per-page breakdown is open. Collapsed by default: the
+  /// dialog answers "what goes live" first, and the detail is one tap away.
+  final Set<String> _expanded = {};
 
   @override
   Widget build(BuildContext context) {
+    final state = widget.state;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,14 +113,80 @@ class _PublishContent extends StatelessWidget {
           ),
         ),
         SizedBox(height: context.styledSpacing.md),
-        for (final code in state.orderedLocales)
+        for (final code in state.orderedLocales) ...[
           _LanguageRow(
             state: state,
             code: code,
-            included: !skipped.contains(code),
-            onToggle: onToggle,
+            included: !widget.skipped.contains(code),
+            onToggle: widget.onToggle,
+            expanded: _expanded.contains(code),
+            onToggleExpanded: () => setState(() {
+              if (!_expanded.remove(code)) _expanded.add(code);
+            }),
           ),
+          // §D.2: the breakdown lists only pages that have changes — a page
+          // with nothing to review is not a row worth reading.
+          if (_expanded.contains(code))
+            for (final page in state.changedPages(code))
+              _PageRow(
+                state: state,
+                language: code,
+                page: page,
+                onOpenReview: widget.onOpenReview,
+              ),
+        ],
+        SizedBox(height: context.styledSpacing.sm),
+        // The promise the whole model rests on, repeated where it is acted on.
+        Text(
+          context.s.wePublishFooter(
+            state.changedFieldCount(
+              state.targetLanguages.isEmpty
+                  ? state.sourceLanguage
+                  : state.targetLanguages.first,
+            ),
+          ),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: context.colors.outline,
+          ),
+        ),
       ],
+    );
+  }
+}
+
+/// One page of one language: how much changed, and a way straight into it.
+class _PageRow extends StatelessWidget {
+  const _PageRow({
+    required this.state,
+    required this.language,
+    required this.page,
+    this.onOpenReview,
+  });
+
+  final SiteContentState state;
+  final String language;
+  final String page;
+  final void Function(String language, String page)? onOpenReview;
+
+  @override
+  Widget build(BuildContext context) {
+    final changed = state
+        .changedFieldsOnPage(language, page)
+        .length;
+    final seen = state.reviewedPages[language]?.contains(page) ?? false;
+
+    return StyledTile(
+      nested: true,
+      title: pageName(context, page),
+      subtitle: seen
+          ? context.s.wePublishPageSeen(changed)
+          : context.s.wePublishPageUnseen(changed),
+      trailing: onOpenReview == null
+          ? null
+          : StyledTextButton(
+              title: context.s.wePublishOpen,
+              onPressed: () => onOpenReview!(language, page),
+            ),
     );
   }
 }
@@ -117,33 +197,51 @@ class _LanguageRow extends StatelessWidget {
     required this.code,
     required this.included,
     required this.onToggle,
+    required this.expanded,
+    required this.onToggleExpanded,
   });
 
   final SiteContentState state;
   final String code;
   final bool included;
   final void Function(String code, bool include) onToggle;
+  final bool expanded;
+  final VoidCallback onToggleExpanded;
 
   @override
   Widget build(BuildContext context) {
     final isSource = code == state.sourceLanguage;
-    final reviewed = state.reviewedLanguages.contains(code);
+    final changedPages = state.changedPages(code);
+    final changedFields = state.changedFieldCount(code);
+    final reviewed = state.isLanguageReviewed(code);
+    final seenPages = state.reviewedChangedPageCount(code);
+    // §D.1: the note is the delta, not the total — "what is there to review".
+    final note = !included
+        ? context.s.wePublishSkippedNote
+        : isSource
+        ? context.s.wePublishSourceDelta(state.changedFieldCount(code))
+        : context.s.wePublishTargetDelta(changedFields, changedPages.length);
+
     final tokens = included && (isSource || reviewed)
         ? WebsiteStatusColors.locked(context.theme.brightness)
         : WebsiteStatusColors.auto(context.theme.brightness);
 
+    // §D.2: four states, and no coverage percentage — a partially reviewed
+    // language says how far it got, because that is the number that decides
+    // whether the owner wants to go back in.
     final String status;
     if (!included) {
       status = context.s.wePublishSkipped;
     } else if (isSource) {
-      status = context.s.wePublishReadyNote;
+      status = context.s.wePublishReady;
+    } else if (changedPages.isEmpty) {
+      status = context.s.wePublishNothingChanged;
+    } else if (reviewed) {
+      status = context.s.wePublishSeen;
+    } else if (seenPages > 0) {
+      status = context.s.wePublishPartlySeen(seenPages, changedPages.length);
     } else {
-      // §11a: a language the owner never opened is translated *at publish*, so
-      // the row has to say both things — it was not reviewed, and it is about
-      // to be written. Shipping unreviewed output stays a visible choice.
-      status = reviewed
-          ? context.s.wePublishReviewed
-          : context.s.wePublishDraftTranslatesNow;
+      status = context.s.wePublishNotSeen;
     }
 
     return StyledTile(
@@ -151,20 +249,36 @@ class _LanguageRow extends StatelessWidget {
       title: isSource
           ? context.s.wePublishSourceRole(languageName(context, code))
           : languageName(context, code),
-      subtitle: status,
-      // The source is not optional; every target is.
-      trailing: isSource
-          ? StyledChip(
-              label: context.s.wePublishReady,
-              size: StyledChipSize.display,
-              leading: Icon(Icons.check, size: 13, color: tokens.foreground),
-              backgroundColor: tokens.background,
-              labelColor: tokens.foreground,
-            )
-          : StyledCheckbox(
+      subtitle: note,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (!isSource && changedPages.isNotEmpty) ...[
+            StyledTextButton(
+              title: context.s.wePublishPerPage,
+              onPressed: onToggleExpanded,
+              showRightIcon: true,
+              rightIconData:
+                  expanded ? Icons.expand_less : Icons.expand_more,
+            ),
+            SizedBox(width: context.styledSpacing.sm),
+          ],
+          StyledChip(
+            label: status,
+            size: StyledChipSize.display,
+            backgroundColor: tokens.background,
+            labelColor: tokens.foreground,
+          ),
+          // The source is not optional; every target is.
+          if (!isSource) ...[
+            SizedBox(width: context.styledSpacing.sm),
+            StyledCheckbox(
               value: included,
               onChanged: (value) => onToggle(code, value),
             ),
+          ],
+        ],
+      ),
     );
   }
 
