@@ -17,6 +17,7 @@ import type {
   PracticalContent,
 } from "./content";
 import { rowTexts, textRows } from "./cms-rows";
+import { mediaPublicUrl } from "./media-url";
 
 type AnyRecord = Record<string, unknown>;
 
@@ -68,7 +69,12 @@ export function normalizeHomeContent(
     if (!home.highlightImages && highlights.some((row) => row.image)) {
       home.highlightImages = highlights
         .filter((row) => typeof row.image === "string")
-        .map((row) => ({ src: row.image as string, alt: row.alt ?? "" }));
+        // A row's image is a storage path once the owner picked it in the
+        // console; resolving here keeps the page ignorant of where it came from.
+        .map((row) => ({
+          src: mediaPublicUrl(row.image as string),
+          alt: row.alt ?? "",
+        }));
     }
   }
   normalizeTextList(home, "amenities");

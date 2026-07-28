@@ -2,6 +2,7 @@ import "server-only";
 
 import type { SiteConfig } from "@/lib/content";
 import { getDictionary, type Locale } from "@/lib/i18n";
+import { isResolvedImageSrc } from "@/lib/media-url";
 import {
   buildResponsiveImage,
   galleryImageSizes,
@@ -49,7 +50,9 @@ export function getGalleryImages(
     galleryFiles.length === 0
       ? curated
       : galleryFiles.map((file, index) => ({
-          src: `${basePath}/${file}`,
+          // A CMS slot holds resolved URLs; a repo list holds bare filenames
+          // that still need the configured folder in front of them.
+          src: isResolvedImageSrc(file) ? file : `${basePath}/${file}`,
           alt: `${fallbackAlt} ${index + 1}`,
         }));
 

@@ -39,6 +39,7 @@ import {
   type DocumentOutcome,
   type DocumentUnavailableReason,
 } from "./supabase/cms";
+import { mediaPublicUrls } from "./media-url";
 import {
   normalizeAreaContent,
   normalizeCabinContent,
@@ -116,13 +117,52 @@ function fromGenerated<T>(record: Partial<Record<Locale, T>>, locale: Locale): T
 }
 
 function mergeSiteConfig(override: Partial<SiteConfig>): SiteConfig {
-  return {
+  const merged: SiteConfig = {
     ...site,
     ...override,
     imagePaths: {
       ...site.imagePaths,
       ...(override.imagePaths ?? {}),
     },
+  };
+  return applyMediaSlots(merged, override);
+}
+
+/**
+ * Photo slots the console writes (`images.heroPhotos`, `images.homeGallery`,
+ * `images.galleryAll`) win over the repo's own file lists.
+ *
+ * Resolved to public bucket URLs here, at the provider boundary, so no page or
+ * resolver has to know whether a photo came from the CMS or from `public/`.
+ * A slot the owner has not filled yet keeps the repo's list: half-migrated is
+ * a state this site is allowed to be in.
+ */
+function applyMediaSlots(
+  config: SiteConfig,
+  override: Partial<SiteConfig>,
+): SiteConfig {
+  const images = (override as { images?: Record<string, unknown> }).images;
+  if (!images) return config;
+
+  const hero = mediaPublicUrls(images.heroPhotos);
+  const homeGallery = mediaPublicUrls(images.homeGallery);
+  const galleryAll = mediaPublicUrls(images.galleryAll);
+
+  return {
+    ...config,
+    heroImages: hero.length > 0 ? hero : config.heroImages,
+    // The homepage selection is a subset of the library, not its own upload
+    // (README par. A.5): same URLs, fewer of them. Alt text stays where it is,
+    // because it is per language and lives in the page's own document.
+    gallery:
+      homeGallery.length > 0
+        ? homeGallery.map((src, index) => ({
+            src,
+            alt: config.gallery[index]?.alt ?? {},
+          }))
+        : config.gallery,
+    galleryAllFilenames:
+      galleryAll.length > 0 ? galleryAll : config.galleryAllFilenames,
   };
 }
 
