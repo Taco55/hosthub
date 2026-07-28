@@ -1,12 +1,10 @@
 import 'dart:convert';
-import 'dart:developer' as developer;
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:hosthub_console/features/auth/domain/ports/email_templates_port.dart';
 import 'package:hosthub_console/features/auth/infrastructure/supabase/supabase_repository.dart';
 import 'package:hosthub_console/features/auth/domain/ports/onboarding_port.dart';
-import 'package:app_errors/app_errors.dart';
 
 class SupabaseOnboardingAdapter extends SupabaseRepository {
   SupabaseOnboardingAdapter({
@@ -136,32 +134,19 @@ class SupabaseOnboardingAdapter extends SupabaseRepository {
     final redirectUri = _resolveRedirectUri(defaultRedirect, overrideRedirect);
 
     try {
+      // No status check: a non-2xx from an Edge Function arrives as an
+      // exception, so `response.status` here is always 2xx and a branch on it
+      // would only ever double-map the error that the catch below handles.
       final response = await supabase.functions.invoke(
         functionName,
         body: jsonEncode({'email': email, 'redirectTo': redirectUri}),
         headers: const {'Content-Type': 'application/json'},
       );
 
-      if (response.status != 200) {
-        throw DomainError.of(
-          DomainErrorCode.serverError,
-          message: '$functionName failed (${response.status})',
-          cause: response.data,
-          context: {'email': email, 'redirect': redirectUri},
-        );
-      }
-
       final data = _ensureMap(response.data);
       final actionLink = (data['action_link'] ?? data['actionLink'])
           ?.toString();
       final otp = (data['email_otp'] ?? data['emailOtp'])?.toString();
-
-      if (operation.contains('MagicLink')) {
-        developer.log(
-          'Magic link generated ($operation): $actionLink',
-          name: 'SupabaseOnboardingAdapter',
-        );
-      }
 
       return _ResetLinkResult(actionLink: actionLink ?? '', otp: otp ?? '');
     } catch (error, stack) {

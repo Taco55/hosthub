@@ -13,9 +13,6 @@ const SUPABASE_SERVICE_ROLE_KEY = env(
   "SUPABASE_SECRET_KEY",
 );
 
-const STORAGE_BUCKET = "images";
-const STORAGE_BATCH_SIZE = 1000;
-
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_SERVICE_ROLE_KEY) {
   throw new Error("Missing Supabase environment configuration.");
 }
@@ -26,153 +23,21 @@ const jsonResponse = (body: unknown, status = 200) =>
 const jsonError = (status: number, message: string) =>
   jsonResponse({ error: message }, status);
 
-const isMissingRelationError = (error: any) => {
-  if (!error) return false;
-  const message = `${error.message ?? ""}`.toLowerCase();
-  const details = `${error.details ?? ""}`.toLowerCase();
-
-  return (
-    error.code === "42P01" ||
-    error.code === "PGRST205" ||
-    (message.includes("relation") && message.includes("does not exist")) ||
-    (details.includes("relation") && details.includes("does not exist")) ||
-    message.includes("could not find the table") ||
-    message.includes("schema cache")
-  );
-};
-
-const isMissingColumnError = (error: any, column: string) => {
-  if (!error) return false;
-  const columnName = column.split(".").pop()?.replace(/"/g, "") ?? column;
-  const message = `${error.message ?? ""}`.toLowerCase();
-  const details = `${error.details ?? ""}`.toLowerCase();
-
-  return (
-    message.includes(`column ${columnName}`) ||
-    message.includes(`column "${columnName}"`) ||
-    details.includes(`column ${columnName}`) ||
-    details.includes(`column "${columnName}"`)
-  );
-};
-
-type CleanupSpec = {
-  table: string;
-  columns: readonly string[];
-};
-
-const CLEANUP_SPECS: readonly CleanupSpec[] = [
-  { table: "profiles", columns: ["id"] },
-];
-
-type FileReferenceLookup = {
-  select: string;
-  column: string;
-};
-
-const FILE_REFERENCE_LOOKUPS: readonly FileReferenceLookup[] = [
-  {
-    select: "remote_full_key, remote_thumbnail_key, items!inner(created_by)",
-    column: "items.created_by",
-  },
-  {
-    select: "remote_full_key, remote_thumbnail_key, items!inner(owner_id)",
-    column: "items.owner_id",
-  },
-];
-
 type EdgeSupabaseClient = SupabaseClient<any, "public", any>;
 
-const collectImageKeys = async (
-  client: EdgeSupabaseClient,
-  userId: string,
-): Promise<string[]> => {
-  for (const lookup of FILE_REFERENCE_LOOKUPS) {
-    const { data, error } = await client
-      .from("file_references")
-      .select(lookup.select)
-      .eq(lookup.column, userId);
-
-    if (!error && Array.isArray(data)) {
-      return data
-        .flatMap((row: any) => [
-          row.remote_full_key,
-          row.remote_thumbnail_key,
-        ])
-        .filter((key): key is string => Boolean(key));
-    }
-
-    if (
-      isMissingRelationError(error) ||
-      isMissingColumnError(error, lookup.column)
-    ) {
-      continue;
-    }
-
-    if (error) throw error;
-  }
-
-  return [];
-};
-
-const deleteStorageKeys = async (
-  client: EdgeSupabaseClient,
-  keys: readonly string[],
-) => {
-  for (let index = 0; index < keys.length; index += STORAGE_BATCH_SIZE) {
-    const batch = keys.slice(index, index + STORAGE_BATCH_SIZE);
-    const { error } = await client.storage.from(STORAGE_BUCKET).remove(batch);
-    if (error) {
-      console.warn("[delete_user] storage.remove:", error.message);
-    }
-  }
-};
-
+// The profile row. Everything else that belongs to the user hangs off it or off
+// auth.users by a cascading foreign key, so this is the whole of the manual
+// cleanup — deleting it before the auth user keeps the order that RLS expects.
 const deleteDataForUser = async (
   client: EdgeSupabaseClient,
   userId: string,
 ) => {
-  for (const spec of CLEANUP_SPECS) {
-    let columnMatched = false;
-
-    for (const column of spec.columns) {
-      const { error } = await client.from(spec.table).delete().eq(column, userId);
-
-      if (isMissingRelationError(error)) {
-        console.warn(
-          `[delete_user] Skipping table ${spec.table}; relation missing.`,
-        );
-        columnMatched = true;
-        break;
-      }
-
-      if (!error) {
-        columnMatched = true;
-        break;
-      }
-
-      if (isMissingColumnError(error, column)) {
-        continue;
-      }
-
-      console.error(
-        `[delete_user] Failed deleting from ${spec.table} using ${column}:`,
-        error,
-      );
-      const errorMessage = error?.message ?? JSON.stringify(error);
-      throw new Error(
-        `Failed to delete from ${spec.table} using ${column}: ${errorMessage}`,
-      );
-    }
-
-    if (!columnMatched && spec.columns.length > 0) {
-      console.warn(
-        `[delete_user] Skipped table ${spec.table}; columns ${
-          spec.columns.join(
-            ", ",
-          )
-        } not found.`,
-      );
-    }
+  const { error } = await client.from("profiles").delete().eq("id", userId);
+  if (error) {
+    console.error("[delete_user] Failed deleting profile:", error);
+    throw new Error(
+      `Failed to delete profile: ${error.message ?? JSON.stringify(error)}`,
+    );
   }
 };
 
@@ -226,11 +91,7 @@ Deno.serve(async (req) => {
 
     const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const storageKeys = await collectImageKeys(adminClient, userId);
-
     await deleteDataForUser(adminClient, userId);
-
-    await deleteStorageKeys(adminClient, storageKeys);
 
     await deleteAuthUser(adminClient, userId);
 
