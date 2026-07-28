@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 6EddShIe6QIprFqsXIE5VXBIz0XOIVsTu5BUSEkpyltOgKfdZbXG8mTKGyDSyW7
+\restrict cCy1i8rWy7ZTRMx0cfpQyYBnbxkiGaDmIw9qdxrlpbxRcbI9DEN5VFFvC0ShFAA
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -79,37 +79,51 @@ CREATE TYPE public.subscription_status AS ENUM (
 ALTER TYPE public.subscription_status OWNER TO postgres;
 
 --
--- Name: accept_pending_invitations(uuid, text); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: accept_pending_invitations(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.accept_pending_invitations(p_user_id uuid, p_user_email text) RETURNS void
+CREATE FUNCTION public.accept_pending_invitations() RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
-DECLARE
-    inv RECORD;
-BEGIN
-    FOR inv IN
-        SELECT id, site_id, role
-        FROM public.site_invitations
-        WHERE email = lower(trim(p_user_email))
-          AND status = 'pending'
-          AND expires_at > now()
-    LOOP
-        INSERT INTO public.site_members (site_id, profile_id, role)
-        VALUES (inv.site_id, p_user_id, inv.role)
-        ON CONFLICT (site_id, profile_id)
-            DO UPDATE SET role = EXCLUDED.role, updated_at = now();
+declare
+  v_user_id uuid := auth.uid();
+  v_email text;
+  inv record;
+begin
+  if v_user_id is null then
+    return;
+  end if;
 
-        UPDATE public.site_invitations
-        SET status = 'accepted'
-        WHERE id = inv.id;
-    END LOOP;
-END;
+  select lower(trim(u.email)) into v_email
+    from auth.users u
+   where u.id = v_user_id;
+
+  if v_email is null or v_email = '' then
+    return;
+  end if;
+
+  for inv in
+    select id, site_id, role
+      from public.site_invitations
+     where email = v_email
+       and status = 'pending'
+       and expires_at > now()
+  loop
+    insert into public.site_members (site_id, profile_id, role)
+    values (inv.site_id, v_user_id, inv.role)
+    on conflict (site_id, profile_id)
+      do update set role = excluded.role, updated_at = now();
+
+    update public.site_invitations
+       set status = 'accepted'
+     where id = inv.id;
+  end loop;
+end;
 $$;
 
 
-ALTER FUNCTION public.accept_pending_invitations(p_user_id uuid, p_user_email text) OWNER TO postgres;
+ALTER FUNCTION public.accept_pending_invitations() OWNER TO postgres;
 
 --
 -- Name: account_owner_for(uuid); Type: FUNCTION; Schema: public; Owner: postgres
@@ -268,71 +282,6 @@ $$;
 
 
 ALTER FUNCTION public.create_local_admin_user(admin_email text, admin_password text, admin_username text) OWNER TO postgres;
-
---
--- Name: get_effective_lodgify_api_key(uuid); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.get_effective_lodgify_api_key(p_user_id uuid) RETURNS text
-    LANGUAGE plpgsql SECURITY DEFINER
-    SET search_path TO 'public'
-    AS $$
-declare
-  v_api_key text;
-begin
-  if p_user_id is null then
-    return null;
-  end if;
-
-  select lak.api_key
-    into v_api_key
-    from public.lodgify_api_keys lak
-   where lak.profile_id = p_user_id
-     and btrim(lak.api_key) <> ''
-   limit 1;
-
-  if v_api_key is not null then
-    return v_api_key;
-  end if;
-
-  select owner_lak.api_key
-    into v_api_key
-    from public.site_members sm
-    join public.sites s
-      on s.id = sm.site_id
-    join public.lodgify_api_keys owner_lak
-      on owner_lak.profile_id = s.owner_profile_id
-   where sm.profile_id = p_user_id
-     and btrim(owner_lak.api_key) <> ''
-   order by sm.created_at asc
-   limit 1;
-
-  return v_api_key;
-end;
-$$;
-
-
-ALTER FUNCTION public.get_effective_lodgify_api_key(p_user_id uuid) OWNER TO postgres;
-
---
--- Name: get_site_lodgify_api_key(uuid); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.get_site_lodgify_api_key(p_site_id uuid) RETURNS text
-    LANGUAGE sql SECURITY DEFINER
-    SET search_path TO 'public'
-    AS $$
-  select lak.api_key
-  from public.sites s
-  join public.lodgify_api_keys lak
-    on lak.profile_id = s.owner_profile_id
-  where s.id = p_site_id
-    and btrim(lak.api_key) <> ''
-  limit 1;
-$$;
-
-
-ALTER FUNCTION public.get_site_lodgify_api_key(p_site_id uuid) OWNER TO postgres;
 
 --
 -- Name: handle_new_user(); Type: FUNCTION; Schema: public; Owner: postgres
@@ -595,11 +544,19 @@ CREATE TABLE public.cms_media (
     tags text[] DEFAULT '{}'::text[],
     sort_order integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    usage jsonb DEFAULT '[]'::jsonb NOT NULL
 );
 
 
 ALTER TABLE public.cms_media OWNER TO postgres;
+
+--
+-- Name: COLUMN cms_media.usage; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.cms_media.usage IS 'Field addresses that reference this file (["page/home:heroPhotos"]). Kept by the console when it writes image keys, so the picker can name a file''s use and block deleting one that is still on a page.';
+
 
 --
 -- Name: cms_media_collection_items; Type: TABLE; Schema: public; Owner: postgres
@@ -1087,6 +1044,13 @@ ALTER TABLE ONLY public.user_settings
 
 
 --
+-- Name: cms_media_site_storage_path_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX cms_media_site_storage_path_key ON public.cms_media USING btree (site_id, storage_path);
+
+
+--
 -- Name: idx_cms_doc_versions_lookup; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1442,13 +1406,6 @@ CREATE POLICY "CMS media collections are publicly readable" ON public.cms_media_
 
 
 --
--- Name: cms_media CMS media is publicly readable; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY "CMS media is publicly readable" ON public.cms_media FOR SELECT TO authenticated, anon USING (true);
-
-
---
 -- Name: site_members Members can view site team; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -1488,10 +1445,24 @@ CREATE POLICY "Site domains limited to site owners" ON public.site_domains USING
 
 
 --
+-- Name: cms_media Site editors manage CMS media; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Site editors manage CMS media" ON public.cms_media TO authenticated USING (public.has_site_access(site_id, auth.uid(), 'editor'::public.site_member_role)) WITH CHECK (public.has_site_access(site_id, auth.uid(), 'editor'::public.site_member_role));
+
+
+--
 -- Name: site_translations Site editors manage translations; Type: POLICY; Schema: public; Owner: postgres
 --
 
 CREATE POLICY "Site editors manage translations" ON public.site_translations TO authenticated USING ((public.is_admin(auth.uid()) OR public.has_site_access(site_id, auth.uid(), 'editor'::public.site_member_role))) WITH CHECK ((public.is_admin(auth.uid()) OR public.has_site_access(site_id, auth.uid(), 'editor'::public.site_member_role)));
+
+
+--
+-- Name: cms_media Site members read CMS media; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Site members read CMS media" ON public.cms_media FOR SELECT TO authenticated USING (public.has_site_access(site_id, auth.uid(), 'viewer'::public.site_member_role));
 
 
 --
@@ -1526,17 +1497,6 @@ CREATE POLICY "Site owners can manage CMS documents" ON public.cms_documents TO 
   WHERE ((s.id = cms_documents.site_id) AND (s.owner_profile_id = auth.uid())))))) WITH CHECK ((public.is_admin(auth.uid()) OR (EXISTS ( SELECT 1
    FROM public.sites s
   WHERE ((s.id = cms_documents.site_id) AND (s.owner_profile_id = auth.uid()))))));
-
-
---
--- Name: cms_media Site owners can manage CMS media; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY "Site owners can manage CMS media" ON public.cms_media TO authenticated USING ((public.is_admin(auth.uid()) OR (EXISTS ( SELECT 1
-   FROM public.sites s
-  WHERE ((s.id = cms_media.site_id) AND (s.owner_profile_id = auth.uid())))))) WITH CHECK ((public.is_admin(auth.uid()) OR (EXISTS ( SELECT 1
-   FROM public.sites s
-  WHERE ((s.id = cms_media.site_id) AND (s.owner_profile_id = auth.uid()))))));
 
 
 --
@@ -1716,19 +1676,19 @@ GRANT USAGE ON SCHEMA public TO service_role;
 
 
 --
--- Name: FUNCTION accept_pending_invitations(p_user_id uuid, p_user_email text); Type: ACL; Schema: public; Owner: postgres
+-- Name: FUNCTION accept_pending_invitations(); Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON FUNCTION public.accept_pending_invitations(p_user_id uuid, p_user_email text) TO anon;
-GRANT ALL ON FUNCTION public.accept_pending_invitations(p_user_id uuid, p_user_email text) TO authenticated;
-GRANT ALL ON FUNCTION public.accept_pending_invitations(p_user_id uuid, p_user_email text) TO service_role;
+REVOKE ALL ON FUNCTION public.accept_pending_invitations() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.accept_pending_invitations() TO authenticated;
+GRANT ALL ON FUNCTION public.accept_pending_invitations() TO service_role;
 
 
 --
 -- Name: FUNCTION account_owner_for(check_user_id uuid); Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON FUNCTION public.account_owner_for(check_user_id uuid) TO anon;
+REVOKE ALL ON FUNCTION public.account_owner_for(check_user_id uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.account_owner_for(check_user_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.account_owner_for(check_user_id uuid) TO service_role;
 
@@ -1746,35 +1706,14 @@ GRANT ALL ON FUNCTION public.cms_next_version() TO service_role;
 -- Name: FUNCTION create_local_admin_user(admin_email text, admin_password text, admin_username text); Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON FUNCTION public.create_local_admin_user(admin_email text, admin_password text, admin_username text) TO anon;
-GRANT ALL ON FUNCTION public.create_local_admin_user(admin_email text, admin_password text, admin_username text) TO authenticated;
-GRANT ALL ON FUNCTION public.create_local_admin_user(admin_email text, admin_password text, admin_username text) TO service_role;
-
-
---
--- Name: FUNCTION get_effective_lodgify_api_key(p_user_id uuid); Type: ACL; Schema: public; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION public.get_effective_lodgify_api_key(p_user_id uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.get_effective_lodgify_api_key(p_user_id uuid) TO service_role;
-
-
---
--- Name: FUNCTION get_site_lodgify_api_key(p_site_id uuid); Type: ACL; Schema: public; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION public.get_site_lodgify_api_key(p_site_id uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.get_site_lodgify_api_key(p_site_id uuid) TO anon;
-GRANT ALL ON FUNCTION public.get_site_lodgify_api_key(p_site_id uuid) TO authenticated;
-GRANT ALL ON FUNCTION public.get_site_lodgify_api_key(p_site_id uuid) TO service_role;
+REVOKE ALL ON FUNCTION public.create_local_admin_user(admin_email text, admin_password text, admin_username text) FROM PUBLIC;
 
 
 --
 -- Name: FUNCTION handle_new_user(); Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON FUNCTION public.handle_new_user() TO anon;
-GRANT ALL ON FUNCTION public.handle_new_user() TO authenticated;
+REVOKE ALL ON FUNCTION public.handle_new_user() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.handle_new_user() TO service_role;
 
 
@@ -1818,8 +1757,7 @@ GRANT ALL ON FUNCTION public.set_updated_at() TO service_role;
 -- Name: FUNCTION sync_lodgify_api_key_secret(); Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON FUNCTION public.sync_lodgify_api_key_secret() TO anon;
-GRANT ALL ON FUNCTION public.sync_lodgify_api_key_secret() TO authenticated;
+REVOKE ALL ON FUNCTION public.sync_lodgify_api_key_secret() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.sync_lodgify_api_key_secret() TO service_role;
 
 
@@ -2036,5 +1974,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON T
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 6EddShIe6QIprFqsXIE5VXBIz0XOIVsTu5BUSEkpyltOgKfdZbXG8mTKGyDSyW7
+\unrestrict cCy1i8rWy7ZTRMx0cfpQyYBnbxkiGaDmIw9qdxrlpbxRcbI9DEN5VFFvC0ShFAA
 

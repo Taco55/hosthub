@@ -440,16 +440,23 @@ class SiteMemberRepository extends SupabaseRepository {
   // Invitation acceptance (called on login)
   // ---------------------------------------------------------------------------
 
+  /// Claims the invitations addressed to the signed-in user.
+  ///
+  /// Takes no arguments on purpose: the RPC reads the subject from `auth.uid()`
+  /// and the verified address from `auth.users`. Passing them in — which this
+  /// used to do — let a caller name somebody else's invited address and join
+  /// that site with the invited role.
   Future<void> acceptPendingInvitations() async {
-    final user = supabase.auth.currentUser;
-    if (user == null || user.email == null) return;
+    if (supabase.auth.currentUser == null) return;
     try {
-      await supabase.rpc(
-        'accept_pending_invitations',
-        params: {'p_user_id': user.id, 'p_user_email': user.email!},
+      await supabase.rpc('accept_pending_invitations');
+    } catch (error, stack) {
+      throw mapError(
+        error,
+        stack,
+        reason: DomainErrorReason.cannotSaveData,
+        context: const {'op': 'acceptPendingInvitations'},
       );
-    } catch (_) {
-      // Non-critical: silently ignore if function doesn't exist yet
     }
   }
 

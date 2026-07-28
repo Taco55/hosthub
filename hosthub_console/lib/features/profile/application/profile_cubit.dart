@@ -87,13 +87,17 @@ class ProfileCubit extends Cubit<ProfileState> {
         profile = newProfile;
       }
 
-      // Accept any pending site invitations for this user
+      // Accept any pending site invitations for this user. A failure here must
+      // not keep the profile from loading — the user is signed in either way —
+      // but it does get reported instead of dropped, because an invitation that
+      // silently never lands looks to everyone involved like the invite was
+      // never sent.
       try {
         if (I.isRegistered<SiteMemberRepository>()) {
           await I.get<SiteMemberRepository>().acceptPendingInvitations();
         }
-      } catch (_) {
-        // Non-critical: silently ignore
+      } catch (error, stack) {
+        addError(error, stack);
       }
 
       emit(
