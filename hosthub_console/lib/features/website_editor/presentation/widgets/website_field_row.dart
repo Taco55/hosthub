@@ -64,7 +64,7 @@ class WebsiteFieldRow extends StatelessWidget {
     }
 
     // A language-independent value is not this language's to write: it shows
-    // the source value, read-only, with the shared micro chip (§B.2).
+    // the source value, disabled, and says why with the shared tag (§B.2).
     if (field.sharedValue) {
       return EditableContentField(
         value: state.valueFor(state.sourceLanguage, field.key),
@@ -73,7 +73,8 @@ class WebsiteFieldRow extends StatelessWidget {
         hint: hint,
         multiline: field.multiline,
         numeric: numeric,
-        sharedValueLabel: context.s.weChipShared,
+        enabled: false,
+        labelTrailing: _sharedTag(context),
       );
     }
 
@@ -91,6 +92,19 @@ class WebsiteFieldRow extends StatelessWidget {
           ? _statusChip(context, cubit, locked)
           : null,
       footer: _footer(context, cubit, locked),
+    );
+  }
+
+  /// The micro tag that says a value is shared across every language — the
+  /// app's own vocabulary, styled with the library's label-tag tokens.
+  Widget _sharedTag(BuildContext context) {
+    final input = StyledWidgetsTheme.of(context).formFields.input;
+    return StyledChip(
+      label: context.s.weChipShared,
+      size: StyledChipSize.micro,
+      backgroundColor: input.labelTagBackgroundColor,
+      labelColor: input.labelTagLabelColor,
+      borderColor: Colors.transparent,
     );
   }
 

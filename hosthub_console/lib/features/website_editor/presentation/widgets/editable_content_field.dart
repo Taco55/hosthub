@@ -16,7 +16,7 @@ class EditableContentField extends StatefulWidget {
     this.multiline = false,
     this.autofocus = false,
     this.numeric = false,
-    this.sharedValueLabel,
+    this.enabled = true,
   });
 
   final String value;
@@ -34,9 +34,10 @@ class EditableContentField extends StatefulWidget {
   /// Right-aligned, tabular value column (a shared numeric pair value).
   final bool numeric;
 
-  /// When set, the field is read-only and carries the shared micro chip: its
-  /// value is language-independent.
-  final String? sharedValueLabel;
+  /// Whether the field accepts edits. A value this language does not own —
+  /// one that is shared across locales — is shown disabled; why it is
+  /// disabled is said by the tag the caller puts in [labelTrailing].
+  final bool enabled;
 
   @override
   State<EditableContentField> createState() => _EditableContentFieldState();
@@ -83,7 +84,7 @@ class _EditableContentFieldState extends State<EditableContentField> {
       labelTrailing: widget.labelTrailing,
       footer: widget.footer,
       helperText: widget.hint,
-      sharedValueLabel: widget.sharedValueLabel,
+      enabled: widget.enabled,
       autofocus: widget.autofocus,
       maxLines: widget.multiline ? 3 : 1,
       minLines: widget.multiline ? 2 : 1,
