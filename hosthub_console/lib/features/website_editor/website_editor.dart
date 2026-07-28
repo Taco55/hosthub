@@ -1,6 +1,9 @@
+export 'application/media_library_cubit.dart';
 export 'application/site_content_cubit.dart';
 export 'data/edge_function_translation_service.dart';
+export 'data/media_repository.dart';
 export 'data/translation_service.dart';
 export 'data/website_content_repository.dart';
+export 'domain/media_file.dart';
 export 'domain/website_content.dart';
 export 'presentation/pages/website_editor_page.dart';

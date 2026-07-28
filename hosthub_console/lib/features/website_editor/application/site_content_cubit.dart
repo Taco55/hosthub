@@ -47,9 +47,11 @@ class SiteContentState extends Equatable {
     required this.publishOpen,
     required this.translating,
     this.listOrder = const {},
+    this.mediaKeys = const {},
     this.draftSource = const {},
     this.draftTranslations = const {},
     this.draftListOrder = const {},
+    this.draftMediaKeys = const {},
     this.errorMessage,
     this.loadError,
     this.previewDomain,
@@ -94,6 +96,13 @@ class SiteContentState extends Equatable {
 
   /// Uncommitted row-order/row-set changes per list (add, reorder).
   final Map<String, List<String>> draftListOrder;
+
+  /// Saved `mediaKey -> storage paths`, in display order. Photos are
+  /// language-independent (README §C.4): one set per site, not per locale.
+  final Map<String, List<String>> mediaKeys;
+
+  /// Uncommitted photo choices and orders.
+  final Map<String, List<String>> draftMediaKeys;
 
   /// Whether there are saved-but-unpublished changes. Set by a save, cleared by
   /// publish: typing does not set it, because typing does not save (§11i).
@@ -158,11 +167,21 @@ class SiteContentState extends Equatable {
   bool get unsavedChanges =>
       draftSource.isNotEmpty ||
       draftListOrder.isNotEmpty ||
+      draftMediaKeys.isNotEmpty ||
       draftTranslations.values.any((fields) => fields.isNotEmpty);
 
   /// Source text as the fields show it: the draft on top of the saved layer.
   Map<String, String> get effectiveSource =>
       draftSource.isEmpty ? source : {...source, ...draftSource};
+
+  /// Photos as the strip shows them: the draft on top of the saved layer.
+  Map<String, List<String>> get effectiveMediaKeys => draftMediaKeys.isEmpty
+      ? mediaKeys
+      : {...mediaKeys, ...draftMediaKeys};
+
+  /// The storage paths of one media slot, in display order.
+  List<String> mediaPathsOf(String mediaKey) =>
+      effectiveMediaKeys[mediaKey] ?? const [];
 
   /// Row order as the editor shows it: the draft on top of the saved layer.
   Map<String, List<String>> get effectiveListOrder => draftListOrder.isEmpty
@@ -336,6 +355,8 @@ class SiteContentState extends Equatable {
     Map<String, String>? source,
     Map<String, Map<String, TranslatedField>>? translations,
     Map<String, List<String>>? listOrder,
+    Map<String, List<String>>? mediaKeys,
+    Map<String, List<String>>? draftMediaKeys,
     Map<String, String>? draftSource,
     Map<String, Map<String, TranslatedField>>? draftTranslations,
     Map<String, List<String>>? draftListOrder,
@@ -369,6 +390,10 @@ class SiteContentState extends Equatable {
       source: source ?? this.source,
       translations: translations ?? this.translations,
       listOrder: listOrder ?? this.listOrder,
+      mediaKeys: mediaKeys ?? this.mediaKeys,
+      draftMediaKeys: clearDraft
+          ? const {}
+          : (draftMediaKeys ?? this.draftMediaKeys),
       draftSource: clearDraft ? const {} : (draftSource ?? this.draftSource),
       draftTranslations: clearDraft
           ? const {}
@@ -408,6 +433,8 @@ class SiteContentState extends Equatable {
     source,
     translations,
     listOrder,
+    mediaKeys,
+    draftMediaKeys,
     draftSource,
     draftTranslations,
     draftListOrder,
@@ -555,6 +582,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
           source: content.source,
           translations: content.translations,
           listOrder: content.listOrder,
+          mediaKeys: content.mediaKeys,
           previewDomain: content.previewDomain,
           dirty: false,
           loadStatus: ContentLoadStatus.ready,
@@ -660,6 +688,47 @@ class SiteContentCubit extends Cubit<SiteContentState> {
       // failures surface as a message, the old text stays.
       translateNow([language]);
     }
+  }
+
+  /// Records the photos chosen for one media slot, in the order the picker
+  /// handed them back. A draft like every other edit; photos are shared across
+  /// languages, so this is only the source language's to change.
+  void setMediaPaths(String mediaKey, List<String> paths) {
+    assert(
+      state.isSourceMode,
+      'Photos are shared across every language; they are chosen in the source.',
+    );
+    final draft = Map<String, List<String>>.from(state.draftMediaKeys);
+    if (_sameOrder(paths, state.mediaKeys[mediaKey])) {
+      draft.remove(mediaKey);
+    } else {
+      draft[mediaKey] = paths;
+    }
+    emit(state.copyWith(draftMediaKeys: draft));
+  }
+
+  /// Moves one photo within its slot. The first photo is the share image, so
+  /// this order is content and not a preference.
+  void moveMediaPath(String mediaKey, int oldIndex, int newIndex) {
+    assert(
+      state.isSourceMode,
+      'Photos are shared across every language; they are ordered in the source.',
+    );
+    final paths = [...state.mediaPathsOf(mediaKey)];
+    if (oldIndex < 0 || oldIndex >= paths.length) return;
+    newIndex = newIndex.clamp(0, paths.length - 1);
+    if (newIndex == oldIndex) return;
+    paths.insert(newIndex, paths.removeAt(oldIndex));
+    setMediaPaths(mediaKey, paths);
+  }
+
+  /// Drops one photo from a slot. The strip keeps the minimum honest, so this
+  /// only has to do the removal.
+  void removeMediaPath(String mediaKey, int index) {
+    final paths = [...state.mediaPathsOf(mediaKey)];
+    if (index < 0 || index >= paths.length) return;
+    paths.removeAt(index);
+    setMediaPaths(mediaKey, paths);
   }
 
   /// Turns the review lane's `Alleen gewijzigd` filter on or off (§B.4).
@@ -1052,13 +1121,15 @@ class SiteContentCubit extends Cubit<SiteContentState> {
 
     final mergedSource = {...state.source, ...state.draftSource};
     final mergedOrder = {...state.listOrder, ...state.draftListOrder};
+    final mergedMedia = {...state.mediaKeys, ...state.draftMediaKeys};
     final changedFields = <(String, String, TranslatedField)>[
       for (final entry in state.draftTranslations.entries)
         for (final field in entry.value.entries)
           (entry.key, field.key, field.value),
     ];
-    final sourceChanged =
-        state.draftSource.isNotEmpty || state.draftListOrder.isNotEmpty;
+    final sourceChanged = state.draftSource.isNotEmpty ||
+        state.draftListOrder.isNotEmpty ||
+        state.draftMediaKeys.isNotEmpty;
 
     emit(state.copyWith(saving: true, clearError: true));
     if (_persistent) {
@@ -1069,6 +1140,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
             sourceLanguage: state.sourceLanguage,
             fields: mergedSource,
             listOrders: state.draftListOrder,
+            mediaKeys: state.draftMediaKeys,
           );
         }
         for (final (language, key, field) in changedFields) {
@@ -1118,6 +1190,8 @@ class SiteContentCubit extends Cubit<SiteContentState> {
         source: mergedSource,
         translations: translations,
         listOrder: mergedOrder,
+        mediaKeys: mergedMedia,
+        draftMediaKeys: const {},
         draftSource: remainingSource,
         draftTranslations: remainingTranslations,
         draftListOrder: remainingOrder,
@@ -1254,6 +1328,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
           siteId: _siteId!,
           sourceLocale: state.sourceLanguage,
           listOrders: state.listOrder,
+          mediaKeys: state.mediaKeys,
           valuesByLocale: {
             state.sourceLanguage: Map<String, String>.from(state.source),
             for (final language in targets)

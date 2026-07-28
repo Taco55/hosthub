@@ -10,7 +10,9 @@ import 'package:hosthub_console/core/core.dart';
 import 'package:hosthub_console/core/widgets/foundation/foundation.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 
+import '../../application/media_library_cubit.dart';
 import '../../application/site_content_cubit.dart';
+import '../../data/media_repository.dart';
 import '../../application/unsaved_changes_warning.dart';
 import '../../data/edge_function_translation_service.dart';
 import '../../data/translation_service.dart';
@@ -36,7 +38,7 @@ class WebsiteEditorPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final id = siteId;
-    return BlocProvider(
+    final editor = BlocProvider(
       create: (_) => id == null
           ? SiteContentCubit(translationService: I.get<TranslationService>())
           : (SiteContentCubit(
@@ -51,6 +53,17 @@ class WebsiteEditorPage extends StatelessWidget {
               siteId: id,
             )..loadContent()),
       child: _WebsiteEditorView(siteId: id),
+    );
+    if (id == null) return editor;
+    // The library is a per-site thing and only exists for a real site: the
+    // demo seed has no bucket to read. Provided above the editor so the media
+    // rows and the picker share one library and one upload queue.
+    return BlocProvider(
+      create: (_) => MediaLibraryCubit(
+        repository: MediaRepository(supabase: Supabase.instance.client),
+        siteId: id,
+      )..load(),
+      child: editor,
     );
   }
 }

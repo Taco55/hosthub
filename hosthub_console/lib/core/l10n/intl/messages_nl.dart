@@ -225,32 +225,47 @@ class MessageLookup extends MessageLookupByLibrary {
   static String m89(locked, total) =>
       "${locked} van ${total} velden in jouw woorden";
 
-  static String m90(min, max) =>
+  static String m90(count) => "${count} toevoegen";
+
+  static String m91(count, max, min) =>
+      "${count} van maximaal ${max} · minimaal ${min}";
+
+  static String m92(min) => "Er moeten minimaal ${min} foto\'s zijn";
+
+  static String m93(min, max) =>
       "${min} tot ${max} foto\'s. De mediakiezer komt met het beeldbeheer.";
 
-  static String m91(language) => "${language} voorbeeld";
+  static String m94(remaining) =>
+      "Kies foto\'s uit de bibliotheek of upload nieuwe. Nog ${remaining} te kiezen.";
 
-  static String m92(count) => "${count} talen publiceren";
+  static String m95(language) => "${language} voorbeeld";
 
-  static String m93(source) => "Alleen ${source} publiceren";
+  static String m96(count) => "${count} talen publiceren";
 
-  static String m94(language) => "${language} · bron";
+  static String m97(source) => "Alleen ${source} publiceren";
 
-  static String m95(source) =>
+  static String m98(language) => "${language} · bron";
+
+  static String m99(source) =>
       "Je ${source} content publiceert zoals die is. De andere talen worden opnieuw vertaald door AI, met behoud van wat je hebt vergrendeld.";
 
-  static String m96(lang) => "Bron · ${lang}";
+  static String m100(lang) => "Bron · ${lang}";
 
-  static String m97(source, count) =>
+  static String m101(source, count) =>
       "${source} + ${count} vertalingen staan live";
 
-  static String m98(languages) =>
+  static String m102(languages) =>
       "${languages} vertalen zodra je ze opent, of bij publiceren";
 
-  static String m99(language) =>
+  static String m103(language) =>
       "Rijen wijzigen doe je in de bron (${language})";
 
-  static String m100(source) => "Volgt nu de ${source} bron.";
+  static String m104(source) => "Volgt nu de ${source} bron.";
+
+  static String m105(width, height) => "${width} × ${height}";
+
+  static String m106(width, height) =>
+      "Te klein (${width} × ${height}). Minimaal 1600 × 1200.";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -2479,7 +2494,33 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "weLocaleSourceBadge": MessageLookupByLibrary.simpleMessage("bron"),
     "weLockedCounter": m89,
-    "weMediaPending": m90,
+    "weMediaAdd": m90,
+    "weMediaCancel": MessageLookupByLibrary.simpleMessage("Annuleren"),
+    "weMediaChoose": MessageLookupByLibrary.simpleMessage("Kiezen"),
+    "weMediaEmptyBody": MessageLookupByLibrary.simpleMessage(
+      "Upload je eerste foto\'s via het tabblad Uploaden.",
+    ),
+    "weMediaEmptyTitle": MessageLookupByLibrary.simpleMessage(
+      "Nog geen foto\'s",
+    ),
+    "weMediaFirst": MessageLookupByLibrary.simpleMessage("Eerste"),
+    "weMediaFootnote": m91,
+    "weMediaMinReached": m92,
+    "weMediaPending": m93,
+    "weMediaPickerHint": m94,
+    "weMediaPickerSingleHint": MessageLookupByLibrary.simpleMessage(
+      "Kies één foto uit de bibliotheek of upload een nieuwe. Kiezen vervangt de huidige.",
+    ),
+    "weMediaReplace": MessageLookupByLibrary.simpleMessage("Vervangen"),
+    "weMediaTabLibrary": MessageLookupByLibrary.simpleMessage("Bibliotheek"),
+    "weMediaTabUpload": MessageLookupByLibrary.simpleMessage("Uploaden"),
+    "weMediaTitleGallery": MessageLookupByLibrary.simpleMessage("Alle foto\'s"),
+    "weMediaTitleHero": MessageLookupByLibrary.simpleMessage("Hero-foto\'s"),
+    "weMediaTitleHomeGallery": MessageLookupByLibrary.simpleMessage(
+      "Uitgelichte foto\'s",
+    ),
+    "weMediaTitleRowImage": MessageLookupByLibrary.simpleMessage("Afbeelding"),
+    "weMediaUnused": MessageLookupByLibrary.simpleMessage("Ongebruikt"),
     "wePageArea": MessageLookupByLibrary.simpleMessage("Omgeving"),
     "wePageGallery": MessageLookupByLibrary.simpleMessage("Galerij"),
     "wePageHome": MessageLookupByLibrary.simpleMessage("Home"),
@@ -2490,7 +2531,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePairTime": MessageLookupByLibrary.simpleMessage("Tijd"),
     "wePairValue": MessageLookupByLibrary.simpleMessage("Waarde"),
     "wePairWhat": MessageLookupByLibrary.simpleMessage("Wat"),
-    "wePreviewLabel": m91,
+    "wePreviewLabel": m95,
     "wePreviewLatest": MessageLookupByLibrary.simpleMessage(
       "Nieuwste bekijken",
     ),
@@ -2502,7 +2543,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Alle talen publiceren",
     ),
     "wePublishCancel": MessageLookupByLibrary.simpleMessage("Annuleren"),
-    "wePublishConfirm": m92,
+    "wePublishConfirm": m96,
     "wePublishDraft": MessageLookupByLibrary.simpleMessage(
       "Concept — nog niet nagekeken",
     ),
@@ -2529,9 +2570,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePublishSkipped": MessageLookupByLibrary.simpleMessage(
       "Overgeslagen · blijft zoals het nu live staat",
     ),
-    "wePublishSourceOnly": m93,
-    "wePublishSourceRole": m94,
-    "wePublishSubtitle": m95,
+    "wePublishSourceOnly": m97,
+    "wePublishSourceRole": m98,
+    "wePublishSubtitle": m99,
     "wePublishTitle": MessageLookupByLibrary.simpleMessage(
       "Alle talen publiceren",
     ),
@@ -2560,15 +2601,15 @@ class MessageLookup extends MessageLookupByLibrary {
       "waarde is gedeeld over talen",
     ),
     "weShowPreview": MessageLookupByLibrary.simpleMessage("Voorbeeld tonen"),
-    "weSourceChip": m96,
+    "weSourceChip": m100,
     "weStaleNotice": MessageLookupByLibrary.simpleMessage(
       "Voorbeeld toont een eerdere bronwijziging.",
     ),
-    "weStatusCleanBody": m97,
+    "weStatusCleanBody": m101,
     "weStatusCleanTitle": MessageLookupByLibrary.simpleMessage(
       "Alles gepubliceerd",
     ),
-    "weStatusSavedBody": m98,
+    "weStatusSavedBody": m102,
     "weStatusSavedTitle": MessageLookupByLibrary.simpleMessage(
       "Opgeslagen · niet gepubliceerd",
     ),
@@ -2578,9 +2619,33 @@ class MessageLookup extends MessageLookupByLibrary {
     "weStatusUnsavedTitle": MessageLookupByLibrary.simpleMessage(
       "Niet-opgeslagen wijzigingen",
     ),
-    "weStructureLocked": m99,
+    "weStructureLocked": m103,
     "weUndo": MessageLookupByLibrary.simpleMessage("Ongedaan maken"),
-    "weUndoSwitchNotice": m100,
+    "weUndoSwitchNotice": m104,
+    "weUploadDone": m105,
+    "weUploadDropTitle": MessageLookupByLibrary.simpleMessage(
+      "Sleep foto\'s hierheen of kies bestanden",
+    ),
+    "weUploadFailed": MessageLookupByLibrary.simpleMessage(
+      "Uploaden is mislukt. Probeer het opnieuw.",
+    ),
+    "weUploadInProgress": MessageLookupByLibrary.simpleMessage("Uploaden…"),
+    "weUploadRejectedPortrait": MessageLookupByLibrary.simpleMessage(
+      "Staand formaat. Gebruik een liggende foto.",
+    ),
+    "weUploadRejectedTooLarge": MessageLookupByLibrary.simpleMessage(
+      "Te groot. Maximaal 8 MB.",
+    ),
+    "weUploadRejectedTooSmall": m106,
+    "weUploadRejectedType": MessageLookupByLibrary.simpleMessage(
+      "Dit bestandstype wordt niet ondersteund. Exporteer als JPG of WebP.",
+    ),
+    "weUploadRequirements": MessageLookupByLibrary.simpleMessage(
+      "JPG of WebP · minimaal 1600 × 1200 · maximaal 8 MB · liggend",
+    ),
+    "weUploadResizeNote": MessageLookupByLibrary.simpleMessage(
+      "Grote bestanden worden automatisch verkleind voor de website.",
+    ),
     "wealth": MessageLookupByLibrary.simpleMessage("Welvaart"),
     "websiteLanguagesFooter": MessageLookupByLibrary.simpleMessage(
       "De talen die je publieke website aan gasten aanbiedt. Voeg talen toe of verwijder ze.",

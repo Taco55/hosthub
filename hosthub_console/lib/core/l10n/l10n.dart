@@ -9946,6 +9946,256 @@ class S {
     return Intl.message('Add', name: 'weAddPhoto', desc: '', args: []);
   }
 
+  /// `Choose photos from the library or upload new ones. {remaining} left to choose.`
+  String weMediaPickerHint(Object remaining) {
+    return Intl.message(
+      'Choose photos from the library or upload new ones. $remaining left to choose.',
+      name: 'weMediaPickerHint',
+      desc: '',
+      args: [remaining],
+    );
+  }
+
+  /// `Choose one photo from the library or upload a new one. Choosing replaces the current one.`
+  String get weMediaPickerSingleHint {
+    return Intl.message(
+      'Choose one photo from the library or upload a new one. Choosing replaces the current one.',
+      name: 'weMediaPickerSingleHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Library`
+  String get weMediaTabLibrary {
+    return Intl.message(
+      'Library',
+      name: 'weMediaTabLibrary',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Upload`
+  String get weMediaTabUpload {
+    return Intl.message('Upload', name: 'weMediaTabUpload', desc: '', args: []);
+  }
+
+  /// `Cancel`
+  String get weMediaCancel {
+    return Intl.message('Cancel', name: 'weMediaCancel', desc: '', args: []);
+  }
+
+  /// `Replace`
+  String get weMediaReplace {
+    return Intl.message('Replace', name: 'weMediaReplace', desc: '', args: []);
+  }
+
+  /// `Add {count}`
+  String weMediaAdd(Object count) {
+    return Intl.message(
+      'Add $count',
+      name: 'weMediaAdd',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Unused`
+  String get weMediaUnused {
+    return Intl.message('Unused', name: 'weMediaUnused', desc: '', args: []);
+  }
+
+  /// `No photos yet`
+  String get weMediaEmptyTitle {
+    return Intl.message(
+      'No photos yet',
+      name: 'weMediaEmptyTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Upload your first photos on the Upload tab.`
+  String get weMediaEmptyBody {
+    return Intl.message(
+      'Upload your first photos on the Upload tab.',
+      name: 'weMediaEmptyBody',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Drag photos here or choose files`
+  String get weUploadDropTitle {
+    return Intl.message(
+      'Drag photos here or choose files',
+      name: 'weUploadDropTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `JPG or WebP · at least 1600 × 1200 · at most 8 MB · landscape`
+  String get weUploadRequirements {
+    return Intl.message(
+      'JPG or WebP · at least 1600 × 1200 · at most 8 MB · landscape',
+      name: 'weUploadRequirements',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Large files are resized automatically for the website.`
+  String get weUploadResizeNote {
+    return Intl.message(
+      'Large files are resized automatically for the website.',
+      name: 'weUploadResizeNote',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Uploading…`
+  String get weUploadInProgress {
+    return Intl.message(
+      'Uploading…',
+      name: 'weUploadInProgress',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{width} × {height}`
+  String weUploadDone(Object width, Object height) {
+    return Intl.message(
+      '$width × $height',
+      name: 'weUploadDone',
+      desc: '',
+      args: [width, height],
+    );
+  }
+
+  /// `The upload failed. Try again.`
+  String get weUploadFailed {
+    return Intl.message(
+      'The upload failed. Try again.',
+      name: 'weUploadFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This file type is not supported. Export as JPG or WebP.`
+  String get weUploadRejectedType {
+    return Intl.message(
+      'This file type is not supported. Export as JPG or WebP.',
+      name: 'weUploadRejectedType',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Too large. At most 8 MB.`
+  String get weUploadRejectedTooLarge {
+    return Intl.message(
+      'Too large. At most 8 MB.',
+      name: 'weUploadRejectedTooLarge',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Too small ({width} × {height}). At least 1600 × 1200.`
+  String weUploadRejectedTooSmall(Object width, Object height) {
+    return Intl.message(
+      'Too small ($width × $height). At least 1600 × 1200.',
+      name: 'weUploadRejectedTooSmall',
+      desc: '',
+      args: [width, height],
+    );
+  }
+
+  /// `Portrait orientation. Use a landscape photo.`
+  String get weUploadRejectedPortrait {
+    return Intl.message(
+      'Portrait orientation. Use a landscape photo.',
+      name: 'weUploadRejectedPortrait',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Choose`
+  String get weMediaChoose {
+    return Intl.message('Choose', name: 'weMediaChoose', desc: '', args: []);
+  }
+
+  /// `First`
+  String get weMediaFirst {
+    return Intl.message('First', name: 'weMediaFirst', desc: '', args: []);
+  }
+
+  /// `There must be at least {min} photos`
+  String weMediaMinReached(Object min) {
+    return Intl.message(
+      'There must be at least $min photos',
+      name: 'weMediaMinReached',
+      desc: '',
+      args: [min],
+    );
+  }
+
+  /// `{count} of at most {max} · at least {min}`
+  String weMediaFootnote(Object count, Object max, Object min) {
+    return Intl.message(
+      '$count of at most $max · at least $min',
+      name: 'weMediaFootnote',
+      desc: '',
+      args: [count, max, min],
+    );
+  }
+
+  /// `Hero photos`
+  String get weMediaTitleHero {
+    return Intl.message(
+      'Hero photos',
+      name: 'weMediaTitleHero',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Featured photos`
+  String get weMediaTitleHomeGallery {
+    return Intl.message(
+      'Featured photos',
+      name: 'weMediaTitleHomeGallery',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `All photos`
+  String get weMediaTitleGallery {
+    return Intl.message(
+      'All photos',
+      name: 'weMediaTitleGallery',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Image`
+  String get weMediaTitleRowImage {
+    return Intl.message(
+      'Image',
+      name: 'weMediaTitleRowImage',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Photos are shared across all languages — edit them in the source.`
   String get weSharedPhotosNote {
     return Intl.message(

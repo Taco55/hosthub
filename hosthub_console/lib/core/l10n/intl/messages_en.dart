@@ -224,31 +224,46 @@ class MessageLookup extends MessageLookupByLibrary {
   static String m89(locked, total) =>
       "${locked} of ${total} fields in your own words";
 
-  static String m90(min, max) =>
+  static String m90(count) => "Add ${count}";
+
+  static String m91(count, max, min) =>
+      "${count} of at most ${max} · at least ${min}";
+
+  static String m92(min) => "There must be at least ${min} photos";
+
+  static String m93(min, max) =>
       "${min} to ${max} photos. The media picker arrives with image management.";
 
-  static String m91(language) => "${language} preview";
+  static String m94(remaining) =>
+      "Choose photos from the library or upload new ones. ${remaining} left to choose.";
 
-  static String m92(count) => "Publish ${count} languages";
+  static String m95(language) => "${language} preview";
 
-  static String m93(source) => "Publish ${source} only";
+  static String m96(count) => "Publish ${count} languages";
 
-  static String m94(language) => "${language} · source";
+  static String m97(source) => "Publish ${source} only";
 
-  static String m95(source) =>
+  static String m98(language) => "${language} · source";
+
+  static String m99(source) =>
       "Your ${source} content publishes as-is. The other languages are re-translated by AI, keeping anything you\'ve locked.";
 
-  static String m96(lang) => "Source · ${lang}";
+  static String m100(lang) => "Source · ${lang}";
 
-  static String m97(source, count) =>
+  static String m101(source, count) =>
       "${source} + ${count} translations are live";
 
-  static String m98(languages) =>
+  static String m102(languages) =>
       "${languages} translate when you open them, or on publish";
 
-  static String m99(language) => "You change rows in the source (${language})";
+  static String m103(language) => "You change rows in the source (${language})";
 
-  static String m100(source) => "Now following the ${source} source.";
+  static String m104(source) => "Now following the ${source} source.";
+
+  static String m105(width, height) => "${width} × ${height}";
+
+  static String m106(width, height) =>
+      "Too small (${width} × ${height}). At least 1600 × 1200.";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -2359,7 +2374,31 @@ class MessageLookup extends MessageLookupByLibrary {
     "weLoadFailedRetry": MessageLookupByLibrary.simpleMessage("Try again"),
     "weLocaleSourceBadge": MessageLookupByLibrary.simpleMessage("source"),
     "weLockedCounter": m89,
-    "weMediaPending": m90,
+    "weMediaAdd": m90,
+    "weMediaCancel": MessageLookupByLibrary.simpleMessage("Cancel"),
+    "weMediaChoose": MessageLookupByLibrary.simpleMessage("Choose"),
+    "weMediaEmptyBody": MessageLookupByLibrary.simpleMessage(
+      "Upload your first photos on the Upload tab.",
+    ),
+    "weMediaEmptyTitle": MessageLookupByLibrary.simpleMessage("No photos yet"),
+    "weMediaFirst": MessageLookupByLibrary.simpleMessage("First"),
+    "weMediaFootnote": m91,
+    "weMediaMinReached": m92,
+    "weMediaPending": m93,
+    "weMediaPickerHint": m94,
+    "weMediaPickerSingleHint": MessageLookupByLibrary.simpleMessage(
+      "Choose one photo from the library or upload a new one. Choosing replaces the current one.",
+    ),
+    "weMediaReplace": MessageLookupByLibrary.simpleMessage("Replace"),
+    "weMediaTabLibrary": MessageLookupByLibrary.simpleMessage("Library"),
+    "weMediaTabUpload": MessageLookupByLibrary.simpleMessage("Upload"),
+    "weMediaTitleGallery": MessageLookupByLibrary.simpleMessage("All photos"),
+    "weMediaTitleHero": MessageLookupByLibrary.simpleMessage("Hero photos"),
+    "weMediaTitleHomeGallery": MessageLookupByLibrary.simpleMessage(
+      "Featured photos",
+    ),
+    "weMediaTitleRowImage": MessageLookupByLibrary.simpleMessage("Image"),
+    "weMediaUnused": MessageLookupByLibrary.simpleMessage("Unused"),
     "wePageArea": MessageLookupByLibrary.simpleMessage("Area"),
     "wePageGallery": MessageLookupByLibrary.simpleMessage("Gallery"),
     "wePageHome": MessageLookupByLibrary.simpleMessage("Home"),
@@ -2370,7 +2409,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePairTime": MessageLookupByLibrary.simpleMessage("Time"),
     "wePairValue": MessageLookupByLibrary.simpleMessage("Value"),
     "wePairWhat": MessageLookupByLibrary.simpleMessage("What"),
-    "wePreviewLabel": m91,
+    "wePreviewLabel": m95,
     "wePreviewLatest": MessageLookupByLibrary.simpleMessage("Preview latest"),
     "wePreviewTranslation": MessageLookupByLibrary.simpleMessage(
       "Preview translation",
@@ -2380,7 +2419,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Publish all languages",
     ),
     "wePublishCancel": MessageLookupByLibrary.simpleMessage("Cancel"),
-    "wePublishConfirm": m92,
+    "wePublishConfirm": m96,
     "wePublishDraft": MessageLookupByLibrary.simpleMessage(
       "Draft — not reviewed yet",
     ),
@@ -2407,9 +2446,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePublishSkipped": MessageLookupByLibrary.simpleMessage(
       "Skipped · stays as it is live now",
     ),
-    "wePublishSourceOnly": m93,
-    "wePublishSourceRole": m94,
-    "wePublishSubtitle": m95,
+    "wePublishSourceOnly": m97,
+    "wePublishSourceRole": m98,
+    "wePublishSubtitle": m99,
     "wePublishTitle": MessageLookupByLibrary.simpleMessage(
       "Publish all languages",
     ),
@@ -2438,15 +2477,15 @@ class MessageLookup extends MessageLookupByLibrary {
       "value is shared across languages",
     ),
     "weShowPreview": MessageLookupByLibrary.simpleMessage("Show preview"),
-    "weSourceChip": m96,
+    "weSourceChip": m100,
     "weStaleNotice": MessageLookupByLibrary.simpleMessage(
       "Preview reflects an earlier source edit.",
     ),
-    "weStatusCleanBody": m97,
+    "weStatusCleanBody": m101,
     "weStatusCleanTitle": MessageLookupByLibrary.simpleMessage(
       "Everything published",
     ),
-    "weStatusSavedBody": m98,
+    "weStatusSavedBody": m102,
     "weStatusSavedTitle": MessageLookupByLibrary.simpleMessage(
       "Saved · not published",
     ),
@@ -2456,9 +2495,33 @@ class MessageLookup extends MessageLookupByLibrary {
     "weStatusUnsavedTitle": MessageLookupByLibrary.simpleMessage(
       "Unsaved changes",
     ),
-    "weStructureLocked": m99,
+    "weStructureLocked": m103,
     "weUndo": MessageLookupByLibrary.simpleMessage("Undo"),
-    "weUndoSwitchNotice": m100,
+    "weUndoSwitchNotice": m104,
+    "weUploadDone": m105,
+    "weUploadDropTitle": MessageLookupByLibrary.simpleMessage(
+      "Drag photos here or choose files",
+    ),
+    "weUploadFailed": MessageLookupByLibrary.simpleMessage(
+      "The upload failed. Try again.",
+    ),
+    "weUploadInProgress": MessageLookupByLibrary.simpleMessage("Uploading…"),
+    "weUploadRejectedPortrait": MessageLookupByLibrary.simpleMessage(
+      "Portrait orientation. Use a landscape photo.",
+    ),
+    "weUploadRejectedTooLarge": MessageLookupByLibrary.simpleMessage(
+      "Too large. At most 8 MB.",
+    ),
+    "weUploadRejectedTooSmall": m106,
+    "weUploadRejectedType": MessageLookupByLibrary.simpleMessage(
+      "This file type is not supported. Export as JPG or WebP.",
+    ),
+    "weUploadRequirements": MessageLookupByLibrary.simpleMessage(
+      "JPG or WebP · at least 1600 × 1200 · at most 8 MB · landscape",
+    ),
+    "weUploadResizeNote": MessageLookupByLibrary.simpleMessage(
+      "Large files are resized automatically for the website.",
+    ),
     "wealth": MessageLookupByLibrary.simpleMessage("Wealth"),
     "websiteLanguagesFooter": MessageLookupByLibrary.simpleMessage(
       "The languages your public website offers to guests. Add or remove any language.",

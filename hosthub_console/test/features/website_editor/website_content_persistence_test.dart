@@ -22,6 +22,12 @@ class FakeWebsiteContentRepository implements WebsiteContentRepository {
   /// The list orders each saveSourceDraft call carried.
   final List<Map<String, List<String>>> sourceDraftOrders = [];
 
+  /// The photo slots each saveSourceDraft call carried.
+  final List<Map<String, List<String>>> sourceDraftMedia = [];
+
+  /// The photo slots each publish carried.
+  final List<Map<String, List<String>>> publishedMedia = [];
+
   @override
   Future<WebsitePageContent> loadPageContent({
     required String siteId,
@@ -40,6 +46,7 @@ class FakeWebsiteContentRepository implements WebsiteContentRepository {
     required String sourceLanguage,
     required Map<String, String> fields,
     Map<String, List<String>> listOrders = const {},
+    Map<String, List<String>> mediaKeys = const {},
   }) async {
     final error = nextSourceDraftError;
     if (error != null) {
@@ -48,6 +55,7 @@ class FakeWebsiteContentRepository implements WebsiteContentRepository {
     }
     sourceDraftSaves.add(Map.of(fields));
     sourceDraftOrders.add(Map.of(listOrders));
+    sourceDraftMedia.add(Map.of(mediaKeys));
   }
 
   @override
@@ -66,8 +74,10 @@ class FakeWebsiteContentRepository implements WebsiteContentRepository {
     required String sourceLocale,
     required Map<String, Map<String, String>> valuesByLocale,
     Map<String, List<String>> listOrders = const {},
+    Map<String, List<String>> mediaKeys = const {},
   }) async {
     publishes.add(valuesByLocale);
+    publishedMedia.add(Map.of(mediaKeys));
   }
 
   @override
@@ -258,6 +268,72 @@ void main() {
       '[en] home.highlights.hA.description',
     );
     expect(cubit.state.rowIdsOfList('home.highlights'), ['hB', 'hA']);
+    await cubit.close();
+  });
+
+
+  test('photo choices are one set for the site, saved into site_config',
+      () async {
+    final repo = FakeWebsiteContentRepository(content: _remoteContent());
+    final cubit = _build(repo);
+    await cubit.loadContent();
+
+    cubit.setMediaPaths('images.heroPhotos', [
+      'site-1/a.jpg',
+      'site-1/b.jpg',
+    ]);
+    expect(cubit.state.unsavedChanges, isTrue);
+    // Nothing is written until the owner saves (par. 11i holds for photos too).
+    expect(repo.sourceDraftMedia, isEmpty);
+
+    await cubit.save();
+
+    expect(repo.sourceDraftMedia.single, {
+      'images.heroPhotos': ['site-1/a.jpg', 'site-1/b.jpg'],
+    });
+    expect(cubit.state.mediaKeys['images.heroPhotos'], [
+      'site-1/a.jpg',
+      'site-1/b.jpg',
+    ]);
+    expect(cubit.state.unsavedChanges, isFalse);
+
+    // Publishing ships the saved set to every locale's site_config: a photo is
+    // language-independent, so no language can end up with its own gallery.
+    await cubit.publishAll();
+    expect(repo.publishedMedia.single, {
+      'images.heroPhotos': ['site-1/a.jpg', 'site-1/b.jpg'],
+    });
+    await cubit.close();
+  });
+
+  test('reordering photos is a change; ordering back is not', () async {
+    final repo = FakeWebsiteContentRepository(content: _remoteContent());
+    final cubit = _build(repo);
+    await cubit.loadContent();
+    cubit.setMediaPaths('images.heroPhotos', ['a', 'b', 'c']);
+    await cubit.save();
+
+    cubit.moveMediaPath('images.heroPhotos', 0, 2);
+    expect(cubit.state.mediaPathsOf('images.heroPhotos'), ['b', 'c', 'a']);
+    expect(cubit.state.unsavedChanges, isTrue);
+
+    // The first photo is the share image, so this order is content — and
+    // putting it back is not a change to save.
+    cubit.setMediaPaths('images.heroPhotos', ['a', 'b', 'c']);
+    expect(cubit.state.draftMediaKeys, isEmpty);
+    expect(cubit.state.unsavedChanges, isFalse);
+    await cubit.close();
+  });
+
+  test('removing a photo drops only that one', () async {
+    final repo = FakeWebsiteContentRepository(content: _remoteContent());
+    final cubit = _build(repo);
+    await cubit.loadContent();
+    cubit.setMediaPaths('images.heroPhotos', ['a', 'b', 'c']);
+
+    cubit.removeMediaPath('images.heroPhotos', 1);
+
+    expect(cubit.state.mediaPathsOf('images.heroPhotos'), ['a', 'c']);
     await cubit.close();
   });
 

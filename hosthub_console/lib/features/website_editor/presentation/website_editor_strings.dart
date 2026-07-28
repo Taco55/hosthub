@@ -38,6 +38,20 @@ String pageName(BuildContext context, String pageKey) {
   }
 }
 
+/// Localized title of a media slot — the picker's own heading.
+String mediaTitle(BuildContext context, String mediaKey) {
+  switch (mediaKey) {
+    case 'images.heroPhotos':
+      return context.s.weMediaTitleHero;
+    case 'images.homeGallery':
+      return context.s.weMediaTitleHomeGallery;
+    case 'images.galleryAll':
+      return context.s.weMediaTitleGallery;
+    default:
+      return context.s.weMediaTitleRowImage;
+  }
+}
+
 /// Localized title of a schema card.
 String cardTitle(BuildContext context, String cardId) {
   switch (cardId) {

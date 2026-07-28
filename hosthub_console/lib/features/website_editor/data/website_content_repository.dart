@@ -12,6 +12,7 @@ class WebsitePageContent {
     required this.source,
     required this.translations,
     this.listOrder = const {},
+    this.mediaKeys = const {},
     this.sourceLanguage,
     this.locales,
     this.previewDomain,
@@ -22,6 +23,9 @@ class WebsitePageContent {
 
   /// `listKey -> row ids` in display order, from the source-locale documents.
   final Map<String, List<String>> listOrder;
+
+  /// `images.<slot> -> storage paths` in display order, from `site_config`.
+  final Map<String, List<String>> mediaKeys;
 
   /// `language -> (fieldKey -> TranslatedField)` for the target languages.
   final Map<String, Map<String, TranslatedField>> translations;
@@ -131,6 +135,10 @@ class WebsiteContentRepository extends SupabaseRepository {
     // The gallery tab is a route, so it is a document — created on first
     // write, like every other document this editor may reach first.
     (contentType: 'page', slug: 'gallery'),
+    // Photo choices: one set for the whole site, so they live in site_config
+    // rather than in a locale's page (README §C.4 — the photo is
+    // language-independent, its alt text is not).
+    (contentType: 'site_config', slug: 'main'),
   ];
 
   // -- field <-> document JSON mapping ------------------------------------
@@ -916,10 +924,26 @@ class WebsiteContentRepository extends SupabaseRepository {
         translations[language] = fields;
       }
 
+      // Photo slots, from the source locale's site_config: they are the same
+      // for every language, so one read answers for all of them.
+      final configContent =
+          contentByDocLocale['site_config:main:$sourceLanguage'];
+      final images = configContent?['images'];
+      final mediaKeys = <String, List<String>>{
+        if (images is Map)
+          for (final entry in images.entries)
+            if (entry.value is List)
+              'images.${entry.key}': [
+                for (final path in entry.value as List<dynamic>)
+                  if (path is String) path,
+              ],
+      };
+
       return WebsitePageContent(
         source: source,
         translations: translations,
         listOrder: listOrder,
+        mediaKeys: mediaKeys,
         sourceLanguage: sourceLanguage,
         locales: locales,
         previewDomain: domainRow?['domain'] as String?,
@@ -946,6 +970,7 @@ class WebsiteContentRepository extends SupabaseRepository {
     required String sourceLanguage,
     required Map<String, String> fields,
     Map<String, List<String>> listOrders = const {},
+    Map<String, List<String>> mediaKeys = const {},
   }) async {
     try {
       await _mergeFieldsIntoDocuments(
@@ -953,6 +978,7 @@ class WebsiteContentRepository extends SupabaseRepository {
         locale: sourceLanguage,
         fields: fields,
         listOrders: listOrders,
+        mediaKeys: mediaKeys,
         publish: false,
       );
     } catch (error, stack) {
@@ -1012,6 +1038,7 @@ class WebsiteContentRepository extends SupabaseRepository {
     required String sourceLocale,
     required Map<String, Map<String, String>> valuesByLocale,
     Map<String, List<String>> listOrders = const {},
+    Map<String, List<String>> mediaKeys = const {},
   }) async {
     try {
       final locales = [
@@ -1024,6 +1051,9 @@ class WebsiteContentRepository extends SupabaseRepository {
           locale: locale,
           fields: valuesByLocale[locale]!,
           listOrders: listOrders,
+          // Photos are one set for the site: every locale's site_config gets
+          // the same paths, so a language cannot end up with its own gallery.
+          mediaKeys: mediaKeys,
           publish: true,
           seedLocale: locale == sourceLocale ? null : sourceLocale,
         );
@@ -1050,6 +1080,7 @@ class WebsiteContentRepository extends SupabaseRepository {
     required Map<String, String> fields,
     required bool publish,
     Map<String, List<String>> listOrders = const {},
+    Map<String, List<String>> mediaKeys = const {},
     String? seedLocale,
   }) async {
     for (final doc in _documents) {
@@ -1062,9 +1093,13 @@ class WebsiteContentRepository extends SupabaseRepository {
           if (_listLocationOf(entry.key)?.document == doc)
             entry.key: entry.value,
       };
-      // A pure reorder is a document change too: the array order is what the
-      // public site renders.
-      if (docFields.isEmpty && docOrders.isEmpty) continue;
+      // Photo slots belong to site_config; every other document ignores them.
+      final docMedia = doc.contentType == 'site_config' && doc.slug == 'main'
+          ? mediaKeys
+          : const <String, List<String>>{};
+      // A pure reorder or a photo choice is a document change too: the array
+      // order is what the public site renders.
+      if (docFields.isEmpty && docOrders.isEmpty && docMedia.isEmpty) continue;
 
       final row = await _documentRow(siteId: siteId, doc: doc, locale: locale);
       // A site whose documents were never provisioned — or a locale enabled
@@ -1073,7 +1108,9 @@ class WebsiteContentRepository extends SupabaseRepository {
       // the editor look like it did nothing.
       if (row == null) {
         docFields = fieldsForNewDocument(docFields);
-        if (docFields.isEmpty) continue;
+        if (docFields.isEmpty && docOrders.isEmpty && docMedia.isEmpty) {
+          continue;
+        }
       }
       // A new target-locale row starts from the source locale's document (as
       // provisioning does when cloning a site), so it is a complete document
@@ -1100,6 +1137,16 @@ class WebsiteContentRepository extends SupabaseRepository {
       docOrders.forEach(
         (listKey, order) => applyListOrder(listKey, content, order),
       );
+      if (docMedia.isNotEmpty) {
+        final images = Map<String, dynamic>.from(
+          content['images'] as Map? ?? const {},
+        );
+        docMedia.forEach((mediaKey, paths) {
+          // `images.heroPhotos` -> images['heroPhotos'].
+          images[mediaKey.split('.').last] = paths;
+        });
+        content['images'] = images;
+      }
 
       final String documentId;
       if (row == null) {

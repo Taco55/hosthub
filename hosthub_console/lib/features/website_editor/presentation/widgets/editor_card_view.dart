@@ -7,7 +7,9 @@ import 'package:hosthub_console/core/widgets/layout/layout.dart';
 
 import '../../application/site_content_cubit.dart';
 import '../../domain/website_content.dart';
+import '../../application/media_library_cubit.dart';
 import '../website_editor_strings.dart';
+import 'media_picker_modal.dart';
 import 'website_field_row.dart';
 
 /// One card from the page schema.
@@ -553,19 +555,83 @@ class _MediaRowView extends StatelessWidget {
   final SiteContentState state;
   final MediaRow row;
 
+  Future<void> _pick(BuildContext context, MediaLibraryCubit media) async {
+    final content = context.read<SiteContentCubit>();
+    final chosen = await showMediaPicker(
+      context,
+      cubit: media,
+      title: mediaTitle(context, row.mediaKey),
+      mode: row.maxItems == 1
+          ? MediaPickerMode.single
+          : MediaPickerMode.multiple,
+      initialSelection: state.mediaPathsOf(row.mediaKey),
+      maxSelection: row.maxItems,
+    );
+    if (chosen == null) return;
+    content.setMediaPaths(row.mediaKey, chosen);
+  }
+
   @override
   Widget build(BuildContext context) {
     final altField = state.fieldFor(row.altFieldKey);
+    // The library is optional: the demo/seed editor runs without a site, and
+    // then there is nothing to pick from. The strip still renders what the
+    // content holds, so the card is never a blank.
+    final media = context.read<MediaLibraryCubit?>();
+    final paths = state.mediaPathsOf(row.mediaKey);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        StyledNotice(
-          tone: StyledNoticeTone.neutral,
-          icon: Icons.photo_library_outlined,
-          message: state.isSourceMode
-              ? context.s.weMediaPending(row.minItems, row.maxItems)
-              : context.s.weSharedPhotosNote,
+        StyledMediaStrip(
+          itemCount: paths.length,
+          imageBuilder: (context, index) => media == null
+              ? const ColoredBox(color: Colors.transparent)
+              : Image.network(
+                  media.publicUrlOf(paths[index]),
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, _, __) =>
+                      const Icon(Icons.broken_image_outlined, size: 18),
+                ),
+          onReorder: state.isSourceMode
+              ? (from, to) => context
+                    .read<SiteContentCubit>()
+                    .moveMediaPath(row.mediaKey, from, to)
+              : null,
+          onRemove: state.isSourceMode
+              ? (index) => context
+                    .read<SiteContentCubit>()
+                    .removeMediaPath(row.mediaKey, index)
+              : null,
+          onAdd: state.isSourceMode && media != null
+              // ignore: discarded_futures — the modal resolves into the cubit;
+              // there is nothing for this callback to await.
+              ? () => _pick(context, media)
+              : null,
+          addLabel: context.s.weMediaChoose,
+          minItems: row.minItems,
+          maxItems: row.maxItems,
+          minReachedReason: context.s.weMediaMinReached(row.minItems),
+          primaryBadgeLabel: row.primaryBadge ? context.s.weMediaFirst : null,
+          footnote: state.isSourceMode
+              ? context.s.weMediaFootnote(
+                  paths.length,
+                  row.maxItems,
+                  row.minItems,
+                )
+              : null,
+          readOnly: !state.isSourceMode,
         ),
+        if (!state.isSourceMode) ...[
+          SizedBox(height: context.styledSpacing.sm),
+          StyledNotice(
+            tone: StyledNoticeTone.neutral,
+            icon: Icons.photo_library_outlined,
+            // §C.4: photos in the source, alt text per language — the note
+            // says both, because the field right below it *is* translated.
+            message: context.s.weSharedPhotosNote,
+          ),
+        ],
         if (altField != null) ...[
           SizedBox(height: context.styledSpacing.sm),
           WebsiteFieldRow(
