@@ -212,10 +212,7 @@ void main() {
     );
     expect(agreements.readOnly, isTrue);
     expect(agreements.rows.single, isA<ExternalRow>());
-    expect(
-      _allSchemaFields().where((f) => f.cardId == 'agreements'),
-      isEmpty,
-    );
+    expect(_allSchemaFields().where((f) => f.cardId == 'agreements'), isEmpty);
   });
 
   test('the highlight row carries title, subline and its alt text', () {

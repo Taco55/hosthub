@@ -17,6 +17,7 @@ class EditableContentField extends StatefulWidget {
     this.autofocus = false,
     this.numeric = false,
     this.enabled = true,
+    this.onFocusChanged,
   });
 
   final String value;
@@ -39,6 +40,13 @@ class EditableContentField extends StatefulWidget {
   /// disabled is said by the tag the caller puts in [labelTrailing].
   final bool enabled;
 
+  /// Called with true on focus and false on blur.
+  ///
+  /// The preview points at the section this field lands in while the cursor is
+  /// here — the cheapest answer to "where do I see this back?" is not to
+  /// explain but to point.
+  final ValueChanged<bool>? onFocusChanged;
+
   @override
   State<EditableContentField> createState() => _EditableContentFieldState();
 }
@@ -51,8 +59,10 @@ class _EditableContentFieldState extends State<EditableContentField> {
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.value);
-    _focusNode = FocusNode();
+    _focusNode = FocusNode()..addListener(_onFocusChanged);
   }
+
+  void _onFocusChanged() => widget.onFocusChanged?.call(_focusNode.hasFocus);
 
   @override
   void didUpdateWidget(covariant EditableContentField oldWidget) {
@@ -71,7 +81,9 @@ class _EditableContentFieldState extends State<EditableContentField> {
   @override
   void dispose() {
     _controller.dispose();
-    _focusNode.dispose();
+    _focusNode
+      ..removeListener(_onFocusChanged)
+      ..dispose();
     super.dispose();
   }
 

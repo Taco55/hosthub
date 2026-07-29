@@ -129,3 +129,26 @@
     top: env(safe-area-inset-top);
   }
 }
+
+/*
+ * Pointing at a field from the console editor (PreviewDraftBridge).
+ *
+ * The section the focused field lands in, not the text: highlighting the words
+ * themselves reflows the line and reads as a validation error. An inset line
+ * plus a wash is enough to say "here", costs no layout, and disappears the
+ * moment the cursor leaves the field.
+ */
+.cms-pointed {
+  position: relative;
+  background-color: rgb(21 93 190 / 0.05);
+  box-shadow: inset 3px 0 0 0 rgb(21 93 190 / 0.85);
+  transition:
+    background-color 160ms ease-out,
+    box-shadow 160ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cms-pointed {
+    transition: none;
+  }
+}

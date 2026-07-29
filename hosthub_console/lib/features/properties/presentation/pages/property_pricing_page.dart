@@ -5,8 +5,6 @@ import 'package:styled_widgets/styled_widgets.dart';
 
 import 'package:hosthub_console/core/l10n/l10n.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
-import 'package:hosthub_console/features/server_settings/data/admin_settings_repository.dart';
-import 'package:hosthub_console/features/server_settings/domain/admin_settings.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
 
 class PropertyPricingPage extends StatelessWidget {
@@ -49,14 +47,15 @@ class PropertyPricingPage extends StatelessWidget {
         }
 
         final propertyRepository = context.read<PropertyRepository>();
-        final adminSettingsRepository = context.read<AdminSettingsRepository>();
+        // The account tier is held once for the shell, so this page cannot
+        // resolve a property against different defaults than the rail badge.
+        final accountDefaults = context
+            .watch<AccountChannelDefaultsCubit>()
+            .state
+            .defaults;
 
-        return FutureBuilder<_PricingData>(
-          future: _loadPricingData(
-            propertyRepository,
-            adminSettingsRepository,
-            current.id,
-          ),
+        return FutureBuilder<PropertyDetails>(
+          future: propertyRepository.fetchPropertyDetails(current.id),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return StyledWebPageScaffold(
@@ -75,7 +74,7 @@ class PropertyPricingPage extends StatelessWidget {
                 decorateLeftPane: false,
                 overline: context.s.menuPricing,
                 title: context.s.pricingPageHeading,
-                leftChild: Text('Failed to load pricing: ${snapshot.error}'),
+                leftChild: Text(context.s.pricingLoadFailed),
               );
             }
 
@@ -113,8 +112,8 @@ class PropertyPricingPage extends StatelessWidget {
                   ),
                   children: [
                     _BookingSettingsSection(
-                      details: data.details,
-                      adminDefaults: data.adminSettings,
+                      details: data,
+                      accountDefaults: accountDefaults,
                       repository: propertyRepository,
                       onSaved: () {
                         context.read<PropertyContextCubit>().loadProperties();
@@ -131,32 +130,9 @@ class PropertyPricingPage extends StatelessWidget {
   }
 }
 
-Future<_PricingData> _loadPricingData(
-  PropertyRepository propertyRepository,
-  AdminSettingsRepository adminSettingsRepository,
-  int propertyId,
-) async {
-  final results = await Future.wait<Object>([
-    propertyRepository.fetchPropertyDetails(propertyId),
-    adminSettingsRepository.load(),
-  ]);
-
-  return _PricingData(
-    details: results[0] as PropertyDetails,
-    adminSettings: results[1] as AdminSettings,
-  );
-}
-
 /// Design `.price-grid`: single column, two columns from 1180px.
 const double _pricingTwoColumnBreakpoint = 1180;
 const double _pricingPreviewWidth = 340;
-
-class _PricingData {
-  const _PricingData({required this.details, required this.adminSettings});
-
-  final PropertyDetails details;
-  final AdminSettings adminSettings;
-}
 
 // ---------------------------------------------------------------------------
 // Booking Settings Section
@@ -165,13 +141,13 @@ class _PricingData {
 class _BookingSettingsSection extends StatefulWidget {
   const _BookingSettingsSection({
     required this.details,
-    required this.adminDefaults,
+    required this.accountDefaults,
     required this.repository,
     required this.onSaved,
   });
 
   final PropertyDetails details;
-  final AdminSettings adminDefaults;
+  final AccountChannelDefaults accountDefaults;
   final PropertyRepository repository;
   final VoidCallback onSaved;
 
@@ -220,12 +196,7 @@ class _BookingSettingsSectionState extends State<_BookingSettingsSection> {
   }
 
   /// The account tier this property's fields fall back to.
-  AccountChannelDefaults get _accountDefaults =>
-      AccountChannelDefaults.fromCommissionPercentages(
-        booking: widget.adminDefaults.bookingChannelFeePercentage,
-        airbnb: widget.adminDefaults.airbnbChannelFeePercentage,
-        other: widget.adminDefaults.otherChannelFeePercentage,
-      );
+  AccountChannelDefaults get _accountDefaults => widget.accountDefaults;
 
   void _applyDetails(PropertyDetails details) {
     final overrides = details.channelOverrides;

@@ -62,8 +62,13 @@ void main() {
         properties: single,
       );
 
+      // Two destinations, split by the question the owner has: what cascades
+      // (Defaults) versus what the organisation is (Account). A one-property
+      // account gets the same two — the split is not about how many properties
+      // there are.
       expect(find.text('ACCOUNT'), findsOneWidget);
-      expect(find.text('Account settings'), findsOneWidget);
+      expect(find.text('Defaults'), findsOneWidget);
+      expect(find.text('Account'), findsOneWidget);
     });
   });
 

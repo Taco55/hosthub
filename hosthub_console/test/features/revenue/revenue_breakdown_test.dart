@@ -63,8 +63,14 @@ void main() {
         stay(checkIn: DateTime(2026, 8, 1), gross: 300, net: 240),
       ]);
 
-      expect(byMonth[DateTime(2026, 7)], const MonthRevenue(gross: 1500, net: 1190));
-      expect(byMonth[DateTime(2026, 8)], const MonthRevenue(gross: 300, net: 240));
+      expect(
+        byMonth[DateTime(2026, 7)],
+        const MonthRevenue(gross: 1500, net: 1190),
+      );
+      expect(
+        byMonth[DateTime(2026, 8)],
+        const MonthRevenue(gross: 300, net: 240),
+      );
     });
 
     test('a stay counts whole in the month it starts', () {
@@ -83,7 +89,10 @@ void main() {
         stay(checkIn: DateTime(2026, 7, 9), gross: null, net: null),
       ]);
 
-      expect(byMonth[DateTime(2026, 7)], const MonthRevenue(gross: 1000, net: 0));
+      expect(
+        byMonth[DateTime(2026, 7)],
+        const MonthRevenue(gross: 1000, net: 0),
+      );
     });
 
     test('a stay without a check-in date is left out', () {
@@ -116,10 +125,11 @@ void main() {
         stay(gross: 400, source: 'direct'),
       ], labelOf: labelOf);
 
-      expect(
-        channels.map((channel) => channel.label),
-        ['Booking.com', 'Website', 'Airbnb'],
-      );
+      expect(channels.map((channel) => channel.label), [
+        'Booking.com',
+        'Website',
+        'Airbnb',
+      ]);
       expect(channels.first.gross, 900);
     });
 
@@ -151,10 +161,11 @@ void main() {
         stay(gross: 100, source: 'airbnb'),
       ], labelOf: labelOf);
 
-      expect(
-        channels.map((channel) => channel.label),
-        ['Airbnb', 'Booking.com', 'Website'],
-      );
+      expect(channels.map((channel) => channel.label), [
+        'Airbnb',
+        'Booking.com',
+        'Website',
+      ]);
     });
 
     test('no rows means no split card', () {

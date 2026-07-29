@@ -4,7 +4,8 @@ import { useRef, useState, type FormEvent } from "react";
 
 import { SectionHeading } from "@/components/section-heading";
 import { Container } from "@/components/site/Container";
-import { cmsFieldAddress } from "@/lib/cms-field";
+import { cmsField, cmsFieldAddress } from "@/lib/cms-field";
+import { usePreviewFocus } from "@/lib/preview-focus";
 import type { ContactFormSectionContent } from "@/lib/content";
 
 type ContactFormSectionProps = {
@@ -13,6 +14,18 @@ type ContactFormSectionProps = {
 
 export function ContactFormSection({ content }: ContactFormSectionProps) {
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
+
+  // `contact.form.success` and `.error` are only ever readable after the form
+  // was submitted, so pointing at them means putting the form in that state
+  // for as long as the cursor is in the field. The editor's own note says why.
+  const focusedAddress = usePreviewFocus();
+  const previewedStatus =
+    focusedAddress === cmsFieldAddress("contact_form/main", "form", "success")
+      ? "success"
+      : focusedAddress === cmsFieldAddress("contact_form/main", "form", "error")
+        ? "error"
+        : null;
+  const shownStatus = previewedStatus ?? status;
   const [loading, setLoading] = useState(false);
   const startedAtRef = useRef(Date.now());
 
@@ -154,11 +167,21 @@ export function ContactFormSection({ content }: ContactFormSectionProps) {
                 {content.form.submit}
               </button>
 
-              {status === "success" && (
-                <p className="text-sm text-green-600">{content.form.success}</p>
+              {shownStatus === "success" && (
+                <p
+                  className="text-sm text-green-600"
+                  {...cmsField("contact_form/main", "form", "success")}
+                >
+                  {content.form.success}
+                </p>
               )}
-              {status === "error" && (
-                <p className="text-sm text-red-600">{content.form.error}</p>
+              {shownStatus === "error" && (
+                <p
+                  className="text-sm text-red-600"
+                  {...cmsField("contact_form/main", "form", "error")}
+                >
+                  {content.form.error}
+                </p>
               )}
             </form>
           </div>

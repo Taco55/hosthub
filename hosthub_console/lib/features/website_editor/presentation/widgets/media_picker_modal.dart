@@ -84,8 +84,9 @@ class _MediaPickerBodyState extends State<_MediaPickerBody> {
 
   bool get _isSingle => widget.mode == MediaPickerMode.single;
 
-  int get _remaining =>
-      widget.maxSelection == null ? 0 : widget.maxSelection! - _selection.length;
+  int get _remaining => widget.maxSelection == null
+      ? 0
+      : widget.maxSelection! - _selection.length;
 
   void _onSelectionChanged(Set<MediaFile> next, List<MediaFile> library) {
     setState(() {
@@ -100,7 +101,8 @@ class _MediaPickerBodyState extends State<_MediaPickerBody> {
         for (final path in _selection)
           if (paths.contains(path)) path,
         for (final file in library)
-          if (paths.contains(file.storagePath) && !_selection.contains(file.storagePath))
+          if (paths.contains(file.storagePath) &&
+              !_selection.contains(file.storagePath))
             file.storagePath,
       ];
     });
@@ -228,14 +230,14 @@ class _LibraryTab extends StatelessWidget {
       itemBuilder: (context, file) => Image.network(
         cubit.publicUrlOf(file.storagePath),
         fit: BoxFit.cover,
-        errorBuilder: (context, _, __) => const Icon(Icons.broken_image_outlined),
+        errorBuilder: (context, _, __) =>
+            const Icon(Icons.broken_image_outlined),
       ),
       captionBuilder: (file) => file.filename,
       // Every tile says what it is for, so "where is this photo used?" is
       // answered by the picker instead of asked about it (README §C.1).
-      subtitleBuilder: (file) => file.usage.isEmpty
-          ? context.s.weMediaUnused
-          : file.usage.join(' · '),
+      subtitleBuilder: (file) =>
+          file.usage.isEmpty ? context.s.weMediaUnused : file.usage.join(' · '),
     );
   }
 }

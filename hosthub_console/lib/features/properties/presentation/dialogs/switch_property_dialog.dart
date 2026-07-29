@@ -27,7 +27,7 @@ class _SwitchPropertyDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Select property'),
+      title: Text(context.s.switchPropertyTitle),
       content: SizedBox(
         width: 420,
         child: properties.isEmpty

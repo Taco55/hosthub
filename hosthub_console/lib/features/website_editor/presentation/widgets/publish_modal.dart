@@ -145,9 +145,9 @@ class _PublishContentState extends State<_PublishContent> {
                   : state.targetLanguages.first,
             ),
           ),
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: context.colors.outline,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: context.colors.outline),
         ),
       ],
     );
@@ -170,9 +170,7 @@ class _PageRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final changed = state
-        .changedFieldsOnPage(language, page)
-        .length;
+    final changed = state.changedFieldsOnPage(language, page).length;
     final seen = state.reviewedPages[language]?.contains(page) ?? false;
 
     return StyledTile(
@@ -258,8 +256,7 @@ class _LanguageRow extends StatelessWidget {
               title: context.s.wePublishPerPage,
               onPressed: onToggleExpanded,
               showRightIcon: true,
-              rightIconData:
-                  expanded ? Icons.expand_less : Icons.expand_more,
+              rightIconData: expanded ? Icons.expand_less : Icons.expand_more,
             ),
             SizedBox(width: context.styledSpacing.sm),
           ],

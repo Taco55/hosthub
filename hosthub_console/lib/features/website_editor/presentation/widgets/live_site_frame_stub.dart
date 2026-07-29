@@ -8,11 +8,13 @@ class LiveSiteFrame extends StatelessWidget {
     required this.url,
     required this.locale,
     required this.fields,
+    this.focusedAddress,
   });
 
   final String url;
   final String locale;
   final Map<String, String> fields;
+  final String? focusedAddress;
 
   @override
   Widget build(BuildContext context) => const SizedBox.expand();

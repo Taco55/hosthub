@@ -33,6 +33,8 @@ String pageName(BuildContext context, String pageKey) {
       return context.s.wePageArea;
     case 'gallery':
       return context.s.wePageGallery;
+    case kLegalPage:
+      return context.s.wePageLegal;
     default:
       return pageKey;
   }
@@ -55,6 +57,8 @@ String mediaTitle(BuildContext context, String mediaKey) {
 /// Localized title of a schema card.
 String cardTitle(BuildContext context, String cardId) {
   switch (cardId) {
+    case 'privacy':
+      return context.s.weCardPrivacy;
     case 'hero':
       return context.s.weCardHero;
     case 'keyFacts':
@@ -186,6 +190,8 @@ IconData cardIcon(String cardId) {
 /// Localized label of a plain (non-list) editor field.
 String fieldLabel(BuildContext context, String fieldKey) {
   switch (fieldKey) {
+    case 'legal.privacy.intro':
+      return context.s.weFieldPrivacyIntro;
     case 'cabin.hero.title':
       return context.s.weFieldHeadline;
     case 'cabin.meta.locationShort':

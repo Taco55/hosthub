@@ -20,24 +20,61 @@ class AccountChannelDefaults {
   final ChannelConfig airbnb;
   final ChannelConfig other;
 
-  /// The account defaults when only the three commission percentages are
-  /// stored account-wide.
+  /// The account tier as `account_channel_defaults` stores it: one row per
+  /// channel, every column filled.
   ///
-  /// That is today's shape: `admin_settings` carries a commission per channel
-  /// and nothing else, so markup and costs default to zero until the account
-  /// tier has a column of its own. Callers pass the percentages rather than the
-  /// settings row, so this stays free of any dependency on where they live.
-  factory AccountChannelDefaults.fromCommissionPercentages({
-    required double booking,
-    required double airbnb,
-    required double other,
-  }) {
-    return AccountChannelDefaults(
-      booking: ChannelConfig(commissionPercentage: booking),
-      airbnb: ChannelConfig(commissionPercentage: airbnb),
-      other: ChannelConfig(commissionPercentage: other),
+  /// A channel with no row resolves to zeroes rather than to nothing — this is
+  /// the bottom of the chain, so there is no "unspecified" here to defer to.
+  factory AccountChannelDefaults.fromRows(Iterable<Map<String, dynamic>> rows) {
+    var defaults = AccountChannelDefaults.empty;
+    for (final row in rows) {
+      final channel = bookingChannelForKey(row['channel'] as String?);
+      if (channel == null) continue;
+      defaults = defaults.copyWithChannel(channel, _configFromRow(row));
+    }
+    return defaults;
+  }
+
+  /// One upsertable row per channel.
+  List<Map<String, dynamic>> toRows(String ownerProfileId) => [
+    for (final channel in BookingChannel.values)
+      {
+        'owner_profile_id': ownerProfileId,
+        'channel': channel.key,
+        ..._rowFromConfig(forChannel(channel)),
+      },
+  ];
+
+  static ChannelConfig _configFromRow(Map<String, dynamic> row) {
+    CostEntry cost(String prefix) => CostEntry(
+      amount: parseChannelDouble(row['${prefix}_amount']) ?? 0,
+      type: costTypeFromKey(row['${prefix}_type'] as String?),
+    );
+
+    return ChannelConfig(
+      commissionPercentage:
+          parseChannelDouble(row['commission_percentage']) ?? 0,
+      rateMarkupPercentage:
+          parseChannelDouble(row['rate_markup_percentage']) ?? 0,
+      cleaningCost: cost('cleaning'),
+      linenCost: cost('linen'),
+      serviceCost: cost('service'),
+      otherCost: cost('other'),
     );
   }
+
+  static Map<String, dynamic> _rowFromConfig(ChannelConfig config) => {
+    'commission_percentage': config.commissionPercentage,
+    'rate_markup_percentage': config.rateMarkupPercentage,
+    'cleaning_amount': config.cleaningCost.amount,
+    'cleaning_type': costTypeKey(config.cleaningCost.type),
+    'linen_amount': config.linenCost.amount,
+    'linen_type': costTypeKey(config.linenCost.type),
+    'service_amount': config.serviceCost.amount,
+    'service_type': costTypeKey(config.serviceCost.type),
+    'other_amount': config.otherCost.amount,
+    'other_type': costTypeKey(config.otherCost.type),
+  };
 
   factory AccountChannelDefaults.fromMap(Map<String, dynamic>? map) {
     if (map == null) return empty;

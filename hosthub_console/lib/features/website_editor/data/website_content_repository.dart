@@ -147,6 +147,11 @@ class WebsiteContentRepository extends SupabaseRepository {
     // rather than in a locale's page (README §C.4 — the photo is
     // language-independent, its alt text is not).
     (contentType: 'site_config', slug: 'main'),
+    // Privacy. A route on the site, but not a tab in the editor: it is a legal
+    // document with a different author and a yearly rhythm, so it is edited
+    // under Site-instellingen → Juridisch (§A.6). Same document machinery,
+    // same translation model, different place.
+    (contentType: 'page', slug: 'privacy'),
   ];
 
   // -- field <-> document JSON mapping ------------------------------------
@@ -168,11 +173,7 @@ class WebsiteContentRepository extends SupabaseRepository {
       path: ['meta', 'locationShort'],
     ),
     (pattern: 'cabin.meta.name', document: 0, path: ['meta', 'name']),
-    (
-      pattern: 'cabin.hero.photosAlt',
-      document: 0,
-      path: ['hero', 'photosAlt'],
-    ),
+    (pattern: 'cabin.hero.photosAlt', document: 0, path: ['hero', 'photosAlt']),
 
     // -- Home: key facts (card 2) --
     (
@@ -214,11 +215,7 @@ class WebsiteContentRepository extends SupabaseRepository {
     ),
 
     // -- Home: location & distances (card 6) --
-    (
-      pattern: 'cabin.location.title',
-      document: 0,
-      path: ['location', 'title'],
-    ),
+    (pattern: 'cabin.location.title', document: 0, path: ['location', 'title']),
     (
       pattern: 'cabin.location.distances.{id}.label',
       document: 0,
@@ -304,11 +301,7 @@ class WebsiteContentRepository extends SupabaseRepository {
     (pattern: 'contact.form.error', document: 4, path: ['form', 'error']),
 
     // -- Practical (§A.2) --
-    (
-      pattern: 'practical.header.title',
-      document: 2,
-      path: ['header', 'title'],
-    ),
+    (pattern: 'practical.header.title', document: 2, path: ['header', 'title']),
     (
       pattern: 'practical.header.subtitle',
       document: 2,
@@ -438,6 +431,14 @@ class WebsiteContentRepository extends SupabaseRepository {
     // says so, because a field that surfaces twice must not be a surprise.
     (pattern: 'home.tagline', document: 1, path: ['tagline']),
     (pattern: 'gallery.allAlt', document: 5, path: ['galleryAlt']),
+
+    // -- Legal: privacy (§A.6), edited under Site-instellingen --
+    (pattern: 'legal.privacy.intro', document: 7, path: ['intro']),
+    (
+      pattern: 'legal.privacy.bullets.{id}.text',
+      document: 7,
+      path: ['bullets', _rowId, 'text'],
+    ),
   ];
 
   /// Where one editor field lives: which document, and the path within its JSON.
@@ -671,9 +672,9 @@ class WebsiteContentRepository extends SupabaseRepository {
         case final int index:
           final list = container as List<dynamic>;
           while (list.length <= index) {
-            list.add(next is int || next is RowId
-                ? <dynamic>[]
-                : <String, dynamic>{});
+            list.add(
+              next is int || next is RowId ? <dynamic>[] : <String, dynamic>{},
+            );
           }
           list[index] = _coerce(list[index], emptyChild);
           container = list[index] as Object;
@@ -957,8 +958,7 @@ class WebsiteContentRepository extends SupabaseRepository {
 
       String? publishedValue(String fieldKey, String locale) {
         final doc = _documentFor(fieldKey);
-        final content =
-            publishedByDocLocale['${_documentKeyOf(doc)}:$locale'];
+        final content = publishedByDocLocale['${_documentKeyOf(doc)}:$locale'];
         if (content == null) return null;
         return readField(fieldKey, doc.contentType, content);
       }

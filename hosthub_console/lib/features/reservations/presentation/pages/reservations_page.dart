@@ -2117,23 +2117,9 @@ class _StatusChip extends StatelessWidget {
     final label = status?.trim();
     if (label == null || label.isEmpty) return const SizedBox.shrink();
 
-    // Lodgify's vocabulary, mapped onto the console's four tones. The pill
-    // itself is shared with every other state pill in the app.
-    final tone = switch (label.toLowerCase()) {
-      final s when s.contains('cancel') || s.contains('declin') =>
-        StatusPillTone.negative,
-      final s
-          when s.contains('tentative') ||
-              s.contains('pending') ||
-              s.contains('option') ||
-              s.contains('hold') =>
-        StatusPillTone.caution,
-      final s when s.contains('book') || s.contains('confirm') =>
-        StatusPillTone.positive,
-      _ => StatusPillTone.neutral,
-    };
-
-    return StatusPill(label: label, tone: tone);
+    // The channel's vocabulary, mapped onto the console's four tones by the one
+    // mapping in reservation_display — the inbox rail shows the same pill.
+    return StatusPill(label: label, tone: bookingStatusTone(label));
   }
 }
 

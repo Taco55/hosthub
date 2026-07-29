@@ -64,11 +64,7 @@ class EditorCardView extends StatelessWidget {
 
 /// Dispatches one schema row to its shape.
 class _RowView extends StatelessWidget {
-  const _RowView({
-    required this.state,
-    required this.card,
-    required this.row,
-  });
+  const _RowView({required this.state, required this.card, required this.row});
 
   final SiteContentState state;
   final EditorCard card;
@@ -136,11 +132,8 @@ class _ListRowView extends StatelessWidget {
       items: fields,
       itemLabel: itemLabel,
       itemKey: (field) => field.key,
-      itemBuilder: (context, field, index) => WebsiteFieldRow(
-        state: state,
-        field: field,
-        label: null,
-      ),
+      itemBuilder: (context, field, index) =>
+          WebsiteFieldRow(state: state, field: field, label: null),
       onReorder: row.repeatable
           ? (from, to) => cubit.moveRow(row.listKey, from, to)
           : null,
@@ -221,14 +214,14 @@ class _PairListRowView extends StatelessWidget {
               ),
           ];
 
-    return StyledFieldList<({
-      String rowId,
-      EditorField? label,
-      EditorField? value,
-      String? title,
-    })>(
+    return StyledFieldList<
+      ({String rowId, EditorField? label, EditorField? value, String? title})
+    >(
       title: listTitle(context, row.listKey),
-      counter: context.s.weListCounter(rows.length, row.maxItems ?? rows.length),
+      counter: context.s.weListCounter(
+        rows.length,
+        row.maxItems ?? rows.length,
+      ),
       meta: row.sharedValue ? context.s.weSharedValueMeta : null,
       items: rows,
       itemLabel: itemLabel,
@@ -311,11 +304,7 @@ class _PairFields extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
-          child: WebsiteFieldRow(
-            state: state,
-            field: label!,
-            label: labelText,
-          ),
+          child: WebsiteFieldRow(state: state, field: label!, label: labelText),
         ),
         SizedBox(width: context.styledSpacing.sm),
         if (wideValue)
@@ -594,14 +583,17 @@ class _MediaRowView extends StatelessWidget {
                       const Icon(Icons.broken_image_outlined, size: 18),
                 ),
           onReorder: state.isSourceMode
-              ? (from, to) => context
-                    .read<SiteContentCubit>()
-                    .moveMediaPath(row.mediaKey, from, to)
+              ? (from, to) => context.read<SiteContentCubit>().moveMediaPath(
+                  row.mediaKey,
+                  from,
+                  to,
+                )
               : null,
           onRemove: state.isSourceMode
-              ? (index) => context
-                    .read<SiteContentCubit>()
-                    .removeMediaPath(row.mediaKey, index)
+              ? (index) => context.read<SiteContentCubit>().removeMediaPath(
+                  row.mediaKey,
+                  index,
+                )
               : null,
           onAdd: state.isSourceMode && media != null
               // ignore: discarded_futures — the modal resolves into the cubit;

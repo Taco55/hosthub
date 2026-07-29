@@ -82,25 +82,28 @@ void main() {
     expect(details.currency, 'NOK');
   });
 
-  test('a field Lodgify did not send stays null instead of becoming a zero', () {
-    // The record page renders null as "—". A 0 or an empty string here would
-    // read as if Lodgify had reported one.
-    final details = LodgifyPropertyDetailsDto.fromMap({
-      'id': 706211,
-      'name': 'Chalet',
-    }).toDomain();
+  test(
+    'a field Lodgify did not send stays null instead of becoming a zero',
+    () {
+      // The record page renders null as "—". A 0 or an empty string here would
+      // read as if Lodgify had reported one.
+      final details = LodgifyPropertyDetailsDto.fromMap({
+        'id': 706211,
+        'name': 'Chalet',
+      }).toDomain();
 
-    expect(details.address, isNull);
-    expect(details.zip, isNull);
-    expect(details.city, isNull);
-    expect(details.country, isNull);
-    expect(details.rating, isNull);
-    expect(details.minPrice, isNull);
-    expect(details.maxPrice, isNull);
-    expect(details.hasAddons, isNull);
-    expect(details.hasAgreement, isNull);
-    expect(details.rooms, isNull);
-    expect(details.ownerSpokenLanguages, isNull);
-    expect(details.subscriptionPlans, isNull);
-  });
+      expect(details.address, isNull);
+      expect(details.zip, isNull);
+      expect(details.city, isNull);
+      expect(details.country, isNull);
+      expect(details.rating, isNull);
+      expect(details.minPrice, isNull);
+      expect(details.maxPrice, isNull);
+      expect(details.hasAddons, isNull);
+      expect(details.hasAgreement, isNull);
+      expect(details.rooms, isNull);
+      expect(details.ownerSpokenLanguages, isNull);
+      expect(details.subscriptionPlans, isNull);
+    },
+  );
 }

@@ -16,6 +16,7 @@ import 'package:hosthub_console/features/website_editor/website_editor.dart';
 /// (mirrors `app.dart`).
 Future<SiteContentCubit> pumpEditor(
   WidgetTester tester, {
+
   /// A tall surface builds every card instead of only what fits: the editor's
   /// card list is lazy, so counting or finding a card further down needs room.
   Size surfaceSize = const Size(1360, 880),
@@ -228,14 +229,10 @@ void main() {
     );
   });
 
-
   testWidgets('the filter hides every card without a changed field', (
     tester,
   ) async {
-    final cubit = await pumpEditor(
-      tester,
-      surfaceSize: const Size(1360, 4000),
-    );
+    final cubit = await pumpEditor(tester, surfaceSize: const Size(1360, 4000));
     // Opening a language translates what is stale (lazy translation, par.
     // 11a), so the change has to happen *after* EN is open — which is also
     // the real review flow: you are in EN and the source moves on.
@@ -269,10 +266,7 @@ void main() {
   });
 
   testWidgets('a card head carries its own changed count', (tester) async {
-    final cubit = await pumpEditor(
-      tester,
-      surfaceSize: const Size(1360, 4000),
-    );
+    final cubit = await pumpEditor(tester, surfaceSize: const Size(1360, 4000));
     cubit.setPreviewLanguage('en');
     await tester.pumpAndSettle();
     cubit.editSourceField('cabin.hero.subtitle', 'Nieuwe ondertitel');
@@ -292,10 +286,7 @@ void main() {
   testWidgets('a row the source just gained reads New, not Locked', (
     tester,
   ) async {
-    final cubit = await pumpEditor(
-      tester,
-      surfaceSize: const Size(1360, 4000),
-    );
+    final cubit = await pumpEditor(tester, surfaceSize: const Size(1360, 4000));
     cubit.addRow('home.highlights');
     // The row carries a generated id for life; ask the state which one.
     final rowId = cubit.state.rowIdsOfList('home.highlights').last;
@@ -435,7 +426,6 @@ void main() {
     expect(cubit.state.isLanguageStale('en'), isFalse);
     expect(cubit.state.isLanguageStale('no'), isTrue);
   });
-
 
   testWidgets('the publish dialog breaks a language down per page', (
     tester,

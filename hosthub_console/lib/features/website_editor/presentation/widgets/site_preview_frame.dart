@@ -35,6 +35,7 @@ class SitePreviewFrame extends StatelessWidget {
     this.maxWidth = 660,
     this.boxShadow,
     this.expandContent = false,
+    this.pointAtChrome = false,
   });
 
   /// The rendered page / content slot.
@@ -63,6 +64,14 @@ class SitePreviewFrame extends StatelessWidget {
   /// When true the content slot fills the available height (for an embedded
   /// live page); when false the frame shrink-wraps its child (the mock).
   final bool expandContent;
+
+  /// Marks the browser chrome instead of anything on the page.
+  ///
+  /// Two fields are not text on the page at all — the tab title and the search
+  /// description (§E). Pointing at them means pointing at the chrome, which is
+  /// the console's own frame rather than the site's document, so the mark lands
+  /// here. The editor's note says what the field is; this says where.
+  final bool pointAtChrome;
 
   static const double _mobileScreenWidth = 306;
   static const double _mobileBezelPadding = 10;
@@ -103,15 +112,23 @@ class SitePreviewFrame extends StatelessWidget {
               alignment: Alignment.centerLeft,
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
-                color: context.colors.surfaceContainerHighest,
+                color: pointAtChrome
+                    ? context.colors.primaryContainer
+                    : context.colors.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(8),
+                border: pointAtChrome
+                    ? Border.all(color: context.colors.primary, width: 1.5)
+                    : null,
               ),
               child: Text(
                 url ?? '',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: context.theme.textTheme.bodySmall?.copyWith(
-                  color: context.colors.onSurfaceVariant,
+                  color: pointAtChrome
+                      ? context.colors.onPrimaryContainer
+                      : context.colors.onSurfaceVariant,
+                  fontWeight: pointAtChrome ? FontWeight.w600 : null,
                 ),
               ),
             ),

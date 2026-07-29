@@ -6837,10 +6837,10 @@ class S {
     );
   }
 
-  /// `{count} of {total} properties`
-  String portfolioFilterSome(Object count, Object total) {
+  /// `{count} of {total, plural, =1{1 property} other{{total} properties}}`
+  String portfolioFilterSome(Object count, num total) {
     return Intl.message(
-      '$count of $total properties',
+      '$count of ${Intl.plural(total, one: '1 property', other: '$total properties')}',
       name: 'portfolioFilterSome',
       desc: '',
       args: [count, total],
@@ -7039,26 +7039,6 @@ class S {
   /// `Revenue`
   String get menuRevenue {
     return Intl.message('Revenue', name: 'menuRevenue', desc: '', args: []);
-  }
-
-  /// `Channel fee defaults (%)`
-  String get channelFeeDefaultsHeader {
-    return Intl.message(
-      'Channel fee defaults (%)',
-      name: 'channelFeeDefaultsHeader',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Default commission percentages used when no override is set per property.`
-  String get channelFeeDefaultsDescription {
-    return Intl.message(
-      'Default commission percentages used when no override is set per property.',
-      name: 'channelFeeDefaultsDescription',
-      desc: '',
-      args: [],
-    );
   }
 
   /// `Website Content`
@@ -11287,6 +11267,1202 @@ class S {
     return Intl.message(
       'Publishing failed — your changes are kept as drafts',
       name: 'weErrorPublishFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Messages`
+  String get inboxTitle {
+    return Intl.message('Messages', name: 'inboxTitle', desc: '', args: []);
+  }
+
+  /// `All`
+  String get inboxFilterAll {
+    return Intl.message('All', name: 'inboxFilterAll', desc: '', args: []);
+  }
+
+  /// `Unread`
+  String get inboxFilterUnread {
+    return Intl.message(
+      'Unread',
+      name: 'inboxFilterUnread',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Action`
+  String get inboxFilterAction {
+    return Intl.message(
+      'Action',
+      name: 'inboxFilterAction',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Search by guest or message`
+  String get inboxSearchHint {
+    return Intl.message(
+      'Search by guest or message',
+      name: 'inboxSearchHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Needs a reply`
+  String get inboxTagAwaiting {
+    return Intl.message(
+      'Needs a reply',
+      name: 'inboxTagAwaiting',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Answered`
+  String get inboxTagAnswered {
+    return Intl.message(
+      'Answered',
+      name: 'inboxTagAnswered',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Reply to {guest} via {channel}…`
+  String inboxReplyHint(Object guest, Object channel) {
+    return Intl.message(
+      'Reply to $guest via $channel…',
+      name: 'inboxReplyHint',
+      desc: '',
+      args: [guest, channel],
+    );
+  }
+
+  /// `Your reply goes out through {channel}`
+  String inboxReplyVia(Object channel) {
+    return Intl.message(
+      'Your reply goes out through $channel',
+      name: 'inboxReplyVia',
+      desc: '',
+      args: [channel],
+    );
+  }
+
+  /// `Replying still happens in {source}.`
+  String inboxSendUnsupported(Object source) {
+    return Intl.message(
+      'Replying still happens in $source.',
+      name: 'inboxSendUnsupported',
+      desc: '',
+      args: [source],
+    );
+  }
+
+  /// `Open in {source}`
+  String inboxOpenInSource(Object source) {
+    return Intl.message(
+      'Open in $source',
+      name: 'inboxOpenInSource',
+      desc: '',
+      args: [source],
+    );
+  }
+
+  /// `Open booking`
+  String get inboxOpenBooking {
+    return Intl.message(
+      'Open booking',
+      name: 'inboxOpenBooking',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Snooze`
+  String get inboxSnooze {
+    return Intl.message('Snooze', name: 'inboxSnooze', desc: '', args: []);
+  }
+
+  /// `Until tomorrow`
+  String get inboxSnoozeTomorrow {
+    return Intl.message(
+      'Until tomorrow',
+      name: 'inboxSnoozeTomorrow',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Until next week`
+  String get inboxSnoozeNextWeek {
+    return Intl.message(
+      'Until next week',
+      name: 'inboxSnoozeNextWeek',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Wake now`
+  String get inboxSnoozeWake {
+    return Intl.message(
+      'Wake now',
+      name: 'inboxSnoozeWake',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Snoozed until {date}`
+  String inboxSnoozedUntil(Object date) {
+    return Intl.message(
+      'Snoozed until $date',
+      name: 'inboxSnoozedUntil',
+      desc: '',
+      args: [date],
+    );
+  }
+
+  /// `Archive`
+  String get inboxArchive {
+    return Intl.message('Archive', name: 'inboxArchive', desc: '', args: []);
+  }
+
+  /// `Airbnb counts your response time towards your ranking. This conversation is still waiting on you.`
+  String get inboxResponseTimeNote {
+    return Intl.message(
+      'Airbnb counts your response time towards your ranking. This conversation is still waiting on you.',
+      name: 'inboxResponseTimeNote',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This conversation is not attached to a booking.`
+  String get inboxNoReservation {
+    return Intl.message(
+      'This conversation is not attached to a booking.',
+      name: 'inboxNoReservation',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Translate to {language}`
+  String inboxTranslate(Object language) {
+    return Intl.message(
+      'Translate to $language',
+      name: 'inboxTranslate',
+      desc: '',
+      args: [language],
+    );
+  }
+
+  /// `Show original`
+  String get inboxShowOriginal {
+    return Intl.message(
+      'Show original',
+      name: 'inboxShowOriginal',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No guest messages for this selection yet.`
+  String get inboxEmptyAll {
+    return Intl.message(
+      'No guest messages for this selection yet.',
+      name: 'inboxEmptyAll',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `As soon as a guest replies to a booking or an enquiry, the conversation lands here.`
+  String get inboxEmptyAllHint {
+    return Intl.message(
+      'As soon as a guest replies to a booking or an enquiry, the conversation lands here.',
+      name: 'inboxEmptyAllHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No conversations in this view.`
+  String get inboxEmptyFiltered {
+    return Intl.message(
+      'No conversations in this view.',
+      name: 'inboxEmptyFiltered',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Change the filter or the search.`
+  String get inboxEmptyFilteredHint {
+    return Intl.message(
+      'Change the filter or the search.',
+      name: 'inboxEmptyFilteredHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This conversation has no messages yet.`
+  String get inboxEmptyConversation {
+    return Intl.message(
+      'This conversation has no messages yet.',
+      name: 'inboxEmptyConversation',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Message not sent.`
+  String get inboxSendFailed {
+    return Intl.message(
+      'Message not sent.',
+      name: 'inboxSendFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Send`
+  String get inboxSend {
+    return Intl.message('Send', name: 'inboxSend', desc: '', args: []);
+  }
+
+  /// `Retry`
+  String get inboxRetry {
+    return Intl.message('Retry', name: 'inboxRetry', desc: '', args: []);
+  }
+
+  /// `Not sent`
+  String get inboxMessageNotSent {
+    return Intl.message(
+      'Not sent',
+      name: 'inboxMessageNotSent',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not load the conversations`
+  String get inboxLoadFailed {
+    return Intl.message(
+      'Could not load the conversations',
+      name: 'inboxLoadFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `The inbox shows no conversations while the source is unreachable.`
+  String get inboxLoadFailedDescription {
+    return Intl.message(
+      'The inbox shows no conversations while the source is unreachable.',
+      name: 'inboxLoadFailedDescription',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not refresh the messages — you are still seeing the previous state.`
+  String get inboxSyncFailed {
+    return Intl.message(
+      'Could not refresh the messages — you are still seeing the previous state.',
+      name: 'inboxSyncFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Read, snoozed and archived are kept by HostHub itself. {source} knows nothing about them.`
+  String inboxLocalStateNote(Object source) {
+    return Intl.message(
+      'Read, snoozed and archived are kept by HostHub itself. $source knows nothing about them.',
+      name: 'inboxLocalStateNote',
+      desc: '',
+      args: [source],
+    );
+  }
+
+  /// `Quick replies`
+  String get inboxQuickRepliesLabel {
+    return Intl.message(
+      'Quick replies',
+      name: 'inboxQuickRepliesLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Check-in is from 4pm. Arriving earlier is usually fine — just let me know.`
+  String get inboxQuickReplyCheckIn {
+    return Intl.message(
+      'Check-in is from 4pm. Arriving earlier is usually fine — just let me know.',
+      name: 'inboxQuickReplyCheckIn',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `A few days before you arrive I'll send you the directions and the key code.`
+  String get inboxQuickReplyDirections {
+    return Intl.message(
+      'A few days before you arrive I\'ll send you the directions and the key code.',
+      name: 'inboxQuickReplyDirections',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `That date is still free. Shall I hold it for you?`
+  String get inboxQuickReplyAvailability {
+    return Intl.message(
+      'That date is still free. Shall I hold it for you?',
+      name: 'inboxQuickReplyAvailability',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Thanks for your message. I'll get back to you as soon as I can.`
+  String get inboxQuickReplyThanks {
+    return Intl.message(
+      'Thanks for your message. I\'ll get back to you as soon as I can.',
+      name: 'inboxQuickReplyThanks',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{property} · {dates} · via {channel}`
+  String inboxThreadSubtitle(Object property, Object dates, Object channel) {
+    return Intl.message(
+      '$property · $dates · via $channel',
+      name: 'inboxThreadSubtitle',
+      desc: '',
+      args: [property, dates, channel],
+    );
+  }
+
+  /// `{property} · via {channel}`
+  String inboxThreadSubtitleNoStay(Object property, Object channel) {
+    return Intl.message(
+      '$property · via $channel',
+      name: 'inboxThreadSubtitleNoStay',
+      desc: '',
+      args: [property, channel],
+    );
+  }
+
+  /// `Booking`
+  String get inboxReservationHeader {
+    return Intl.message(
+      'Booking',
+      name: 'inboxReservationHeader',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Language`
+  String get inboxGuestLanguage {
+    return Intl.message(
+      'Language',
+      name: 'inboxGuestLanguage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Total`
+  String get inboxTotal {
+    return Intl.message('Total', name: 'inboxTotal', desc: '', args: []);
+  }
+
+  /// `Booked before`
+  String get inboxPreviouslyBooked {
+    return Intl.message(
+      'Booked before',
+      name: 'inboxPreviouslyBooked',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count, plural, =0{First booking} =1{1 earlier booking} other{{count} earlier bookings}}`
+  String inboxPreviouslyBookedValue(num count) {
+    return Intl.plural(
+      count,
+      zero: 'First booking',
+      one: '1 earlier booking',
+      other: '$count earlier bookings',
+      name: 'inboxPreviouslyBookedValue',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `{count, plural, =1{1 unread conversation} other{{count} unread conversations}}`
+  String inboxUnreadTooltip(num count) {
+    return Intl.plural(
+      count,
+      one: '1 unread conversation',
+      other: '$count unread conversations',
+      name: 'inboxUnreadTooltip',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Today`
+  String get dayToday {
+    return Intl.message('Today', name: 'dayToday', desc: '', args: []);
+  }
+
+  /// `Yesterday`
+  String get dayYesterday {
+    return Intl.message('Yesterday', name: 'dayYesterday', desc: '', args: []);
+  }
+
+  /// `Defaults`
+  String get navAccountDefaults {
+    return Intl.message(
+      'Defaults',
+      name: 'navAccountDefaults',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Account`
+  String get navAccount {
+    return Intl.message('Account', name: 'navAccount', desc: '', args: []);
+  }
+
+  /// `Defaults`
+  String get accountDefaultsTitle {
+    return Intl.message(
+      'Defaults',
+      name: 'accountDefaultsTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `What every property inherits, unless that property says otherwise.`
+  String get accountDefaultsSubtitle {
+    return Intl.message(
+      'What every property inherits, unless that property says otherwise.',
+      name: 'accountDefaultsSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Channels & costs`
+  String get accountDefaultsChannelsHeader {
+    return Intl.message(
+      'Channels & costs',
+      name: 'accountDefaultsChannelsHeader',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Languages`
+  String get accountDefaultsLanguagesHeader {
+    return Intl.message(
+      'Languages',
+      name: 'accountDefaultsLanguagesHeader',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This is the starting point for your next property. Existing websites do not change here.`
+  String get accountDefaultsLanguagesFooter {
+    return Intl.message(
+      'This is the starting point for your next property. Existing websites do not change here.',
+      name: 'accountDefaultsLanguagesFooter',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Only the account owner can change defaults. Deviating per property is still possible.`
+  String get accountDefaultsReadOnlyNotice {
+    return Intl.message(
+      'Only the account owner can change defaults. Deviating per property is still possible.',
+      name: 'accountDefaultsReadOnlyNotice',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Commission`
+  String get channelFieldCommission {
+    return Intl.message(
+      'Commission',
+      name: 'channelFieldCommission',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `What this channel keeps from the booking.`
+  String get channelFieldCommissionHint {
+    return Intl.message(
+      'What this channel keeps from the booking.',
+      name: 'channelFieldCommissionHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Price markup`
+  String get channelFieldMarkup {
+    return Intl.message(
+      'Price markup',
+      name: 'channelFieldMarkup',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Raise the channel price relative to your base price.`
+  String get channelFieldMarkupHint {
+    return Intl.message(
+      'Raise the channel price relative to your base price.',
+      name: 'channelFieldMarkupHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Cleaning`
+  String get channelFieldCleaning {
+    return Intl.message(
+      'Cleaning',
+      name: 'channelFieldCleaning',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Linen`
+  String get channelFieldLinen {
+    return Intl.message('Linen', name: 'channelFieldLinen', desc: '', args: []);
+  }
+
+  /// `Service`
+  String get channelFieldService {
+    return Intl.message(
+      'Service',
+      name: 'channelFieldService',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Other`
+  String get channelFieldOther {
+    return Intl.message('Other', name: 'channelFieldOther', desc: '', args: []);
+  }
+
+  /// `per stay`
+  String get costTypePerBooking {
+    return Intl.message(
+      'per stay',
+      name: 'costTypePerBooking',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `per guest`
+  String get costTypePerPerson {
+    return Intl.message(
+      'per guest',
+      name: 'costTypePerPerson',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `per night`
+  String get costTypePerNight {
+    return Intl.message(
+      'per night',
+      name: 'costTypePerNight',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Commission {percentage}%`
+  String channelSummaryCommission(Object percentage) {
+    return Intl.message(
+      'Commission $percentage%',
+      name: 'channelSummaryCommission',
+      desc: '',
+      args: [percentage],
+    );
+  }
+
+  /// `{following, plural, =0{No property follows} other{{following} of {total} follow}}`
+  String coverageFollowing(num following, Object total) {
+    return Intl.plural(
+      following,
+      zero: 'No property follows',
+      other: '$following of $total follow',
+      name: 'coverageFollowing',
+      desc: '',
+      args: [following, total],
+    );
+  }
+
+  /// `Follows the default`
+  String get coverageSingleFollows {
+    return Intl.message(
+      'Follows the default',
+      name: 'coverageSingleFollows',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Own value`
+  String get coverageSingleOwn {
+    return Intl.message(
+      'Own value',
+      name: 'coverageSingleOwn',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Own values at:`
+  String get coverageOwnValuesAt {
+    return Intl.message(
+      'Own values at:',
+      name: 'coverageOwnValuesAt',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{property} has its own values — open Pricing`
+  String coverageOpenPricingTooltip(Object property) {
+    return Intl.message(
+      '$property has its own values — open Pricing',
+      name: 'coverageOpenPricingTooltip',
+      desc: '',
+      args: [property],
+    );
+  }
+
+  /// `{count, plural, =1{1 property gets this value} other{{count} properties get this value}}`
+  String accountDefaultsImpactSome(num count) {
+    return Intl.plural(
+      count,
+      one: '1 property gets this value',
+      other: '$count properties get this value',
+      name: 'accountDefaultsImpactSome',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `{count, plural, =1{1 property with its own value stays unchanged.} other{{count} properties with their own values stay unchanged.}}`
+  String accountDefaultsImpactUnchanged(num count) {
+    return Intl.plural(
+      count,
+      one: '1 property with its own value stays unchanged.',
+      other: '$count properties with their own values stay unchanged.',
+      name: 'accountDefaultsImpactUnchanged',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Nothing changes until you apply.`
+  String get accountDefaultsImpactNotYetApplied {
+    return Intl.message(
+      'Nothing changes until you apply.',
+      name: 'accountDefaultsImpactNotYetApplied',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No property follows this default`
+  String get accountDefaultsImpactNone {
+    return Intl.message(
+      'No property follows this default',
+      name: 'accountDefaultsImpactNone',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This changes your property`
+  String get accountDefaultsImpactSingleProperty {
+    return Intl.message(
+      'This changes your property',
+      name: 'accountDefaultsImpactSingleProperty',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Apply`
+  String get accountDefaultsApply {
+    return Intl.message(
+      'Apply',
+      name: 'accountDefaultsApply',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Defaults applied.`
+  String get accountDefaultsApplied {
+    return Intl.message(
+      'Defaults applied.',
+      name: 'accountDefaultsApplied',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Account`
+  String get accountTitle {
+    return Intl.message('Account', name: 'accountTitle', desc: '', args: []);
+  }
+
+  /// `Users & roles`
+  String get accountUsersHeader {
+    return Intl.message(
+      'Users & roles',
+      name: 'accountUsersHeader',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `A role applies to the whole account, so to all of your properties.`
+  String get accountUsersFooter {
+    return Intl.message(
+      'A role applies to the whole account, so to all of your properties.',
+      name: 'accountUsersFooter',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Invite a member`
+  String get accountInviteMember {
+    return Intl.message(
+      'Invite a member',
+      name: 'accountInviteMember',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `You have not invited anyone yet.`
+  String get accountNoMembers {
+    return Intl.message(
+      'You have not invited anyone yet.',
+      name: 'accountNoMembers',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Owner`
+  String get accountRoleOwner {
+    return Intl.message('Owner', name: 'accountRoleOwner', desc: '', args: []);
+  }
+
+  /// `Manager`
+  String get accountRoleAdmin {
+    return Intl.message(
+      'Manager',
+      name: 'accountRoleAdmin',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Read only`
+  String get accountRoleViewer {
+    return Intl.message(
+      'Read only',
+      name: 'accountRoleViewer',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Everything, including billing and members.`
+  String get accountRoleOwnerDescription {
+    return Intl.message(
+      'Everything, including billing and members.',
+      name: 'accountRoleOwnerDescription',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Content, pricing and per-property deviations. No billing, no members.`
+  String get accountRoleAdminDescription {
+    return Intl.message(
+      'Content, pricing and per-property deviations. No billing, no members.',
+      name: 'accountRoleAdminDescription',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Can look, cannot change.`
+  String get accountRoleViewerDescription {
+    return Intl.message(
+      'Can look, cannot change.',
+      name: 'accountRoleViewerDescription',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `· invited`
+  String get accountMemberInvited {
+    return Intl.message(
+      '· invited',
+      name: 'accountMemberInvited',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Remove {name}?`
+  String accountRemoveMemberTitle(Object name) {
+    return Intl.message(
+      'Remove $name?',
+      name: 'accountRemoveMemberTitle',
+      desc: '',
+      args: [name],
+    );
+  }
+
+  /// `This user loses access to all of your properties.`
+  String get accountRemoveMemberMessage {
+    return Intl.message(
+      'This user loses access to all of your properties.',
+      name: 'accountRemoveMemberMessage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Connections`
+  String get accountConnectionsHeader {
+    return Intl.message(
+      'Connections',
+      name: 'accountConnectionsHeader',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Last successful sync: {when}`
+  String accountConnectionLastSync(Object when) {
+    return Intl.message(
+      'Last successful sync: $when',
+      name: 'accountConnectionLastSync',
+      desc: '',
+      args: [when],
+    );
+  }
+
+  /// `Never synced`
+  String get accountConnectionNeverSynced {
+    return Intl.message(
+      'Never synced',
+      name: 'accountConnectionNeverSynced',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Subscription & billing`
+  String get accountBillingHeader {
+    return Intl.message(
+      'Subscription & billing',
+      name: 'accountBillingHeader',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Subscription`
+  String get accountBillingPlan {
+    return Intl.message(
+      'Subscription',
+      name: 'accountBillingPlan',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{plan} · {count, plural, =1{1 property} other{{count} properties}}`
+  String accountBillingPlanValue(Object plan, num count) {
+    return Intl.message(
+      '$plan · ${Intl.plural(count, one: '1 property', other: '$count properties')}',
+      name: 'accountBillingPlanValue',
+      desc: '',
+      args: [plan, count],
+    );
+  }
+
+  /// `Pro, monthly`
+  String get accountBillingPlanPro {
+    return Intl.message(
+      'Pro, monthly',
+      name: 'accountBillingPlanPro',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Payment method`
+  String get accountBillingPaymentMethod {
+    return Intl.message(
+      'Payment method',
+      name: 'accountBillingPaymentMethod',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Invoices`
+  String get accountBillingInvoices {
+    return Intl.message(
+      'Invoices',
+      name: 'accountBillingInvoices',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `View and download your invoices`
+  String get accountBillingInvoicesValue {
+    return Intl.message(
+      'View and download your invoices',
+      name: 'accountBillingInvoicesValue',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `VAT or company number`
+  String get accountBillingVatNumber {
+    return Intl.message(
+      'VAT or company number',
+      name: 'accountBillingVatNumber',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Fill this in if your invoice has to be addressed to a company.`
+  String get accountBillingVatHint {
+    return Intl.message(
+      'Fill this in if your invoice has to be addressed to a company.',
+      name: 'accountBillingVatHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Payment method and invoices are managed at our payment provider. That link is still to come.`
+  String get accountBillingExternalNotice {
+    return Intl.message(
+      'Payment method and invoices are managed at our payment provider. That link is still to come.',
+      name: 'accountBillingExternalNotice',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Interface language and the compact side menu are yours, not the account's. They live with your profile at the bottom of the sidebar.`
+  String get accountPreferencesMovedFooter {
+    return Intl.message(
+      'Interface language and the compact side menu are yours, not the account\'s. They live with your profile at the bottom of the sidebar.',
+      name: 'accountPreferencesMovedFooter',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Legal`
+  String get legalSectionTitle {
+    return Intl.message('Legal', name: 'legalSectionTitle', desc: '', args: []);
+  }
+
+  /// `The privacy statement lives on your website at /privacy and is published together with the rest of your content.`
+  String get legalSectionFooter {
+    return Intl.message(
+      'The privacy statement lives on your website at /privacy and is published together with the rest of your content.',
+      name: 'legalSectionFooter',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `This is a legal text. Only change it if you know what it has to say — have it checked if you are unsure.`
+  String get legalSectionWarning {
+    return Intl.message(
+      'This is a legal text. Only change it if you know what it has to say — have it checked if you are unsure.',
+      name: 'legalSectionWarning',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Legal`
+  String get wePageLegal {
+    return Intl.message('Legal', name: 'wePageLegal', desc: '', args: []);
+  }
+
+  /// `Privacy statement`
+  String get weCardPrivacy {
+    return Intl.message(
+      'Privacy statement',
+      name: 'weCardPrivacy',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Introduction`
+  String get weFieldPrivacyIntro {
+    return Intl.message(
+      'Introduction',
+      name: 'weFieldPrivacyIntro',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Listings`
+  String get listingsHeader {
+    return Intl.message('Listings', name: 'listingsHeader', desc: '', args: []);
+  }
+
+  /// `Add a listing by hand, or remove listings, to try out a new website setup without a Lodgify sync.`
+  String get listingsDescription {
+    return Intl.message(
+      'Add a listing by hand, or remove listings, to try out a new website setup without a Lodgify sync.',
+      name: 'listingsDescription',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `ID`
+  String get listingsColumnId {
+    return Intl.message('ID', name: 'listingsColumnId', desc: '', args: []);
+  }
+
+  /// `Name`
+  String get listingsColumnName {
+    return Intl.message('Name', name: 'listingsColumnName', desc: '', args: []);
+  }
+
+  /// `Lodgify ID`
+  String get listingsColumnLodgifyId {
+    return Intl.message(
+      'Lodgify ID',
+      name: 'listingsColumnLodgifyId',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Actions`
+  String get listingsColumnActions {
+    return Intl.message(
+      'Actions',
+      name: 'listingsColumnActions',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Listing "{name}" added.`
+  String listingsAdded(Object name) {
+    return Intl.message(
+      'Listing "$name" added.',
+      name: 'listingsAdded',
+      desc: '',
+      args: [name],
+    );
+  }
+
+  /// `Listing "{name}" removed.`
+  String listingsRemoved(Object name) {
+    return Intl.message(
+      'Listing "$name" removed.',
+      name: 'listingsRemoved',
+      desc: '',
+      args: [name],
+    );
+  }
+
+  /// `Remove "{name}"?`
+  String listingsRemoveTitle(Object name) {
+    return Intl.message(
+      'Remove "$name"?',
+      name: 'listingsRemoveTitle',
+      desc: '',
+      args: [name],
+    );
+  }
+
+  /// `The listing disappears from this account. Bookings at the source are untouched.`
+  String get listingsRemoveMessage {
+    return Intl.message(
+      'The listing disappears from this account. Bookings at the source are untouched.',
+      name: 'listingsRemoveMessage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Pick a property`
+  String get switchPropertyTitle {
+    return Intl.message(
+      'Pick a property',
+      name: 'switchPropertyTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Could not load the pricing settings.`
+  String get pricingLoadFailed {
+    return Intl.message(
+      'Could not load the pricing settings.',
+      name: 'pricingLoadFailed',
       desc: '',
       args: [],
     );

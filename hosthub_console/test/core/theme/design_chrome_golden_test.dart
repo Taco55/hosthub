@@ -92,8 +92,9 @@ void main() {
     );
   });
 
-  testWidgets('golden: booking table (.dt header band + white rows)',
-      (tester) async {
+  testWidgets('golden: booking table (.dt header band + white rows)', (
+    tester,
+  ) async {
     const rows = [
       ['Dina Simonsen', '7 feb 2027', '12 feb 2027', '5', '8 (4 + 4)'],
       ['Thomas Fogt Nielsen', '13 feb 2027', '19 feb 2027', '6', '8 (8 + 0)'],
@@ -135,8 +136,9 @@ void main() {
     );
   });
 
-  testWidgets('golden: toolbar (.seg + .tbtn, plain and selected)',
-      (tester) async {
+  testWidgets('golden: toolbar (.seg + .tbtn, plain and selected)', (
+    tester,
+  ) async {
     await pump(
       tester,
       Align(
@@ -187,8 +189,9 @@ void main() {
     );
   });
 
-  testWidgets('golden: revenue chart card (.chartcard + .chart)',
-      (tester) async {
+  testWidgets('golden: revenue chart card (.chartcard + .chart)', (
+    tester,
+  ) async {
     const gross = [42, 51, 38, 22, 12, 9, 14, 11, 18, 26, 34, 61];
     const months = [
       'jan',
@@ -242,8 +245,9 @@ void main() {
     );
   });
 
-  testWidgets('golden: channel split (.split) and a totals row (.dt tfoot)',
-      (tester) async {
+  testWidgets('golden: channel split (.split) and a totals row (.dt tfoot)', (
+    tester,
+  ) async {
     const rows = [
       ['Dina Simonsen', '5', 'kr 12 000', 'kr 9 400'],
       ['Thomas Fogt Nielsen', '6', 'kr 15 600', 'kr 12 100'],

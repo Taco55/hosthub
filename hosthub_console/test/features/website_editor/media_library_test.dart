@@ -185,24 +185,27 @@ void main() {
       await cubit.close();
     });
 
-    test('a failed upload marks its own row and keeps the library intact',
-        () async {
-      final repo = FakeMediaRepository()..nextUploadError = StateError('offline');
-      final cubit = build(repo);
+    test(
+      'a failed upload marks its own row and keeps the library intact',
+      () async {
+        final repo = FakeMediaRepository()
+          ..nextUploadError = StateError('offline');
+        final cubit = build(repo);
 
-      await cubit.addUpload(
-        filename: 'good.jpg',
-        bytes: _bytes(2048),
-        contentType: 'image/jpeg',
-        width: 2400,
-        height: 1600,
-      );
+        await cubit.addUpload(
+          filename: 'good.jpg',
+          bytes: _bytes(2048),
+          contentType: 'image/jpeg',
+          width: 2400,
+          height: 1600,
+        );
 
-      expect(cubit.state.uploads.single.isFailed, isTrue);
-      expect(cubit.state.files, isEmpty);
-      expect(cubit.state.error, isNotNull);
-      await cubit.close();
-    });
+        expect(cubit.state.uploads.single.isFailed, isTrue);
+        expect(cubit.state.files, isEmpty);
+        expect(cubit.state.error, isNotNull);
+        await cubit.close();
+      },
+    );
 
     test('a file a page renders cannot be deleted', () async {
       // The worst outcome of this screen is a photo vanishing from a live page

@@ -60,7 +60,7 @@ class EditorColumn extends StatelessWidget {
             ],
           ),
         ),
-        _SaveBar(state: state),
+        EditorSaveBar(state: state),
       ],
     );
   }
@@ -124,7 +124,7 @@ class _TopBar extends StatelessWidget {
           // §11g: the switcher picks the language you *edit*, so it belongs
           // above the form. In the preview header it read as "what am I
           // looking at" and disappeared entirely with the preview hidden.
-          _LocaleSwitcher(state: state),
+          EditorLocaleSwitcher(state: state),
           const SizedBox(width: 8),
           // §11d: a page-scoped toolbar holds page-scoped controls. Team is
           // property-scoped and the gear duplicated the sidebar's Settings;
@@ -146,8 +146,10 @@ class _TopBar extends StatelessWidget {
 /// Design §11g: one segment per locale, the source labelled `source` and the
 /// targets carrying nothing — a translation is not "AI" once the owner has
 /// locked fields, and provenance is already stated per field.
-class _LocaleSwitcher extends StatelessWidget {
-  const _LocaleSwitcher({required this.state});
+/// Which language you are looking at. Shared with the legal document, so the
+/// source badge and the segment behave identically in both places.
+class EditorLocaleSwitcher extends StatelessWidget {
+  const EditorLocaleSwitcher({super.key, required this.state});
   final SiteContentState state;
 
   @override
@@ -304,8 +306,13 @@ class _TranslationStatusToolbar extends StatelessWidget {
 
 // Card and row rendering lives in editor_card_view.dart.
 
-class _SaveBar extends StatelessWidget {
-  const _SaveBar({required this.state});
+/// The editor's status line and its two actions.
+///
+/// Public because the legal document under Site-instellingen runs on the same
+/// save model — explicit save, discard, dimmed publish — and a second save bar
+/// would be a second vocabulary for the same three states.
+class EditorSaveBar extends StatelessWidget {
+  const EditorSaveBar({super.key, required this.state});
   final SiteContentState state;
 
   @override

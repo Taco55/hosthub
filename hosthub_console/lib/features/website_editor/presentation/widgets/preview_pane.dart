@@ -7,6 +7,7 @@ import 'package:hosthub_console/core/widgets/foundation/foundation.dart';
 import 'package:hosthub_console/core/config/app_config.dart';
 
 import '../../application/site_content_cubit.dart';
+import '../../domain/editor_schema.dart';
 import '../website_editor_status_colors.dart';
 import 'live_site_frame.dart';
 import 'site_preview_frame.dart';
@@ -54,6 +55,9 @@ class PreviewPane extends StatelessWidget {
     final isLive = liveUrl != null;
     final frame = SitePreviewFrame(
       url: url,
+      // §E: the two SEO fields live in the browser chrome, not in the page —
+      // so that is what gets marked while one of them has the cursor.
+      pointAtChrome: state.focusedVisibility == FieldVisibility.seo,
       device: state.previewDevice == PreviewDevice.mobile
           ? SitePreviewFrameDevice.mobile
           : SitePreviewFrameDevice.desktop,
@@ -65,6 +69,8 @@ class PreviewPane extends StatelessWidget {
               // The unsaved draft included — the pane says "live preview" and
               // this is what makes that true.
               fields: state.previewFieldValues,
+              // §E: focus a field and the preview points at where it lands.
+              focusedAddress: state.focusedAddress,
             )
           : _SitePreview(state: state),
     );

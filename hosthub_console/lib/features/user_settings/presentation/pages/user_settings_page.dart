@@ -16,7 +16,6 @@ import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:hosthub_console/features/profile/profile.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/server_settings/application/server_settings_cubit.dart';
-import 'package:hosthub_console/features/server_settings/domain/admin_settings.dart';
 import 'package:hosthub_console/features/server_settings/presentation/widgets/admin_options_section.dart';
 import 'package:hosthub_console/features/team/application/site_members_cubit.dart';
 import 'package:hosthub_console/features/team/domain/site_invitation.dart';
@@ -166,7 +165,8 @@ class _UserSettingsView extends StatelessWidget {
           // content runs to the screen edge and the gap below the card is
           // only visible at maximum scroll.
           return StyledWebPageScaffold(
-            title: context.s.settingsLabel,
+            overline: context.s.navGroupAccount,
+            title: context.s.accountTitle,
             intrinsicPaneHeight: true,
             leftChild: isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -212,29 +212,17 @@ class _UserSettingsSection extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    // Property-scope website settings (design §5): site details, website
-    // languages and source language. Empty when no site is linked.
-    final siteSections = buildSiteSettingsSections(
-      context,
-      context.watch<SiteContextCubit>().state,
-    );
-
+    // §8.3, in order: who has access, what we are connected to, what you pay.
+    // Site details, website languages and the source language moved to
+    // Site-instellingen — they are about one property, and three screens called
+    // "instellingen" with no rule about which held what was the problem this
+    // split solves.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ...siteSections,
+        const _TeamSection(),
         StyledSection(
-          isFirstSection: siteSections.isEmpty,
-          header: context.s.generalSectionTitle,
-          horizontalPadding: 0,
-          children: const [
-            // Interface language is a personal preference and lives in the
-            // profile modal (design §4b); this page is property scope.
-            _AppInfoTile(),
-          ],
-        ),
-        StyledSection(
-          header: context.s.connectionsSectionTitle,
+          header: context.s.accountConnectionsHeader,
           horizontalPadding: 0,
           children: [
             Text(context.s.lodgifyTitle),
@@ -308,15 +296,20 @@ class _UserSettingsSection extends StatelessWidget {
             _LastSyncTile(lastSyncedAt: lastSyncedAt),
           ],
         ),
-        // Listings are account data, so they sit right under the Lodgify
-        // connection that normally creates them — the manual add/remove is the
-        // escape hatch for testing a website setup without a sync.
+        // Listings sit under the connection that normally creates them — the
+        // manual add/remove is the escape hatch for setting up a website
+        // without a sync.
         const ListingsSection(),
-        const _ChannelFeeDefaultsSection(),
-        const _TeamSection(),
+        const _BillingSection(),
+        StyledSection(
+          header: context.s.generalSectionTitle,
+          footer: context.s.accountPreferencesMovedFooter,
+          horizontalPadding: 0,
+          children: const [_AppInfoTile()],
+        ),
         // Admin scope last: everything above is this account's own data, the
         // admin section is the whole environment's. Absent for a non-admin, so
-        // the page ends at Gebruikers for everyone else.
+        // the page ends at the account for everyone else.
         if (context.watch<ProfileCubit>().state.profile?.isAdmin ?? false)
           const AdminOptionsSection(),
       ],
@@ -325,8 +318,28 @@ class _UserSettingsSection extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Gebruikers Section
+// Gebruikers & rollen
 // ---------------------------------------------------------------------------
+
+/// The role a member holds, as the account states it.
+///
+/// Three roles, and they are **account-wide**: a role is granted once and holds
+/// for every property, including one added tomorrow (a trigger on `sites`
+/// carries the account's members onto a new site). Per-site rows remain the
+/// storage; there is deliberately no second membership model beside them.
+extension _AccountRoleCopy on SiteMemberRole {
+  String roleLabel(BuildContext context) => switch (this) {
+    SiteMemberRole.owner => context.s.accountRoleOwner,
+    SiteMemberRole.editor => context.s.accountRoleAdmin,
+    SiteMemberRole.viewer => context.s.accountRoleViewer,
+  };
+
+  String roleDescription(BuildContext context) => switch (this) {
+    SiteMemberRole.owner => context.s.accountRoleOwnerDescription,
+    SiteMemberRole.editor => context.s.accountRoleAdminDescription,
+    SiteMemberRole.viewer => context.s.accountRoleViewerDescription,
+  };
+}
 
 class _TeamSection extends StatefulWidget {
   const _TeamSection();
@@ -361,55 +374,37 @@ class _TeamSectionState extends State<_TeamSection> {
         final isLoading = state.isLoading && members.isEmpty;
 
         return StyledSection(
-          header: 'Gebruikers',
+          isFirstSection: true,
+          header: context.s.accountUsersHeader,
+          // A role is account-wide, and the reader has to know that before
+          // they grant one.
+          footer: context.s.accountUsersFooter,
           horizontalPadding: 0,
+          headerAction: StyledButton(
+            title: context.s.accountInviteMember,
+            size: StyledButtonSize.compact,
+            leftIconData: Icons.person_add_outlined,
+            showLeftIcon: true,
+            onPressed: () => _handleInvite(context),
+          ),
           children: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Nodig een gebruiker uit om samen je properties te beheren.',
-                      style: context.theme.textTheme.bodySmall?.copyWith(
-                        color: context.colors.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  StyledButton(
-                    title: 'Uitnodigen',
-                    leftIconData: Icons.person_add_outlined,
-                    showLeftIcon: true,
-                    onPressed: () => _handleInvite(context),
-                    minHeight: 40,
-                  ),
-                ],
-              ),
-            ),
             if (isLoading)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 16),
                 child: Center(child: CircularProgressIndicator()),
               )
             else ...[
+              // Members and pending invitations are one list: an invitation is
+              // a member whose link has not been used yet, and splitting them
+              // made the same person look like two entries.
               if (members.isNotEmpty) _TeamMembersList(members: members),
-              if (invitations.isNotEmpty) ...[
-                if (members.isNotEmpty) const SizedBox(height: 16),
-                Text(
-                  'Openstaande uitnodigingen',
-                  style: context.theme.textTheme.labelMedium?.copyWith(
-                    color: context.colors.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 8),
+              if (invitations.isNotEmpty)
                 _TeamInvitationsList(invitations: invitations),
-              ],
               if (members.isEmpty && invitations.isEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Text(
-                    'Je hebt nog geen gebruikers uitgenodigd.',
+                    context.s.accountNoMembers,
                     style: context.theme.textTheme.bodySmall?.copyWith(
                       color: context.colors.onSurfaceVariant,
                     ),
@@ -428,7 +423,7 @@ class _TeamSectionState extends State<_TeamSection> {
       showStyledToast(
         context,
         type: ToastificationType.success,
-        description: 'Uitnodiging verstuurd',
+        description: context.s.teamInvitationSent,
       );
     }
   }
@@ -445,18 +440,12 @@ class _TeamMembersList extends StatelessWidget {
       children: members.map((member) {
         return StyledTile(
           title: member.displayName,
-          value: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: context.colors.secondaryContainer,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              member.memberRole.label,
-              style: context.theme.textTheme.labelSmall?.copyWith(
-                color: context.colors.onSecondaryContainer,
-              ),
-            ),
+          subtitle: member.memberRole.roleDescription(context),
+          value: StyledChip(
+            label: member.memberRole.roleLabel(context),
+            size: StyledChipSize.display,
+            backgroundColor: context.colors.secondaryContainer,
+            labelColor: context.colors.onSecondaryContainer,
           ),
           trailing: member.memberRole != SiteMemberRole.owner
               ? StyledToolbarButton(
@@ -472,30 +461,15 @@ class _TeamMembersList extends StatelessWidget {
   }
 
   void _confirmRemove(BuildContext context, SiteMember member) {
-    showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Gebruiker verwijderen'),
-        content: Text(
-          'Weet je zeker dat je ${member.displayName} wilt verwijderen? '
-          'Deze gebruiker verliest toegang tot al je properties.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(context.s.cancelButton),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Verwijderen'),
-          ),
-        ],
-      ),
-    ).then((confirmed) {
-      if (confirmed == true && context.mounted) {
-        context.read<SiteMembersCubit>().removePartner(member);
-      }
-    });
+    showStyledAlertDialog(
+      context,
+      title: context.s.accountRemoveMemberTitle(member.displayName),
+      message: context.s.accountRemoveMemberMessage,
+      actionText: context.s.remove,
+      dismissText: context.s.cancelButton,
+      isDestructiveAction: true,
+      onAction: () => context.read<SiteMembersCubit>().removePartner(member),
+    );
   }
 }
 
@@ -510,18 +484,16 @@ class _TeamInvitationsList extends StatelessWidget {
       children: invitations.map((inv) {
         return StyledTile(
           title: inv.email,
-          value: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: context.colors.tertiaryContainer,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              inv.memberRole.label,
-              style: context.theme.textTheme.labelSmall?.copyWith(
-                color: context.colors.onTertiaryContainer,
-              ),
-            ),
+          subtitle: inv.memberRole.roleDescription(context),
+          value: StyledChip(
+            // The role, then what is still missing: the link has not been used
+            // yet. One row per person either way.
+            label:
+                '${inv.memberRole.roleLabel(context)} '
+                '${context.s.accountMemberInvited}',
+            size: StyledChipSize.display,
+            backgroundColor: context.colors.tertiaryContainer,
+            labelColor: context.colors.onTertiaryContainer,
           ),
           trailing: StyledToolbarButton(
             iconData: Icons.cancel_outlined,
@@ -581,230 +553,118 @@ class _AppInfoTileState extends State<_AppInfoTile> {
 }
 
 // ---------------------------------------------------------------------------
-// Channel Fee Defaults Section
+// Abonnement & facturering
 // ---------------------------------------------------------------------------
 
-class _ChannelFeeDefaultsSection extends StatefulWidget {
-  const _ChannelFeeDefaultsSection();
-
-  @override
-  State<_ChannelFeeDefaultsSection> createState() =>
-      _ChannelFeeDefaultsSectionState();
-}
-
-class _ChannelFeeDefaultsSectionState
-    extends State<_ChannelFeeDefaultsSection> {
-  final _bookingController = TextEditingController();
-  final _airbnbController = TextEditingController();
-  final _otherController = TextEditingController();
-
-  bool _isApplyingDraft = false;
-  AdminSettings? _loadedSettings;
-
-  List<TextEditingController> get _controllers => [
-    _bookingController,
-    _airbnbController,
-    _otherController,
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    for (final c in _controllers) {
-      c.addListener(_onDraftChanged);
-    }
-    final cubit = context.read<ServerSettingsCubit>();
-    if (cubit.state.settings == null &&
-        cubit.state.status != ServerSettingsStatus.loading &&
-        cubit.state.status != ServerSettingsStatus.mutating) {
-      cubit.load();
-    }
-  }
-
-  @override
-  void dispose() {
-    for (final c in _controllers) {
-      c.removeListener(_onDraftChanged);
-      c.dispose();
-    }
-    super.dispose();
-  }
-
-  void _onDraftChanged() {
-    if (_isApplyingDraft || !mounted) return;
-    setState(() {});
-  }
-
-  void _applyDraft(AdminSettings settings) {
-    _loadedSettings = settings;
-    _isApplyingDraft = true;
-    _bookingController.text = _fmtDec(settings.bookingChannelFeePercentage);
-    _airbnbController.text = _fmtDec(settings.airbnbChannelFeePercentage);
-    _otherController.text = _fmtDec(settings.otherChannelFeePercentage);
-    _isApplyingDraft = false;
-  }
-
-  bool _hasChanges(AdminSettings base) {
-    return _dblChanged(
-          _parseCtrl(_bookingController, base.bookingChannelFeePercentage),
-          base.bookingChannelFeePercentage,
-        ) ||
-        _dblChanged(
-          _parseCtrl(_airbnbController, base.airbnbChannelFeePercentage),
-          base.airbnbChannelFeePercentage,
-        ) ||
-        _dblChanged(
-          _parseCtrl(_otherController, base.otherChannelFeePercentage),
-          base.otherChannelFeePercentage,
-        );
-  }
-
-  void _save(AdminSettings current) {
-    final updated = current.copyWith(
-      bookingChannelFeePercentage: _parseCtrl(
-        _bookingController,
-        current.bookingChannelFeePercentage,
-      ),
-      airbnbChannelFeePercentage: _parseCtrl(
-        _airbnbController,
-        current.airbnbChannelFeePercentage,
-      ),
-      otherChannelFeePercentage: _parseCtrl(
-        _otherController,
-        current.otherChannelFeePercentage,
-      ),
-    );
-    context.read<ServerSettingsCubit>().save(updated);
-  }
+/// What the account pays for, and the one field a business user needs.
+///
+/// Deliberately small. HostHub is for people with a few homes; the business
+/// ones need a company number on the invoice, not a second account type, a
+/// "bedrijfsgegevens" block or a KvK field. The payment method and the invoice
+/// list belong to the payment provider, so they are stated here and linked
+/// there — a row without a chevron is a value, never a dead navigation.
+class _BillingSection extends StatelessWidget {
+  const _BillingSection();
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<ServerSettingsCubit, ServerSettingsState>(
-      listenWhen: (previous, current) => previous.settings != current.settings,
-      listener: (context, state) {
-        final settings = state.settings;
-        if (settings != null && !identical(settings, _loadedSettings)) {
-          setState(() => _applyDraft(settings));
-        }
-      },
-      builder: (context, state) {
-        final isLoading =
-            state.status == ServerSettingsStatus.loading &&
-            state.settings == null;
-        if (isLoading) {
-          return StyledSection(
-            header: context.s.channelFeeDefaultsHeader,
-            horizontalPadding: 0,
-            children: const [Center(child: CircularProgressIndicator())],
-          );
-        }
+    final state = context.watch<AccountChannelDefaultsCubit>().state;
+    final propertyCount = context
+        .watch<PropertyContextCubit>()
+        .state
+        .properties
+        .length;
 
-        final settings = state.settings ?? AdminSettings.defaults();
-        final isMutating = state.status == ServerSettingsStatus.mutating;
-        final canSave =
-            _loadedSettings != null &&
-            _hasChanges(_loadedSettings!) &&
-            !isMutating;
-
-        return StyledSection(
-          header: context.s.channelFeeDefaultsHeader,
-          horizontalPadding: 0,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Text(
-                context.s.channelFeeDefaultsDescription,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-            _ChannelFeeInputTile(
-              title: 'Booking.com',
-              leading: const BookingSourceIcon(source: 'booking', size: 20),
-              controller: _bookingController,
-              enabled: !isMutating,
-            ),
-            _ChannelFeeInputTile(
-              title: 'Airbnb',
-              leading: const BookingSourceIcon(source: 'airbnb', size: 20),
-              controller: _airbnbController,
-              enabled: !isMutating,
-            ),
-            _ChannelFeeInputTile(
-              title: 'Overig / Direct',
-              leading: const BookingSourceIcon(source: 'direct', size: 20),
-              controller: _otherController,
-              enabled: !isMutating,
-            ),
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: StyledButton(
-                title: context.s.saveButton,
-                onPressed: canSave ? () => _save(settings) : null,
-                enabled: canSave,
-                showProgressIndicatorWhenDisabled: isMutating,
-                leftIconData: isMutating ? null : Icons.save_outlined,
-                showLeftIcon: !isMutating,
-                minHeight: 40,
-              ),
-            ),
-          ],
-        );
-      },
+    return StyledSection(
+      header: context.s.accountBillingHeader,
+      footer: context.s.accountBillingExternalNotice,
+      horizontalPadding: 0,
+      children: [
+        StyledTile(
+          leading: const Icon(Icons.workspace_premium_outlined),
+          title: context.s.accountBillingPlan,
+          value: context.s.accountBillingPlanValue(
+            context.s.accountBillingPlanPro,
+            propertyCount,
+          ),
+        ),
+        StyledTile(
+          leading: const Icon(Icons.credit_card_outlined),
+          title: context.s.accountBillingPaymentMethod,
+          value: notSetPlaceholder(context),
+        ),
+        StyledTile(
+          leading: const Icon(Icons.receipt_long_outlined),
+          title: context.s.accountBillingInvoices,
+          value: context.s.accountBillingInvoicesValue,
+        ),
+        _VatNumberTile(state: state),
+      ],
     );
   }
-
-  static String _fmtDec(double value) {
-    final fixed = value.toStringAsFixed(2);
-    return fixed
-        .replaceFirst(RegExp(r'0+$'), '')
-        .replaceFirst(RegExp(r'\.$'), '');
-  }
-
-  static double _parseCtrl(TextEditingController c, double fallback) {
-    final text = c.text.trim();
-    if (text.isEmpty) return 0;
-    return double.tryParse(text.replaceAll(',', '.')) ?? fallback;
-  }
-
-  static bool _dblChanged(double a, double b) => (a - b).abs() >= 0.001;
 }
 
-class _ChannelFeeInputTile extends StatelessWidget {
-  const _ChannelFeeInputTile({
-    required this.title,
-    required this.controller,
-    required this.enabled,
-    this.leading,
-  });
+class _VatNumberTile extends StatefulWidget {
+  const _VatNumberTile({required this.state});
 
-  final String title;
-  final TextEditingController controller;
-  final bool enabled;
-  final Widget? leading;
+  final AccountChannelDefaultsState state;
+
+  @override
+  State<_VatNumberTile> createState() => _VatNumberTileState();
+}
+
+class _VatNumberTileState extends State<_VatNumberTile> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.state.settings.vatNumber ?? '',
+  );
+
+  @override
+  void didUpdateWidget(covariant _VatNumberTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final stored = widget.state.settings.vatNumber ?? '';
+    if (stored != _controller.text && !_focusNode.hasFocus) {
+      _controller.text = stored;
+    }
+  }
+
+  final FocusNode _focusNode = FocusNode();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _commit() {
+    final value = _controller.text.trim();
+    final stored = widget.state.settings.vatNumber ?? '';
+    if (value == stored) return;
+    context.read<AccountChannelDefaultsCubit>().saveSettings(
+      widget.state.settings.copyWith(
+        vatNumber: value.isEmpty ? null : value,
+        clearVatNumber: value.isEmpty,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return StyledTile(
-      title: title,
-      leading: leading,
+      leading: const Icon(Icons.badge_outlined),
+      title: context.s.accountBillingVatNumber,
+      subtitle: context.s.accountBillingVatHint,
       value: SizedBox(
-        width: 120,
-        child: StyledTextFormField(
-          controller: controller,
-          enabled: enabled,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          textInputAction: TextInputAction.next,
-          placeholder: '0',
-        ),
-      ),
-      trailing: Text(
-        '%',
-        style: context.theme.textTheme.labelMedium?.copyWith(
-          color: context.colors.onSurfaceVariant,
-          fontWeight: FontWeight.w600,
+        width: 220,
+        child: StyledTextField(
+          controller: _controller,
+          focusNode: _focusNode,
+          enabled: widget.state.canEdit,
+          textAlign: TextAlign.right,
+          // Committed on leaving the field rather than per keystroke: an
+          // account-level write per character is a write per character.
+          onEditingComplete: _commit,
+          onSubmitted: (_) => _commit(),
         ),
       ),
     );

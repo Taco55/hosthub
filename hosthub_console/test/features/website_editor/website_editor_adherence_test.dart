@@ -108,8 +108,7 @@ void main() {
     expect(
       offenders,
       isEmpty,
-      reason:
-          'Chrome must come from StyledWidgets:\n${offenders.join('\n')}',
+      reason: 'Chrome must come from StyledWidgets:\n${offenders.join('\n')}',
     );
   });
 

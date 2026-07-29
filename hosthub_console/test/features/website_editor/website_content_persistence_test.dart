@@ -168,7 +168,10 @@ void main() {
     repo.loadError = null;
     await cubit.loadContent();
     expect(cubit.state.loadStatus, ContentLoadStatus.ready);
-    expect(cubit.state.valueFor('nl', 'cabin.hero.title'), 'Titel uit database');
+    expect(
+      cubit.state.valueFor('nl', 'cabin.hero.title'),
+      'Titel uit database',
+    );
     await cubit.close();
   });
 
@@ -181,8 +184,14 @@ void main() {
       await cubit.loadContent();
 
       expect(repo.loadCalls, 1);
-      expect(cubit.state.valueFor('nl', 'cabin.hero.title'), 'Titel uit database');
-      expect(cubit.state.valueFor('en', 'cabin.hero.title'), '[en] cabin.hero.title');
+      expect(
+        cubit.state.valueFor('nl', 'cabin.hero.title'),
+        'Titel uit database',
+      );
+      expect(
+        cubit.state.valueFor('en', 'cabin.hero.title'),
+        '[en] cabin.hero.title',
+      );
       expect(cubit.state.dirty, isFalse);
       expect(cubit.state.staleLanguages, isEmpty);
       await cubit.close();
@@ -256,8 +265,10 @@ void main() {
     expect(repo.sourceDraftOrders.single, {
       'home.highlights': ['hB', 'hA'],
     });
-    expect(repo.sourceDraftSaves.single['home.highlights.hA.description'],
-        'Hoogtepunt A');
+    expect(
+      repo.sourceDraftSaves.single['home.highlights.hA.description'],
+      'Hoogtepunt A',
+    );
     expect(cubit.state.listOrder['home.highlights'], ['hB', 'hA']);
     expect(cubit.state.unsavedChanges, isFalse);
 
@@ -271,17 +282,12 @@ void main() {
     await cubit.close();
   });
 
-
-  test('photo choices are one set for the site, saved into site_config',
-      () async {
+  test('photo choices are one set for the site, saved into site_config', () async {
     final repo = FakeWebsiteContentRepository(content: _remoteContent());
     final cubit = _build(repo);
     await cubit.loadContent();
 
-    cubit.setMediaPaths('images.heroPhotos', [
-      'site-1/a.jpg',
-      'site-1/b.jpg',
-    ]);
+    cubit.setMediaPaths('images.heroPhotos', ['site-1/a.jpg', 'site-1/b.jpg']);
     expect(cubit.state.unsavedChanges, isTrue);
     // Nothing is written until the owner saves (par. 11i holds for photos too).
     expect(repo.sourceDraftMedia, isEmpty);
@@ -505,7 +511,11 @@ void main() {
       };
 
       expect(
-        WebsiteContentRepository.readField('cabin.hero.title', 'cabin', content),
+        WebsiteContentRepository.readField(
+          'cabin.hero.title',
+          'cabin',
+          content,
+        ),
         'Oude titel',
       );
 

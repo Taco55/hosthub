@@ -1,5 +1,6 @@
 import 'package:hosthub_console/features/properties/domain/account_channel_defaults.dart';
 import 'package:hosthub_console/features/properties/domain/booking_channel.dart';
+import 'package:hosthub_console/features/properties/domain/channel_field.dart';
 import 'package:hosthub_console/features/properties/domain/channel_overrides.dart';
 import 'package:hosthub_console/features/properties/domain/channel_settings.dart';
 
@@ -72,6 +73,54 @@ class ChannelSettingsResolver {
   /// The number behind the Prijzen badge for [propertyId].
   int overriddenFieldCount(int propertyId) =>
       overridesFor(propertyId).overriddenFieldCount;
+
+  /// Which of [propertyIds] take the account's value for one field.
+  ///
+  /// The coverage line next to a default (`3 van 4 volgen`) and the impact of
+  /// changing it are the same question asked twice, so they read the same
+  /// answer. A property absent from [overridesByPropertyId] follows everything.
+  List<int> propertiesFollowing(
+    Iterable<int> propertyIds,
+    BookingChannel channel,
+    ChannelField field,
+  ) => [
+    for (final propertyId in propertyIds)
+      if (!field.isOverriddenIn(overridesFor(propertyId).forChannel(channel)))
+        propertyId,
+  ];
+
+  /// Which of [propertyIds] state a value of their own for [channel].
+  ///
+  /// The counterpart of a coverage number: without naming who deviates, "3 van
+  /// 4 volgen" is a riddle.
+  List<int> propertiesOverriding(
+    Iterable<int> propertyIds,
+    BookingChannel channel,
+  ) => [
+    for (final propertyId in propertyIds)
+      if (!overridesFor(propertyId).forChannel(channel).isEmpty) propertyId,
+  ];
+
+  /// The union of properties that follow at least one of [fields].
+  ///
+  /// What a draft's impact line counts: several fields and several channels can
+  /// sit in one draft, and a property is affected if any single one of them
+  /// reaches it.
+  List<int> propertiesAffectedBy(
+    Iterable<int> propertyIds,
+    Iterable<({BookingChannel channel, ChannelField field})> fields,
+  ) {
+    final affected = <int>{};
+    for (final entry in fields) {
+      affected.addAll(
+        propertiesFollowing(propertyIds, entry.channel, entry.field),
+      );
+    }
+    return [
+      for (final propertyId in propertyIds)
+        if (affected.contains(propertyId)) propertyId,
+    ];
+  }
 
   ChannelSettingsResolver copyWith({
     AccountChannelDefaults? accountDefaults,

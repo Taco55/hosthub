@@ -55,14 +55,14 @@ Future<void> _pumpPage(
   await tester.pumpAndSettle();
 }
 
-double _dx(WidgetTester tester, Finder finder) =>
-    tester.getTopLeft(finder).dx;
+double _dx(WidgetTester tester, Finder finder) => tester.getTopLeft(finder).dx;
 
 void main() {
   group('page header alignment', () {
     // Each entry is a shape a console page actually uses.
-    testWidgets('undecorated wide pane (reservations, revenue, pricing)',
-        (tester) async {
+    testWidgets('undecorated wide pane (reservations, revenue, pricing)', (
+      tester,
+    ) async {
       await _pumpPage(tester, overline: 'Reserveringen', decoratePane: false);
 
       expect(
@@ -75,8 +75,9 @@ void main() {
       );
     });
 
-    testWidgets('decorated pane keeps the card on the title edge',
-        (tester) async {
+    testWidgets('decorated pane keeps the card on the title edge', (
+      tester,
+    ) async {
       await _pumpPage(tester, overline: 'Details');
 
       // The card, not its inner padding, is what lines up with the title.
@@ -86,8 +87,9 @@ void main() {
       expect(_dx(tester, card), _dx(tester, find.text('Boekingen · Trysil')));
     });
 
-    testWidgets('the scrolling page (settings) keeps the same edge',
-        (tester) async {
+    testWidgets('the scrolling page (settings) keeps the same edge', (
+      tester,
+    ) async {
       await _pumpPage(
         tester,
         overline: 'Instellingen',
@@ -132,8 +134,9 @@ void main() {
   });
 
   group('page header rule', () {
-    testWidgets('runs the full page width under the title band',
-        (tester) async {
+    testWidgets('runs the full page width under the title band', (
+      tester,
+    ) async {
       const window = Size(1800, 900);
       await _pumpPage(
         tester,
@@ -144,8 +147,7 @@ void main() {
 
       final rule = tester.getRect(
         find.byWidgetPredicate(
-          (w) =>
-              w is ColoredBox && w.color == HosthubDiploraV1Palette.softGrey,
+          (w) => w is ColoredBox && w.color == HosthubDiploraV1Palette.softGrey,
         ),
       );
       expect(rule.left, 0);
@@ -181,10 +183,11 @@ void main() {
       // The design's `.top` is a crumb over a title — nothing else. A page
       // that needs to explain itself does so in its body.
       final offenders = <String>[];
-      for (final file in Directory('lib/features')
-          .listSync(recursive: true)
-          .whereType<File>()
-          .where((f) => f.path.endsWith('_page.dart'))) {
+      for (final file
+          in Directory('lib/features')
+              .listSync(recursive: true)
+              .whereType<File>()
+              .where((f) => f.path.endsWith('_page.dart'))) {
         final lines = file.readAsLinesSync();
         var insideScaffold = false;
         for (var i = 0; i < lines.length; i++) {

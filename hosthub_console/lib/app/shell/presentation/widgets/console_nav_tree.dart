@@ -51,6 +51,7 @@ List<StyledNavGroup> buildConsoleNavGroups({
   required ConsoleRoute route,
   required List<ConsoleNavProperty> properties,
   required void Function(String path) onNavigate,
+  int unreadMessageCount = 0,
 }) {
   final openPropertyId = route.propertyId;
   final chrome = PortfolioChrome(propertyCount: properties.length);
@@ -64,6 +65,15 @@ List<StyledNavGroup> buildConsoleNavGroups({
           ? s.navGroupSingleProperty
           : s.navGroupPortfolio,
       entries: [
+        StyledNavItem(
+          icon: Icons.mark_email_unread_outlined,
+          label: s.inboxTitle,
+          selected: route.portfolioSection == PortfolioSection.messages,
+          onTap: () => onNavigate(ConsoleRoute.messagesPath),
+          // A conversation waiting on the owner is the only state this screen
+          // should shout about; at zero the badge is gone rather than a `0`.
+          badge: unreadMessageCount > 0 ? unreadMessageCount.toString() : null,
+        ),
         StyledNavItem(
           icon: Icons.calendar_month_outlined,
           label: s.navBookings,
@@ -116,11 +126,20 @@ List<StyledNavGroup> buildConsoleNavGroups({
       ),
     StyledNavGroup(
       label: s.navGroupAccount,
+      // Two destinations, split by the question the owner actually has: does
+      // this hold for all my properties, or is it about the organisation? The
+      // word "accountinstellingen" is gone — it named a bucket, not a screen.
       entries: [
         StyledNavItem(
-          icon: Icons.dashboard_outlined,
-          label: s.navAccountSettings,
-          selected: route.isAccount,
+          icon: Icons.tune,
+          label: s.navAccountDefaults,
+          selected: route.accountSection == AccountSection.defaults,
+          onTap: () => onNavigate(ConsoleRoute.accountDefaultsPath),
+        ),
+        StyledNavItem(
+          icon: Icons.account_circle_outlined,
+          label: s.navAccount,
+          selected: route.accountSection == AccountSection.account,
           onTap: () => onNavigate(ConsoleRoute.accountPath),
         ),
       ],

@@ -1,10 +1,18 @@
 import 'package:flutter/foundation.dart';
 
-/// The two portfolio destinations: about the whole account, filterable.
-enum PortfolioSection { bookings, revenue }
+/// The portfolio destinations: about the whole account, filterable.
+enum PortfolioSection { messages, bookings, revenue }
 
 /// The four destinations that are about exactly one property.
 enum PropertySection { overview, website, pricing, settings }
+
+/// The two account destinations.
+///
+/// The split answers the question the owner actually has: *does this hold for
+/// all my properties, or for this one?* Everything that cascades is
+/// [defaults]; everything about the organisation is [account]. What deviates
+/// per property stays at Site-instellingen.
+enum AccountSection { defaults, account }
 
 /// Where the console is, in the terms the sidebar needs.
 ///
@@ -20,7 +28,7 @@ class ConsoleRoute {
     this.propertyId,
     this.propertySection,
     this.isPropertiesList = false,
-    this.isAccount = false,
+    this.accountSection,
   });
 
   const ConsoleRoute.portfolio(PortfolioSection section)
@@ -31,7 +39,8 @@ class ConsoleRoute {
   const ConsoleRoute.property(int propertyId, PropertySection section)
     : this._(propertyId: propertyId, propertySection: section);
 
-  const ConsoleRoute.account() : this._(isAccount: true);
+  const ConsoleRoute.account([AccountSection section = AccountSection.account])
+    : this._(accountSection: section);
 
   /// Anywhere the tree does not describe — the admin pages, the legacy site
   /// routes. Nothing is selected and no property is expanded, which is correct:
@@ -46,16 +55,20 @@ class ConsoleRoute {
 
   final PropertySection? propertySection;
   final bool isPropertiesList;
-  final bool isAccount;
+  final AccountSection? accountSection;
+
+  bool get isAccount => accountSection != null;
 
   /// Whether a property is open — exactly one, ever, because a route carries one
   /// property id.
   bool get hasOpenProperty => propertyId != null;
 
+  static const String messagesPath = '/messages';
   static const String bookingsPath = '/bookings';
   static const String revenuePath = '/revenue';
   static const String propertiesPath = '/properties';
   static const String accountPath = '/account';
+  static const String accountDefaultsPath = '/account/defaults';
 
   /// The path of one property's section.
   static String propertyPath(int propertyId, PropertySection section) =>
@@ -100,11 +113,16 @@ class ConsoleRoute {
     if (segments.isEmpty) return elsewhere;
 
     switch (segments.first) {
+      case 'messages':
+        return const ConsoleRoute.portfolio(PortfolioSection.messages);
       case 'bookings':
         return const ConsoleRoute.portfolio(PortfolioSection.bookings);
       case 'revenue':
         return const ConsoleRoute.portfolio(PortfolioSection.revenue);
       case 'account':
+        if (segments.length > 1 && segments[1] == 'defaults') {
+          return const ConsoleRoute.account(AccountSection.defaults);
+        }
         return const ConsoleRoute.account();
       case 'properties':
         if (segments.length == 1) return const ConsoleRoute.propertiesList();
@@ -128,7 +146,11 @@ class ConsoleRoute {
   String get path {
     final section = portfolioSection;
     if (section != null) {
-      return section == PortfolioSection.bookings ? bookingsPath : revenuePath;
+      return switch (section) {
+        PortfolioSection.messages => messagesPath,
+        PortfolioSection.bookings => bookingsPath,
+        PortfolioSection.revenue => revenuePath,
+      };
     }
     final propertyId = this.propertyId;
     if (propertyId != null) {
@@ -138,7 +160,12 @@ class ConsoleRoute {
       );
     }
     if (isPropertiesList) return propertiesPath;
-    if (isAccount) return accountPath;
+    final account = accountSection;
+    if (account != null) {
+      return account == AccountSection.defaults
+          ? accountDefaultsPath
+          : accountPath;
+    }
     return '';
   }
 
@@ -169,7 +196,7 @@ class ConsoleRoute {
           propertyId == other.propertyId &&
           propertySection == other.propertySection &&
           isPropertiesList == other.isPropertiesList &&
-          isAccount == other.isAccount;
+          accountSection == other.accountSection;
 
   @override
   int get hashCode => Object.hash(
@@ -177,7 +204,7 @@ class ConsoleRoute {
     propertyId,
     propertySection,
     isPropertiesList,
-    isAccount,
+    accountSection,
   );
 
   @override

@@ -28,6 +28,22 @@ extension BookingChannelKey on BookingChannel {
   }
 }
 
+/// The channel a stored key names, or null when the key is not one of ours.
+///
+/// Distinct from [bookingChannelForSource]: that one *searches* a provider's
+/// free-form source string, this one reads a value the console itself wrote.
+/// Returning null rather than falling back to `other` matters at the storage
+/// boundary — a row with an unrecognised channel is a schema problem, not a
+/// direct booking.
+BookingChannel? bookingChannelForKey(String? key) {
+  final normalized = key?.trim().toLowerCase();
+  if (normalized == null || normalized.isEmpty) return null;
+  for (final channel in BookingChannel.values) {
+    if (channel.key == normalized) return channel;
+  }
+  return null;
+}
+
 /// Which channel a provider's source string means.
 BookingChannel bookingChannelForSource(String? source) {
   final normalized = source?.trim().toLowerCase() ?? '';

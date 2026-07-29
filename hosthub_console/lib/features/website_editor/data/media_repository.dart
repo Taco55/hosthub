@@ -30,7 +30,9 @@ class MediaRepository extends SupabaseRepository {
     try {
       final rows = await supabase
           .from('cms_media')
-          .select('storage_path, filename, width, height, file_size_bytes, usage')
+          .select(
+            'storage_path, filename, width, height, file_size_bytes, usage',
+          )
           .eq('site_id', siteId)
           .order('created_at');
       return [

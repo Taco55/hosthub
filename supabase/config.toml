@@ -312,3 +312,15 @@ enabled = true
 verify_jwt = false
 entrypoint = "./functions/translate-content/index.ts"
 import_map = "./functions/translate-content/deno.json"
+
+[functions.messaging-sync]
+enabled = true
+# JWT is validated inside the function via auth.getUser(token).
+verify_jwt = false
+entrypoint = "./functions/messaging-sync/index.ts"
+
+[functions.translate-message]
+enabled = true
+# JWT is validated inside the function via auth.getUser(token).
+verify_jwt = false
+entrypoint = "./functions/translate-message/index.ts"

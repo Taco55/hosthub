@@ -66,7 +66,7 @@ class _ListingsSectionState extends State<ListingsSection> {
       showStyledToast(
         context,
         type: ToastificationType.success,
-        description: 'Listing "$name" toegevoegd.',
+        description: context.s.listingsAdded(name),
       );
     } catch (error, stack) {
       if (!mounted) return;
@@ -95,7 +95,7 @@ class _ListingsSectionState extends State<ListingsSection> {
       showStyledToast(
         context,
         type: ToastificationType.success,
-        description: 'Listing "${property.name}" verwijderd.',
+        description: context.s.listingsRemoved(property.name),
       );
     } catch (error, stack) {
       if (!mounted) return;
@@ -110,45 +110,31 @@ class _ListingsSectionState extends State<ListingsSection> {
     }
   }
 
+  /// A yes/no about something destructive: the shared alert dialog, never a
+  /// hand-rolled one (AGENTS.md).
   Future<bool> _confirmDelete(PropertySummary property) async {
-    final result = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Listing verwijderen'),
-          content: Text(
-            'Weet je zeker dat je "${property.name}" wilt verwijderen?',
-          ),
-          actions: [
-            StyledButton(
-              title: context.s.cancelButton,
-              onPressed: () => Navigator.of(context).pop(false),
-              minHeight: 40,
-            ),
-            StyledButton(
-              title: context.s.deleteButton,
-              onPressed: () => Navigator.of(context).pop(true),
-              minHeight: 40,
-              backgroundColor: Theme.of(context).colorScheme.error,
-              labelColor: Theme.of(context).colorScheme.onError,
-            ),
-          ],
-        );
-      },
+    var confirmed = false;
+    await showStyledAlertDialog(
+      context,
+      title: context.s.listingsRemoveTitle(property.name),
+      message: context.s.listingsRemoveMessage,
+      actionText: context.s.deleteButton,
+      dismissText: context.s.cancelButton,
+      isDestructiveAction: true,
+      onAction: () => confirmed = true,
     );
-    return result ?? false;
+    return confirmed;
   }
 
   @override
   Widget build(BuildContext context) {
     return StyledSection(
-      header: 'Listings',
+      header: context.s.listingsHeader,
       inset: false,
       horizontalPadding: 0,
       children: [
         Text(
-          'Voeg handmatig een listing toe of verwijder listings om een nieuwe website-opzet te testen zonder Lodgify-sync.',
+          context.s.listingsDescription,
           style: context.theme.textTheme.bodySmall?.copyWith(
             color: context.colors.onSurfaceVariant,
           ),
@@ -222,24 +208,24 @@ class _ListingsSectionState extends State<ListingsSection> {
               variant: StyledTableVariant.card,
               dense: true,
               uppercaseHeaderLabels: false,
-              columns: const [
+              columns: [
                 StyledDataColumn(
-                  columnHeaderLabel: 'ID',
+                  columnHeaderLabel: context.s.listingsColumnId,
                   flex: 1,
                   minWidth: 64,
                 ),
                 StyledDataColumn(
-                  columnHeaderLabel: 'Naam',
+                  columnHeaderLabel: context.s.listingsColumnName,
                   flex: 3,
                   minWidth: 220,
                 ),
                 StyledDataColumn(
-                  columnHeaderLabel: 'Lodgify ID',
+                  columnHeaderLabel: context.s.listingsColumnLodgifyId,
                   flex: 2,
                   minWidth: 180,
                 ),
                 StyledDataColumn(
-                  columnHeaderLabel: 'Acties',
+                  columnHeaderLabel: context.s.listingsColumnActions,
                   flex: 2,
                   minWidth: 140,
                 ),

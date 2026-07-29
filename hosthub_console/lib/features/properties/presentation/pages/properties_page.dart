@@ -9,8 +9,6 @@ import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:hosthub_console/features/portfolio/domain/portfolio_chrome.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/reservations/application/reservations_cubit.dart';
-import 'package:hosthub_console/features/server_settings/application/server_settings_cubit.dart';
-import 'package:hosthub_console/features/server_settings/domain/admin_settings.dart';
 
 /// The account's properties as a plain list: chip, name, how many bookings, and
 /// whether it follows the account or states its own channel values.
@@ -27,15 +25,11 @@ class PropertiesPage extends StatelessWidget {
     return BlocBuilder<PropertyContextCubit, PropertyContextState>(
       builder: (context, state) {
         final properties = state.properties;
-        final adminSettings =
-            context.watch<ServerSettingsCubit>().state.settings ??
-            AdminSettings.defaults();
         final channelSettings = ChannelSettingsResolver.forProperties(
-          accountDefaults: AccountChannelDefaults.fromCommissionPercentages(
-            booking: adminSettings.bookingChannelFeePercentage,
-            airbnb: adminSettings.airbnbChannelFeePercentage,
-            other: adminSettings.otherChannelFeePercentage,
-          ),
+          accountDefaults: context
+              .watch<AccountChannelDefaultsCubit>()
+              .state
+              .defaults,
           properties: channelOverridesOf(properties),
         );
         final abbreviations = uniquePropertyAbbreviations([

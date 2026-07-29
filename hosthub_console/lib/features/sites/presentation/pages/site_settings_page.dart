@@ -2,12 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
+import 'package:hosthub_console/app/shell/application/site_context_cubit.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:hosthub_console/features/cms/cms.dart';
+import 'package:hosthub_console/features/user_settings/presentation/widgets/site_settings_sections.dart';
+import 'package:hosthub_console/features/website_editor/presentation/widgets/legal_document_section.dart';
 
-/// Per-site website settings: contact recipient + email sender name (email) and
-/// Lodgify property/room ids (booking). Backed by CmsCubit (state.site) and
-/// persisted via CmsCubit.saveSiteSettings.
+/// Site-instellingen: everything that is about **this one property's website**.
+///
+/// It gathers what used to be spread over three screens called "instellingen":
+/// the site's own details, the website languages and the source language (which
+/// sat on the account page), the contact recipient and the channel ids, and the
+/// legal document (§A.6). The rule that decides what belongs here is the one
+/// question the owner actually has — does this hold for all my properties, or
+/// for this one? Everything that cascades is Standaardwaarden; everything about
+/// the organisation is Account; this is what deviates per property.
 class SiteSettingsPage extends StatefulWidget {
   const SiteSettingsPage({super.key, required this.siteId});
 
@@ -60,7 +69,6 @@ class _SiteSettingsPageState extends State<SiteSettingsPage> {
 
   Future<void> _save() async {
     setState(() => _saving = true);
-    final messenger = ScaffoldMessenger.of(context);
     try {
       await context.read<CmsCubit>().saveSiteSettings(
         contactEmail: _norm(_contactEmail.text),
@@ -68,12 +76,18 @@ class _SiteSettingsPageState extends State<SiteSettingsPage> {
         lodgifyPropertyId: _norm(_lodgifyPropertyId.text),
         lodgifyRoomTypeId: _norm(_lodgifyRoomTypeId.text),
       );
-      messenger.showSnackBar(
-        SnackBar(content: Text(context.s.siteSettingsSaved)),
+      if (!mounted) return;
+      showStyledToast(
+        context,
+        type: ToastificationType.success,
+        description: context.s.siteSettingsSaved,
       );
     } catch (_) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(context.s.siteSettingsSaveFailed)),
+      if (!mounted) return;
+      showStyledToast(
+        context,
+        type: ToastificationType.error,
+        description: context.s.siteSettingsSaveFailed,
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -92,10 +106,10 @@ class _SiteSettingsPageState extends State<SiteSettingsPage> {
       builder: (context, state) {
         final loading = state.status == CmsStatus.loading && !_initialized;
         return StyledWebPageScaffold(
-          // Design `.top`: `Settings` over `Site settings` — the section this
-          // page hangs under, then what it is. No sentence underneath.
-          overline: context.s.adminSettingsTitle,
-          title: context.s.siteSettingsTitle,
+          // Design `.top`: the crumb says which part of the console this is,
+          // the title is the screen.
+          overline: context.s.navPropertyWebsite,
+          title: context.s.navPropertySiteSettings,
           primaryAction: StyledWebPageAction(
             label: context.s.saveButton,
             icon: Icons.save_outlined,
@@ -110,8 +124,15 @@ class _SiteSettingsPageState extends State<SiteSettingsPage> {
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      // Site details, website languages and the source
+                      // language: property scope, so they live here rather
+                      // than on the account page they used to sit on.
+                      ...buildSiteSettingsSections(
+                        context,
+                        context.watch<SiteContextCubit>().state,
+                      ),
+                      const SizedBox(height: 20),
                       StyledSection(
-                        isFirstSection: true,
                         header: context.s.siteSettingsContactSection,
                         inset: false,
                         children: [
@@ -145,6 +166,8 @@ class _SiteSettingsPageState extends State<SiteSettingsPage> {
                           ),
                         ],
                       ),
+                      const SizedBox(height: 20),
+                      LegalDocumentSection(siteId: widget.siteId),
                     ],
                   ),
           ),

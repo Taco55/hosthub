@@ -78,9 +78,7 @@ class _FakeChannelManagerRepository implements ChannelManagerRepository {
   String? requestedPropertyId;
 
   @override
-  Future<ChannelPropertyDetails> fetchPropertyDetails(
-    String propertyId,
-  ) async {
+  Future<ChannelPropertyDetails> fetchPropertyDetails(String propertyId) async {
     fetchCount++;
     requestedPropertyId = propertyId;
     final error = failure;
@@ -413,7 +411,9 @@ void main() {
   ) async {
     final harness = await pumpPage(
       tester,
-      channelFailure: Exception('Missing Lodgify API key. Add one in Settings.'),
+      channelFailure: Exception(
+        'Missing Lodgify API key. Add one in Settings.',
+      ),
     );
 
     await tester.tap(find.text('Sync now'));

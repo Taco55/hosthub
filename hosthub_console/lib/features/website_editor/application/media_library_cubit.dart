@@ -122,10 +122,12 @@ class MediaLibraryState extends Equatable {
 /// content cubit then writes into the document. That keeps one owner for the
 /// draft/saved/published layers and one owner for the library.
 class MediaLibraryCubit extends Cubit<MediaLibraryState> {
-  MediaLibraryCubit({required MediaRepository repository, required String siteId})
-    : _repository = repository,
-      _siteId = siteId,
-      super(const MediaLibraryState());
+  MediaLibraryCubit({
+    required MediaRepository repository,
+    required String siteId,
+  }) : _repository = repository,
+       _siteId = siteId,
+       super(const MediaLibraryState());
 
   final MediaRepository _repository;
   final String _siteId;

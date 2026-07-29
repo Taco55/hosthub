@@ -15,6 +15,9 @@ import 'package:hosthub_console/app/shell/presentation/widgets/side_menu.dart';
 import 'package:hosthub_console/core/l10n/l10n.dart';
 import 'package:hosthub_console/core/models/models.dart';
 import 'package:hosthub_console/core/widgets/foundation/foundation.dart';
+import 'package:hosthub_console/features/messaging/application/inbox_cubit.dart';
+import 'package:hosthub_console/features/messaging/domain/messaging_repository.dart';
+import 'package:hosthub_console/features/messaging/domain/models/models.dart';
 import 'package:hosthub_console/features/profile/profile.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/server_settings/application/server_settings_cubit.dart';
@@ -57,6 +60,21 @@ class _FakePropertyContextCubit extends Cubit<PropertyContextState>
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+/// The account tier the rail's override badges resolve against. Zeroes: these
+/// tests are about the tree, not about what a channel costs.
+class _FakeAccountDefaultsCubit extends Cubit<AccountChannelDefaultsState>
+    implements AccountChannelDefaultsCubit {
+  _FakeAccountDefaultsCubit()
+    : super(
+        const AccountChannelDefaultsState(
+          status: AccountChannelDefaultsStatus.loaded,
+        ),
+      );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 class _FakeServerSettingsCubit extends Cubit<ServerSettingsState>
     implements ServerSettingsCubit {
   _FakeServerSettingsCubit()
@@ -66,6 +84,18 @@ class _FakeServerSettingsCubit extends Cubit<ServerSettingsState>
           settings: AdminSettings.defaults(),
         ),
       );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// A source with nothing in it: the rail's unread badge is absent, which is
+/// what these tests assert about every state but the one that has messages.
+class _SilentMessagingRepository implements MessagingRepository {
+  @override
+  final MessagingCapabilities capabilities = const MessagingCapabilities(
+    sourceName: 'Testbron',
+  );
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -109,12 +139,16 @@ Future<SidebarModeCubit> pumpShell(
   final propertyCubit = _FakePropertyContextCubit(properties);
   final serverSettingsCubit = _FakeServerSettingsCubit();
   final sidebarModeCubit = SidebarModeCubit();
+  final inboxCubit = InboxCubit(repository: _SilentMessagingRepository());
+  final accountDefaultsCubit = _FakeAccountDefaultsCubit();
   final guard = NavigationGuardController();
   addTearDown(authBloc.close);
   addTearDown(profileCubit.close);
   addTearDown(propertyCubit.close);
   addTearDown(serverSettingsCubit.close);
   addTearDown(sidebarModeCubit.close);
+  addTearDown(inboxCubit.close);
+  addTearDown(accountDefaultsCubit.close);
   addTearDown(guard.dispose);
 
   await tester.pumpWidget(
@@ -125,6 +159,10 @@ Future<SidebarModeCubit> pumpShell(
         BlocProvider<PropertyContextCubit>.value(value: propertyCubit),
         BlocProvider<ServerSettingsCubit>.value(value: serverSettingsCubit),
         BlocProvider<SidebarModeCubit>.value(value: sidebarModeCubit),
+        BlocProvider<InboxCubit>.value(value: inboxCubit),
+        BlocProvider<AccountChannelDefaultsCubit>.value(
+          value: accountDefaultsCubit,
+        ),
         ChangeNotifierProvider<NavigationGuardController>.value(value: guard),
       ],
       child: MaterialApp(

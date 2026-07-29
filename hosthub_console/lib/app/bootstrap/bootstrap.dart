@@ -4,6 +4,7 @@ import 'package:hosthub_console/app/bootstrap/bloc_registry.dart';
 import 'package:hosthub_console/core/core.dart';
 import 'package:hosthub_console/features/auth/auth_di.dart';
 import 'package:hosthub_console/features/cms/cms_di.dart';
+import 'package:hosthub_console/features/messaging/messaging_di.dart';
 import 'package:hosthub_console/features/profile/profile_di.dart';
 import 'package:hosthub_console/features/properties/properties_di.dart';
 import 'package:hosthub_console/features/server_settings/server_settings_di.dart';
@@ -49,6 +50,7 @@ Future<void> registerFeatureServices({required SupabaseClient client}) async {
   registerCmsDependencies(client);
   registerPropertiesDependencies(client);
   registerLodgifyDependencies();
+  registerMessagingDependencies(client);
   registerTeamDependencies(client);
   registerWebsiteEditorDependencies();
 }

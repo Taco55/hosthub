@@ -49,7 +49,10 @@ void main() {
       expect(s.dirty, isFalse);
       expect(s.unsavedChanges, isFalse);
       expect(s.staleLanguages, isEmpty);
-      expect(s.valueFor('en', 'cabin.hero.title'), 'Your mountain home in Trysil');
+      expect(
+        s.valueFor('en', 'cabin.hero.title'),
+        'Your mountain home in Trysil',
+      );
       expect(s.lockedFieldCount('en'), 0);
     });
 
@@ -58,7 +61,11 @@ void main() {
       () async {
         final cubit = build();
         // Lock the subtitle in EN so it must survive a source edit.
-        cubit.editTranslationField('en', 'cabin.hero.subtitle', 'Locked subtitle');
+        cubit.editTranslationField(
+          'en',
+          'cabin.hero.subtitle',
+          'Locked subtitle',
+        );
 
         cubit.editSourceField('cabin.hero.title', 'Nieuwe titel');
         // Staleness follows the *saved* source: what is still in the fields has
@@ -96,7 +103,11 @@ void main() {
 
     test('translateNow refreshes only auto fields and clears stale', () async {
       final cubit = build();
-      cubit.editTranslationField('en', 'cabin.hero.subtitle', 'Locked subtitle');
+      cubit.editTranslationField(
+        'en',
+        'cabin.hero.subtitle',
+        'Locked subtitle',
+      );
       cubit.editSourceField('cabin.hero.title', 'Nieuwe titel');
       await cubit.save();
       expect(cubit.state.isLanguageStale('en'), isTrue);
@@ -206,22 +217,24 @@ void main() {
 
     test('addRow appends an empty repeatable row in every language', () {
       final cubit = build();
-      expect(
-        cubit.state.rowIdsOfList('home.highlights'),
-        hasLength(2),
-      );
+      expect(cubit.state.rowIdsOfList('home.highlights'), hasLength(2));
 
       cubit.addRow('home.highlights');
 
       expect(cubit.state.rowIdsOfList('home.highlights'), hasLength(3));
       expect(cubit.state.valueFor('nl', 'home.highlights.r1.description'), '');
       expect(
-        cubit.state.translatedField('en', 'home.highlights.r1.description')!.status,
+        cubit.state
+            .translatedField('en', 'home.highlights.r1.description')!
+            .status,
         FieldTranslationStatus.auto,
       );
       expect(cubit.state.unsavedChanges, isTrue);
       // The new empty row is fresh, not stale.
-      expect(cubit.state.isFieldStale('en', 'home.highlights.r1.description'), isFalse);
+      expect(
+        cubit.state.isFieldStale('en', 'home.highlights.r1.description'),
+        isFalse,
+      );
     });
 
     test('an added row survives being typed into and emptied again', () {
@@ -233,10 +246,7 @@ void main() {
       cubit.editSourceField('home.highlights.r1.description', 'Iets');
       cubit.editSourceField('home.highlights.r1.description', '');
 
-      expect(
-        cubit.state.rowIdsOfList('home.highlights'),
-        hasLength(3),
-      );
+      expect(cubit.state.rowIdsOfList('home.highlights'), hasLength(3));
       expect(cubit.state.unsavedChanges, isTrue);
     });
 
@@ -255,10 +265,7 @@ void main() {
       cubit.moveRow('home.highlights', 0, 2);
 
       // The display order changed…
-      expect(cubit.state.effectiveListOrder['home.highlights'], [
-        'h2',
-        'h1',
-      ]);
+      expect(cubit.state.effectiveListOrder['home.highlights'], ['h2', 'h1']);
       expect(cubit.state.rowIdsOfList('home.highlights'), ['h2', 'h1']);
       // …and nothing else: source text and the locked EN translation are
       // keyed by the row's id and traveled with it.
@@ -393,7 +400,11 @@ void main() {
       final savedSource = cubit.state.source['cabin.hero.title'];
 
       cubit.editSourceField('cabin.hero.title', 'Half getypte zin');
-      cubit.editTranslationField('en', 'cabin.hero.subtitle', 'Half typed line');
+      cubit.editTranslationField(
+        'en',
+        'cabin.hero.subtitle',
+        'Half typed line',
+      );
 
       final s = cubit.state;
       // What the fields show.
@@ -401,7 +412,10 @@ void main() {
       expect(s.valueFor('en', 'cabin.hero.subtitle'), 'Half typed line');
       // What publish and translation would read.
       expect(s.source['cabin.hero.title'], savedSource);
-      expect(s.savedValueFor('en', 'cabin.hero.subtitle'), isNot('Half typed line'));
+      expect(
+        s.savedValueFor('en', 'cabin.hero.subtitle'),
+        isNot('Half typed line'),
+      );
       expect(
         s.savedTranslatedField('en', 'cabin.hero.subtitle')!.status,
         FieldTranslationStatus.auto,
@@ -455,8 +469,14 @@ void main() {
       await cubit.save();
 
       expect(cubit.state.unsavedChanges, isFalse);
-      expect(cubit.state.savedValueFor('en', 'cabin.hero.title'), 'English draft');
-      expect(cubit.state.savedValueFor('no', 'cabin.hero.title'), 'Norsk utkast');
+      expect(
+        cubit.state.savedValueFor('en', 'cabin.hero.title'),
+        'English draft',
+      );
+      expect(
+        cubit.state.savedValueFor('no', 'cabin.hero.title'),
+        'Norsk utkast',
+      );
     });
 
     test('discard drops the draft for every language', () {
@@ -606,8 +626,10 @@ void main() {
 
       for (final language in cubit.state.targetLanguages) {
         expect(cubit.state.isFieldNew(language, key), isTrue);
-        expect(cubit.state.translatedField(language, key)!.status,
-            FieldTranslationStatus.auto);
+        expect(
+          cubit.state.translatedField(language, key)!.status,
+          FieldTranslationStatus.auto,
+        );
       }
       // And it is what the counters count.
       expect(cubit.state.changedFieldCount('en'), greaterThan(0));
@@ -680,22 +702,24 @@ void main() {
       expect(cubit.state.reviewedPages['en'], contains('practical'));
     });
 
-    test('publishing moves the baseline; a skipped language keeps its own',
-        () async {
-      final cubit = build();
-      cubit.editSourceField('cabin.hero.title', 'Nieuwe titel');
-      await cubit.save();
-      expect(cubit.state.changedFieldCount('en'), 1);
-      expect(cubit.state.changedFieldCount('no'), 1);
+    test(
+      'publishing moves the baseline; a skipped language keeps its own',
+      () async {
+        final cubit = build();
+        cubit.editSourceField('cabin.hero.title', 'Nieuwe titel');
+        await cubit.save();
+        expect(cubit.state.changedFieldCount('en'), 1);
+        expect(cubit.state.changedFieldCount('no'), 1);
 
-      await cubit.publishAll(skipLanguages: {'no'});
+        await cubit.publishAll(skipLanguages: {'no'});
 
-      // What went out is live now, so its delta is empty; the language that
-      // stayed behind still has something waiting, because its pages did not
-      // change either.
-      expect(cubit.state.changedFieldCount('en'), 0);
-      expect(cubit.state.changedFieldCount('no'), 1);
-      await cubit.close();
-    });
+        // What went out is live now, so its delta is empty; the language that
+        // stayed behind still has something waiting, because its pages did not
+        // change either.
+        expect(cubit.state.changedFieldCount('en'), 0);
+        expect(cubit.state.changedFieldCount('no'), 1);
+        await cubit.close();
+      },
+    );
   });
 }

@@ -156,9 +156,11 @@ void main() {
       expect(expectedCentre, 34);
 
       for (final icon in [
+        Icons.mark_email_unread_outlined,
         Icons.calendar_month_outlined,
         Icons.bar_chart,
-        Icons.dashboard_outlined,
+        Icons.tune,
+        Icons.account_circle_outlined,
       ]) {
         expect(
           tester.getCenter(find.byIcon(icon)).dx,

@@ -23,6 +23,7 @@ class LiveSiteFrame extends StatefulWidget {
     required this.url,
     required this.locale,
     required this.fields,
+    this.focusedAddress,
   });
 
   final String url;
@@ -33,6 +34,14 @@ class LiveSiteFrame extends StatefulWidget {
   /// `cms address -> value`, e.g. `cabin/main:hero.title`.
   final Map<String, String> fields;
 
+  /// The address the cursor is in, or null.
+  ///
+  /// A second message type on the same channel — the addressing already exists,
+  /// so pointing at a field is not new infrastructure. The page marks the
+  /// section the field lands in and scrolls to it; it never highlights the text
+  /// itself, which would shift the layout and read as an error.
+  final String? focusedAddress;
+
   @override
   State<LiveSiteFrame> createState() => _LiveSiteFrameState();
 }
@@ -40,6 +49,7 @@ class LiveSiteFrame extends StatefulWidget {
 class _LiveSiteFrameState extends State<LiveSiteFrame> {
   static const String _draftMessage = 'hosthub-preview-draft';
   static const String _readyMessage = 'hosthub-preview-ready';
+  static const String _focusMessage = 'hosthub-preview-focus';
 
   late final String _viewType;
   late final web.HTMLIFrameElement _iframe;
@@ -79,6 +89,9 @@ class _LiveSiteFrameState extends State<LiveSiteFrame> {
         !mapEquals(widget.fields, oldWidget.fields)) {
       _sendDraft();
     }
+    if (widget.focusedAddress != oldWidget.focusedAddress) {
+      _sendFocus();
+    }
   }
 
   @override
@@ -93,6 +106,8 @@ class _LiveSiteFrameState extends State<LiveSiteFrame> {
     final data = event.data?.dartify();
     if (data is! Map || data['type'] != _readyMessage) return;
     _sendDraft();
+    // A reload forgets what was marked; the cursor has not moved.
+    if (widget.focusedAddress != null) _sendFocus();
   }
 
   /// The origin of the embedded preview — the only window this talks to.
@@ -108,6 +123,17 @@ class _LiveSiteFrameState extends State<LiveSiteFrame> {
       'type': _draftMessage,
       'locale': widget.locale,
       'fields': widget.fields,
+    };
+    _iframe.contentWindow?.postMessage(payload.jsify(), _previewOrigin.toJS);
+  }
+
+  void _sendFocus() {
+    final payload = <String, Object?>{
+      'type': _focusMessage,
+      'locale': widget.locale,
+      // Null clears the marking: blur has to un-point, or the mark stops
+      // meaning "this one".
+      'address': widget.focusedAddress,
     };
     _iframe.contentWindow?.postMessage(payload.jsify(), _previewOrigin.toJS);
   }

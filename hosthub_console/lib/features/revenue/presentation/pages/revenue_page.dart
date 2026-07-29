@@ -14,8 +14,6 @@ import 'package:hosthub_console/features/portfolio/domain/property_selection.dar
 import 'package:hosthub_console/features/reservations/application/nightly_rates_cubit.dart';
 import 'package:hosthub_console/features/reservations/application/reservations_cubit.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
-import 'package:hosthub_console/features/server_settings/data/admin_settings_repository.dart';
-import 'package:hosthub_console/features/server_settings/domain/admin_settings.dart';
 import 'package:hosthub_console/features/user_settings/application/user_settings_cubit.dart';
 import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
 import 'package:hosthub_console/features/reservations/presentation/dialogs/reservation_details_dialog.dart';
@@ -47,13 +45,11 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
   _RevenuePeriod _period = _RevenuePeriod.year;
   DateTime _periodAnchor = _startOfPeriod(_RevenuePeriod.year, DateTime.now());
   String? _lastRequestKey;
-  AdminSettings _adminSettings = AdminSettings.defaults();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadAdminSettings();
       _loadPortfolio(context.read<PropertyContextCubit>().state.properties);
     });
   }
@@ -712,19 +708,9 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
     );
   }
 
-  Future<void> _loadAdminSettings() async {
-    try {
-      final settings = await context.read<AdminSettingsRepository>().load();
-      if (!mounted) return;
-      setState(() => _adminSettings = settings);
-    } catch (_) {
-      // Keep defaults when admin settings are unavailable.
-    }
-  }
-
   /// The two settings tiers, ready to answer for any property.
   ///
-  /// `admin_settings` holds the account-wide commission per channel; the
+  /// `account_channel_defaults` holds what the account charges per channel; the
   /// property row holds only its own deviations. Only
   /// [ChannelSettingsResolver] puts the two together.
   /// Over the **whole account**, not the property on screen: the per-booking
@@ -734,11 +720,10 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
     List<PropertySummary> properties,
   ) {
     return ChannelSettingsResolver.forProperties(
-      accountDefaults: AccountChannelDefaults.fromCommissionPercentages(
-        booking: _adminSettings.bookingChannelFeePercentage,
-        airbnb: _adminSettings.airbnbChannelFeePercentage,
-        other: _adminSettings.otherChannelFeePercentage,
-      ),
+      accountDefaults: context
+          .watch<AccountChannelDefaultsCubit>()
+          .state
+          .defaults,
       properties: channelOverridesOf(properties),
     );
   }

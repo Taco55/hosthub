@@ -18,6 +18,7 @@ import 'package:hosthub_console/features/auth/auth.dart';
 import 'package:hosthub_console/features/reservations/reservations.dart';
 import 'package:hosthub_console/features/channel_manager/domain/channel_manager_repository.dart';
 import 'package:hosthub_console/features/cms/cms.dart';
+import 'package:hosthub_console/features/messaging/messaging.dart';
 import 'package:hosthub_console/features/properties/presentation/pages/property_section_page.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/revenue/revenue.dart';
@@ -142,30 +143,59 @@ class HosthubRouter {
                     repository: I.get<SiteMemberRepository>(),
                   ),
                 ),
+                // Shell-scoped, because the rail's unread badge needs the
+                // count wherever you are — not only while Berichten is open.
+                BlocProvider<InboxCubit>(
+                  create: (_) =>
+                      InboxCubit(repository: I.get<MessagingRepository>()),
+                ),
+                // The account tier is read by the rail's override badges, the
+                // properties list, Prijzen and Standaardwaarden. One instance,
+                // so those four cannot disagree about what a property inherits.
+                BlocProvider<AccountChannelDefaultsCubit>(
+                  create: (_) => AccountChannelDefaultsCubit(
+                    repository: I.get<AccountChannelDefaultsRepository>(),
+                  )..load(),
+                ),
               ],
               // The shared shell owns the three-band responsive layout (full
               // menu / pinned icon rail / hamburger drawer) and hands the menu
               // its placement; the console only supplies the menu, the body and
               // its pin preference.
-              child: BlocBuilder<SidebarModeCubit, StyledSideMenuMode>(
-                builder: (context, sidebarMode) {
-                  final shell = StyledSideMenuScaffold(
-                    compact: sidebarMode == StyledSideMenuMode.compact,
-                    // §7: the rail expands on hover after 0.35s. Long enough
-                    // that crossing the left edge on the way somewhere else does
-                    // not slide a panel over the page.
-                    hoverIntentDelay: kSidebarHoverIntentDelay,
-                    drawerMenuTooltip: context.s.menuTooltip,
-                    // Nothing from the placement is needed here: the menu and
-                    // its rows read it themselves.
-                    menuBuilder: (context, _) => SideMenu(route: route),
-                    bodyBuilder: (context, _) =>
-                        PropertySetupGate(selectedItem: item, child: child),
-                  );
-                  // Text selection is a desktop affordance; on the web the
-                  // browser already provides it.
-                  return kIsWeb ? shell : SelectionArea(child: shell);
-                },
+              child: BlocListener<PropertyContextCubit, PropertyContextState>(
+                // The unread badge counts what the console already stores —
+                // `sync: false`, so opening the app never costs a round trip to
+                // a rate-limited source. Opening Berichten is what asks.
+                listenWhen: (previous, current) =>
+                    previous.properties.length != current.properties.length,
+                listener: (context, propertyState) =>
+                    context.read<InboxCubit>().load(
+                      propertyIds: [
+                        for (final property in propertyState.properties)
+                          property.id,
+                      ],
+                      sync: false,
+                    ),
+                child: BlocBuilder<SidebarModeCubit, StyledSideMenuMode>(
+                  builder: (context, sidebarMode) {
+                    final shell = StyledSideMenuScaffold(
+                      compact: sidebarMode == StyledSideMenuMode.compact,
+                      // §7: the rail expands on hover after 0.35s. Long enough
+                      // that crossing the left edge on the way somewhere else does
+                      // not slide a panel over the page.
+                      hoverIntentDelay: kSidebarHoverIntentDelay,
+                      drawerMenuTooltip: context.s.menuTooltip,
+                      // Nothing from the placement is needed here: the menu and
+                      // its rows read it themselves.
+                      menuBuilder: (context, _) => SideMenu(route: route),
+                      bodyBuilder: (context, _) =>
+                          PropertySetupGate(selectedItem: item, child: child),
+                    );
+                    // Text selection is a desktop affordance; on the web the
+                    // browser already provides it.
+                    return kIsWeb ? shell : SelectionArea(child: shell);
+                  },
+                ),
               ),
             );
           },
@@ -250,6 +280,12 @@ class HosthubRouter {
                 );
               },
             ),
+            // Literal-suffixed first: go_router matches in order, so
+            // '/account' would otherwise swallow '/account/defaults'.
+            GoRoute(
+              path: ConsoleRoute.accountDefaultsPath,
+              builder: (context, state) => const AccountDefaultsPage(),
+            ),
             GoRoute(
               path: ConsoleRoute.accountPath,
               builder: (context, state) => const UserSettingsPage(),
@@ -262,6 +298,10 @@ class HosthubRouter {
             GoRoute(
               path: '/reservations',
               redirect: (context, state) => ConsoleRoute.bookingsPath,
+            ),
+            GoRoute(
+              path: ConsoleRoute.messagesPath,
+              builder: (context, state) => const InboxPage(),
             ),
             GoRoute(
               path: ConsoleRoute.bookingsPath,

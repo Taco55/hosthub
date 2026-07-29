@@ -1,7 +1,7 @@
 import { Home, Mountain, MountainSnow, Snowflake, TreePine } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-import { InteractiveMap } from "@/components/interactive-map";
+import { PreviewMapPin } from "@/components/site/PreviewMapPin";
 import { Button } from "@/components/ui/button";
 import { IconBadge } from "@/components/ui/IconBadge";
 import { SectionHeading } from "@/components/section-heading";
@@ -106,9 +106,9 @@ export function LocationBlock({
             </a>
           </Button>
         </div>
-        <InteractiveMap
-          title={`${mapQuery} map`}
-          src={mapEmbedUrl}
+        <PreviewMapPin
+          mapQuery={mapQuery}
+          mapEmbedUrl={mapEmbedUrl}
           className="h-72 w-full border-0 md:h-96"
         />
       </div>

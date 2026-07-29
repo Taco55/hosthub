@@ -55,6 +55,8 @@ class WebsiteFieldRow extends StatelessWidget {
       return EditableContentField(
         value: state.valueFor(lang, field.key),
         onChanged: (v) => cubit.editSourceField(field.key, v),
+        onFocusChanged: (hasFocus) =>
+            cubit.setFocusedField(hasFocus ? field.key : null),
         label: label,
         hint: hint,
         multiline: field.multiline,
@@ -88,6 +90,8 @@ class WebsiteFieldRow extends StatelessWidget {
     return EditableContentField(
       value: state.valueFor(lang, field.key),
       onChanged: (v) => cubit.editTranslationField(lang, field.key, v),
+      onFocusChanged: (hasFocus) =>
+          cubit.setFocusedField(hasFocus ? field.key : null),
       label: label,
       hint: hint,
       multiline: field.multiline,

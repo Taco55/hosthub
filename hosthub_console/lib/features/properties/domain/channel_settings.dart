@@ -12,7 +12,9 @@ enum CostType {
   perNight,
 }
 
-CostType _costTypeFromString(String? value) {
+/// The [CostType] a stored key means. Unknown or absent reads as per booking —
+/// the shape a cost written before the type existed had.
+CostType costTypeFromKey(String? value) {
   switch (value) {
     case 'per_person':
       return CostType.perPerson;
@@ -23,7 +25,8 @@ CostType _costTypeFromString(String? value) {
   }
 }
 
-String _costTypeToString(CostType type) {
+/// The stored key for a [CostType].
+String costTypeKey(CostType type) {
   switch (type) {
     case CostType.perBooking:
       return 'per_booking';
@@ -45,7 +48,7 @@ class CostEntry {
     if (map == null) return const CostEntry();
     return CostEntry(
       amount: parseChannelDouble(map['amount']) ?? 0,
-      type: _costTypeFromString(map['type'] as String?),
+      type: costTypeFromKey(map['type'] as String?),
     );
   }
 
@@ -60,14 +63,11 @@ class CostEntry {
     if (amount == null) return null;
     return CostEntry(
       amount: amount,
-      type: _costTypeFromString(map['type'] as String?),
+      type: costTypeFromKey(map['type'] as String?),
     );
   }
 
-  Map<String, dynamic> toMap() => {
-    'amount': amount,
-    'type': _costTypeToString(type),
-  };
+  Map<String, dynamic> toMap() => {'amount': amount, 'type': costTypeKey(type)};
 
   /// Calculate the effective cost given booking context.
   double resolve({int guests = 1, int nights = 1}) {

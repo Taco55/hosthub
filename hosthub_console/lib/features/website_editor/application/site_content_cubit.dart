@@ -63,6 +63,7 @@ class SiteContentState extends Equatable {
     this.pendingRowDelete,
     this.loadStatus = ContentLoadStatus.ready,
     this.onlyChangedFields = false,
+    this.focusedFieldKey,
   });
 
   final String propertyName;
@@ -149,6 +150,13 @@ class SiteContentState extends Equatable {
   /// somebody to forget to set.
   final Map<String, Set<String>> reviewedPages;
 
+  /// The field the cursor is in, or null.
+  ///
+  /// The preview points at where this field lands while it is focused (§E).
+  /// State rather than a callback, because the pointing has to survive a
+  /// rebuild and the preview frame is not a child of the field.
+  final String? focusedFieldKey;
+
   /// The one in-session undo for switching a field back to automatic — the
   /// only genuinely destructive action on this screen (§11g). Holds the
   /// owner's previous wording until they navigate away or publish.
@@ -186,18 +194,16 @@ class SiteContentState extends Equatable {
       draftSource.isEmpty ? source : {...source, ...draftSource};
 
   /// Photos as the strip shows them: the draft on top of the saved layer.
-  Map<String, List<String>> get effectiveMediaKeys => draftMediaKeys.isEmpty
-      ? mediaKeys
-      : {...mediaKeys, ...draftMediaKeys};
+  Map<String, List<String>> get effectiveMediaKeys =>
+      draftMediaKeys.isEmpty ? mediaKeys : {...mediaKeys, ...draftMediaKeys};
 
   /// The storage paths of one media slot, in display order.
   List<String> mediaPathsOf(String mediaKey) =>
       effectiveMediaKeys[mediaKey] ?? const [];
 
   /// Row order as the editor shows it: the draft on top of the saved layer.
-  Map<String, List<String>> get effectiveListOrder => draftListOrder.isEmpty
-      ? listOrder
-      : {...listOrder, ...draftListOrder};
+  Map<String, List<String>> get effectiveListOrder =>
+      draftListOrder.isEmpty ? listOrder : {...listOrder, ...draftListOrder};
 
   /// Target locales in display order (source first, then the rest).
   List<String> get orderedLocales => [
@@ -358,8 +364,10 @@ class SiteContentState extends Equatable {
   /// — what the publish dialog reports per language (§D.2).
   List<String> changedPages(String language) => [
     for (final page in kPageCards.keys)
-      if (effectiveFieldsFor(page, effectiveListOrder)
-          .any((f) => isFieldChanged(language, f.key)))
+      if (effectiveFieldsFor(
+        page,
+        effectiveListOrder,
+      ).any((f) => isFieldChanged(language, f.key)))
         page,
   ];
 
@@ -395,6 +403,31 @@ class SiteContentState extends Equatable {
         location.address: valueFor(previewLanguage, field.key),
   };
 
+  /// The CMS address the preview should point at, or null when no field has
+  /// the cursor. Same address vocabulary as [previewFieldValues], so pointing
+  /// needs no second addressing scheme.
+  String? get focusedAddress {
+    final key = focusedFieldKey;
+    if (key == null) return null;
+    return WebsiteContentRepository.locationOf(key)?.address;
+  }
+
+  /// How the preview has to behave to make the focused field visible.
+  ///
+  /// Most fields are text on their own page and the preview just marks the
+  /// section they land in. The five that are not each need the preview to *do*
+  /// something — show the browser chrome, move the map pin, put the form in its
+  /// submitted state — and to say in one line why that was necessary. A field
+  /// that cannot be pointed at at all does not belong in the editor.
+  FieldVisibility? get focusedVisibility {
+    final key = focusedFieldKey;
+    if (key == null) return null;
+    for (final field in allFields) {
+      if (field.key == key) return field.visibility;
+    }
+    return null;
+  }
+
   SiteContentState copyWith({
     String? sourceLanguage,
     List<String>? locales,
@@ -424,6 +457,8 @@ class SiteContentState extends Equatable {
     PendingRowDelete? pendingRowDelete,
     ContentLoadStatus? loadStatus,
     bool? onlyChangedFields,
+    String? focusedFieldKey,
+    bool clearFocusedField = false,
     bool clearDraft = false,
     bool clearPendingAutoSwitch = false,
     bool clearPendingRowDelete = false,
@@ -470,6 +505,9 @@ class SiteContentState extends Equatable {
           : (pendingRowDelete ?? this.pendingRowDelete),
       loadStatus: loadStatus ?? this.loadStatus,
       onlyChangedFields: onlyChangedFields ?? this.onlyChangedFields,
+      focusedFieldKey: clearFocusedField
+          ? null
+          : (focusedFieldKey ?? this.focusedFieldKey),
     );
   }
 
@@ -504,6 +542,7 @@ class SiteContentState extends Equatable {
     pendingRowDelete,
     loadStatus,
     onlyChangedFields,
+    focusedFieldKey,
   ];
 }
 
@@ -721,6 +760,19 @@ class SiteContentCubit extends Cubit<SiteContentState> {
       dirty: false,
       publishOpen: false,
       translating: const {},
+    );
+  }
+
+  /// The cursor moved into [fieldKey], or out of every field when it is null.
+  ///
+  /// Blur clears rather than leaving the last field marked: a marking that
+  /// outlives the cursor stops meaning "this one".
+  void setFocusedField(String? fieldKey) {
+    if (state.focusedFieldKey == fieldKey) return;
+    emit(
+      fieldKey == null
+          ? state.copyWith(clearFocusedField: true)
+          : state.copyWith(focusedFieldKey: fieldKey),
     );
   }
 
@@ -965,9 +1017,8 @@ class SiteContentCubit extends Cubit<SiteContentState> {
     final keys = _rowFieldKeys(listKey, rowId);
 
     final order = [...?state.effectiveListOrder[listKey], rowId];
-    final draftListOrder = Map<String, List<String>>.from(
-      state.draftListOrder,
-    )..[listKey] = order;
+    final draftListOrder = Map<String, List<String>>.from(state.draftListOrder)
+      ..[listKey] = order;
     // A new group starts with an empty item list, so its nested list exists.
     for (final nested in _nestedListKeys(listKey, rowId)) {
       draftListOrder[nested] = const [];
@@ -1046,7 +1097,8 @@ class SiteContentCubit extends Cubit<SiteContentState> {
       rowId: rowId,
       index: index,
       sourceValues: {
-        for (final key in allKeys) key: state.valueFor(state.sourceLanguage, key),
+        for (final key in allKeys)
+          key: state.valueFor(state.sourceLanguage, key),
       },
       translations: {
         for (final language in state.targetLanguages)
@@ -1143,9 +1195,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
     final id = order.removeAt(oldIndex);
     order.insert(newIndex, id);
 
-    final draftListOrder = Map<String, List<String>>.from(
-      state.draftListOrder,
-    );
+    final draftListOrder = Map<String, List<String>>.from(state.draftListOrder);
     // Ordering back to the saved order is not a change.
     if (_sameOrder(order, state.listOrder[listKey])) {
       draftListOrder.remove(listKey);
@@ -1230,7 +1280,8 @@ class SiteContentCubit extends Cubit<SiteContentState> {
         for (final field in entry.value.entries)
           (entry.key, field.key, field.value),
     ];
-    final sourceChanged = state.draftSource.isNotEmpty ||
+    final sourceChanged =
+        state.draftSource.isNotEmpty ||
         state.draftListOrder.isNotEmpty ||
         state.draftMediaKeys.isNotEmpty;
 
@@ -1450,7 +1501,8 @@ class SiteContentCubit extends Cubit<SiteContentState> {
     // skipped language keeps its old baseline, because its live pages did not
     // change either.
     final published = {
-      for (final entry in state.publishedByLocale.entries) entry.key: entry.value,
+      for (final entry in state.publishedByLocale.entries)
+        entry.key: entry.value,
       state.sourceLanguage: {
         for (final field in state.allFields)
           field.key: state.savedValueFor(state.sourceLanguage, field.key),

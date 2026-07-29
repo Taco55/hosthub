@@ -258,9 +258,33 @@ class EditorCard {
 /// tab either; it lives under Settings → Legal (§A.6).
 const List<String> kWebsitePages = ['home', 'practical', 'area', 'gallery'];
 
+/// The legal document's page key.
+///
+/// Deliberately outside [kWebsitePages]: it is a page of the site but not a tab
+/// of the editor. A fifth tab invites editing exactly what you do not want
+/// casually edited, so it is reached through Site-instellingen instead — while
+/// running through the same schema, the same translation model and the same
+/// explicit save as everything else.
+const String kLegalPage = 'legal';
+
 /// The editor's page schema: README §A.1–A.4, card for card, in page order —
 /// so scrolling the editor and scrolling the preview are the same movement.
 const Map<String, List<EditorCard>> kPageCards = {
+  kLegalPage: [
+    EditorCard(
+      id: 'privacy',
+      rows: [
+        FieldRow('legal.privacy.intro', multiline: true),
+        ListRow(
+          'legal.privacy.bullets',
+          sub: 'text',
+          multiline: true,
+          repeatable: true,
+          minItems: 1,
+        ),
+      ],
+    ),
+  ],
   'home': [
     EditorCard(
       id: 'hero',
@@ -351,7 +375,10 @@ const Map<String, List<EditorCard>> kPageCards = {
       rows: [
         RowListRow(
           'home.highlights',
-          subs: [(sub: 'title', multiline: false), (sub: 'description', multiline: false)],
+          subs: [
+            (sub: 'title', multiline: false),
+            (sub: 'description', multiline: false),
+          ],
           minItems: 2,
           maxItems: 6,
           media: true,

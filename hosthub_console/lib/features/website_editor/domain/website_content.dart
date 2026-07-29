@@ -112,7 +112,8 @@ class WebsiteSeed {
       'cabin.hero.title': 'Your mountain home in Trysil',
       'cabin.hero.subtitle':
           "Ski-in, ski-out luxury for eight, a stone's throw from the slopes and the forest.",
-      'home.highlights.h1.description': 'Straight onto the Trysilfjellet trails.',
+      'home.highlights.h1.description':
+          'Straight onto the Trysilfjellet trails.',
       'home.highlights.h2.description': 'Unwind after a day on the mountain.',
       'cabin.description.d1.text':
           'Detached chalet in Fageråsen with a private sauna and panoramic mountain views.',

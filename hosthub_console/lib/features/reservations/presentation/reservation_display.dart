@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 
 import 'package:hosthub_console/core/l10n/l10n.dart';
+import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
 import 'package:hosthub_console/features/revenue/domain/booking_revenue.dart';
 
@@ -19,6 +20,28 @@ int? stayNights(DateTime? start, DateTime? end) {
   if (start == null || end == null) return null;
   final nights = _dateOnly(end).difference(_dateOnly(start)).inDays;
   return nights <= 0 ? 1 : nights;
+}
+
+/// The console's tone for a channel's own status word.
+///
+/// The label stays the channel's — the console does not own that vocabulary,
+/// and the filter menu lists the same raw values — but the tone is ours, so a
+/// cancellation is visible without reading the word. One mapping, so a booking
+/// cannot read as cancelled on one screen and neutral on another.
+StatusPillTone bookingStatusTone(String? status) {
+  return switch (status?.trim().toLowerCase() ?? '') {
+    final s when s.contains('cancel') || s.contains('declin') =>
+      StatusPillTone.negative,
+    final s
+        when s.contains('tentative') ||
+            s.contains('pending') ||
+            s.contains('option') ||
+            s.contains('hold') =>
+      StatusPillTone.caution,
+    final s when s.contains('book') || s.contains('confirm') =>
+      StatusPillTone.positive,
+    _ => StatusPillTone.neutral,
+  };
 }
 
 /// The booker's name, or [fallback] when the channel didn't supply one.

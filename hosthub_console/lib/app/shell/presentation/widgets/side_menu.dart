@@ -7,11 +7,10 @@ import 'package:styled_widgets/styled_widgets.dart';
 import 'package:hosthub_console/core/models/models.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:hosthub_console/features/auth/auth.dart';
+import 'package:hosthub_console/features/messaging/application/inbox_cubit.dart';
 import 'package:hosthub_console/features/profile/profile.dart';
 import 'package:hosthub_console/app/navigation/console_route.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
-import 'package:hosthub_console/features/server_settings/application/server_settings_cubit.dart';
-import 'package:hosthub_console/features/server_settings/domain/admin_settings.dart';
 
 import '../../application/sidebar_mode_cubit.dart';
 import '../../navigation/navigation_guard_controller.dart';
@@ -44,23 +43,20 @@ class SideMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     final authState = context.watch<AuthBloc>().state;
     final profile = context.watch<ProfileCubit>().state.profile;
-    // Account-wide channel defaults, for the Prijzen override badges. Absent
-    // while the settings are still loading, which reads as "no overrides" —
-    // the badge appearing a moment later is better than a wrong count.
-    final adminSettings =
-        context.watch<ServerSettingsCubit>().state.settings ??
-        AdminSettings.defaults();
+    // Account-wide channel defaults, for the Prijzen override badges. Zeroes
+    // while they are still loading, which reads as "no overrides" — the badge
+    // appearing a moment later is better than a wrong count.
+    final accountDefaults = context
+        .watch<AccountChannelDefaultsCubit>()
+        .state
+        .defaults;
 
     return BlocBuilder<PropertyContextCubit, PropertyContextState>(
       builder: (context, propertyState) {
         final properties = propertyState.properties;
         final isSingleProperty = properties.length == 1;
         final channelSettings = ChannelSettingsResolver.forProperties(
-          accountDefaults: AccountChannelDefaults.fromCommissionPercentages(
-            booking: adminSettings.bookingChannelFeePercentage,
-            airbnb: adminSettings.airbnbChannelFeePercentage,
-            other: adminSettings.otherChannelFeePercentage,
-          ),
+          accountDefaults: accountDefaults,
           properties: channelOverridesOf(properties),
         );
 
@@ -102,6 +98,9 @@ class SideMenu extends StatelessWidget {
               channelSettings: channelSettings,
             ),
             onNavigate: (path) => _go(context, path),
+            // The badge counts what the console already knows; opening
+            // Berichten is what goes and asks the source for more.
+            unreadMessageCount: context.watch<InboxCubit>().state.unreadCount(),
           ),
           profile: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
