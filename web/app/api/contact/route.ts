@@ -53,6 +53,15 @@ export async function POST(req: Request) {
     // Resolve per-site config (contact recipient + sender name) from the request
     // domain. Falls back to the worker env for sites with no values set yet.
     const site = await resolveRuntimeSiteContext();
+    if (!site.siteId) {
+      // Without a site there is no recipient that belongs to this domain, and
+      // the env fallback below is platform-wide: sending would deliver a
+      // visitor's enquiry to the wrong inbox.
+      console.error(
+        `[contact] refusing to send: host ${site.domain ?? "(none)"} resolved to no site (${site.source})`,
+      );
+      return NextResponse.json({ error: "Unknown site" }, { status: 404 });
+    }
     const settings = await getSiteSettings(site.siteId);
 
     const contactEmailTo = settings?.contactEmail || process.env.CONTACT_EMAIL_TO;
@@ -62,14 +71,18 @@ export async function POST(req: Request) {
         process.env.EMAIL_FROM_NAME ||
         "HostHub",
     );
-    // Platform sending address (verified domain). Override via EMAIL_FROM_ADDRESS
-    // once the platform domain (e.g. no-reply@mail.hosthub.com) is verified.
-    const fromAddress =
-      process.env.EMAIL_FROM_ADDRESS?.trim() || "no-reply@trysilpanorama.com";
+    // Platform sending address on the verified domain. No default: the previous
+    // one was a customer's own domain, which every other site would then have
+    // sent its mail from.
+    const fromAddress = process.env.EMAIL_FROM_ADDRESS?.trim();
 
     const resendApiKey = process.env.RESEND_API_KEY;
     if (!contactEmailTo) {
       return NextResponse.json({ error: "Missing contact destination" }, { status: 500 });
+    }
+    if (!fromAddress) {
+      console.error("[contact] EMAIL_FROM_ADDRESS is not configured");
+      return NextResponse.json({ error: "Missing sender address" }, { status: 500 });
     }
     if (!resendApiKey) {
       return NextResponse.json({ error: "Missing email API key" }, { status: 500 });

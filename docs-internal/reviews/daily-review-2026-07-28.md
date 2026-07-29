@@ -101,6 +101,44 @@
 - Bewijs/check: `grep -n "ON FUNCTION public.get_site_lodgify_api_key" supabase/schema_dump/latest_prd.sql`
   geeft nog `TO anon`.
 
+#### [P1 Hoog] `content.ts` is Trysil's site als platform-default
+
+- Bestand: `web/lib/content.ts` (1786 regels),
+  `web/lib/content-provider.ts:164-174,286-296`
+- Probleem: `mergeSiteConfig` spreidt `...site` onder het CMS-document en
+  `getLocalizedContent` spreidt `...localizedContent[locale]` eronder — ook op
+  het happy path. Beide komen uit `content.ts`, dat Trysil's content is.
+- Impact: een correct geresolveerde klantsite erft Trysil's waarden voor elk veld
+  dat hun eigen document niet zet. De fixes van deze run dichten de gevallen
+  waarin er géén document is; gedeeltelijke documenten blijven over.
+- Suggestie: `content.ts` splitsen in neutrale schema-defaults (lege strings,
+  lege lijsten, structuur) en Trysil's seed-content, en alleen de eerste als
+  basis spreiden.
+- Ontbrekende test/guardrail: een test die een minimaal CMS-document rendert en
+  aantoont dat er geen enkele waarde uit `content.ts` in de output zit.
+- Release-blocking: nee voor Trysil (het is hun eigen content); **ja** vóór de
+  tweede klant live gaat.
+- Bewijs/check: `grep -c -i trysil web/lib/content.ts` → 51.
+
+#### [P2 Medium] Deploy-variabelen die de web-deploy nu vereist
+
+- Bestand: `web/.env.example`, `web/wrangler.jsonc`
+- Probleem: deze run heeft twee fail-closed checks toegevoegd die elk een
+  variabele nodig hebben die nergens geconfigureerd staat.
+  `CMS_SNAPSHOT_SITE_ID` bepaalt welke site de gebundelde snapshot mag
+  gebruiken; zonder hem valt een onleesbaar CMS terug op een neutrale fout in
+  plaats van op de snapshot. `EMAIL_FROM_ADDRESS` heeft geen default meer — de
+  oude was `no-reply@trysilpanorama.com`, een klantdomein als platform-afzender.
+- Impact: zonder `EMAIL_FROM_ADDRESS` geeft het contactformulier na de volgende
+  deploy een 500 met een expliciete logregel. Dat is bewust luidruchtig, maar
+  het moet gezet worden.
+- Suggestie: beide zetten op de web-deploy. `npm run cms:snapshot` print de
+  exacte `CMS_SNAPSHOT_SITE_ID`-regel.
+- Ontbrekende test/guardrail: n.v.t.
+- Release-blocking: **ja** voor de volgende web-deploy
+- Bewijs/check: `grep -rn "EMAIL_FROM_ADDRESS" web/.env.local web/wrangler.jsonc Makefile`
+  geeft niets.
+
 #### [P2 Medium] Twee parallelle implementaties van dezelfde datumrange-kalender
 
 - Bestand: `web/components/booking/DateRangeModal.tsx` (793 regels),

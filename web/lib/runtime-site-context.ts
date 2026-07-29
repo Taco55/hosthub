@@ -1,11 +1,18 @@
 import "server-only";
 
 import { headers } from "next/headers";
+import { notFound } from "next/navigation";
 
 import { getSiteBaseUrl } from "./site-url";
 import { getServiceClient } from "./supabase/service";
 
-export type RuntimeSiteContextSource = "domain_lookup" | "unresolved";
+export type RuntimeSiteContextSource =
+  /** The host matched a `site_domains` row. `siteId` is set. */
+  | "domain_lookup"
+  /** The lookup succeeded and this host belongs to no site. */
+  | "unknown_domain"
+  /** The lookup itself failed, so which site this is remains unknown. */
+  | "lookup_failed";
 
 export type RuntimeSiteContext = {
   siteId: string | null;
@@ -64,9 +71,20 @@ function resolveProtocol(domain: string | null, forwardedProto: string | null) {
   return "https";
 }
 
-async function findSiteIdByDomain(domain: string): Promise<string | null> {
+type DomainLookup =
+  | { outcome: "match"; siteId: string }
+  | { outcome: "no_match" }
+  | { outcome: "failed" };
+
+/**
+ * "No such domain" and "could not ask" are different answers, and the caller
+ * has to treat them differently: the first is a 404, the second must not become
+ * one — a 404 would tell crawlers a live customer site is gone because Supabase
+ * blinked.
+ */
+async function findSiteIdByDomain(domain: string): Promise<DomainLookup> {
   const lookupClient = getServiceClient();
-  if (!lookupClient) return null;
+  if (!lookupClient) return { outcome: "failed" };
 
   try {
     const { data, error } = await lookupClient
@@ -77,16 +95,15 @@ async function findSiteIdByDomain(domain: string): Promise<string | null> {
       .limit(1)
       .maybeSingle();
 
-    if (error || !data) {
-      return null;
-    }
+    if (error) return { outcome: "failed" };
+    if (!data) return { outcome: "no_match" };
 
     const siteId = data["site_id"];
-    return typeof siteId === "string" && siteId.trim() ? siteId : null;
+    return typeof siteId === "string" && siteId.trim()
+      ? { outcome: "match", siteId }
+      : { outcome: "no_match" };
   } catch {
-    // Supabase unreachable or the query threw — fall back to env/default site
-    // so the website keeps rendering when the CMS backend is down.
-    return null;
+    return { outcome: "failed" };
   }
 }
 
@@ -104,36 +121,68 @@ export async function resolveRuntimeSiteContext(): Promise<RuntimeSiteContext> {
   const protocol = resolveProtocol(domain, forwardedProto);
   const baseUrl = domain ? `${protocol}://${domain}` : getSiteBaseUrl();
 
-  const matchedSiteId = domain ? await findSiteIdByDomain(domain) : null;
-  if (matchedSiteId) {
+  // No env default: the host is what identifies a site, in production and
+  // locally alike (`localhost` is a row in site_domains). A second way to arrive
+  // at a site id is how a console and a preview end up editing and rendering
+  // different sites without anything saying so.
+  const lookup = domain
+    ? await findSiteIdByDomain(domain)
+    : ({ outcome: "no_match" } as const);
+
+  if (lookup.outcome === "match") {
     return {
-      siteId: matchedSiteId,
+      siteId: lookup.siteId,
       domain,
       baseUrl,
       source: "domain_lookup",
     };
   }
 
-  // No env default any more: the host is what identifies a site, in production
-  // and locally alike (`localhost` is a row in site_domains). A second way to
-  // arrive at a site id is how a console and a preview end up editing and
-  // rendering different sites without anything saying so.
   return {
     siteId: null,
     domain,
     baseUrl,
-    source: "unresolved",
+    source: lookup.outcome === "failed" ? "lookup_failed" : "unknown_domain",
   };
 }
 
 export type SiteContentOptions = {
   preview?: boolean;
-  siteId?: string;
+  siteId: string;
 };
 
+/**
+ * Thrown when the request cannot be attributed to a site. Deliberately not a
+ * 404: see [findSiteIdByDomain].
+ */
+export class SiteLookupFailedError extends Error {
+  constructor(domain: string | null) {
+    super(
+      `Could not resolve a site for host ${domain ?? "(none)"}: the site_domains lookup failed`,
+    );
+    this.name = "SiteLookupFailedError";
+  }
+}
+
+/**
+ * Turns a resolved context into the options every content read needs, and
+ * refuses to produce them when there is no site.
+ *
+ * Failing closed is the point. One Next.js worker serves every customer domain,
+ * and the content fallbacks bundled into it (`content.generated.ts`,
+ * `content.ts`) hold one specific site's copy. Returning `{}` here — which is
+ * what this used to do — made every unresolved host render that site: an
+ * unknown domain pointed at the worker, and any real customer domain during a
+ * Supabase hiccup, both served another customer's pages, prices and contact
+ * details under their own name.
+ */
 export function toSiteContentOptions(
   context: RuntimeSiteContext,
   preview = false,
 ): SiteContentOptions {
-  return context.siteId ? { preview, siteId: context.siteId } : { preview };
+  if (context.siteId) return { preview, siteId: context.siteId };
+  if (context.source === "lookup_failed") {
+    throw new SiteLookupFailedError(context.domain);
+  }
+  notFound();
 }

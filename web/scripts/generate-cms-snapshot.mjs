@@ -278,6 +278,13 @@ async function main() {
   process.stdout.write(
     `Generated CMS snapshot: ${path.relative(WEB_ROOT, outPath)} (${matchedDocs} mapped docs)\n`,
   );
+  // The worker serves every customer domain but carries this one snapshot, so
+  // the runtime has to know whose it is before it may use it as a fallback.
+  // Without this variable the snapshot is ignored and an unreadable CMS renders
+  // a neutral error instead of this site's copy under someone else's domain.
+  process.stdout.write(
+    `\nSet this on the deployment that ships this bundle:\n  CMS_SNAPSHOT_SITE_ID=${siteId}\n`,
+  );
 }
 
 main().catch((error) => {

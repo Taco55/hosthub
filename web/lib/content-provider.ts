@@ -7,15 +7,19 @@
  * rendered cannot drift apart.
  *
  * Falls back to generated snapshot content from `content.generated.ts`, and
- * finally to static `content.ts`, when a document is missing or unreadable.
+ * finally to static `content.ts`, when a document is missing or unreadable —
+ * but only for the site those bundles belong to (`CMS_SNAPSHOT_SITE_ID`). One
+ * worker serves every customer domain and carries exactly one site's copy, so
+ * for any other site the fallback would be another customer's content and the
+ * read fails closed instead.
  *
- * This means the website keeps rendering when the CMS is unreachable or a
- * locale has no documents yet. The fallback is deliberate for the public site
- * and a trap
- * for the preview: a preview that quietly renders snapshot content tells the
- * owner their CMS copy is live when it is not. So every fallback is reported —
- * to the server log, and through [getPreviewContentStatus] to the preview
- * banner, which states what is actually on screen.
+ * For the site that does own the bundle, the website keeps rendering when the
+ * CMS is unreachable or a locale has no documents yet. That fallback is
+ * deliberate for the public site and a trap for the preview: a preview that
+ * quietly renders snapshot content tells the owner their CMS copy is live when
+ * it is not. So every fallback is reported — to the server log, and through
+ * [getPreviewContentStatus] to the preview banner, which states what is
+ * actually on screen.
  */
 
 import type { Locale } from "./i18n";
@@ -63,13 +67,14 @@ const SITE_DOCUMENTS: { contentType: string; slug: string }[] = [
 export type ContentOptions = {
   /** When true, also fetches draft documents (for preview mode). */
   preview?: boolean;
-  /** Optional runtime override for multi-site setups. */
+  /** Which site to read. Comes from the request host; see runtime-site-context. */
   siteId?: string;
 };
 
 /**
- * The site comes from the request's host (see runtime-site-context): with a
- * site there is CMS content to read, without one the fallback is all there is.
+ * The site comes from the request's host (see runtime-site-context).
+ * `toSiteContentOptions` refuses to build options without one, so an empty value
+ * here means a caller bypassed that guard.
  */
 function resolveSiteId(options?: ContentOptions) {
   return options?.siteId?.trim() ?? "";
@@ -77,6 +82,50 @@ function resolveSiteId(options?: ContentOptions) {
 
 function cmsActive(siteId: string) {
   return siteId.length > 0;
+}
+
+/**
+ * The site the bundled snapshot was generated from
+ * (`scripts/generate-cms-snapshot.mjs` prints the line to set).
+ *
+ * One worker serves every customer domain but carries one snapshot, so the
+ * snapshot is only ever a valid fallback for the site it came from. Unset means
+ * no site claims it, and then it is not used at all — an outage that shows a
+ * neutral error is recoverable, one that shows a competitor's prices under your
+ * own domain is not.
+ */
+const SNAPSHOT_SITE_ID = process.env.CMS_SNAPSHOT_SITE_ID?.trim() ?? "";
+
+function snapshotServes(siteId: string) {
+  return SNAPSHOT_SITE_ID.length > 0 && siteId === SNAPSHOT_SITE_ID;
+}
+
+/**
+ * No readable document, and no bundled fallback this site may use.
+ *
+ * Surfacing an error is the correct outcome: the alternative is rendering the
+ * one site whose copy happens to be compiled into the worker.
+ */
+export class SiteContentUnavailableError extends Error {
+  constructor(siteId: string, document: string, locale: Locale) {
+    super(
+      `No content for ${document} (${locale}) on site ${
+        siteId || "(unresolved)"
+      }, and the bundled snapshot does not belong to this site`,
+    );
+    this.name = "SiteContentUnavailableError";
+  }
+}
+
+/** Guards the bundled fallbacks. Call before reading either of them. */
+function requireBundledFallback(
+  siteId: string,
+  document: string,
+  locale: Locale,
+) {
+  if (!snapshotServes(siteId)) {
+    throw new SiteContentUnavailableError(siteId, document, locale);
+  }
 }
 
 /**
@@ -186,6 +235,7 @@ export async function getSiteConfig(
     );
     if (doc) return mergeSiteConfig(doc);
   }
+  requireBundledFallback(siteId, "site_config/main", locale);
   const generated = fromGenerated(generatedContentSnapshot.siteConfig, locale);
   if (generated) return mergeSiteConfig(generated);
   return site;
@@ -211,6 +261,7 @@ export async function getCabinContent(
     );
     if (doc) return normalizeCabinContent(doc);
   }
+  requireBundledFallback(siteId, "cabin/main", locale);
   const generated = fromGenerated(generatedContentSnapshot.cabin, locale);
   if (generated) return normalizeCabinContent(generated);
   return normalizeCabinContent(getStaticCabinContent(locale));
@@ -245,6 +296,7 @@ export async function getLocalizedContent(
       };
     }
   }
+  requireBundledFallback(siteId, "page/home", locale);
   const generated = fromGenerated(generatedContentSnapshot.home, locale);
   if (generated) {
     return { ...localizedContent[locale], ...normalizeHomeContent(generated) };
@@ -276,6 +328,7 @@ export async function getPracticalContent(
     );
     if (doc) return normalizePracticalContent(doc);
   }
+  requireBundledFallback(siteId, "page/practical", locale);
   const generated = fromGenerated(generatedContentSnapshot.practical, locale);
   if (generated) return normalizePracticalContent(generated);
   return localizedContent[locale].practical;
@@ -303,6 +356,7 @@ export async function getAreaContent(
     );
     if (doc) return normalizeAreaContent(doc);
   }
+  requireBundledFallback(siteId, "page/area", locale);
   const generated = fromGenerated(generatedContentSnapshot.area, locale);
   if (generated) return normalizeAreaContent(generated);
   return localizedContent[locale].area;
@@ -330,6 +384,7 @@ export async function getPrivacyContent(
     );
     if (doc) return normalizePrivacyContent(doc);
   }
+  requireBundledFallback(siteId, "page/privacy", locale);
   const generated = fromGenerated(generatedContentSnapshot.privacy, locale);
   if (generated) return normalizePrivacyContent(generated);
   return localizedContent[locale].privacy;
@@ -359,6 +414,7 @@ export async function getContactFormContent(
     );
     if (doc) return normalizeContactFormContent(doc);
   }
+  requireBundledFallback(siteId, "contact_form/main", locale);
   const generated = fromGenerated(generatedContentSnapshot.contactForm, locale);
   if (generated) return normalizeContactFormContent(generated);
   return contactFormSection[locale];
