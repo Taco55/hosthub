@@ -1,7 +1,10 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { env } from "../_shared/env.ts";
 import { buildCorsHeaders, jsonError, jsonResponse } from "../_shared/http.ts";
-import { resolveEffectiveLodgifyApiKey } from "../_shared/lodgify.ts";
+import {
+  proxyLodgifyResponse,
+  resolveEffectiveLodgifyApiKey,
+} from "../_shared/lodgify.ts";
 
 const SUPABASE_URL = env("SUPABASE_URL");
 const SERVICE_ROLE_KEY = env(
@@ -77,15 +80,12 @@ Deno.serve(async (req: Request) => {
     });
 
     if (!availResponse.ok) {
-      const errBody = await availResponse.text();
       console.log(
-        `[lodgify-rates] availability request failed: status=${availResponse.status} body=${errBody}`,
+        `[lodgify-rates] availability request failed: status=${availResponse.status}`,
       );
-      return jsonError(
-        availResponse.status,
-        `Lodgify availability error: ${availResponse.status}`,
-        corsOptions,
-      );
+      // Hand Lodgify's own status and body back, which keeps Retry-After on a
+      // 429 — the console needs that to know how long to wait.
+      return proxyLodgifyResponse(availResponse, corsOptions);
     }
 
     const availData = await availResponse.json();
@@ -113,6 +113,13 @@ Deno.serve(async (req: Request) => {
       method: "GET",
       headers: lodgifyHeaders(apiKey),
     });
+
+    if (!ratesResponse.ok) {
+      console.log(
+        `[lodgify-rates] rates request failed: status=${ratesResponse.status}`,
+      );
+      return proxyLodgifyResponse(ratesResponse, corsOptions);
+    }
 
     const ratesBody = await ratesResponse.text();
     const ratesStatus = ratesResponse.status;

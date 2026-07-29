@@ -1,7 +1,11 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { env } from "../_shared/env.ts";
 import { buildCorsHeaders, jsonError, jsonResponse } from "../_shared/http.ts";
-import { resolveEffectiveLodgifyApiKey } from "../_shared/lodgify.ts";
+import {
+  proxyLodgifyResponse,
+  resolveEffectiveLodgifyApiKey,
+  type SiteMemberRole,
+} from "../_shared/lodgify.ts";
 
 const SUPABASE_URL = env("SUPABASE_URL");
 const SERVICE_ROLE_KEY = env(
@@ -47,7 +51,13 @@ Deno.serve(async (req: Request) => {
     return jsonError(405, "Method not allowed", corsOptions);
   }
 
-  const resolved = await resolveLodgifyApiKey(req, corsOptions);
+  // A PATCH changes something in the key owner's Lodgify account, so borrowing
+  // their key for it takes `editor`. Reading is fine for any member.
+  const resolved = await resolveLodgifyApiKey(
+    req,
+    corsOptions,
+    req.method === "PATCH" ? "editor" : "viewer",
+  );
   if (resolved.error) return resolved.error;
 
   if (req.method === "GET") {
@@ -60,6 +70,7 @@ Deno.serve(async (req: Request) => {
 async function resolveLodgifyApiKey(
   req: Request,
   corsOptions: CorsOptions,
+  minRole: SiteMemberRole,
 ): Promise<
   { apiKey: string; error?: undefined } | {
     apiKey?: undefined;
@@ -95,6 +106,7 @@ async function resolveLodgifyApiKey(
   const { data, error } = await resolveEffectiveLodgifyApiKey(
     adminClient,
     user.id,
+    { minRole },
   );
 
   if (error) {
@@ -143,7 +155,7 @@ async function handleGet(
     },
   });
 
-  return proxyResponse(lodgifyResponse, corsOptions);
+  return proxyLodgifyResponse(lodgifyResponse, corsOptions);
 }
 
 async function handlePatch(
@@ -182,24 +194,5 @@ async function handlePatch(
     body,
   });
 
-  return proxyResponse(lodgifyResponse, corsOptions);
-}
-
-async function proxyResponse(
-  lodgifyResponse: Response,
-  corsOptions: CorsOptions,
-) {
-  const body = await lodgifyResponse.text();
-  const status = lodgifyResponse.status;
-
-  if (!body) {
-    return jsonResponse({}, status, corsOptions);
-  }
-
-  try {
-    const parsed = JSON.parse(body);
-    return jsonResponse(parsed, status, corsOptions);
-  } catch (_) {
-    return jsonError(502, "Invalid JSON returned by Lodgify.", corsOptions);
-  }
+  return proxyLodgifyResponse(lodgifyResponse, corsOptions);
 }

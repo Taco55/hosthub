@@ -1,7 +1,10 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { env } from "../_shared/env.ts";
-import { buildCorsHeaders, jsonError, jsonResponse } from "../_shared/http.ts";
-import { resolveEffectiveLodgifyApiKey } from "../_shared/lodgify.ts";
+import { buildCorsHeaders, jsonError } from "../_shared/http.ts";
+import {
+  proxyLodgifyResponse,
+  resolveEffectiveLodgifyApiKey,
+} from "../_shared/lodgify.ts";
 
 const SUPABASE_URL = env("SUPABASE_URL");
 const SERVICE_ROLE_KEY = env(
@@ -77,7 +80,7 @@ Deno.serve(async (req: Request) => {
       headers: lodgifyHeaders(apiKey),
     });
 
-    return await proxyResponse(lodgifyResponse, corsOptions);
+    return await proxyLodgifyResponse(lodgifyResponse, corsOptions);
   } catch (error) {
     console.error("[lodgify-properties] request failed", error);
     return jsonError(
@@ -153,23 +156,4 @@ async function resolveLodgifyApiKey(
   }
 
   return { apiKey };
-}
-
-async function proxyResponse(
-  lodgifyResponse: Response,
-  corsOptions: CorsOptions,
-) {
-  const body = await lodgifyResponse.text();
-  const status = lodgifyResponse.status;
-
-  if (!body) {
-    return jsonResponse({}, status, corsOptions);
-  }
-
-  try {
-    const parsed = JSON.parse(body);
-    return jsonResponse(parsed, status, corsOptions);
-  } catch (_) {
-    return jsonError(502, "Invalid JSON returned by Lodgify.", corsOptions);
-  }
 }
