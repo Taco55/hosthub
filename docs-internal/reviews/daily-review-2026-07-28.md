@@ -2,104 +2,59 @@
 
 ## Openstaande Issues
 
-#### [P0 Kritiek] Elke ingelogde gebruiker kan een sign-in credential voor elk account opvragen
-
-- Bestand: `supabase/functions/generate_password_reset_link_and_otp/index.ts:71`,
-  `supabase/functions/generate_magic_link_and_otp/index.ts`,
-  `supabase/functions/generate_sign_up_link_and_otp/index.ts:66`,
-  `supabase/config.toml:260-276`
-- Probleem: alle drie de link-generators draaien op de service-role key,
-  accepteren een **caller-gekozen e-mailadres** en geven `action_link`,
-  `email_otp` en `hashed_token` terug in de response. Er is geen enkele check
-  dat de caller iets met dat adres te maken heeft. `verify_jwt = true` op de
-  reset- en magic-link-functie bewijst alleen dat de caller *iemand* is, niet
-  dat het adres van hem is. `generate_sign_up_link_and_otp` staat op
-  `verify_jwt = false` en regelt geen eigen autorisatie, dus daar is helemaal
-  geen account nodig.
-- Impact: account-takeover. Een `viewer` op één site — of een gebruiker van een
-  heel ander account — vraagt een reset- of magic-link op voor het adres van een
-  admin en logt in als die admin. Voor de sign-up-variant is de anon key genoeg.
-  Prd heeft echte klantdata (Trysil).
-- Suggestie: de credential mag de client niet bereiken. Eén Edge Function per
-  flow die de link genereert **en** de mail verstuurt, met
-  `{ sent: true }` als enige response. Dan is een caller die
-  `victim@example.com` invult niets meer dan iemand die de victim een
-  password-reset mailt — precies het bedoelde gedrag. De volledige
-  fix-richting, inclusief waarom de mailtemplates dan server-side landen en
-  waarom dat niet met de ARB-regel botst, staat in
-  `daily-release-readiness-state.md` onder "Fix-richting D-2026-07-28-05/06".
-- Ontbrekende test/guardrail: een test die aantoont dat geen enkele
-  auth-mail-functie een `action_link`, `email_otp` of `hashed_token` in zijn
-  response zet.
-- Release-blocking: **ja**
-- Bewijs/check: de drie `index.ts`-bestanden nemen `payload.email` ongefilterd
-  door naar `client.auth.admin.generateLink(...)` en serialiseren
-  `data.properties` terug; `supabase/config.toml` toont de `verify_jwt`-waarden.
-
-#### [P0 Kritiek] `send_email` is een open relay vanaf het verified domein
-
-- Bestand: `supabase/functions/send_email/index.ts:28-32`, `supabase/config.toml:252-258`
-- Probleem: de functie staat op `verify_jwt = false` en accepteert vrije `to`,
-  `subject`, `html` en `attachments`, die één op één naar Resend gaan. De
-  afzender is het geconfigureerde `FROM_EMAIL` van het platform.
-- Impact: iedereen kan willekeurige mail met willekeurige HTML versturen die
-  afkomstig lijkt van het HostHub-domein. Phishing met een echte, geldige
-  afzender, en domeinreputatie-schade die de bezorging van alle transactionele
-  mail raakt.
-- Suggestie: `send_email` hoort geen client-endpoint te zijn. Zodra de
-  auth-mails server-side verstuurd worden (zie de vorige bevinding) heeft de
-  console geen ongeauthenticeerd mailpad meer nodig en kan deze functie achter
-  `verify_jwt = true` of volledig achter de nieuwe functie verdwijnen.
-- Ontbrekende test/guardrail: geen; de gate is de `verify_jwt`-instelling zelf.
-- Release-blocking: **ja**
-- Bewijs/check: `EmailPayload` in `send_email/index.ts` is `{to, subject, html,
-  attachments}` zonder enige autorisatie- of recipient-validatie; de comment bij
-  `[functions.send_email]` in `config.toml` noemt expliciet dat JWT-verificatie
-  uit staat omdat sign-up-mails vóór de sessie verstuurd worden.
-
-#### [P1 Hoog] De sign-up confirmation link kan niet gegenereerd worden
-
-- Bestand: `supabase/functions/generate_sign_up_link_and_otp/index.ts:66`
-- Probleem: `generateLink({ type: "signup", email, options })` mist het
-  `password`-veld dat GoTrue voor signup-links vereist. `deno check` faalt hier
-  met TS2345.
-- Impact: `resendSignUpEmail` en de confirmation-mail direct na `signUp()`
-  leveren geen link op — de gebruiker kan zijn account niet bevestigen.
-- Suggestie: hoort bij dezelfde ontwerpbeslissing als de P0-cluster hierboven.
-  Een willekeurig wachtwoord meesturen is géén oplossing: dat overschrijft het
-  wachtwoord dat de gebruiker net bij `signUp()` heeft gekozen.
-- Ontbrekende test/guardrail: `deno check` per functie met de eigen import map
-  hoort in de gate te zitten —
-  `deno check --config supabase/functions/<fn>/deno.json supabase/functions/<fn>/index.ts`.
-  `deno check */index.ts` vanuit `supabase/functions/` pakt de parent
-  `deno.json` en faalt daardoor ook onterecht op `delete_user`.
-- Release-blocking: nee (de flow is nu al stuk, dus geen regressie)
-- Bewijs/check: `deno check --config supabase/functions/generate_sign_up_link_and_otp/deno.json …`
-
-#### [P1 Hoog] Migraties 20260728140000 en 20260728150000 moeten naar prd
+#### [P1 Hoog] Deze wijzigingen moeten in de juiste volgorde naar prd
 
 - Bestand: `supabase/migrations/20260728140000_lock_down_security_definer_grants.sql`,
-  `supabase/migrations/20260728150000_drop_cms_migration_helpers.sql`
-- Probleem: de drie anon-bereikbare `SECURITY DEFINER`-functies zijn deze run
-  lokaal gedicht, maar `supabase/schema_dump/latest_prd.sql` laat zien dat prd
-  ze nog heeft: `create_local_admin_user` en `get_site_lodgify_api_key` zijn
-  daar nog aan `anon` gegrant, en `accept_pending_invitations` heeft daar nog de
-  `(uuid, text)`-signatuur.
-- Impact: zolang de migratie niet op prd staat, blijft daar het volgende open:
-  een anonieme caller kan met de publieke anon key een admin-account aanmaken,
-  en kan de Lodgify API-key van de site-owner ophalen via een `site_id` uit de
-  publiek leesbare `cms_documents`.
-- Suggestie: beide migraties los toepassen via `psql` (het bewezen pad; de
-  baseline-replay wordt geskipt op `to_regclass('public.profiles')`), in deze
-  volgorde, **vóór** de console-deploy — `accept_pending_invitations` wijzigt
-  van signatuur en de nieuwe console-code roept de parameterloze versie aan.
-  Daarna `NOTIFY pgrst, 'reload schema'`, anders geeft PostgREST PGRST202 op de
-  gewijzigde RPC.
+  `supabase/migrations/20260728150000_drop_cms_migration_helpers.sql`,
+  `supabase/functions/send_auth_email/`, `supabase/functions/invite_site_member/`,
+  `web/`
+- Probleem: `supabase/schema_dump/latest_prd.sql` laat zien dat prd de drie
+  anon-bereikbare `SECURITY DEFINER`-functies nog heeft:
+  `create_local_admin_user` en `get_site_lodgify_api_key` zijn daar nog aan
+  `anon` gegrant, en `accept_pending_invitations` heeft nog de
+  `(uuid, text)`-signatuur. Zolang dat zo is kan een anonieme caller met de
+  publieke anon key op prd een admin-account aanmaken en de Lodgify-key van de
+  site-owner ophalen.
+- Impact: de P0's van vandaag zijn in de repo gedicht maar op prd nog open.
+- Suggestie: in deze volgorde.
+  1. Beide migraties los via `psql` (het bewezen pad; de baseline-replay wordt
+     geskipt op `to_regclass('public.profiles')`), daarna
+     `NOTIFY pgrst, 'reload schema'` — zonder die stap geeft PostgREST PGRST202
+     op de gewijzigde RPC.
+  2. `SUPPORT_EMAIL` en `EMAIL_ENV_LABEL` als function-secrets zetten, dan
+     `make functions-deploy` — `send_auth_email` is nieuw, `invite_site_member`
+     is gewijzigd, en `send_email` + de drie `generate_*`-functies zijn
+     verwijderd en horen ook op prd te verdwijnen.
+  3. Console deployen: die roept `accept_pending_invitations()` parameterloos
+     aan en `send_auth_email` in plaats van de generators, dus de migratie en
+     de functions moeten er eerst zijn.
+  4. Web deployen, met `CMS_SNAPSHOT_SITE_ID` en `EMAIL_FROM_ADDRESS` gezet
+     (zie de bevinding hieronder).
 - Ontbrekende test/guardrail: `supabase/tests/security_definer_grants_test.sql`
-  bestaat nu; die hoort ná de prd-apply ook tegen prd te draaien.
+  hoort ná de prd-apply ook tegen prd te draaien.
 - Release-blocking: **ja**
 - Bewijs/check: `grep -n "ON FUNCTION public.get_site_lodgify_api_key" supabase/schema_dump/latest_prd.sql`
   geeft nog `TO anon`.
+
+#### [P1 Hoog] Mailaflevering van de nieuwe auth-mails is niet geverifieerd
+
+- Bestand: `supabase/functions/send_auth_email/index.ts`,
+  `supabase/functions/invite_site_member/index.ts`
+- Probleem: de vijf auth-mails worden nu server-side gerenderd en verstuurd. De
+  rendering en de entry-link zijn gepind met 14 Deno-tests (de vier Dart-tests
+  van `AuthEntryLinkBuilder` zijn één-op-één geport), maar er is in deze
+  omgeving geen Resend-sandbox, dus de aflevering zelf is niet getest.
+- Impact: een fout in de Resend-aanroep of in de nieuwe env-variabelen valt pas
+  op wanneer een gebruiker geen mail krijgt — en dat raakt inloggen en
+  wachtwoord-reset.
+- Suggestie: na de deploy één keer per flow versturen en controleren:
+  wachtwoord vergeten, magic-link inloggen, sign-up bevestigen, gebruiker
+  aanmaken als admin, en een site-uitnodiging (nieuw én bestaand adres).
+- Ontbrekende test/guardrail: er is nu een Deno-suite
+  (`_shared/auth_email_test.ts`); een end-to-end mailtest hoort in een
+  staging-omgeving met een Resend-testkey.
+- Release-blocking: **ja** (handmatige verificatie, geen code)
+- Bewijs/check: `deno test supabase/functions/_shared/auth_email_test.ts` → 14 groen.
 
 #### [P1 Hoog] `content.ts` is Trysil's site als platform-default
 
