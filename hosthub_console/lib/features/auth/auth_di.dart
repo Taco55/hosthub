@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:hosthub_console/core/core.dart';
 import 'package:hosthub_console/features/auth/auth.dart';
 import 'package:hosthub_console/features/auth/infrastructure/supabase/supabase_auth_adapter.dart';
-import 'package:hosthub_console/features/auth/infrastructure/supabase/supabase_email_templates_adapter.dart';
+import 'package:hosthub_console/features/auth/infrastructure/supabase/supabase_auth_mail_adapter.dart';
 import 'package:hosthub_console/features/auth/infrastructure/supabase/supabase_onboarding_adapter.dart';
 import 'package:hosthub_console/features/server_settings/data/admin_settings_repository.dart';
 
@@ -19,7 +19,7 @@ void registerAuthDependencies([SupabaseClient? client]) {
 
   if (!I.isRegistered<EmailTemplatesPort>()) {
     I.registerSingleton<EmailTemplatesPort>(
-      SupabaseEmailTemplatesAdapter(client: supabaseClient),
+      SupabaseAuthMailAdapter(client: supabaseClient),
       signalsReady: true,
     );
   }

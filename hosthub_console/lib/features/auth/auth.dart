@@ -7,7 +7,6 @@ export 'package:auth_ui_flutter/auth_ui_flutter.dart'
         AuthSignUpStep,
         AccountDeletionResult;
 
-export 'domain/models/email_template_config.dart';
 export 'domain/ports/auth_port.dart';
 export 'domain/ports/email_templates_port.dart';
 export 'domain/ports/onboarding_port.dart';

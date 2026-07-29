@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:hosthub_console/features/auth/domain/ports/email_templates_port.dart';
 import 'package:hosthub_console/features/auth/infrastructure/supabase/supabase_repository.dart';
 import 'package:hosthub_console/features/team/domain/site_invitation.dart';
 import 'package:hosthub_console/features/team/domain/site_member.dart';
@@ -12,13 +11,10 @@ import 'package:app_errors/app_errors.dart';
 class SiteMemberRepository extends SupabaseRepository {
   SiteMemberRepository({
     required SupabaseClient supabase,
-    required EmailTemplatesPort emailTemplates,
     required String setPasswordRedirectUri,
-  }) : _emailTemplates = emailTemplates,
-       _setPasswordRedirectUri = setPasswordRedirectUri,
+  }) : _setPasswordRedirectUri = setPasswordRedirectUri,
        super(supabase);
 
-  final EmailTemplatesPort _emailTemplates;
   final String _setPasswordRedirectUri;
 
   static const _membersTable = 'site_members';
@@ -110,7 +106,7 @@ class SiteMemberRepository extends SupabaseRepository {
     }
   }
 
-  /// Invite a member via the edge function, then send an invitation email.
+  /// Invite a member. The edge function mints the link and sends the mail.
   Future<SiteInvitation?> inviteMember({
     required String siteId,
     required String email,
@@ -135,21 +131,10 @@ class SiteMemberRepository extends SupabaseRepository {
         );
       }
 
-      final data = _ensureMap(response.data);
-      final actionLink = data['action_link']?.toString() ?? '';
-      final otp = data['email_otp']?.toString() ?? '';
-      final isNewUser = data['is_new_user'] == true;
+      // The function mints the link and sends the mail itself, so there is no
+      // action_link or email_otp in the response to pass on.
 
-      // 2. Send invitation email
-      await _emailTemplates.sendSiteInvitationEmail(
-        email,
-        actionLink: actionLink,
-        otp: otp,
-        siteName: siteName,
-        isNewUser: isNewUser,
-      );
-
-      // 3. Fetch the created invitation
+      // 2. Fetch the created invitation
       final invitations = await fetchInvitations(siteId);
       return invitations
           .where((i) => i.email == email.trim().toLowerCase())
@@ -165,7 +150,7 @@ class SiteMemberRepository extends SupabaseRepository {
     }
   }
 
-  /// Resend an invitation email by regenerating the auth link.
+  /// Resend an invitation: the edge function regenerates the link and mails it.
   Future<void> resendInvitation({
     required SiteInvitation invitation,
     required String siteName,
@@ -187,18 +172,7 @@ class SiteMemberRepository extends SupabaseRepository {
         );
       }
 
-      final data = _ensureMap(response.data);
-      final actionLink = data['action_link']?.toString() ?? '';
-      final otp = data['email_otp']?.toString() ?? '';
-      final isNewUser = data['is_new_user'] == true;
-
-      await _emailTemplates.sendSiteInvitationEmail(
-        invitation.email,
-        actionLink: actionLink,
-        otp: otp,
-        siteName: siteName,
-        isNewUser: isNewUser,
-      );
+      // The function sends the mail; nothing to do with the response.
     } catch (error, stack) {
       if (error is DomainError) rethrow;
       throw mapError(
@@ -299,7 +273,11 @@ class SiteMemberRepository extends SupabaseRepository {
   }
 
   /// Invite a user to all accessible sites.
-  /// Calls the edge function for each site but sends only one email.
+  ///
+  /// One mail per site, because the edge function is what sends it now — it
+  /// holds the link, and handing that back here to compose a single combined
+  /// mail is exactly the leak this moved away from. For a single-site account,
+  /// which is every account today, nothing changes.
   Future<void> inviteToAllSites({
     required String email,
     required SiteMemberRole role,
@@ -314,12 +292,7 @@ class SiteMemberRepository extends SupabaseRepository {
         );
       }
 
-      String actionLink = '';
-      String otp = '';
-      bool isNewUser = false;
-
-      for (int i = 0; i < sites.length; i++) {
-        final site = sites[i];
+      for (final site in sites) {
         final response = await _invokeInviteSiteMember({
           'siteId': site['id'],
           'email': email.trim().toLowerCase(),
@@ -335,27 +308,7 @@ class SiteMemberRepository extends SupabaseRepository {
             context: {'status': response.status},
           );
         }
-
-        if (i == 0) {
-          final data = _ensureMap(response.data);
-          actionLink = data['action_link']?.toString() ?? '';
-          otp = data['email_otp']?.toString() ?? '';
-          isNewUser = data['is_new_user'] == true;
-        }
       }
-
-      final siteNames = sites
-          .map((s) => s['name']?.toString() ?? '')
-          .where((n) => n.isNotEmpty)
-          .join(', ');
-
-      await _emailTemplates.sendSiteInvitationEmail(
-        email,
-        actionLink: actionLink,
-        otp: otp,
-        siteName: siteNames,
-        isNewUser: isNewUser,
-      );
     } catch (error, stack) {
       if (error is DomainError) rethrow;
       throw mapError(

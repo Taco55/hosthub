@@ -249,31 +249,19 @@ entrypoint = "./functions/delete_user/index.ts"
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/delete_user/*.html" ]
 
-[functions.send_email]
+[functions.send_auth_email]
 enabled = true
-# Sign-up confirmation emails are triggered before the user has a session.
-# Disable JWT verification so the client can call this function with the anon key.
+# Mints the auth link, renders the mail and sends it; the response carries no
+# action_link, email_otp or hashed_token. Password reset and sign-up
+# confirmation are asked for by someone who has no session, so there is no JWT
+# to require — and requiring one would have been theatre anyway, since the anon
+# key is itself a project-signed JWT that ships in the browser bundle. That is
+# exactly what made the three generate_* functions this replaces unsafe: they
+# returned the credential to whoever asked, for any address.
+# The two staff kinds (user_created, site_invitation) check the caller inside
+# the function via auth.getUser(token).
 verify_jwt = false
-import_map = "./functions/send_email/deno.json"
-entrypoint = "./functions/send_email/index.ts"
-
-[functions.generate_password_reset_link_and_otp]
-enabled = true
-verify_jwt = true
-import_map = "./functions/generate_password_reset_link_and_otp/deno.json"
-entrypoint = "./functions/generate_password_reset_link_and_otp/index.ts"
-
-[functions.generate_magic_link_and_otp]
-enabled = true
-verify_jwt = true
-import_map = "./functions/generate_magic_link_and_otp/deno.json"
-entrypoint = "./functions/generate_magic_link_and_otp/index.ts"
-
-[functions.generate_sign_up_link_and_otp]
-enabled = true
-verify_jwt = false
-import_map = "./functions/generate_sign_up_link_and_otp/deno.json"
-entrypoint = "./functions/generate_sign_up_link_and_otp/index.ts"
+entrypoint = "./functions/send_auth_email/index.ts"
 
 [functions.invite_site_member]
 enabled = true

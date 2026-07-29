@@ -21,7 +21,13 @@ SUPABASE_DIR   := $(WORKSPACE_ROOT)/supabase
 # Email (Resend) + the translate-content provider config; the free MyMemory
 # default needs no key, DEEPL_API_KEY opts into DeepL, LIBRETRANSLATE_URL into a
 # self-hosted engine (see supabase/functions/translate-content).
+# SUPPORT_EMAIL and EMAIL_ENV_LABEL are read by send_auth_email and
+# invite_site_member: the auth mail templates moved into the functions, so the
+# support address in their footer and the environment badge that used to come
+# from the console's own config have to be available server-side. Neither is
+# secret; they travel with the other function config.
 FUNCTION_SECRET_VARS := RESEND_API_KEY FROM_EMAIL FROM_NAME DASHBOARD_BASE_URL \
+                        SUPPORT_EMAIL EMAIL_ENV_LABEL \
                         DEEPL_API_KEY TRANSLATE_PROVIDER \
                         LIBRETRANSLATE_URL LIBRETRANSLATE_API_KEY MYMEMORY_EMAIL
 

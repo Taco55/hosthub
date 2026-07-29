@@ -1,11 +1,16 @@
-import 'dart:convert';
-
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:hosthub_console/features/auth/domain/ports/email_templates_port.dart';
 import 'package:hosthub_console/features/auth/infrastructure/supabase/supabase_repository.dart';
 import 'package:hosthub_console/features/auth/domain/ports/onboarding_port.dart';
 
+/// The onboarding mails, as the console asks for them.
+///
+/// It used to fetch the link and the one-time code from an Edge Function and pass
+/// them on to be rendered here. It no longer sees either: it names the flow and
+/// the address, and `send_auth_email` does the rest. What is left of this class
+/// is the redirect-URI resolution and the one setting that decides whether a
+/// newly created user is mailed at all.
 class SupabaseOnboardingAdapter extends SupabaseRepository {
   SupabaseOnboardingAdapter({
     required SupabaseClient supabase,
@@ -37,16 +42,13 @@ class SupabaseOnboardingAdapter extends SupabaseRepository {
     final settings = await _settingsRepository.load();
     if (!settings.emailUserOnCreate) return;
 
-    final link = await _generateResetLink(
-      email: email,
-      redirectUriOverride: redirectUriOverride,
-    );
-
     await _emailRepository.sendUserCreatedEmail(
-      email,
-      actionLink: link.actionLink,
+      email.trim(),
       name: name,
-      otp: link.otp,
+      redirectTo: _resolveRedirectUri(
+        _passwordResetRedirectUri,
+        redirectUriOverride,
+      ),
     );
   }
 
@@ -54,134 +56,36 @@ class SupabaseOnboardingAdapter extends SupabaseRepository {
     required String email,
     String? name,
     String? redirectUriOverride,
-  }) async {
-    final link = await _generateResetLink(
-      email: email,
-      redirectUriOverride: redirectUriOverride,
-    );
-
-    await _emailRepository.sendPasswordResetEmail(
-      email,
-      link.actionLink,
-      name: name,
-      otp: link.otp,
-    );
-  }
+  }) => _emailRepository.sendPasswordResetEmail(
+    email.trim(),
+    name: name,
+    redirectTo: _resolveRedirectUri(
+      _passwordResetRedirectUri,
+      redirectUriOverride,
+    ),
+  );
 
   Future<void> sendSignInOtpEmail({
     required String email,
     String? redirectUriOverride,
-  }) async {
-    final trimmedEmail = email.trim();
-    final link = await _generateLink(
-      functionName: 'generate_magic_link_and_otp',
-      email: trimmedEmail,
-      defaultRedirect: _signInRedirectUri,
-      overrideRedirect: redirectUriOverride,
-      operation: 'generateMagicLink',
-    );
-
-    await _emailRepository.sendLoginOtpEmail(
-      trimmedEmail,
-      actionLink: link.actionLink,
-      otp: link.otp,
-    );
-  }
+  }) => _emailRepository.sendLoginOtpEmail(
+    email.trim(),
+    redirectTo: _resolveRedirectUri(_signInRedirectUri, redirectUriOverride),
+  );
 
   Future<void> sendSignUpConfirmationEmail({
     required String email,
     String? name,
     String? redirectUriOverride,
-  }) async {
-    final trimmedEmail = email.trim();
-
-    final link = await _generateLink(
-      functionName: 'generate_sign_up_link_and_otp',
-      email: trimmedEmail,
-      defaultRedirect: _signInRedirectUri,
-      overrideRedirect: redirectUriOverride,
-      operation: 'generateSignUpLink',
-    );
-
-    await _emailRepository.sendSignUpConfirmationEmail(
-      trimmedEmail,
-      actionLink: link.actionLink,
-      name: name,
-      otp: link.otp,
-    );
-  }
-
-  Future<_ResetLinkResult> _generateResetLink({
-    required String email,
-    String? redirectUriOverride,
-  }) async {
-    return _generateLink(
-      functionName: 'generate_password_reset_link_and_otp',
-      email: email,
-      defaultRedirect: _passwordResetRedirectUri,
-      overrideRedirect: redirectUriOverride,
-      operation: 'generateResetLink',
-    );
-  }
-
-  Future<_ResetLinkResult> _generateLink({
-    required String functionName,
-    required String email,
-    required String defaultRedirect,
-    required String operation,
-    String? overrideRedirect,
-  }) async {
-    final redirectUri = _resolveRedirectUri(defaultRedirect, overrideRedirect);
-
-    try {
-      // No status check: a non-2xx from an Edge Function arrives as an
-      // exception, so `response.status` here is always 2xx and a branch on it
-      // would only ever double-map the error that the catch below handles.
-      final response = await supabase.functions.invoke(
-        functionName,
-        body: jsonEncode({'email': email, 'redirectTo': redirectUri}),
-        headers: const {'Content-Type': 'application/json'},
-      );
-
-      final data = _ensureMap(response.data);
-      final actionLink = (data['action_link'] ?? data['actionLink'])
-          ?.toString();
-      final otp = (data['email_otp'] ?? data['emailOtp'])?.toString();
-
-      return _ResetLinkResult(actionLink: actionLink ?? '', otp: otp ?? '');
-    } catch (error, stack) {
-      throw mapError(
-        error,
-        stack,
-        context: {'op': operation, 'email': email, 'redirect': redirectUri},
-      );
-    }
-  }
+  }) => _emailRepository.sendSignUpConfirmationEmail(
+    email.trim(),
+    name: name,
+    redirectTo: _resolveRedirectUri(_signInRedirectUri, redirectUriOverride),
+  );
 
   String _resolveRedirectUri(String defaultValue, String? override) {
     final trimmed = override?.trim();
     if (trimmed != null && trimmed.isNotEmpty) return trimmed;
     return defaultValue;
   }
-
-  Map<String, dynamic> _ensureMap(dynamic data) {
-    if (data is Map<String, dynamic>) return data;
-    if (data is Map) {
-      return data.map((key, value) => MapEntry(key.toString(), value));
-    }
-    if (data is String && data.trim().isNotEmpty) {
-      final decoded = jsonDecode(data);
-      if (decoded is Map) {
-        return decoded.map((key, value) => MapEntry(key.toString(), value));
-      }
-    }
-    return const {};
-  }
-}
-
-class _ResetLinkResult {
-  const _ResetLinkResult({required this.actionLink, required this.otp});
-
-  final String actionLink;
-  final String otp;
 }

@@ -1,7 +1,14 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
+import {
+  authEmailSpec,
+  buildSafeAuthEntryLink,
+  prefixSubject,
+  renderAuthEmail,
+} from "../_shared/auth_email.ts";
 import { env } from "../_shared/env.ts";
 import { buildCorsHeaders, jsonResponse, jsonError } from "../_shared/http.ts";
+import { sendViaResend } from "../_shared/resend.ts";
 
 const SUPABASE_URL = env("SUPABASE_URL");
 const SERVICE_ROLE_KEY = env(
@@ -9,6 +16,8 @@ const SERVICE_ROLE_KEY = env(
   "SUPABASE_SECRET_KEY",
 );
 const DASHBOARD_BASE_URL = env("ADMIN_BASE_URL", "DASHBOARD_BASE_URL");
+const SUPPORT_EMAIL = env("SUPPORT_EMAIL");
+const ENV_LABEL = env("EMAIL_ENV_LABEL");
 
 if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
   throw new Error(
@@ -304,11 +313,57 @@ Deno.serve(async (req) => {
       }
     }
 
+    // The mail goes out here rather than being composed by the console, so the
+    // invitation link never travels back through the client. It used to: a site
+    // owner could invite an address that already had an account and, because the
+    // fallback below mints a magiclink for existing users, receive a working
+    // sign-in link for it — an admin's included.
+    // Read the name rather than trust the caller's: it goes into the subject
+    // line of a mail this function sends on the platform's behalf.
+    const { data: siteRow } = await adminClient
+      .from("sites")
+      .select("name")
+      .eq("id", siteId)
+      .maybeSingle();
+
+    const spec = authEmailSpec("site_invitation", {
+      siteName: typeof siteRow?.name === "string" ? siteRow.name : null,
+      isNewUser,
+    });
+    const mail = await sendViaResend({
+      to: email,
+      subject: prefixSubject(spec.subject, ENV_LABEL ?? ""),
+      html: renderAuthEmail({
+        templateId: spec.templateId,
+        actionLink: buildSafeAuthEntryLink({
+          email,
+          actionLink,
+          otp: emailOtp,
+          requireOtp: spec.requireOtp,
+        }),
+        otp: emailOtp,
+        copy: spec.copy,
+        envLabel: ENV_LABEL ?? "",
+        supportEmail: SUPPORT_EMAIL ?? "",
+        year: new Date().getUTCFullYear(),
+      }),
+    });
+
+    if (!mail.ok) {
+      console.error(
+        `[invite_site_member] mail to ${email} failed: ${mail.error}`,
+        mail.details ?? "",
+      );
+      return jsonResponse(
+        { error: "Invitation created but the email could not be sent" },
+        502,
+      );
+    }
+
     return jsonResponse({
       invitation_id: invitation.id,
-      action_link: actionLink,
-      email_otp: emailOtp,
       is_new_user: isNewUser,
+      sent: true,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
