@@ -136,7 +136,20 @@ class LodgifyService {
 
     final status = response.status;
     if (status != 200 && status != 201) {
-      return (periods: const <Map<String, dynamic>>[], currency: null);
+      // Not an empty result: returning one made a Lodgify rate limit look like
+      // "this property has no rates", which is a different thing entirely and
+      // one nobody can act on. Throwing lets DomainError.from read the status —
+      // a 429 becomes tooManyRequests/rateLimited.
+      final requestOptions = RequestOptions(path: 'lodgify-rates');
+      throw DioException(
+        requestOptions: requestOptions,
+        response: Response(
+          requestOptions: requestOptions,
+          statusCode: status,
+          data: response.data,
+        ),
+        type: DioExceptionType.badResponse,
+      );
     }
 
     final decoded = (response.data as Object?).asDecodedJsonOrSelf();

@@ -5,6 +5,7 @@ import 'package:hosthub_console/features/channel_manager/infrastructure/lodgify/
 import 'package:hosthub_console/features/channel_manager/infrastructure/lodgify/dto/lodgify_property_details_dto.dart';
 import 'package:hosthub_console/features/channel_manager/infrastructure/lodgify/dto/lodgify_property_dto.dart';
 import 'package:hosthub_console/core/services/lodgify_service.dart';
+import 'package:app_errors/app_errors.dart';
 
 /// [ChannelManagerRepository] implementation backed by Lodgify.
 ///
@@ -16,8 +17,36 @@ class LodgifyChannelManagerRepository implements ChannelManagerRepository {
 
   final LodgifyService _lodgifyService;
 
+  /// Turns whatever the service throws into a [DomainError].
+  ///
+  /// This layer used to let raw `DioException`s straight through to the cubits,
+  /// which is why a Lodgify rate limit arrived as an unrecognisable failure.
+  /// `DomainError.from` already reads the status: a 429 becomes
+  /// [DomainErrorCode.tooManyRequests] with [DomainErrorReason.rateLimited], and
+  /// so gets the message that belongs to it.
+  Future<T> _mapped<T>(
+    String op,
+    Future<T> Function() body, {
+    Map<String, Object?> context = const {},
+  }) async {
+    try {
+      return await body();
+    } catch (error, stack) {
+      final mapped = DomainError.from(error, stack: stack);
+      throw mapped.copyWith(
+        context: {
+          'repository': 'LodgifyChannelManagerRepository',
+          'op': op,
+          ...?mapped.context,
+          ...context,
+        },
+      );
+    }
+  }
+
   @override
-  Future<List<ChannelProperty>> fetchProperties() async {
+  Future<List<ChannelProperty>> fetchProperties() =>
+      _mapped('fetchProperties', () async {
     final lodgifyProperties = await _lodgifyService.fetchProperties();
     return lodgifyProperties
         .map(
@@ -25,13 +54,15 @@ class LodgifyChannelManagerRepository implements ChannelManagerRepository {
               LodgifyPropertyDto(id: p.id, name: p.name, raw: p.raw).toDomain(),
         )
         .toList();
-  }
+  });
 
   @override
-  Future<ChannelPropertyDetails> fetchPropertyDetails(String propertyId) async {
+  Future<ChannelPropertyDetails> fetchPropertyDetails(String propertyId) =>
+      _mapped('fetchPropertyDetails', context: {'propertyId': propertyId},
+          () async {
     final details = await _lodgifyService.fetchPropertyDetails(propertyId);
     return LodgifyPropertyDetailsDto.fromMap(details.raw).toDomain();
-  }
+  });
 
   @override
   Future<List<Reservation>> fetchReservations({
@@ -39,7 +70,9 @@ class LodgifyChannelManagerRepository implements ChannelManagerRepository {
     required String channelPropertyId,
     DateTime? start,
     DateTime? end,
-  }) async {
+  }) =>
+      _mapped('fetchReservations', context: {'propertyId': propertyId},
+          () async {
     // The Lodgify V2 bookings API does not support server-side date filtering
     // (it uses stayFilter=All to return all bookings).  We therefore fetch
     // everything and narrow by [start]/[end] client-side.
@@ -70,22 +103,23 @@ class LodgifyChannelManagerRepository implements ChannelManagerRepository {
     }
 
     return reservations;
-  }
+  });
 
   @override
-  Future<void> updateReservationNotes(
-    String reservationId,
-    String notes,
-  ) async {
+  Future<void> updateReservationNotes(String reservationId, String notes) =>
+      _mapped('updateReservationNotes',
+          context: {'reservationId': reservationId}, () async {
     await _lodgifyService.updateReservationNotes(reservationId, notes);
-  }
+  });
 
   @override
   Future<({Map<DateTime, num> rates, String? currency})> fetchNightlyRates(
     String propertyId, {
     DateTime? start,
     DateTime? end,
-  }) async {
+  }) =>
+      _mapped('fetchNightlyRates', context: {'propertyId': propertyId},
+          () async {
     final result = await _lodgifyService.fetchRates(
       propertyId,
       start: start,
@@ -161,7 +195,7 @@ class LodgifyChannelManagerRepository implements ChannelManagerRepository {
     }
 
     return (rates: rates, currency: currency);
-  }
+  });
 
   /// Extracts a nightly rate from a period map.
   ///
@@ -272,7 +306,8 @@ class LodgifyChannelManagerRepository implements ChannelManagerRepository {
   }
 
   @override
-  Future<void> testConnection() async {
+  Future<void> testConnection() =>
+      _mapped('testConnection', () async {
     await _lodgifyService.fetchProperties();
-  }
+  });
 }
