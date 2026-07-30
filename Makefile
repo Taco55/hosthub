@@ -109,6 +109,7 @@ help: _common-help
 	@echo "                                           Create an admin user in local DB"
 	@echo "  make create-admin ENV=stg EMAIL=… PASSWORD=… [USERNAME=…]"
 	@echo "                                           Create an admin user in remote DB"
+	@echo "  make functions-restart-local             Restart local edge runtime + gateway"
 	@echo ""
 
 # ============================
@@ -142,3 +143,25 @@ create-admin: preflight check-pg-version
 	$(PSQL) "$$DB_URL" -v ON_ERROR_STOP=1 \
 	  -c "SELECT create_local_admin_user('$(EMAIL)', '$(PASSWORD)', '$(or $(USERNAME),$(EMAIL))');" \
 	&& echo "Admin user created on $(ENV)."
+
+# ============================
+# Project-specific: local edge functions
+# ============================
+
+## functions-restart-local — Restart the local edge runtime and its gateway.
+## Restart both, always: Kong resolves the runtime container's name once and
+## caches the address, so restarting the runtime alone leaves every function
+## call answering 503 "name resolution failed" until the gateway restarts too.
+## Also reports leftover deno.lock files, which make the worker fail to boot.
+.PHONY: functions-restart-local
+functions-restart-local:
+	@docker restart supabase_edge_runtime_$(PROJECT_NAME)_local \
+	                supabase_kong_$(PROJECT_NAME)_local >/dev/null \
+	  || { echo "Local Supabase does not look like it is running — try: supabase start"; exit 1; }
+	@locks=$$(find "$(SUPABASE_DIR)/functions" -name deno.lock 2>/dev/null); \
+	if [ -n "$$locks" ]; then \
+	  echo "WARNING: lockfiles found — the runtime cannot read them and will fail to boot:"; \
+	  echo "$$locks" | sed 's/^/  /'; \
+	  echo "  Delete them; \"lock\": false in the deno.json files keeps them away."; \
+	fi
+	@echo "Restarted edge runtime + gateway; the gateway needs a few seconds to report healthy."

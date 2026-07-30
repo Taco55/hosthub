@@ -59,4 +59,9 @@ CLAUDE.md
 # Deno-lockfiles bij edge functions: een lokale `deno check`/`deno run` schrijft
 # hier een lockfile met een versie die de (oudere) Deno in de Supabase
 # edge-runtime niet kan lezen -> "Worker failed to boot".
+#
+# Negeren alleen is niet genoeg: de runtime leest het bestand van schijf, niet uit
+# git. Daarom staat `"lock": false` in elke deno.json onder supabase/functions/ --
+# dan wordt het bestand nooit geschreven. Deze regel blijft als vangnet voor een
+# Deno die die instelling niet kent.
 supabase/functions/**/deno.lock
