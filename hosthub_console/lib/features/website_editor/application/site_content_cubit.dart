@@ -661,6 +661,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
         sourceLanguage: state.sourceLanguage,
         locales: state.locales,
       );
+      if (isClosed) return;
       final sourceLanguage = content.sourceLanguage ?? state.sourceLanguage;
       emit(
         state.copyWith(
@@ -685,6 +686,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
         ),
       );
     } catch (error, stack) {
+      if (isClosed) return;
       emit(
         state.copyWith(
           loadStatus: ContentLoadStatus.failed,
@@ -975,6 +977,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
         targetLanguage: language,
         sourceFields: {key: state.source[key] ?? ''},
       );
+      if (isClosed) return;
       _putDraftField(
         language,
         key,
@@ -991,6 +994,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
         clearError: true,
       );
     } catch (_) {
+      if (isClosed) return;
       emit(state.copyWith(errorMessage: 'reset_failed'));
     }
   }
@@ -1401,6 +1405,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
           targetLanguage: language,
           sourceFields: autoSources,
         );
+        if (isClosed) return;
         translated.forEach((key, value) {
           final field = TranslatedField(
             value: value,
@@ -1429,6 +1434,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
         if (!isClosed) emit(state.copyWith(errorMessage: 'save_failed'));
       }
     } catch (_) {
+      if (isClosed) return;
       // Degrade gracefully: keep the last good translations, surface an error.
       emit(
         state.copyWith(
@@ -1476,6 +1482,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
         .where((language) => !skipLanguages.contains(language))
         .toList();
     await translateNow(targets);
+    if (isClosed) return;
     if (_persistent) {
       try {
         await _repository!.publishAll(
@@ -1493,9 +1500,10 @@ class SiteContentCubit extends Cubit<SiteContentState> {
           },
         );
       } catch (_) {
-        emit(state.copyWith(errorMessage: 'publish_failed'));
+        if (!isClosed) emit(state.copyWith(errorMessage: 'publish_failed'));
         return;
       }
+      if (isClosed) return;
     }
     // What just went out *is* live now, so the delta starts from here. A
     // skipped language keeps its old baseline, because its live pages did not

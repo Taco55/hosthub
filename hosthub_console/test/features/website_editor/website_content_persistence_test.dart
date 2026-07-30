@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hosthub_console/features/website_editor/website_editor.dart';
 
@@ -19,6 +21,10 @@ class FakeWebsiteContentRepository implements WebsiteContentRepository {
   /// When set, [loadPageContent] throws it instead of returning content.
   Object? loadError;
 
+  /// When set, [loadPageContent] waits on it before answering — lets a test
+  /// hold a load in flight while the editor's route goes away.
+  Completer<void>? loadGate;
+
   /// The list orders each saveSourceDraft call carried.
   final List<Map<String, List<String>>> sourceDraftOrders = [];
 
@@ -35,6 +41,7 @@ class FakeWebsiteContentRepository implements WebsiteContentRepository {
     required List<String> locales,
   }) async {
     loadCalls++;
+    await loadGate?.future;
     final error = loadError;
     if (error != null) throw error;
     return content;
@@ -142,6 +149,37 @@ void main() {
     // Not the seed's 'Jouw bergwoning in Trysil'.
     expect(cubit.state.valueFor('nl', 'cabin.hero.title'), isEmpty);
     await cubit.close();
+  });
+
+  // Leaving the editor closes its cubit; the load it kicked off in initState
+  // keeps running and lands on a closed cubit. Emitting then throws a bare
+  // StateError into the app zone, so the console shows a red exception for a
+  // page the owner already navigated away from.
+  test('a load landing after the editor is gone emits nothing', () async {
+    final gate = Completer<void>();
+    final repo = FakeWebsiteContentRepository(content: _remoteContent())
+      ..loadGate = gate;
+    final cubit = _build(repo);
+
+    final pending = cubit.loadContent();
+    await cubit.close();
+    gate.complete();
+
+    await expectLater(pending, completes);
+  });
+
+  test('a load that fails after the editor is gone emits nothing', () async {
+    final gate = Completer<void>();
+    final repo = FakeWebsiteContentRepository(content: _remoteContent())
+      ..loadGate = gate
+      ..loadError = StateError('column cms_documents.draft_content missing');
+    final cubit = _build(repo);
+
+    final pending = cubit.loadContent();
+    await cubit.close();
+    gate.complete();
+
+    await expectLater(pending, completes);
   });
 
   test('a failed load leaves no content to save', () async {
