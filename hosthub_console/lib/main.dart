@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 
 import 'package:hosthub_console/app/app.dart';
 import 'package:hosthub_console/app/bootstrap/bootstrap.dart';
+import 'package:hosthub_console/core/config/app_environment.dart';
 import 'package:hosthub_console/core/widgets/auth/auth_ui_styled_overrides.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:hosthub_console/features/auth/auth.dart';
@@ -21,7 +22,8 @@ void main() {
       AuthUi.initialize(_authUiConfig);
       AppErrors.configure(
         adapters: const [supabaseAdapter],
-        showDebugDetails: true,
+        showDebugDetails:
+            AppEnvironment.fromEnvironment().showsErrorDiagnostics,
         errorPresenter: styledAppErrorPresenter,
         onLogoutRequired: handleAppErrorLogout,
       );

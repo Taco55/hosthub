@@ -44,4 +44,12 @@ extension AppEnvironmentChecks on AppEnvironment {
   bool get isDev => this == AppEnvironment.dev;
   bool get isStg => this == AppEnvironment.stg;
   bool get isPrd => this == AppEnvironment.prd;
+
+  /// Whether an error may show its stacktrace and internal context alongside
+  /// the message.
+  ///
+  /// Off on prd: those details are for whoever fixes the bug, and a site owner
+  /// reading them cannot act on any of it — while the one line that does tell
+  /// them what happened gets buried. Everywhere else they save a round trip.
+  bool get showsErrorDiagnostics => !isPrd;
 }
