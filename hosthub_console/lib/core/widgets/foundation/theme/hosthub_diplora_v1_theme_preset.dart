@@ -556,9 +556,15 @@ abstract final class HosthubThemePreset {
             HosthubDiploraV1Palette.surfaceContainerDark,
         secondaryBorderColorDark: HosthubDiploraV1Palette.outlineDark,
         secondaryLabelColorDark: HosthubDiploraV1Palette.onSurfaceDark,
-        destructiveBackgroundColor: HosthubDiploraV1Palette.errorSoft,
-        destructiveBorderColor: HosthubDiploraV1Palette.error,
-        destructiveLabelColor: HosthubDiploraV1Palette.error,
+        // A filled destructive button only shows up where destroying *is* the
+        // primary action — the confirmation dialog itself. A 20% wash with a red
+        // hairline made that button the softest-looking thing in its row, beside
+        // a text `Annuleren`: the dangerous choice read as the cautious one.
+        // Solid red, white label. The low-weight `Verwijderen` in a modal footer
+        // is a text button, and its label falls back to this background, which is
+        // now the red it wanted — so it states nothing of its own.
+        destructiveBackgroundColor: HosthubDiploraV1Palette.error,
+        destructiveLabelColor: Colors.white,
       ),
       segmentedControls: (t) => t.copyWith(cornerRadius: 10),
       dialogs: (t) => t.copyWith(
@@ -566,6 +572,14 @@ abstract final class HosthubThemePreset {
         backgroundColorDark: HosthubDiploraV1Palette.surfaceContainerDark,
         buttonsLayout: DialogButtonsLayout.horizontal,
         buttonAlignment: DialogButtonAlignment.right,
+      ),
+      // Body and footer padding come from the library: its default is the 24 the
+      // sections use, so a bare-field body and a section body land on the same
+      // edge without either being stated here.
+      modals: (t) => t.copyWith(
+        // Every modal here commits below the content it confirms; saying so once
+        // keeps a new call site from inheriting the library's header default.
+        actionPlacement: StyledModalSlotPlacement.footer,
       ),
       toasts: (t) => t.copyWith(
         successBackgroundColor: HosthubDiploraV1Palette.success,

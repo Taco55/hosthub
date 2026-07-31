@@ -420,6 +420,32 @@ void main() {
     });
   });
 
+  group('modal geometry: one edge for body and footer', () {
+    test('the modal grid matches the section inset', () {
+      final styled = styledFor(Brightness.light);
+      final content = styled.modals.contentPadding.resolve(TextDirection.ltr);
+      final footer = styled.modals.footerActionsPadding.resolve(
+        TextDirection.ltr,
+      );
+
+      // Inherited from the library, asserted here because it is what keeps a
+      // bare-field modal body off the modal's rounded corners and on the same
+      // edge as the footer — the preset must not override one of the two.
+      expect(content.left, styled.sharedLayout.horizontalPadding);
+      expect(content.left, footer.left);
+      expect(content.right, footer.right);
+      // And the primary is not glued to the last field.
+      expect(content.bottom, greaterThanOrEqualTo(16));
+    });
+
+    test('commitments render below the content they confirm', () {
+      expect(
+        styledFor(Brightness.light).modals.actionPlacement,
+        StyledModalSlotPlacement.footer,
+      );
+    });
+  });
+
   group('timeline calendar geometry follows the design', () {
     test('bar, day cell, weekday strip and month heading', () {
       final calendar = themeFor(Brightness.light).timelineCalendar;
@@ -442,60 +468,73 @@ void main() {
     });
   });
 
-  group(
-    'decision: the outlined button is a hairline, not a second blue CTA',
-    () {
-      test(
-        'light: design .btn-line — white, card-border hairline, slate label',
-        () {
-          final buttons = styledFor(Brightness.light).buttons;
+  group('decision: the outlined button is a hairline, not a second blue CTA', () {
+    test(
+      'light: design .btn-line — white, card-border hairline, slate label',
+      () {
+        final buttons = styledFor(Brightness.light).buttons;
 
-          expect(buttons.secondaryBackgroundColor, Colors.white);
+        expect(buttons.secondaryBackgroundColor, Colors.white);
+        expect(buttons.secondaryBorderColor, HosthubDiploraV1Palette.softGrey);
+        expect(
+          buttons.secondaryLabelColor,
+          HosthubDiploraV1Palette.outlineButtonLabel,
+        );
+      },
+    );
+
+    test(
+      'the outlined label is never `primary` — that is the filled button',
+      () {
+        for (final brightness in Brightness.values) {
           expect(
-            buttons.secondaryBorderColor,
-            HosthubDiploraV1Palette.softGrey,
+            styledFor(brightness).buttons.secondaryLabelColor,
+            isNot(themeFor(brightness).colorScheme.primary),
+            reason: 'outlined button label in $brightness',
           );
-          expect(
-            buttons.secondaryLabelColor,
-            HosthubDiploraV1Palette.outlineButtonLabel,
-          );
-        },
+        }
+      },
+    );
+
+    test('dark: the same button on the dark surfaces, not white-on-white', () {
+      final buttons = styledFor(Brightness.dark).buttons;
+
+      expect(
+        buttons.secondaryBackgroundColor,
+        HosthubDiploraV1Palette.surfaceContainerDark,
       );
-
-      test(
-        'the outlined label is never `primary` — that is the filled button',
-        () {
-          for (final brightness in Brightness.values) {
-            expect(
-              styledFor(brightness).buttons.secondaryLabelColor,
-              isNot(themeFor(brightness).colorScheme.primary),
-              reason: 'outlined button label in $brightness',
-            );
-          }
-        },
+      expect(buttons.secondaryBorderColor, HosthubDiploraV1Palette.outlineDark);
+      expect(
+        buttons.secondaryLabelColor,
+        HosthubDiploraV1Palette.onSurfaceDark,
       );
+    });
 
-      test(
-        'dark: the same button on the dark surfaces, not white-on-white',
-        () {
-          final buttons = styledFor(Brightness.dark).buttons;
+    test('a destructive button is filled red, not a wash with a hairline', () {
+      for (final brightness in Brightness.values) {
+        final buttons = styledFor(brightness).buttons;
 
-          expect(
-            buttons.secondaryBackgroundColor,
-            HosthubDiploraV1Palette.surfaceContainerDark,
-          );
-          expect(
-            buttons.secondaryBorderColor,
-            HosthubDiploraV1Palette.outlineDark,
-          );
-          expect(
-            buttons.secondaryLabelColor,
-            HosthubDiploraV1Palette.onSurfaceDark,
-          );
-        },
-      );
-    },
-  );
+        // The filled destructive is the confirmation dialog's primary action.
+        // A soft wash there makes the dangerous button the weakest-looking one
+        // in a row where its neighbour is a text `Annuleren`.
+        expect(
+          buttons.destructiveBackgroundColor,
+          HosthubDiploraV1Palette.error,
+          reason: 'destructive fill in $brightness',
+        );
+        expect(buttons.destructiveLabelColor, Colors.white);
+
+        // The destructive *text* label falls back to that background and needs
+        // no line of its own — which is only true while the background is a
+        // solid red rather than something meant to sit behind a label.
+        expect(
+          buttons.destructiveTextLabelColor,
+          HosthubDiploraV1Palette.error,
+          reason: 'destructive text label in $brightness',
+        );
+      }
+    });
+  });
 }
 
 double _contrastOnWhite(Color color) {
