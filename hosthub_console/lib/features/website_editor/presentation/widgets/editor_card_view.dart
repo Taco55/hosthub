@@ -62,6 +62,17 @@ class EditorCardView extends StatelessWidget {
   }
 }
 
+/// Hands a dragged row's floating proxy the editor cubit again.
+///
+/// A drag rebuilds the row inside the Navigator's overlay, above the route that
+/// provides [SiteContentCubit] — so every row widget that reads the cubit from
+/// its context (and they all do, through [WebsiteFieldRow]) would throw the
+/// moment it is picked up. [cubit] is resolved by the caller, from the list's
+/// own context: inside the returned builder the lookup fails for the same
+/// reason it is being repaired.
+Widget Function(Widget) _dragProxyScope(SiteContentCubit cubit) =>
+    (child) => BlocProvider.value(value: cubit, child: child);
+
 /// Dispatches one schema row to its shape.
 class _RowView extends StatelessWidget {
   const _RowView({required this.state, required this.card, required this.row});
@@ -134,6 +145,7 @@ class _ListRowView extends StatelessWidget {
       itemKey: (field) => field.key,
       itemBuilder: (context, field, index) =>
           WebsiteFieldRow(state: state, field: field, label: null),
+      dragProxyBuilder: _dragProxyScope(cubit),
       onReorder: row.repeatable
           ? (from, to) => cubit.moveRow(row.listKey, from, to)
           : null,
@@ -240,6 +252,7 @@ class _PairListRowView extends StatelessWidget {
         sharedValue: row.sharedValue,
         wideValue: row.wideValue,
       ),
+      dragProxyBuilder: _dragProxyScope(cubit),
       onReorder: row.repeatable
           ? (from, to) => cubit.moveRow(row.listKey, from, to)
           : null,
@@ -356,6 +369,7 @@ class _RowListRowView extends StatelessWidget {
             ),
         ],
       ),
+      dragProxyBuilder: _dragProxyScope(cubit),
       onReorder: row.repeatable
           ? (from, to) => cubit.moveRow(row.listKey, from, to)
           : null,
@@ -423,6 +437,7 @@ class _GroupListRowView extends StatelessWidget {
         lockedReason: lockedReason,
       ),
       itemBuilder: (context, groupId, index) => const SizedBox.shrink(),
+      dragProxyBuilder: _dragProxyScope(cubit),
       onReorder: row.repeatable && !row.fixedTitles
           ? (from, to) => cubit.moveRow(row.listKey, from, to)
           : null,
@@ -509,6 +524,7 @@ class _GroupBlock extends StatelessWidget {
             itemKey: (field) => field.key,
             itemBuilder: (context, field, i) =>
                 WebsiteFieldRow(state: state, field: field, label: null),
+            dragProxyBuilder: _dragProxyScope(cubit),
             onReorder: structureLocked
                 ? null
                 : (from, to) => cubit.moveRow(itemsKey, from, to),

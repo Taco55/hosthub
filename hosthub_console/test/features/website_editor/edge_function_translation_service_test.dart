@@ -70,7 +70,7 @@ void main() {
     var called = false;
     final service = buildService((name, {body}) async {
       called = true;
-      return FunctionResponse(status: 200, data: {'translations': []});
+      return FunctionResponse(status: 200, data: {'translations': <dynamic>[]});
     });
 
     final result = await service.translateFields(
