@@ -2400,7 +2400,6 @@ class _ExportSettingsDialogContentState
 
   void _onReorder(int oldIndex, int newIndex) {
     setState(() {
-      if (oldIndex < newIndex) newIndex -= 1;
       final item = _orderedColumns.removeAt(oldIndex);
       _orderedColumns.insert(newIndex, item);
     });
