@@ -129,4 +129,37 @@ void main() {
 
     expect(await result, isNull);
   });
+
+  // This body is a bare field, not a StyledSection, so it cannot inset itself —
+  // the modal's content padding is the only thing standing between it and the
+  // rounded corners. That padding is theme-level, so these pin the preset (and
+  // the library default behind it), not this modal. Footer stacking is the same
+  // class of bug and lives in the library's own tests: it is gated on window
+  // width, which a widget test's surface size does not change.
+  group('layout: a bare field body sits on the modal grid', () {
+    testWidgets('the field shares its edges with the footer', (tester) async {
+      await _open(tester, hasApiKey: false);
+
+      final field = tester.getRect(find.byType(StyledTextFormField));
+      final primary = tester.getRect(find.widgetWithText(StyledButton, 'Add'));
+
+      // Full-bleed content beside an inset footer is the thing that looked
+      // broken: the field ran to the modal's rounded corners while the button
+      // below it stopped short of them.
+      expect(field.right, moreOrLessEquals(primary.right, epsilon: 0.5));
+      // The modal spans the surface here (a widget test resolves adaptive to a
+      // sheet), so the field's own inset is readable from the surface edges.
+      expect(field.left, greaterThan(0));
+      expect(field.left, moreOrLessEquals(1200 - field.right, epsilon: 0.5));
+    });
+
+    testWidgets('the field is not glued to the primary', (tester) async {
+      await _open(tester, hasApiKey: false);
+
+      final field = tester.getRect(find.byType(StyledTextFormField));
+      final primary = tester.getRect(find.widgetWithText(StyledButton, 'Add'));
+
+      expect(primary.top - field.bottom, greaterThanOrEqualTo(12));
+    });
+  });
 }

@@ -28,12 +28,7 @@ Future<bool> showLodgifySyncModal(
     title: context.s.lodgifySyncResultTitle,
     subtitle: _outcome(context, plan),
     dismiss: const StyledModalDismiss<void>(isDismissible: false),
-    sizing: const StyledModalSizing(
-      dialogMaxWidth: 560,
-      // The body is one StyledSection, which brings its own padding.
-      contentPadding: EdgeInsets.zero,
-      bodyMaxHeight: 420,
-    ),
+    sizing: const StyledModalSizing(dialogMaxWidth: 560, bodyMaxHeight: 420),
     // With work to apply this is a confirmation; without it the modal only
     // states an outcome, so it gets an outline `Sluiten` and no filled call to
     // action.

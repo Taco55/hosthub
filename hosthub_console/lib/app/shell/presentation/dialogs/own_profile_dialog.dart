@@ -55,7 +55,6 @@ Future<void> showOwnProfileDialog(
       dialogMaxWidth: 480,
       bodyMinHeight: 400,
       enableBodyScroll: true,
-      contentPadding: EdgeInsets.zero,
     ),
     steps: StyledModalSteps(
       children: [

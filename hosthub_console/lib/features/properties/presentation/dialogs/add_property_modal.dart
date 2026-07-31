@@ -32,8 +32,6 @@ Future<void> showAddPropertyModal(BuildContext context) async {
     steps: StyledModalSteps(
       children: [
         StyledModalStep(
-          // The two routes are a StyledSection, which owns its padding.
-          contentPadding: EdgeInsets.zero,
           builder: (context, modal) => StyledSection(
             isFirstSection: true,
             footer: context.s.addPropertyFooter,
