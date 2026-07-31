@@ -1175,6 +1175,12 @@ class SiteContentCubit extends Cubit<SiteContentState> {
   /// Reorders a repeatable list's rows (drag grip). Only the order changes:
   /// every value — source text, translations, locked/auto status — is keyed
   /// by the row's stable id and travels with it untouched.
+  ///
+  /// Both indices are plain list positions: [newIndex] is where the row ends
+  /// up, not `ReorderableListView`'s pre-removal insertion point. That is what
+  /// `StyledFieldList.onReorder` promises — it normalizes the drag itself, and
+  /// its up/down buttons report the same thing — so adjusting again here would
+  /// land the row one short of where it was dropped.
   void moveRow(String listKey, int oldIndex, int newIndex) {
     // §B.4: structure is the source language's. The UI turns these actions off
     // in a target language, but an assert is the rule — a convention that only
@@ -1192,7 +1198,6 @@ class SiteContentCubit extends Cubit<SiteContentState> {
     );
     final order = [...?state.effectiveListOrder[listKey]];
     if (oldIndex < 0 || oldIndex >= order.length) return;
-    if (newIndex > oldIndex) newIndex -= 1;
     newIndex = newIndex.clamp(0, order.length - 1);
     if (newIndex == oldIndex) return;
 

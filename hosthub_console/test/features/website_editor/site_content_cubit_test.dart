@@ -260,9 +260,10 @@ void main() {
         'Locked first',
       );
 
-      // Drag row 0 below row 1 (ReorderableListView semantics: newIndex is
-      // the insertion point before removal).
-      cubit.moveRow('home.highlights', 0, 2);
+      // Drag row 0 below row 1. Plain list indices, the way StyledFieldList
+      // reports them: newIndex is where the row lands, not
+      // ReorderableListView's pre-removal insertion point.
+      cubit.moveRow('home.highlights', 0, 1);
 
       // The display order changed…
       expect(cubit.state.effectiveListOrder['home.highlights'], ['h2', 'h1']);
@@ -284,7 +285,7 @@ void main() {
 
     test('ordering back to the saved order clears the draft', () {
       final cubit = build();
-      cubit.moveRow('home.highlights', 0, 2);
+      cubit.moveRow('home.highlights', 0, 1);
       expect(cubit.state.unsavedChanges, isTrue);
 
       cubit.moveRow('home.highlights', 1, 0);
@@ -591,7 +592,7 @@ void main() {
       // widget is one refactor away from being gone.
       expect(() => cubit.addRow('home.highlights'), throwsAssertionError);
       expect(
-        () => cubit.moveRow('home.highlights', 0, 2),
+        () => cubit.moveRow('home.highlights', 0, 1),
         throwsAssertionError,
       );
       expect(

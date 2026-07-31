@@ -296,7 +296,7 @@ void main() {
     await cubit.loadContent();
     expect(cubit.state.listOrder['home.highlights'], ['hA', 'hB']);
 
-    cubit.moveRow('home.highlights', 0, 2);
+    cubit.moveRow('home.highlights', 0, 1);
     await cubit.save();
 
     // The write is the order; no field values changed hands.
