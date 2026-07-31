@@ -177,8 +177,7 @@ abstract final class BlocDetailFormatter {
     'dirtyContent',
     'savingDocuments',
     'publishingDocuments',
-    'missingPropertiesToConfirm',
-    'channelPropertiesToReview',
+    'syncListings',
   ];
 
   static const _contextFields = [
@@ -215,10 +214,8 @@ abstract final class BlocDetailFormatter {
         return obj.savingDocuments;
       case 'publishingDocuments':
         return obj.publishingDocuments;
-      case 'missingPropertiesToConfirm':
-        return obj.missingPropertiesToConfirm;
-      case 'channelPropertiesToReview':
-        return obj.channelPropertiesToReview;
+      case 'syncListings':
+        return obj.syncPlan?.listings;
       case 'propertyId':
         return obj.propertyId;
       case 'selectedLocale':

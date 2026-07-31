@@ -44,4 +44,13 @@ abstract class ChannelManagerRepository {
 
   /// Test the connection to the channel manager (validates API key, etc.).
   Future<void> testConnection();
+
+  /// Returns the signed-in user's own API key in plaintext, or `null` when they
+  /// have none of their own.
+  ///
+  /// Exists so the settings screen can show the user the key they entered
+  /// themselves. It is deliberately not how any call to the channel manager
+  /// obtains its credential — those resolve the key server-side and never hand
+  /// it to the client.
+  Future<String?> revealApiKey();
 }

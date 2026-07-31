@@ -294,6 +294,14 @@ enabled = true
 verify_jwt = false
 entrypoint = "./functions/lodgify-properties/index.ts"
 
+[functions.lodgify-reveal-api-key]
+enabled = true
+# JWT is validated inside the function via auth.getUser(token), which is what
+# binds the returned key to the caller — the function reads only
+# profile_id = the authenticated user.
+verify_jwt = false
+entrypoint = "./functions/lodgify-reveal-api-key/index.ts"
+
 [functions.translate-content]
 enabled = true
 # JWT is validated inside the function via auth.getUser(token).

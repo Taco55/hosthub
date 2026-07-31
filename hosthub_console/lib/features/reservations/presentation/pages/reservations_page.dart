@@ -2310,17 +2310,23 @@ Future<_ExportSettingsResult?> _showExportSettingsDialog(
   return showStyledModal<_ExportSettingsResult>(
     context,
     title: context.s.exportSettingsTitle,
-    isDismissible: true,
-    showCloseButton: true,
-    leadingClose: true,
-    leadingPlacement: StyledModalSlotPlacement.header,
-    dialogMinWidth: 440,
-    dialogMaxWidth: 480,
-    actionPlacement: StyledModalSlotPlacement.footer,
-    actionLabel: context.s.saveButton,
-    closeOnAction: true,
-    stateBuilder: (data) => StyledModalControlState(
-      actionEnabled: data != null && data.enabledColumns.isNotEmpty,
+    dismiss: const StyledModalDismiss<_ExportSettingsResult>(
+      isDismissible: true,
+    ),
+    sizing: const StyledModalSizing(dialogMinWidth: 440, dialogMaxWidth: 480),
+    // The body collects the settings, so the primary confirms them: `Annuleren`
+    // sits directly left of it in the footer, not as a ✕ above the content it
+    // would abandon.
+    actions: StyledModalActions.pick(
+      label: context.s.saveButton,
+      cancelLabel: context.s.cancelButton,
+    ),
+    // Enablement follows the collected columns, so it is read per rebuild
+    // rather than once when the modal opens.
+    controls: StyledModalControls<_ExportSettingsResult>(
+      stateBuilder: (data) => StyledModalControlState(
+        actionEnabled: data != null && data.enabledColumns.isNotEmpty,
+      ),
     ),
     initialValue: _ExportSettingsResult(
       enabledColumns: currentColumns,

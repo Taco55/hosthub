@@ -239,6 +239,46 @@ class PropertyRepository extends SupabaseRepository {
     }
   }
 
+  /// Point an existing property at a Lodgify listing, or stop pointing at one.
+  ///
+  /// Both directions are one write because they are the same column, and both
+  /// keep the row: linking is how a listing arrives on the property the owner
+  /// already built a website for, and unlinking is what "delete" means for a
+  /// synced property — the listing stays in Lodgify, so removing the row would
+  /// only make the next sync recreate it empty.
+  ///
+  /// The sync stamp goes with it: after unlinking, the Lodgify-owned columns are
+  /// no longer maintained, and a date claiming otherwise is worse than none.
+  Future<PropertySummary> setLodgifyLink({
+    required int propertyId,
+    required String? lodgifyId,
+  }) async {
+    final trimmed = lodgifyId?.trim();
+    final linking = trimmed != null && trimmed.isNotEmpty;
+    try {
+      final response = await supabase
+          .from('properties')
+          .update({
+            'lodgify_id': linking ? trimmed : null,
+            if (!linking) 'lodgify_synced_at': null,
+          })
+          .eq('id', propertyId)
+          .select('id, name, lodgify_id, channel_settings')
+          .single();
+      return PropertySummary.fromMap(response);
+    } catch (error, stack) {
+      throw mapError(
+        error,
+        stack,
+        reason: DomainErrorReason.cannotSaveData,
+        context: {
+          'op': linking ? 'linkLodgifyProperty' : 'unlinkLodgifyProperty',
+          'property_id': propertyId,
+        },
+      );
+    }
+  }
+
   Future<PropertyDetails> fetchPropertyDetails(int id) async {
     try {
       final response = await supabase

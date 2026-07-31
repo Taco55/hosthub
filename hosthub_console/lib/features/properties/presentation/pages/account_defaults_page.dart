@@ -157,16 +157,23 @@ class _AccountDefaultsViewState extends State<_AccountDefaultsView> {
                       ),
                     ),
                     if (_draft.isNotEmpty)
-                      _ImpactBar(
-                        affected: resolver.propertiesAffectedBy(
-                          propertyIds,
-                          _draft.keys,
+                      Padding(
+                        // The bar is a card now, not a band welded to the
+                        // bottom edge, so it keeps the same gap the cards above
+                        // it have.
+                        padding: EdgeInsets.only(top: context.styledSpacing.md),
+                        child: _ImpactBar(
+                          affected: resolver.propertiesAffectedBy(
+                            propertyIds,
+                            _draft.keys,
+                          ),
+                          propertyCount: propertyIds.length,
+                          isSaving:
+                              state.status ==
+                              AccountChannelDefaultsStatus.saving,
+                          onCancel: () => setState(_draft.clear),
+                          onApply: () => _apply(state),
                         ),
-                        propertyCount: propertyIds.length,
-                        isSaving:
-                            state.status == AccountChannelDefaultsStatus.saving,
-                        onCancel: () => setState(_draft.clear),
-                        onApply: () => _apply(state),
                       ),
                   ],
                 ),
@@ -454,38 +461,36 @@ class _ImpactBar extends StatelessWidget {
     final spacing = context.styledSpacing;
     final unchanged = propertyCount - affected.length;
 
-    return Container(
+    // Design `.applybar`: the same ice callout the page's other notice uses, so
+    // the two soft surfaces on this screen are one component and one set of
+    // tokens instead of a hand-decorated Container.
+    return StyledNotice(
       padding: EdgeInsets.symmetric(
         horizontal: spacing.lg,
         vertical: spacing.md,
       ),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        border: Border(top: BorderSide(color: colors.outlineVariant)),
-      ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  _headline(context),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                Text(
-                  _detail(context, unchanged),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colors.onSurfaceVariant,
-                  ),
-                ),
-              ],
+          Text(
+            _headline(context),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: colors.onPrimaryContainer,
             ),
           ),
-          SizedBox(width: spacing.md),
+          Text(
+            _detail(context, unchanged),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: colors.onPrimaryContainer,
+            ),
+          ),
+        ],
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
           StyledTextButton(
             title: context.s.cancelButton,
             enabled: !isSaving,

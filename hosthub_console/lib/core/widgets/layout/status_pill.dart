@@ -14,6 +14,12 @@ enum StatusPillTone {
   /// Cancelled, failed, disconnected.
   negative,
 
+  /// Design `.chip-new`: something that is about to happen — a listing this
+  /// sync would add, a row that would be linked. Not a verdict on the thing,
+  /// which is why it takes the ice/primary pairing the console uses for
+  /// "selected/active" rather than a red or a green.
+  info,
+
   /// A state with no verdict attached.
   neutral,
 }
@@ -52,6 +58,10 @@ class StatusPill extends StatelessWidget {
       StatusPillTone.negative => (
         HosthubDiploraV1Palette.error.withValues(alpha: 0.12),
         HosthubDiploraV1Palette.error,
+      ),
+      StatusPillTone.info => (
+        context.colors.primaryContainer,
+        context.colors.primary,
       ),
       StatusPillTone.neutral => (
         context.colors.surfaceContainerHighest,

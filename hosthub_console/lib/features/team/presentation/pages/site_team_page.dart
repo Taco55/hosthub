@@ -9,6 +9,7 @@ import 'package:hosthub_console/features/team/domain/site_invitation.dart';
 import 'package:hosthub_console/features/team/domain/site_member.dart';
 import 'package:hosthub_console/features/team/domain/site_member_role.dart';
 import 'package:hosthub_console/features/team/presentation/dialogs/invite_member_dialog.dart';
+import 'package:hosthub_console/features/team/presentation/site_member_role_copy.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
 class SiteTeamPage extends StatelessWidget {
@@ -168,7 +169,7 @@ class _RoleDisplay extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
-          role.label,
+          role.roleLabel(context),
           style: context.theme.textTheme.labelSmall?.copyWith(
             color: context.colors.onPrimaryContainer,
           ),
@@ -181,7 +182,10 @@ class _RoleDisplay extends StatelessWidget {
       underline: const SizedBox.shrink(),
       isDense: true,
       items: SiteMemberRole.assignableRoles
-          .map((r) => DropdownMenuItem(value: r, child: Text(r.label)))
+          .map(
+            (r) =>
+                DropdownMenuItem(value: r, child: Text(r.roleLabel(context))),
+          )
           .toList(),
       onChanged: (newRole) {
         if (newRole == null || newRole == role) return;
@@ -270,7 +274,7 @@ class _InvitationsSection extends StatelessWidget {
             final inv = invitations[index];
             return [
               Text(inv.email, overflow: TextOverflow.ellipsis),
-              Text(inv.memberRole.label),
+              Text(inv.memberRole.roleLabel(tableContext)),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [

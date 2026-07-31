@@ -116,12 +116,14 @@ Future<String?> _promptTextValue(
   return showStyledModal<String>(
     context,
     title: title,
-    presentation: StyledModalPresentation.dialog,
-    dialogMinWidth: 420,
-    dialogMaxWidth: 480,
-    showAction: true,
-    actionLabel: context.s.saveButton,
-    leadingLabel: context.s.cancelButton,
+    sheet: const StyledModalSheet(presentation: StyledModalPresentation.dialog),
+    sizing: const StyledModalSizing(dialogMinWidth: 420, dialogMaxWidth: 480),
+    // The body collects the value, so the primary confirms it and the entered
+    // text is the modal's result — no callback to route it through.
+    actions: StyledModalActions.pick(
+      label: context.s.saveButton,
+      cancelLabel: context.s.cancelButton,
+    ),
     initialValue: initialValue,
     dataBuilder: (ctx, onChanged) => StyledTextFormField(
       initialValue: initialValue,

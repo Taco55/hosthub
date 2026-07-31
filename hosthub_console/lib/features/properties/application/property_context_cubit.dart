@@ -129,6 +129,63 @@ class PropertyContextCubit extends Cubit<PropertyContextState> {
     }
   }
 
+  /// Remove a property the owner created by hand.
+  ///
+  /// Only correct for a property with no `lodgify_id`: a synced one is
+  /// [unlinkProperty]'s job, because deleting the row leaves the listing in
+  /// Lodgify and the next sync brings it back without any of the website
+  /// content that was on it.
+  Future<bool> deleteProperty(PropertySummary property) async {
+    try {
+      await _repository.deleteProperty(property.id);
+      await loadProperties();
+      return true;
+    } catch (error, stack) {
+      emit(
+        state.copyWith(
+          status: PropertyContextStatus.error,
+          error: DomainError.from(error, stack: stack),
+        ),
+      );
+      return false;
+    }
+  }
+
+  /// Detach a property from its Lodgify listing, keeping the property.
+  ///
+  /// The row becomes a manual one: its website content stays, and its name and
+  /// prices become the owner's to edit because no sync overwrites them anymore.
+  Future<bool> unlinkProperty(PropertySummary property) async {
+    try {
+      await _repository.setLodgifyLink(
+        propertyId: property.id,
+        lodgifyId: null,
+      );
+      await loadProperties();
+      return true;
+    } catch (error, stack) {
+      emit(
+        state.copyWith(
+          status: PropertyContextStatus.error,
+          error: DomainError.from(error, stack: stack),
+        ),
+      );
+      return false;
+    }
+  }
+
+  /// Drop a reported error once a screen has shown it.
+  void clearError() {
+    if (state.error == null) return;
+    emit(
+      state.copyWith(
+        status: state.properties.isEmpty
+            ? PropertyContextStatus.initial
+            : PropertyContextStatus.loaded,
+      ),
+    );
+  }
+
   void reset() {
     emit(const PropertyContextState.initial());
   }

@@ -11,7 +11,6 @@ import 'package:hosthub_console/app/shell/application/site_context_cubit.dart';
 import 'package:app_errors/app_errors.dart';
 import 'package:hosthub_console/core/core.dart';
 import 'package:hosthub_console/core/models/models.dart';
-import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:hosthub_console/features/profile/profile.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
@@ -22,8 +21,10 @@ import 'package:hosthub_console/features/team/domain/site_invitation.dart';
 import 'package:hosthub_console/features/team/domain/site_member.dart';
 import 'package:hosthub_console/features/team/domain/site_member_role.dart';
 import 'package:hosthub_console/features/team/presentation/dialogs/invite_member_dialog.dart';
-import 'package:hosthub_console/features/user_settings/presentation/widgets/listings_section.dart';
-import 'package:hosthub_console/features/user_settings/presentation/widgets/site_settings_sections.dart';
+import 'package:hosthub_console/features/team/presentation/site_member_role_copy.dart';
+import 'package:hosthub_console/features/user_settings/presentation/dialogs/lodgify_api_key_modal.dart';
+import 'package:hosthub_console/features/user_settings/presentation/widgets/site_settings_sections.dart'
+    show notSetPlaceholder;
 import 'package:hosthub_console/features/user_settings/user_settings.dart';
 
 const _lodgifyServerStoredMarker = '__lodgify_server_stored__';
@@ -118,41 +119,6 @@ class _UserSettingsView extends StatelessWidget {
             context.read<SiteContextCubit>().clearError();
           },
         ),
-        BlocListener<UserSettingsCubit, UserSettingsState>(
-          listenWhen: (previous, current) =>
-              previous.channelPropertiesToReview !=
-                  current.channelPropertiesToReview &&
-              current.channelPropertiesToReview != null,
-          listener: (context, state) async {
-            final lodgifyProperties = state.channelPropertiesToReview;
-            if (lodgifyProperties == null) return;
-            final missing = state.missingPropertiesToConfirm ?? const [];
-            final shouldAdd = await _showMissingPropertiesDialog(
-              context,
-              lodgifyProperties: lodgifyProperties,
-              missing: missing,
-            );
-            if (!context.mounted) return;
-            if (missing.isEmpty) {
-              if (shouldAdd) {
-                await context.read<UserSettingsCubit>().confirmLodgifySync();
-              } else {
-                context.read<UserSettingsCubit>().skipMissingProperties();
-              }
-              return;
-            }
-            if (shouldAdd) {
-              await context.read<UserSettingsCubit>().addMissingProperties(
-                missing,
-              );
-              if (!context.mounted) return;
-              context.read<PropertyContextCubit>().loadProperties();
-            } else {
-              await context.read<UserSettingsCubit>().skipMissingProperties();
-            }
-            context.read<UserSettingsCubit>().clearMissingProperties();
-          },
-        ),
       ],
       child: BlocBuilder<UserSettingsCubit, UserSettingsState>(
         builder: (context, state) {
@@ -168,12 +134,9 @@ class _UserSettingsView extends StatelessWidget {
             overline: context.s.navGroupAccount,
             title: context.s.accountTitle,
             intrinsicPaneHeight: true,
-            leftChild: isLoading
+            leftChild: isLoading || settings == null
                 ? const Center(child: CircularProgressIndicator())
-                : _UserSettingsSection(
-                    theme: context.theme,
-                    settings: settings,
-                  ),
+                : _AccountSections(settings: settings),
           );
         },
       ),
@@ -181,125 +144,24 @@ class _UserSettingsView extends StatelessWidget {
   }
 }
 
-class _UserSettingsSection extends StatelessWidget {
-  const _UserSettingsSection({required this.theme, required this.settings});
+/// §8.3, in order: who has access, what we are connected to, what you pay.
+///
+/// Nothing else. Listings moved to Properties (§8.5) — an owner does not look
+/// for "add a home" under their invoices — and site details, website languages
+/// and the source language moved to Site-instellingen, because they are about
+/// one property.
+class _AccountSections extends StatelessWidget {
+  const _AccountSections({required this.settings});
 
-  final ThemeData theme;
-  final UserSettings? settings;
+  final UserSettings settings;
 
   @override
   Widget build(BuildContext context) {
-    final styledTheme = StyledWidgetsTheme.of(context);
-
-    final status = context.select(
-      (UserSettingsCubit cubit) => cubit.state.status,
-    );
-    final lodgifyApiKey = settings?.lodgifyApiKey?.trim();
-    final hasApiKey = lodgifyApiKey?.isNotEmpty ?? false;
-    final isServerStoredApiKey =
-        lodgifyApiKey == _lodgifyServerStoredMarker ||
-        lodgifyApiKey == _legacyLodgifyServerStoredMarker;
-    final isConnected = settings?.lodgifyConnected ?? false;
-    final isBusy =
-        status == UserSettingsStatus.saving ||
-        status == UserSettingsStatus.connecting ||
-        status == UserSettingsStatus.syncing;
-    final canConnect = hasApiKey && !isBusy;
-    final canSync = isConnected && !isBusy;
-    final lastSyncedAt = settings?.lodgifyLastSyncedAt;
-
-    if (settings == null) {
-      return const SizedBox.shrink();
-    }
-
-    // §8.3, in order: who has access, what we are connected to, what you pay.
-    // Site details, website languages and the source language moved to
-    // Site-instellingen — they are about one property, and three screens called
-    // "instellingen" with no rule about which held what was the problem this
-    // split solves.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const _TeamSection(),
-        StyledSection(
-          header: context.s.accountConnectionsHeader,
-          horizontalPadding: 0,
-          children: [
-            Text(context.s.lodgifyTitle),
-            StyledTile(
-              title: context.s.lodgifyApiKeyLabel,
-              subtitle: context.s.lodgifyApiKeyDescription,
-              value: hasApiKey
-                  ? Text(
-                      _maskApiKey(
-                        settings?.lodgifyApiKey ?? '',
-                        isServerStored: isServerStoredApiKey,
-                        last4: settings?.lodgifyApiKeyLast4,
-                      ),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        letterSpacing: 1.1,
-                      ),
-                    )
-                  : null,
-              trailing: _LodgifyApiKeyControl(
-                hasApiKey: hasApiKey,
-                isBusy: isBusy,
-                onEdit: () async {
-                  final result = await _showLodgifyApiKeyDialog(
-                    context,
-                    currentApiKey: isServerStoredApiKey
-                        ? null
-                        : settings?.lodgifyApiKey,
-                  );
-                  if (result == null || !context.mounted) return;
-                  context.read<UserSettingsCubit>().updateLodgifyApiKey(
-                    result.apiKey,
-                    remove: result.remove,
-                  );
-                },
-              ),
-            ),
-            StyledTile(
-              title: Text(
-                isConnected
-                    ? context.s.connectionStatusConnected
-                    : context.s.connectionStatusDisconnected,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              trailing: StyledButton(
-                title: isConnected
-                    ? context.s.lodgifySyncLabel
-                    : context.s.connectLabel,
-                onPressed: isConnected
-                    ? (canSync
-                          ? () =>
-                                context.read<UserSettingsCubit>().syncLodgify()
-                          : null)
-                    : (canConnect
-                          ? () => context
-                                .read<UserSettingsCubit>()
-                                .connectLodgify()
-                          : null),
-                enabled: isConnected ? canSync : canConnect,
-                showProgressIndicatorWhenDisabled: isBusy,
-                backgroundColorDisabled:
-                    styledTheme.buttons.disabledBackgroundColor,
-                labelColorDisabled: styledTheme.buttons.disabledLabelColor,
-                enableShrinking: false,
-                width: 120,
-                minWidth: 120,
-                minHeight: 40,
-              ),
-            ),
-            _LastSyncTile(lastSyncedAt: lastSyncedAt),
-          ],
-        ),
-        // Listings sit under the connection that normally creates them — the
-        // manual add/remove is the escape hatch for setting up a website
-        // without a sync.
-        const ListingsSection(),
+        _ConnectionsSection(settings: settings),
         const _BillingSection(),
         StyledSection(
           header: context.s.generalSectionTitle,
@@ -320,26 +182,6 @@ class _UserSettingsSection extends StatelessWidget {
 // ---------------------------------------------------------------------------
 // Gebruikers & rollen
 // ---------------------------------------------------------------------------
-
-/// The role a member holds, as the account states it.
-///
-/// Three roles, and they are **account-wide**: a role is granted once and holds
-/// for every property, including one added tomorrow (a trigger on `sites`
-/// carries the account's members onto a new site). Per-site rows remain the
-/// storage; there is deliberately no second membership model beside them.
-extension _AccountRoleCopy on SiteMemberRole {
-  String roleLabel(BuildContext context) => switch (this) {
-    SiteMemberRole.owner => context.s.accountRoleOwner,
-    SiteMemberRole.editor => context.s.accountRoleAdmin,
-    SiteMemberRole.viewer => context.s.accountRoleViewer,
-  };
-
-  String roleDescription(BuildContext context) => switch (this) {
-    SiteMemberRole.owner => context.s.accountRoleOwnerDescription,
-    SiteMemberRole.editor => context.s.accountRoleAdminDescription,
-    SiteMemberRole.viewer => context.s.accountRoleViewerDescription,
-  };
-}
 
 class _TeamSection extends StatefulWidget {
   const _TeamSection();
@@ -376,17 +218,11 @@ class _TeamSectionState extends State<_TeamSection> {
         return StyledSection(
           isFirstSection: true,
           header: context.s.accountUsersHeader,
-          // A role is account-wide, and the reader has to know that before
-          // they grant one.
+          // A role is account-wide and says what it may do — both before the
+          // reader grants one, and once for the whole list instead of on every
+          // row.
           footer: context.s.accountUsersFooter,
           horizontalPadding: 0,
-          headerAction: StyledButton(
-            title: context.s.accountInviteMember,
-            size: StyledButtonSize.compact,
-            leftIconData: Icons.person_add_outlined,
-            showLeftIcon: true,
-            onPressed: () => _handleInvite(context),
-          ),
           children: [
             if (isLoading)
               const Padding(
@@ -397,20 +233,22 @@ class _TeamSectionState extends State<_TeamSection> {
               // Members and pending invitations are one list: an invitation is
               // a member whose link has not been used yet, and splitting them
               // made the same person look like two entries.
-              if (members.isNotEmpty) _TeamMembersList(members: members),
-              if (invitations.isNotEmpty)
-                _TeamInvitationsList(invitations: invitations),
-              if (members.isEmpty && invitations.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Text(
-                    context.s.accountNoMembers,
-                    style: context.theme.textTheme.bodySmall?.copyWith(
-                      color: context.colors.onSurfaceVariant,
-                    ),
-                  ),
-                ),
+              for (final member in members) _MemberRow(member: member),
+              for (final invitation in invitations)
+                _InvitationRow(invitation: invitation),
             ],
+            // The add affordance as the list's last row (design `.stile.tap`
+            // with the primary `+`), the same as `Taal toevoegen` — not a
+            // filled button in the section header competing with the page.
+            StyledTile(
+              leading: Icon(
+                Icons.person_add_outlined,
+                color: context.colors.primary,
+              ),
+              title: context.s.accountInviteMember,
+              titleColor: context.colors.primary,
+              onTap: () => _handleInvite(context),
+            ),
           ],
         );
       },
@@ -429,34 +267,36 @@ class _TeamSectionState extends State<_TeamSection> {
   }
 }
 
-class _TeamMembersList extends StatelessWidget {
-  const _TeamMembersList({required this.members});
+/// Design `.stile` + `.avm` + `.rochip`: who, their address, and their role as
+/// one quiet tag.
+///
+/// One chip style for members and invitations. Three container colours in one
+/// list (a teal pill for a role, an azure one for an invitation, primary blue on
+/// the buttons) made a role read as something to click.
+class _MemberRow extends StatelessWidget {
+  const _MemberRow({required this.member});
 
-  final List<SiteMember> members;
+  final SiteMember member;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: members.map((member) {
-        return StyledTile(
-          title: member.displayName,
-          subtitle: member.memberRole.roleDescription(context),
-          value: StyledChip(
-            label: member.memberRole.roleLabel(context),
-            size: StyledChipSize.display,
-            backgroundColor: context.colors.secondaryContainer,
-            labelColor: context.colors.onSecondaryContainer,
-          ),
-          trailing: member.memberRole != SiteMemberRole.owner
-              ? StyledToolbarButton(
-                  iconData: Icons.remove_circle_outline,
-                  destructive: true,
-                  tooltip: context.s.teamRemoveMember,
-                  onPressed: () => _confirmRemove(context, member),
-                )
-              : null,
-        );
-      }).toList(),
+    final email = member.email?.trim() ?? '';
+    final name = member.displayName;
+
+    return StyledTile(
+      leading: _Avatar(seed: name),
+      title: name,
+      // Only when it adds something: `displayName` falls back to the email.
+      subtitle: email.isEmpty || email == name ? null : email,
+      value: StatusPill(label: member.memberRole.roleLabel(context)),
+      trailing: member.memberRole != SiteMemberRole.owner
+          ? StyledToolbarButton(
+              iconData: Icons.remove_circle_outline,
+              destructive: true,
+              tooltip: context.s.teamRemoveMember,
+              onPressed: () => _confirmRemove(context, member),
+            )
+          : null,
     );
   }
 
@@ -473,81 +313,250 @@ class _TeamMembersList extends StatelessWidget {
   }
 }
 
-class _TeamInvitationsList extends StatelessWidget {
-  const _TeamInvitationsList({required this.invitations});
+class _InvitationRow extends StatelessWidget {
+  const _InvitationRow({required this.invitation});
 
-  final List<SiteInvitation> invitations;
+  final SiteInvitation invitation;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: invitations.map((inv) {
-        return StyledTile(
-          title: inv.email,
-          subtitle: inv.memberRole.roleDescription(context),
-          value: StyledChip(
-            // The role, then what is still missing: the link has not been used
-            // yet. One row per person either way.
-            label:
-                '${inv.memberRole.roleLabel(context)} '
-                '${context.s.accountMemberInvited}',
-            size: StyledChipSize.display,
-            backgroundColor: context.colors.tertiaryContainer,
-            labelColor: context.colors.onTertiaryContainer,
-          ),
-          trailing: StyledToolbarButton(
-            iconData: Icons.cancel_outlined,
-            destructive: true,
-            tooltip: context.s.teamCancelInvitation,
-            onPressed: () {
-              context.read<SiteMembersCubit>().cancelPartnerInvitation(inv);
-            },
-          ),
-        );
-      }).toList(),
+    return StyledTile(
+      leading: _Avatar(seed: invitation.email),
+      title: invitation.email,
+      // The role, then what is still missing: the link has not been used yet.
+      // One row per person either way.
+      value: StatusPill(
+        label:
+            '${invitation.memberRole.roleLabel(context)} '
+            '${context.s.accountMemberInvited}',
+      ),
+      trailing: StyledToolbarButton(
+        iconData: Icons.cancel_outlined,
+        destructive: true,
+        tooltip: context.s.teamCancelInvitation,
+        onPressed: () {
+          context.read<SiteMembersCubit>().cancelPartnerInvitation(invitation);
+        },
+      ),
     );
   }
 }
 
-class _AppInfoTile extends StatefulWidget {
-  const _AppInfoTile();
+/// Design `.stile .lead.avm`: a 30px round monogram in the ice/primary pairing.
+class _Avatar extends StatelessWidget {
+  const _Avatar({required this.seed});
+
+  final String seed;
 
   @override
-  State<_AppInfoTile> createState() => _AppInfoTileState();
+  Widget build(BuildContext context) {
+    final trimmed = seed.trim();
+    return StyledIconBadge.monogram(
+      trimmed.isEmpty ? '?' : trimmed.characters.first.toUpperCase(),
+      size: 30,
+      borderRadius: 15,
+      backgroundColor: context.colors.primaryContainer,
+      iconColor: context.colors.primary,
+    );
+  }
 }
 
-class _AppInfoTileState extends State<_AppInfoTile> {
-  late final Future<PackageInfo> _packageInfoFuture;
+// ---------------------------------------------------------------------------
+// Koppelingen
+// ---------------------------------------------------------------------------
+
+/// What the account is connected to: the credential, and the connection itself.
+///
+/// Two rows, because that is what there is to say. The version this replaces
+/// spent four — a bare `Lodgify` text between the tiles, a row whose title was
+/// the connection status, a full-height primary `Sync` button and the last-sync
+/// time on a row of its own.
+class _ConnectionsSection extends StatelessWidget {
+  const _ConnectionsSection({required this.settings});
+
+  final UserSettings settings;
+
+  @override
+  Widget build(BuildContext context) {
+    final status = context.select(
+      (UserSettingsCubit cubit) => cubit.state.status,
+    );
+    final apiKey = settings.lodgifyApiKey?.trim();
+    final hasApiKey = apiKey?.isNotEmpty ?? false;
+    final isServerStored =
+        apiKey == _lodgifyServerStoredMarker ||
+        apiKey == _legacyLodgifyServerStoredMarker;
+    final isBusy =
+        status == UserSettingsStatus.saving ||
+        status == UserSettingsStatus.connecting ||
+        status == UserSettingsStatus.syncing;
+
+    return StyledSection(
+      header: context.s.accountConnectionsHeader,
+      footer: context.s.accountConnectionsFooter,
+      horizontalPadding: 0,
+      children: [
+        StyledSecretTile(
+          // Design `.stile .lead`: both rows in this card carry a leading
+          // glyph, so their titles start on the same edge.
+          leading: const Icon(Icons.vpn_key_outlined),
+          title: context.s.lodgifyApiKeyLabel,
+          subtitle: context.s.lodgifyApiKeyDescription,
+          isSet: hasApiKey,
+          // The raw key only reaches the client on an explicit reveal, so the
+          // row itself has nothing but the last-4 hint to show. A key the user
+          // typed and has not saved yet is already in `value`.
+          value: isServerStored ? null : apiKey,
+          hint: settings.lodgifyApiKeyLast4,
+          onReveal: isServerStored
+              ? () => context.read<UserSettingsCubit>().revealChannelApiKey()
+              : null,
+          copyable: true,
+          onCopied: () => showStyledToast(
+            context,
+            type: ToastificationType.success,
+            description: context.s.copied,
+          ),
+          revealTooltip: context.s.show,
+          hideTooltip: context.s.hide,
+          copyTooltip: context.s.copy,
+          // Design `.btn-line.btn-sm`: one action height for every button that
+          // sits in a row on this page.
+          trailing: StyledButton.secondary(
+            title: hasApiKey ? context.s.edit : context.s.add,
+            size: StyledButtonSize.compact,
+            enabled: !isBusy,
+            onPressed: isBusy ? null : () => _editApiKey(context, settings),
+          ),
+        ),
+        _LodgifyConnectionTile(settings: settings, isBusy: isBusy),
+      ],
+    );
+  }
+
+  Future<void> _editApiKey(BuildContext context, UserSettings settings) async {
+    final cubit = context.read<UserSettingsCubit>();
+    final apiKey = settings.lodgifyApiKey?.trim();
+    final hasApiKey = apiKey?.isNotEmpty ?? false;
+    final isServerStored =
+        apiKey == _lodgifyServerStoredMarker ||
+        apiKey == _legacyLodgifyServerStoredMarker;
+
+    final result = await showLodgifyApiKeyModal(
+      context,
+      hasApiKey: hasApiKey,
+      currentApiKey: isServerStored ? null : apiKey,
+      resolveApiKey: isServerStored ? cubit.revealChannelApiKey : null,
+    );
+    if (result == null) return;
+    cubit.updateLodgifyApiKey(result.apiKey, remove: result.remove);
+  }
+}
+
+/// One row for the connection: what it does, when it last worked, and the one
+/// button that makes it work again.
+///
+/// Stateful for the clock only — `timeago` renders a relative time, so the row
+/// re-reads it every minute instead of aging silently while the page is open.
+class _LodgifyConnectionTile extends StatefulWidget {
+  const _LodgifyConnectionTile({required this.settings, required this.isBusy});
+
+  final UserSettings settings;
+  final bool isBusy;
+
+  @override
+  State<_LodgifyConnectionTile> createState() => _LodgifyConnectionTileState();
+}
+
+class _LodgifyConnectionTileState extends State<_LodgifyConnectionTile> {
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    _packageInfoFuture = PackageInfo.fromPlatform();
+    _restartTimer();
+  }
+
+  @override
+  void didUpdateWidget(covariant _LodgifyConnectionTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.settings.lodgifyLastSyncedAt !=
+        widget.settings.lodgifyLastSyncedAt) {
+      _restartTimer();
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _restartTimer() {
+    _timer?.cancel();
+    if (widget.settings.lodgifyLastSyncedAt == null) return;
+    _timer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (!mounted) return;
+      setState(() {});
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final environment = AppConfig.current.environment.name.toUpperCase();
+    final settings = widget.settings;
+    final isConnected = settings.lodgifyConnected;
+    final hasApiKey = settings.lodgifyApiKey?.trim().isNotEmpty ?? false;
+    final canAct = isConnected ? !widget.isBusy : hasApiKey && !widget.isBusy;
 
-    return FutureBuilder<PackageInfo>(
-      future: _packageInfoFuture,
-      builder: (context, snapshot) {
-        final packageInfo = snapshot.data;
-        final buildNumber = packageInfo?.buildNumber.trim() ?? '';
-        final version = packageInfo?.version ?? '-';
-        final fullVersion = buildNumber.isEmpty
-            ? version
-            : '$version+$buildNumber';
+    return StyledTile(
+      leading: StyledIconBadge.monogram(
+        'LG',
+        size: 34,
+        borderRadius: 10,
+        backgroundColor: context.colors.secondary,
+        iconColor: context.colors.onSecondary,
+      ),
+      title: context.s.lodgifyTitle,
+      // What it brings across, and when it last did — the design's
+      // `Boekingen, prijzen en beschikbaarheid · 6 dagen geleden`.
+      subtitle:
+          '${context.s.accountConnectionScope} · ${_syncLine(context, settings)}',
+      value: isConnected
+          ? StatusPill(
+              label: context.s.connectionStatusConnected,
+              tone: StatusPillTone.positive,
+              icon: Icons.check,
+            )
+          : StatusPill(label: context.s.connectionStatusDisconnected),
+      trailing: StyledButton.secondary(
+        title: isConnected
+            ? context.s.lodgifySyncLabel
+            : context.s.connectLabel,
+        size: StyledButtonSize.compact,
+        enabled: canAct,
+        showProgressIndicatorWhenDisabled: widget.isBusy,
+        onPressed: canAct
+            ? () {
+                final cubit = context.read<UserSettingsCubit>();
+                if (isConnected) {
+                  cubit.syncLodgify();
+                } else {
+                  cubit.connectLodgify();
+                }
+              }
+            : null,
+      ),
+    );
+  }
 
-        return StyledTile(
-          title: context.s.appInfoTileTitle,
-          value: Text(
-            context.s.appInfoTileValue(fullVersion, environment),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        );
-      },
+  String _syncLine(BuildContext context, UserSettings settings) {
+    final timestamp = settings.lodgifyLastSyncedAt;
+    if (timestamp == null) return context.s.accountConnectionNeverSynced;
+    return context.s.lodgifyLastSyncLabel(
+      timeago.format(
+        timestamp.toLocal(),
+        locale: Localizations.localeOf(context).languageCode,
+      ),
     );
   }
 }
@@ -583,10 +592,8 @@ class _BillingSection extends StatelessWidget {
         StyledTile(
           leading: const Icon(Icons.workspace_premium_outlined),
           title: context.s.accountBillingPlan,
-          value: context.s.accountBillingPlanValue(
-            context.s.accountBillingPlanPro,
-            propertyCount,
-          ),
+          subtitle: context.s.accountBillingPlanSubtitle(propertyCount),
+          value: context.s.accountBillingPlanPro,
         ),
         StyledTile(
           leading: const Icon(Icons.credit_card_outlined),
@@ -654,13 +661,15 @@ class _VatNumberTileState extends State<_VatNumberTile> {
       leading: const Icon(Icons.badge_outlined),
       title: context.s.accountBillingVatNumber,
       subtitle: context.s.accountBillingVatHint,
+      // Design `.miniinp.wide`: 150px, left-aligned, and it says out loud that
+      // leaving it empty is fine.
       value: SizedBox(
-        width: 220,
+        width: 170,
         child: StyledTextField(
           controller: _controller,
           focusNode: _focusNode,
           enabled: widget.state.canEdit,
-          textAlign: TextAlign.right,
+          placeholder: context.s.optionalPlaceholder,
           // Committed on leaving the field rather than per keystroke: an
           // account-level write per character is a write per character.
           onEditingComplete: _commit,
@@ -671,367 +680,50 @@ class _VatNumberTileState extends State<_VatNumberTile> {
   }
 }
 
-class _LastSyncTile extends StatefulWidget {
-  const _LastSyncTile({required this.lastSyncedAt});
-
-  final DateTime? lastSyncedAt;
+class _AppInfoTile extends StatefulWidget {
+  const _AppInfoTile();
 
   @override
-  State<_LastSyncTile> createState() => _LastSyncTileState();
+  State<_AppInfoTile> createState() => _AppInfoTileState();
 }
 
-class _LastSyncTileState extends State<_LastSyncTile> {
-  Timer? _timer;
+class _AppInfoTileState extends State<_AppInfoTile> {
+  late final Future<PackageInfo> _packageInfoFuture;
 
   @override
   void initState() {
     super.initState();
-    _restartTimer();
-  }
-
-  @override
-  void didUpdateWidget(covariant _LastSyncTile oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.lastSyncedAt != widget.lastSyncedAt) {
-      _restartTimer();
-    }
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  void _restartTimer() {
-    _timer?.cancel();
-    if (widget.lastSyncedAt == null) return;
-    _timer = Timer.periodic(const Duration(minutes: 1), (_) {
-      if (!mounted) return;
-      setState(() {});
-    });
+    _packageInfoFuture = PackageInfo.fromPlatform();
   }
 
   @override
   Widget build(BuildContext context) {
-    final timestamp = widget.lastSyncedAt;
-    if (timestamp == null) {
-      return const SizedBox.shrink();
-    }
+    // A diagnostic row: it states the environment when there is one rather than
+    // taking the page down with it when there is not.
+    final environment =
+        AppConfig.currentOrNull?.environment.name.toUpperCase() ?? '-';
 
-    final formattedSyncTime = _formatSyncTimestamp(context, timestamp);
-    return StyledTile(
-      title: Text(
-        context.s.lodgifyLastSyncLabel(formattedSyncTime),
-        style: context.theme.textTheme.bodySmall?.copyWith(
-          color: context.colors.onSurfaceVariant,
-        ),
-      ),
-    );
-  }
-}
+    return FutureBuilder<PackageInfo>(
+      future: _packageInfoFuture,
+      builder: (context, snapshot) {
+        final packageInfo = snapshot.data;
+        final buildNumber = packageInfo?.buildNumber.trim() ?? '';
+        final version = packageInfo?.version ?? '-';
+        final fullVersion = buildNumber.isEmpty
+            ? version
+            : '$version+$buildNumber';
 
-class _LodgifyApiKeyControl extends StatelessWidget {
-  const _LodgifyApiKeyControl({
-    required this.hasApiKey,
-    required this.isBusy,
-    required this.onEdit,
-  });
-
-  final bool hasApiKey;
-  final bool isBusy;
-  final VoidCallback onEdit;
-
-  @override
-  Widget build(BuildContext context) {
-    if (!hasApiKey) {
-      return ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 220),
-        child: StyledButton(
-          title: context.s.add,
-          onPressed: isBusy ? null : onEdit,
-          enabled: !isBusy,
-          leftIconData: Icons.add,
-          showLeftIcon: !isBusy,
-          minHeight: 40,
-        ),
-      );
-    }
-
-    return StyledToolbarButton(
-      iconData: Icons.edit_outlined,
-      tooltip: context.s.edit,
-      onPressed: isBusy ? null : onEdit,
-    );
-  }
-}
-
-class _LodgifyApiKeyDialogResult {
-  const _LodgifyApiKeyDialogResult.save(this.apiKey) : remove = false;
-  const _LodgifyApiKeyDialogResult.remove() : apiKey = null, remove = true;
-
-  final String? apiKey;
-  final bool remove;
-}
-
-Future<_LodgifyApiKeyDialogResult?> _showLodgifyApiKeyDialog(
-  BuildContext context, {
-  required String? currentApiKey,
-}) async {
-  final hasApiKey = currentApiKey?.trim().isNotEmpty ?? false;
-  final contentKey = GlobalKey<_LodgifyApiKeyDialogContentState>();
-
-  final result = await showStyledModal<_LodgifyApiKeyDialogResult>(
-    context,
-    title: context.s.lodgifyApiKeyLabel,
-    isDismissible: false,
-    actionLabel: hasApiKey ? context.s.saveButton : context.s.add,
-    leadingLabel: context.s.cancelButton,
-    showAction: true,
-    showCloseButton: true,
-    leadingClose: true,
-    closeOnAction: false,
-    builder: (context, modal) {
-      return _LodgifyApiKeyDialogContent(
-        key: contentKey,
-        currentApiKey: currentApiKey,
-        hasApiKey: hasApiKey,
-      );
-    },
-    onAction: (_) {
-      contentKey.currentState?.submit();
-    },
-  );
-
-  return result;
-}
-
-class _LodgifyApiKeyDialogContent extends StatefulWidget {
-  const _LodgifyApiKeyDialogContent({
-    super.key,
-    required this.currentApiKey,
-    required this.hasApiKey,
-  });
-
-  final String? currentApiKey;
-  final bool hasApiKey;
-
-  @override
-  State<_LodgifyApiKeyDialogContent> createState() =>
-      _LodgifyApiKeyDialogContentState();
-}
-
-class _LodgifyApiKeyDialogContentState
-    extends State<_LodgifyApiKeyDialogContent> {
-  final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.currentApiKey ?? '');
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void submit() {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-    Navigator.of(
-      context,
-    ).pop(_LodgifyApiKeyDialogResult.save(_controller.text.trim()));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Form(
-            key: _formKey,
-            child: StyledTextFormField(
-              controller: _controller,
-              autofocus: true,
-              placeholder: context.s.lodgifyApiKeyLabel,
-              obscureText: true,
-              keyboardType: TextInputType.visiblePassword,
-              textInputAction: TextInputAction.done,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return context.s.lodgifyApiKeyRequired;
-                }
-                return null;
-              },
-              onFieldSubmitted: (_) => submit(),
-            ),
+        return StyledTile(
+          title: context.s.appInfoTileTitle,
+          value: Text(
+            context.s.appInfoTileValue(fullVersion, environment),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          if (widget.hasApiKey) ...[
-            const SizedBox(height: 12),
-            StyledButton(
-              title: context.s.deleteButton,
-              onPressed: () => Navigator.of(
-                context,
-              ).pop(const _LodgifyApiKeyDialogResult.remove()),
-              backgroundColor: context.colors.error,
-              labelColor: context.colors.onError,
-              minHeight: 40,
-            ),
-          ],
-        ],
-      ),
+        );
+      },
     );
   }
-}
-
-Future<bool> _showMissingPropertiesDialog(
-  BuildContext context, {
-  required List<ChannelProperty> lodgifyProperties,
-  required List<ChannelProperty> missing,
-}) async {
-  final missingIds = missing
-      .map((property) => property.id?.trim())
-      .whereType<String>()
-      .where((value) => value.isNotEmpty)
-      .toSet();
-  final missingNames = missing
-      .map((property) => property.name?.trim().toLowerCase())
-      .whereType<String>()
-      .where((value) => value.isNotEmpty)
-      .toSet();
-  final hasMissing = missing.isNotEmpty;
-  final styledTheme = StyledWidgetsTheme.of(context);
-  final subtitle = hasMissing ? null : context.s.lodgifyNoNewPropertiesFound;
-
-  final shouldAdd =
-      await showStyledModal<bool>(
-        context,
-        hideDefaultHeader: true,
-        isDismissible: false,
-        builder: (context, modal) {
-          return SizedBox(
-            width: 420,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 320),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-                    child: Column(
-                      children: [
-                        Text(
-                          context.s.lodgifyMissingPropertiesTitle,
-                          style: context.theme.textTheme.titleMedium,
-                          textAlign: TextAlign.center,
-                        ),
-                        if (subtitle != null) ...[
-                          const SizedBox(height: 6),
-                          Text(
-                            subtitle,
-                            style: context.theme.textTheme.bodySmall?.copyWith(
-                              color: context.colors.onSurfaceVariant,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  Flexible(
-                    child: ListView.separated(
-                      shrinkWrap: true,
-                      itemCount: lodgifyProperties.length,
-                      itemBuilder: (context, index) {
-                        final property = lodgifyProperties[index];
-                        final title =
-                            property.name ?? property.id ?? 'Unknown property';
-                        final lodgifyId = property.id?.trim();
-                        final isMissing =
-                            (lodgifyId != null &&
-                                lodgifyId.isNotEmpty &&
-                                missingIds.contains(lodgifyId)) ||
-                            missingNames.contains(
-                              (property.name ?? '').trim().toLowerCase(),
-                            );
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: StyledTile(
-                            title: title,
-                            leading: isMissing
-                                ? null
-                                : Icon(
-                                    Icons.check_circle,
-                                    color: context.colors.primary,
-                                  ),
-                            centerContent: false,
-                            minHeight: 44,
-                          ),
-                        );
-                      },
-                      separatorBuilder: (context, index) =>
-                          const Divider(height: 1),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: StyledButton(
-                            title: context.s.cancelButton,
-                            onPressed: () => Navigator.of(context).pop(false),
-                            minHeight: 40,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: StyledButton(
-                            titleWidget: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                              ),
-                              child: Center(
-                                child: FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  child: Text(
-                                    hasMissing
-                                        ? context
-                                              .s
-                                              .lodgifyMissingPropertiesAddAction
-                                        : context.s.lodgifySyncLabel,
-                                    style: context.theme.textTheme.bodyMedium
-                                        ?.copyWith(
-                                          color: styledTheme.buttons.labelColor,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                    maxLines: 1,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            onPressed: () => Navigator.of(context).pop(true),
-                            minHeight: 40,
-                            backgroundColor:
-                                styledTheme.buttons.backgroundColor,
-                            labelColor: styledTheme.buttons.labelColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ) ??
-      false;
-  return shouldAdd;
 }
 
 AppError _mapDomainError(BuildContext context, DomainError domainError) {
@@ -1078,39 +770,7 @@ String _toastMessage(BuildContext context, UserSettingsToastMessage message) {
     UserSettingsToastMessage.settingsSaved => context.s.settingsSaved,
     UserSettingsToastMessage.lodgifyApiKeyRequired =>
       context.s.lodgifyApiKeyRequired,
-    UserSettingsToastMessage.lodgifyApiKeySaveFailed =>
-      context.s.lodgifyApiKeySaveFailed,
     UserSettingsToastMessage.lodgifyConnectSuccess =>
       context.s.lodgifyConnectSuccess,
-    UserSettingsToastMessage.lodgifyConnectFailed =>
-      context.s.lodgifyConnectFailed,
-    UserSettingsToastMessage.lodgifySyncCompleted =>
-      context.s.lodgifySyncCompleted,
-    UserSettingsToastMessage.lodgifySyncFailed => context.s.lodgifySyncFailed,
-    UserSettingsToastMessage.lodgifyNoNewProperties =>
-      context.s.lodgifyNoNewPropertiesFound,
-    UserSettingsToastMessage.userSettingsLoadFailed =>
-      context.s.userSettingsLoadFailed,
   };
-}
-
-String _maskApiKey(String value, {bool isServerStored = false, String? last4}) {
-  final trimmed = value.trim();
-  if (trimmed.isEmpty) return '';
-  if (isServerStored) {
-    // The raw key never reaches the client; show the non-secret last-4 hint
-    // when available, otherwise fall back to a plain mask.
-    final hint = last4?.trim() ?? '';
-    return hint.isNotEmpty ? '••••••••$hint' : '********';
-  }
-  if (trimmed.length <= 4) {
-    return List.filled(trimmed.length, '*').join();
-  }
-  return '********${trimmed.substring(trimmed.length - 4)}';
-}
-
-String _formatSyncTimestamp(BuildContext context, DateTime timestamp) {
-  final local = timestamp.toLocal();
-  final localeCode = Localizations.localeOf(context).languageCode;
-  return timeago.format(local, locale: localeCode);
 }

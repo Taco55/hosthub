@@ -1,18 +1,12 @@
+/// The role a member holds, account-wide.
+///
+/// Carries no copy: the labels and descriptions live in
+/// `SiteMemberRoleCopy` (presentation) so they come out of the ARB files
+/// instead of being hardcoded English here.
 enum SiteMemberRole {
   owner,
   editor,
   viewer;
-
-  String get label {
-    switch (this) {
-      case SiteMemberRole.owner:
-        return 'Owner';
-      case SiteMemberRole.editor:
-        return 'Editor';
-      case SiteMemberRole.viewer:
-        return 'Viewer';
-    }
-  }
 
   static SiteMemberRole fromString(String value) {
     return SiteMemberRole.values.firstWhere(

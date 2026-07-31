@@ -34,11 +34,13 @@ Future<List<String>?> showMediaPicker(
   return showStyledModal<List<String>>(
     context,
     title: title,
-    presentation: StyledModalPresentation.dialog,
-    dialogMinWidth: 760,
-    dialogMaxWidth: 760,
-    bodyMinHeight: 460,
-    enableBodyScroll: true,
+    sheet: const StyledModalSheet(presentation: StyledModalPresentation.dialog),
+    sizing: const StyledModalSizing(
+      dialogMinWidth: 760,
+      dialogMaxWidth: 760,
+      bodyMinHeight: 460,
+      enableBodyScroll: true,
+    ),
     builder: (modalContext, controller) => BlocProvider.value(
       value: cubit,
       child: _MediaPickerBody(

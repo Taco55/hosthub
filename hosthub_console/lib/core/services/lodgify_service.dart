@@ -111,6 +111,42 @@ class LodgifyService {
     }
   }
 
+  /// Returns the signed-in user's own stored API key in plaintext.
+  ///
+  /// The key is not in `user_settings` — that row only carries a marker and a
+  /// last-4 hint — so showing it to the user who typed it in takes a round trip
+  /// to the one function allowed to read `lodgify_api_keys`. Returns `null` when
+  /// this user has no key of their own; a member borrowing the site owner's key
+  /// for API calls does not get to see it.
+  Future<String?> revealApiKey() async {
+    final response = await Supabase.instance.client.functions.invoke(
+      'lodgify-reveal-api-key',
+      method: HttpMethod.post,
+    );
+
+    final status = response.status;
+    if (status == 404) return null;
+    if (status != 200) {
+      final requestOptions = RequestOptions(path: 'lodgify-reveal-api-key');
+      throw DioException(
+        requestOptions: requestOptions,
+        response: Response(
+          requestOptions: requestOptions,
+          statusCode: status,
+          data: response.data,
+        ),
+        type: DioExceptionType.badResponse,
+      );
+    }
+
+    final decoded = (response.data as Object?).asDecodedJsonOrSelf();
+    if (decoded is! Map) return null;
+    final apiKey = decoded['apiKey'];
+    if (apiKey is! String) return null;
+    final trimmed = apiKey.trim();
+    return trimmed.isEmpty ? null : trimmed;
+  }
+
   /// Fetches nightly rates for a property.
   ///
   /// Returns a record with a list of rate-period maps and the optional

@@ -619,21 +619,31 @@ class S {
     );
   }
 
-  /// `Lodgify connected.`
-  String get lodgifyConnectSuccess {
+  /// `Remove the API key?`
+  String get lodgifyApiKeyRemoveTitle {
     return Intl.message(
-      'Lodgify connected.',
-      name: 'lodgifyConnectSuccess',
+      'Remove the API key?',
+      name: 'lodgifyApiKeyRemoveTitle',
       desc: '',
       args: [],
     );
   }
 
-  /// `Could not connect Lodgify.`
-  String get lodgifyConnectFailed {
+  /// `The Lodgify connection stops. Your properties and their website content stay.`
+  String get lodgifyApiKeyRemoveMessage {
     return Intl.message(
-      'Could not connect Lodgify.',
-      name: 'lodgifyConnectFailed',
+      'The Lodgify connection stops. Your properties and their website content stay.',
+      name: 'lodgifyApiKeyRemoveMessage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Lodgify connected.`
+  String get lodgifyConnectSuccess {
+    return Intl.message(
+      'Lodgify connected.',
+      name: 'lodgifyConnectSuccess',
       desc: '',
       args: [],
     );
@@ -659,39 +669,9 @@ class S {
     );
   }
 
-  /// `Unable to save the Lodgify API key.`
-  String get lodgifyApiKeySaveFailed {
-    return Intl.message(
-      'Unable to save the Lodgify API key.',
-      name: 'lodgifyApiKeySaveFailed',
-      desc: '',
-      args: [],
-    );
-  }
-
   /// `Sync`
   String get lodgifySyncLabel {
     return Intl.message('Sync', name: 'lodgifySyncLabel', desc: '', args: []);
-  }
-
-  /// `Lodgify sync completed.`
-  String get lodgifySyncCompleted {
-    return Intl.message(
-      'Lodgify sync completed.',
-      name: 'lodgifySyncCompleted',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Lodgify sync failed.`
-  String get lodgifySyncFailed {
-    return Intl.message(
-      'Lodgify sync failed.',
-      name: 'lodgifySyncFailed',
-      desc: '',
-      args: [],
-    );
   }
 
   /// `No new Lodgify properties found.`
@@ -704,41 +684,132 @@ class S {
     );
   }
 
-  /// `Last sync: {time}`
+  /// `last sync {time}`
   String lodgifyLastSyncLabel(Object time) {
     return Intl.message(
-      'Last sync: $time',
+      'last sync $time',
       name: 'lodgifyLastSyncLabel',
       desc: '',
       args: [time],
     );
   }
 
-  /// `Lodgify properties found`
-  String get lodgifyMissingPropertiesTitle {
+  /// `What Lodgify has`
+  String get lodgifySyncResultTitle {
     return Intl.message(
-      'Lodgify properties found',
-      name: 'lodgifyMissingPropertiesTitle',
+      'What Lodgify has',
+      name: 'lodgifySyncResultTitle',
       desc: '',
       args: [],
     );
   }
 
-  /// `Add to database`
-  String get lodgifyMissingPropertiesAddAction {
+  /// `{count, plural, =1{1 new listing} other{{count} new listings}}`
+  String lodgifySyncOutcomeNew(num count) {
+    return Intl.plural(
+      count,
+      one: '1 new listing',
+      other: '$count new listings',
+      name: 'lodgifySyncOutcomeNew',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `{count, plural, =1{1 links to a property you created yourself} other{{count} link to properties you created yourself}}`
+  String lodgifySyncOutcomeLink(num count) {
+    return Intl.plural(
+      count,
+      one: '1 links to a property you created yourself',
+      other: '$count link to properties you created yourself',
+      name: 'lodgifySyncOutcomeLink',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `New`
+  String get lodgifySyncStateNew {
+    return Intl.message('New', name: 'lodgifySyncStateNew', desc: '', args: []);
+  }
+
+  /// `Link`
+  String get lodgifySyncStateLink {
     return Intl.message(
-      'Add to database',
-      name: 'lodgifyMissingPropertiesAddAction',
+      'Link',
+      name: 'lodgifySyncStateLink',
       desc: '',
       args: [],
     );
   }
 
-  /// `Could not load user settings.`
-  String get userSettingsLoadFailed {
+  /// `Already linked`
+  String get lodgifySyncStateLinked {
     return Intl.message(
-      'Could not load user settings.',
-      name: 'userSettingsLoadFailed',
+      'Already linked',
+      name: 'lodgifySyncStateLinked',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Links to {name}. The website content already on it stays.`
+  String lodgifySyncLinkSubtitle(Object name) {
+    return Intl.message(
+      'Links to $name. The website content already on it stays.',
+      name: 'lodgifySyncLinkSubtitle',
+      desc: '',
+      args: [name],
+    );
+  }
+
+  /// `Add`
+  String get lodgifySyncAddAction {
+    return Intl.message(
+      'Add',
+      name: 'lodgifySyncAddAction',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Link`
+  String get lodgifySyncLinkAction {
+    return Intl.message(
+      'Link',
+      name: 'lodgifySyncLinkAction',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Add and link`
+  String get lodgifySyncAddAndLinkAction {
+    return Intl.message(
+      'Add and link',
+      name: 'lodgifySyncAddAndLinkAction',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{count, plural, =1{1 listing brought over} other{{count} listings brought over}}`
+  String lodgifySyncApplied(num count) {
+    return Intl.plural(
+      count,
+      one: '1 listing brought over',
+      other: '$count listings brought over',
+      name: 'lodgifySyncApplied',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Go to Properties`
+  String get lodgifySyncGoToProperties {
+    return Intl.message(
+      'Go to Properties',
+      name: 'lodgifySyncGoToProperties',
       desc: '',
       args: [],
     );
@@ -2892,6 +2963,11 @@ class S {
   /// `Hide`
   String get hide {
     return Intl.message('Hide', name: 'hide', desc: '', args: []);
+  }
+
+  /// `Show`
+  String get show {
+    return Intl.message('Show', name: 'show', desc: '', args: []);
   }
 
   /// `Dollar`
@@ -5399,86 +5475,6 @@ class S {
     );
   }
 
-  /// `Properties`
-  String get propertySetupTitle {
-    return Intl.message(
-      'Properties',
-      name: 'propertySetupTitle',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Connect Lodgify to import your properties.`
-  String get propertySetupConnectDescription {
-    return Intl.message(
-      'Connect Lodgify to import your properties.',
-      name: 'propertySetupConnectDescription',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Connect Lodgify`
-  String get propertySetupConnectTitle {
-    return Intl.message(
-      'Connect Lodgify',
-      name: 'propertySetupConnectTitle',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Go to Settings to add your Lodgify API key and connect your account.`
-  String get propertySetupConnectBody {
-    return Intl.message(
-      'Go to Settings to add your Lodgify API key and connect your account.',
-      name: 'propertySetupConnectBody',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Go to Settings`
-  String get propertySetupGoToSettings {
-    return Intl.message(
-      'Go to Settings',
-      name: 'propertySetupGoToSettings',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Sync your properties from Lodgify.`
-  String get propertySetupSyncDescription {
-    return Intl.message(
-      'Sync your properties from Lodgify.',
-      name: 'propertySetupSyncDescription',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Sync properties`
-  String get propertySetupSyncTitle {
-    return Intl.message(
-      'Sync properties',
-      name: 'propertySetupSyncTitle',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Lodgify is connected. Sync your properties from Lodgify to get started.`
-  String get propertySetupSyncBody {
-    return Intl.message(
-      'Lodgify is connected. Sync your properties from Lodgify to get started.',
-      name: 'propertySetupSyncBody',
-      desc: '',
-      args: [],
-    );
-  }
-
   /// `To change the property name, update it in Lodgify and sync.`
   String get propertyNameLodgifyHint {
     return Intl.message(
@@ -6502,66 +6498,6 @@ class S {
     );
   }
 
-  /// `Create manually`
-  String get propertySetupManualTitle {
-    return Intl.message(
-      'Create manually',
-      name: 'propertySetupManualTitle',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Add a property without Lodgify connection.`
-  String get propertySetupManualBody {
-    return Intl.message(
-      'Add a property without Lodgify connection.',
-      name: 'propertySetupManualBody',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Create property`
-  String get propertySetupManualButton {
-    return Intl.message(
-      'Create property',
-      name: 'propertySetupManualButton',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Property name`
-  String get propertySetupManualNameLabel {
-    return Intl.message(
-      'Property name',
-      name: 'propertySetupManualNameLabel',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Enter a property name.`
-  String get propertySetupManualNameRequired {
-    return Intl.message(
-      'Enter a property name.',
-      name: 'propertySetupManualNameRequired',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `or`
-  String get propertySetupOrDivider {
-    return Intl.message(
-      'or',
-      name: 'propertySetupOrDivider',
-      desc: '',
-      args: [],
-    );
-  }
-
   /// `Channels & costs`
   String get pricingPageHeading {
     return Intl.message(
@@ -6967,16 +6903,6 @@ class S {
     );
   }
 
-  /// `Open a property to manage its website, details and pricing. Bookings and Revenue cover your whole portfolio.`
-  String get propertiesListIntro {
-    return Intl.message(
-      'Open a property to manage its website, details and pricing. Bookings and Revenue cover your whole portfolio.',
-      name: 'propertiesListIntro',
-      desc: '',
-      args: [],
-    );
-  }
-
   /// `Add property`
   String get propertiesListAdd {
     return Intl.message(
@@ -7026,6 +6952,196 @@ class S {
     return Intl.message(
       'No properties in this account yet.',
       name: 'propertiesListEmpty',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Bring them over from Lodgify, or create one yourself to start building a website.`
+  String get propertiesEmptyBody {
+    return Intl.message(
+      'Bring them over from Lodgify, or create one yourself to start building a website.',
+      name: 'propertiesEmptyBody',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `From Lodgify: name, prices and availability come from there, so that row can only be unlinked. Manual: entirely yours.`
+  String get propertiesListFooter {
+    return Intl.message(
+      'From Lodgify: name, prices and availability come from there, so that row can only be unlinked. Manual: entirely yours.',
+      name: 'propertiesListFooter',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `From Lodgify`
+  String get propertyOriginLodgify {
+    return Intl.message(
+      'From Lodgify',
+      name: 'propertyOriginLodgify',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Manual`
+  String get propertyOriginManual {
+    return Intl.message(
+      'Manual',
+      name: 'propertyOriginManual',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Unlink from Lodgify`
+  String get propertyUnlinkTooltip {
+    return Intl.message(
+      'Unlink from Lodgify',
+      name: 'propertyUnlinkTooltip',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Unlink {name}?`
+  String propertyUnlinkTitle(Object name) {
+    return Intl.message(
+      'Unlink $name?',
+      name: 'propertyUnlinkTitle',
+      desc: '',
+      args: [name],
+    );
+  }
+
+  /// `The listing stays in Lodgify. Its name and prices become yours again, and the next sync no longer updates this property.`
+  String get propertyUnlinkMessage {
+    return Intl.message(
+      'The listing stays in Lodgify. Its name and prices become yours again, and the next sync no longer updates this property.',
+      name: 'propertyUnlinkMessage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Unlink`
+  String get propertyUnlinkAction {
+    return Intl.message(
+      'Unlink',
+      name: 'propertyUnlinkAction',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Delete property`
+  String get propertyDeleteTooltip {
+    return Intl.message(
+      'Delete property',
+      name: 'propertyDeleteTooltip',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Delete {name}?`
+  String propertyDeleteTitle(Object name) {
+    return Intl.message(
+      'Delete $name?',
+      name: 'propertyDeleteTitle',
+      desc: '',
+      args: [name],
+    );
+  }
+
+  /// `The property disappears from this account, along with the website content on it.`
+  String get propertyDeleteMessage {
+    return Intl.message(
+      'The property disappears from this account, along with the website content on it.',
+      name: 'propertyDeleteMessage',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `From Lodgify is the normal route. Manual is there for setting up a website before Lodgify is ready.`
+  String get addPropertyFooter {
+    return Intl.message(
+      'From Lodgify is the normal route. Manual is there for setting up a website before Lodgify is ready.',
+      name: 'addPropertyFooter',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Bring over from Lodgify`
+  String get addPropertyFromLodgifyTitle {
+    return Intl.message(
+      'Bring over from Lodgify',
+      name: 'addPropertyFromLodgifyTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Fetches your listings and shows what is new.`
+  String get addPropertyFromLodgifyBody {
+    return Intl.message(
+      'Fetches your listings and shows what is new.',
+      name: 'addPropertyFromLodgifyBody',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Connect Lodgify on Account first.`
+  String get addPropertyLodgifyNotConnected {
+    return Intl.message(
+      'Connect Lodgify on Account first.',
+      name: 'addPropertyLodgifyNotConnected',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Create manually`
+  String get addPropertyManualTitle {
+    return Intl.message(
+      'Create manually',
+      name: 'addPropertyManualTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Just a name. The rest you fill in from the website editor.`
+  String get addPropertyManualBody {
+    return Intl.message(
+      'Just a name. The rest you fill in from the website editor.',
+      name: 'addPropertyManualBody',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Create`
+  String get addPropertyManualAction {
+    return Intl.message(
+      'Create',
+      name: 'addPropertyManualAction',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Property name`
+  String get addPropertyNameLabel {
+    return Intl.message(
+      'Property name',
+      name: 'addPropertyNameLabel',
       desc: '',
       args: [],
     );
@@ -12058,10 +12174,10 @@ class S {
     );
   }
 
-  /// `A role applies to the whole account, so to all of your properties.`
+  /// `A role applies to the whole account, so to all of your properties. The owner handles everything; a manager handles content and prices, but not billing.`
   String get accountUsersFooter {
     return Intl.message(
-      'A role applies to the whole account, so to all of your properties.',
+      'A role applies to the whole account, so to all of your properties. The owner handles everything; a manager handles content and prices, but not billing.',
       name: 'accountUsersFooter',
       desc: '',
       args: [],
@@ -12073,16 +12189,6 @@ class S {
     return Intl.message(
       'Invite a member',
       name: 'accountInviteMember',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `You have not invited anyone yet.`
-  String get accountNoMembers {
-    return Intl.message(
-      'You have not invited anyone yet.',
-      name: 'accountNoMembers',
       desc: '',
       args: [],
     );
@@ -12183,21 +12289,31 @@ class S {
     );
   }
 
-  /// `Last successful sync: {when}`
-  String accountConnectionLastSync(Object when) {
+  /// `never synced`
+  String get accountConnectionNeverSynced {
     return Intl.message(
-      'Last successful sync: $when',
-      name: 'accountConnectionLastSync',
+      'never synced',
+      name: 'accountConnectionNeverSynced',
       desc: '',
-      args: [when],
+      args: [],
     );
   }
 
-  /// `Never synced`
-  String get accountConnectionNeverSynced {
+  /// `Bookings, prices and availability`
+  String get accountConnectionScope {
     return Intl.message(
-      'Never synced',
-      name: 'accountConnectionNeverSynced',
+      'Bookings, prices and availability',
+      name: 'accountConnectionScope',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Payment schedule, cancellation and deposit stay in Lodgify. HostHub only reads them.`
+  String get accountConnectionsFooter {
+    return Intl.message(
+      'Payment schedule, cancellation and deposit stay in Lodgify. HostHub only reads them.',
+      name: 'accountConnectionsFooter',
       desc: '',
       args: [],
     );
@@ -12223,21 +12339,33 @@ class S {
     );
   }
 
-  /// `{plan} · {count, plural, =1{1 property} other{{count} properties}}`
-  String accountBillingPlanValue(Object plan, num count) {
+  /// `Pro`
+  String get accountBillingPlanPro {
     return Intl.message(
-      '$plan · ${Intl.plural(count, one: '1 property', other: '$count properties')}',
-      name: 'accountBillingPlanValue',
+      'Pro',
+      name: 'accountBillingPlanPro',
       desc: '',
-      args: [plan, count],
+      args: [],
     );
   }
 
-  /// `Pro, monthly`
-  String get accountBillingPlanPro {
+  /// `{count, plural, =1{Monthly · 1 property} other{Monthly · {count} properties}}`
+  String accountBillingPlanSubtitle(num count) {
+    return Intl.plural(
+      count,
+      one: 'Monthly · 1 property',
+      other: 'Monthly · $count properties',
+      name: 'accountBillingPlanSubtitle',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `Optional`
+  String get optionalPlaceholder {
     return Intl.message(
-      'Pro, monthly',
-      name: 'accountBillingPlanPro',
+      'Optional',
+      name: 'optionalPlaceholder',
       desc: '',
       args: [],
     );
@@ -12358,91 +12486,6 @@ class S {
     return Intl.message(
       'Introduction',
       name: 'weFieldPrivacyIntro',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Listings`
-  String get listingsHeader {
-    return Intl.message('Listings', name: 'listingsHeader', desc: '', args: []);
-  }
-
-  /// `Add a listing by hand, or remove listings, to try out a new website setup without a Lodgify sync.`
-  String get listingsDescription {
-    return Intl.message(
-      'Add a listing by hand, or remove listings, to try out a new website setup without a Lodgify sync.',
-      name: 'listingsDescription',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `ID`
-  String get listingsColumnId {
-    return Intl.message('ID', name: 'listingsColumnId', desc: '', args: []);
-  }
-
-  /// `Name`
-  String get listingsColumnName {
-    return Intl.message('Name', name: 'listingsColumnName', desc: '', args: []);
-  }
-
-  /// `Lodgify ID`
-  String get listingsColumnLodgifyId {
-    return Intl.message(
-      'Lodgify ID',
-      name: 'listingsColumnLodgifyId',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Actions`
-  String get listingsColumnActions {
-    return Intl.message(
-      'Actions',
-      name: 'listingsColumnActions',
-      desc: '',
-      args: [],
-    );
-  }
-
-  /// `Listing "{name}" added.`
-  String listingsAdded(Object name) {
-    return Intl.message(
-      'Listing "$name" added.',
-      name: 'listingsAdded',
-      desc: '',
-      args: [name],
-    );
-  }
-
-  /// `Listing "{name}" removed.`
-  String listingsRemoved(Object name) {
-    return Intl.message(
-      'Listing "$name" removed.',
-      name: 'listingsRemoved',
-      desc: '',
-      args: [name],
-    );
-  }
-
-  /// `Remove "{name}"?`
-  String listingsRemoveTitle(Object name) {
-    return Intl.message(
-      'Remove "$name"?',
-      name: 'listingsRemoveTitle',
-      desc: '',
-      args: [name],
-    );
-  }
-
-  /// `The listing disappears from this account. Bookings at the source are untouched.`
-  String get listingsRemoveMessage {
-    return Intl.message(
-      'The listing disappears from this account. Bookings at the source are untouched.',
-      name: 'listingsRemoveMessage',
       desc: '',
       args: [],
     );

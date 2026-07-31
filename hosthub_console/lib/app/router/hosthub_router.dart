@@ -9,6 +9,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 import 'package:hosthub_console/app/navigation/console_route.dart';
 import 'package:hosthub_console/app/shell/application/sidebar_mode_cubit.dart';
+import 'package:hosthub_console/app/shell/presentation/widgets/lodgify_sync_listener.dart';
 import 'package:hosthub_console/app/shell/presentation/widgets/menu_item.dart';
 import 'package:hosthub_console/app/shell/presentation/widgets/property_setup_gate.dart';
 import 'package:hosthub_console/app/shell/presentation/widgets/side_menu.dart';
@@ -188,8 +189,12 @@ class HosthubRouter {
                       // Nothing from the placement is needed here: the menu and
                       // its rows read it themselves.
                       menuBuilder: (context, _) => SideMenu(route: route),
-                      bodyBuilder: (context, _) =>
-                          PropertySetupGate(selectedItem: item, child: child),
+                      bodyBuilder: (context, _) => LodgifySyncListener(
+                        child: PropertySetupGate(
+                          selectedItem: item,
+                          child: child,
+                        ),
+                      ),
                     );
                     // Text selection is a desktop affordance; on the web the
                     // browser already provides it.

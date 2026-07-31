@@ -48,13 +48,15 @@ Future<void> showOwnProfileDialog(
   await showStyledModal<void>(
     context,
     title: displayName,
-    presentation: StyledModalPresentation.dialog,
-    isDismissible: false,
-    dialogMinWidth: 480,
-    dialogMaxWidth: 480,
-    bodyMinHeight: 400,
-    enableBodyScroll: true,
-    contentPadding: EdgeInsets.zero,
+    sheet: const StyledModalSheet(presentation: StyledModalPresentation.dialog),
+    dismiss: const StyledModalDismiss<void>(isDismissible: false),
+    sizing: const StyledModalSizing(
+      dialogMinWidth: 480,
+      dialogMaxWidth: 480,
+      bodyMinHeight: 400,
+      enableBodyScroll: true,
+      contentPadding: EdgeInsets.zero,
+    ),
     steps: StyledModalSteps(
       children: [
         // ----- Root: Profile overview + menu -----

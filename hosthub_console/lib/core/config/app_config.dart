@@ -97,6 +97,14 @@ class AppConfig {
     return v;
   }
 
+  /// The config if there is one, for readers that can do without it.
+  ///
+  /// Only for values a screen may leave out — the environment name on the
+  /// version row. Anything that needs a URL or a key still goes through
+  /// [current] and should fail loudly, because a screen that silently runs
+  /// against no backend is worse than one that does not render.
+  static AppConfig? get currentOrNull => _instance;
+
   static void initialize({
     required String clientAppKey,
     String? deepLinkScheme,

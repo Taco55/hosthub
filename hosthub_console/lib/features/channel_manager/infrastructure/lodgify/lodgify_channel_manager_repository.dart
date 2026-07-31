@@ -310,4 +310,8 @@ class LodgifyChannelManagerRepository implements ChannelManagerRepository {
       _mapped('testConnection', () async {
     await _lodgifyService.fetchProperties();
   });
+
+  @override
+  Future<String?> revealApiKey() =>
+      _mapped('revealApiKey', () => _lodgifyService.revealApiKey());
 }

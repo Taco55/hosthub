@@ -70,6 +70,9 @@ class _FakeChannelManager implements ChannelManagerRepository {
 
   @override
   Future<void> testConnection() async => throw UnimplementedError();
+
+  @override
+  Future<String?> revealApiKey() async => throw UnimplementedError();
 }
 
 void main() {

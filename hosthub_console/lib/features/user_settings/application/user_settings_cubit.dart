@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:hosthub_console/core/models/models.dart';
 import 'package:hosthub_console/features/channel_manager/domain/channel_manager_repository.dart';
-import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/user_settings/application/settings_cubit.dart';
 import 'package:hosthub_console/features/user_settings/application/user_settings_state.dart';
@@ -206,6 +205,31 @@ class UserSettingsCubit extends Cubit<UserSettingsState> {
     );
   }
 
+  /// Resolves the user's own channel API key so the settings screen can show it.
+  ///
+  /// Returns `null` on failure and puts the [DomainError] in state, which is the
+  /// contract the secret tile expects: the tile stays masked and the page's
+  /// error listener reports why.
+  Future<String?> revealChannelApiKey() async {
+    final settings = state.settings;
+    if (settings == null) return null;
+
+    try {
+      return await _channelManagerRepository.revealApiKey();
+    } catch (error, stack) {
+      emit(
+        state.copyWith(
+          domainError: DomainError.from(
+            error,
+            stack: stack,
+            context: const {'lodgify_action': 'reveal_api_key'},
+          ),
+        ),
+      );
+      return null;
+    }
+  }
+
   Future<void> connectLodgify() async {
     final settings = state.settings;
     if (settings == null) return;
@@ -261,6 +285,11 @@ class UserSettingsCubit extends Cubit<UserSettingsState> {
     }
   }
 
+  /// Ask Lodgify what it has, and resolve it against the properties we hold.
+  ///
+  /// Writes nothing: the outcome lands in [UserSettingsState.syncPlan] so the
+  /// owner sees what applying would create and what it would link before it
+  /// happens.
   Future<void> syncLodgify({bool allowWhenBusy = false}) async {
     final settings = state.settings;
     if (settings == null || !settings.lodgifyConnected) return;
@@ -268,32 +297,25 @@ class UserSettingsCubit extends Cubit<UserSettingsState> {
 
     emit(state.copyWith(status: UserSettingsStatus.syncing));
     try {
-      final channelProperties = await _channelManagerRepository
-          .fetchProperties();
+      final listings = await _channelManagerRepository.fetchProperties();
       final existing = await _propertyRepository.fetchProperties();
-      final existingNames = existing
-          .map((property) => property.name.trim().toLowerCase())
-          .toSet();
-      final existingLodgifyIds = existing
-          .map((property) => property.lodgifyId?.trim())
-          .whereType<String>()
-          .where((id) => id.isNotEmpty)
-          .toSet();
-      final missing = channelProperties.where((property) {
-        final channelId = property.id?.trim();
-        if (channelId != null && channelId.isNotEmpty) {
-          return !existingLodgifyIds.contains(channelId);
-        }
-        final name = property.name?.trim();
-        if (name == null || name.isEmpty) return false;
-        return !existingNames.contains(name.toLowerCase());
-      }).toList();
-
+      final plan = LodgifySyncPlan.from(
+        listings: listings,
+        properties: existing,
+      );
+      // Lodgify answered, so this *is* the last successful sync — whether or
+      // not the owner applies what it found. Stamping it only after applying
+      // made a sync that found nothing look like a sync that never ran.
+      final saved = await _userSettingsRepository.save(
+        settings.copyWith(lodgifyLastSyncedAt: DateTime.now()),
+      );
+      _settingsCubit.load(forceRefresh: true);
       emit(
         state.copyWith(
           status: UserSettingsStatus.ready,
-          missingPropertiesToConfirm: missing,
-          channelPropertiesToReview: channelProperties,
+          settings: saved,
+          syncPlan: plan,
+          errorMessage: null,
         ),
       );
       return;
@@ -308,22 +330,43 @@ class UserSettingsCubit extends Cubit<UserSettingsState> {
     }
   }
 
-  Future<void> addMissingProperties(List<ChannelProperty> missing) async {
+  /// Create what the plan says is new, link what it says already exists here.
+  ///
+  /// Returns how many properties were added or linked, so the caller can say it
+  /// and point at the list. A plan with nothing to do only stamps the sync time.
+  Future<int> applySyncPlan() async {
     final settings = state.settings;
-    if (settings == null) return;
-    if (_isBusy) return;
+    final plan = state.syncPlan;
+    if (settings == null || plan == null) return 0;
+    if (_isBusy) return 0;
 
     emit(state.copyWith(status: UserSettingsStatus.syncing));
     try {
-      for (final property in missing) {
-        final name = property.name?.trim();
-        if (name == null || name.isEmpty) continue;
+      for (final entry in plan.toCreate) {
         await _propertyRepository.createProperty(
-          name: name,
-          lodgifyId: property.id,
+          name: entry.label,
+          lodgifyId: entry.listing.id,
         );
       }
-      await _completeSync(settings);
+      for (final entry in plan.toLink) {
+        final existing = entry.existing;
+        final lodgifyId = entry.listing.id;
+        if (existing == null || lodgifyId == null) continue;
+        await _propertyRepository.setLodgifyLink(
+          propertyId: existing.id,
+          lodgifyId: lodgifyId,
+        );
+      }
+      // No toast from here: the caller knows how many properties this touched
+      // and can point at them, which a fixed sentence cannot.
+      emit(
+        state.copyWith(
+          status: UserSettingsStatus.ready,
+          errorMessage: null,
+          clearSyncPlan: true,
+        ),
+      );
+      return plan.changeCount;
     } catch (error, stack) {
       emit(
         state.copyWith(
@@ -332,29 +375,15 @@ class UserSettingsCubit extends Cubit<UserSettingsState> {
           domainError: DomainError.from(error, stack: stack),
         ),
       );
+      return 0;
     }
   }
 
-  Future<void> skipMissingProperties() async {
-    final settings = state.settings;
-    if (settings == null) return;
-    if (_isBusy) return;
-    emit(
-      state.copyWith(
-        status: UserSettingsStatus.ready,
-        clearMissingProperties: true,
-      ),
-    );
-  }
-
-  Future<void> confirmLodgifySync() async {
-    final settings = state.settings;
-    if (settings == null) return;
-    if (_isBusy) return;
-
-    emit(state.copyWith(status: UserSettingsStatus.syncing));
-
-    await _completeSync(settings);
+  /// Walk away from a plan without applying it. The sync itself already counted
+  /// as successful, so the stamp stays where [syncLodgify] put it.
+  void dismissSyncPlan() {
+    if (state.syncPlan == null) return;
+    emit(state.copyWith(status: UserSettingsStatus.ready, clearSyncPlan: true));
   }
 
   void clearToast() {
@@ -365,14 +394,6 @@ class UserSettingsCubit extends Cubit<UserSettingsState> {
   void clearError() {
     if (state.domainError == null) return;
     emit(state.copyWith(clearDomainError: true));
-  }
-
-  void clearMissingProperties() {
-    if (state.missingPropertiesToConfirm == null &&
-        state.channelPropertiesToReview == null) {
-      return;
-    }
-    emit(state.copyWith(clearMissingProperties: true));
   }
 
   Future<void> refresh() async {
@@ -406,34 +427,6 @@ class UserSettingsCubit extends Cubit<UserSettingsState> {
           errorMessage: error.toString(),
           domainError: DomainError.from(error, stack: stack),
           clearToast: true,
-        ),
-      );
-    }
-  }
-
-  Future<void> _completeSync(UserSettings settings) async {
-    final updated = settings.copyWith(lodgifyLastSyncedAt: DateTime.now());
-    try {
-      final saved = await _userSettingsRepository.save(updated);
-      _settingsCubit.load(forceRefresh: true);
-      emit(
-        state.copyWith(
-          status: UserSettingsStatus.ready,
-          settings: saved,
-          toast: const UserSettingsToast(
-            type: UserSettingsToastType.success,
-            message: UserSettingsToastMessage.lodgifySyncCompleted,
-          ),
-          errorMessage: null,
-          clearMissingProperties: true,
-        ),
-      );
-    } catch (error, stack) {
-      emit(
-        state.copyWith(
-          status: UserSettingsStatus.ready,
-          errorMessage: error.toString(),
-          domainError: DomainError.from(error, stack: stack),
         ),
       );
     }

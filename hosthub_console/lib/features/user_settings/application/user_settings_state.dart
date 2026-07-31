@@ -1,7 +1,7 @@
 import 'package:app_errors/app_errors.dart';
 
 import 'package:hosthub_console/core/models/models.dart';
-import 'package:hosthub_console/features/channel_manager/domain/models/models.dart';
+import 'package:hosthub_console/features/properties/domain/lodgify_sync_plan.dart';
 import 'package:hosthub_console/features/user_settings/domain/user_settings_actions.dart';
 
 enum UserSettingsStatus {
@@ -21,8 +21,7 @@ class UserSettingsState {
     this.errorMessage,
     this.domainError,
     this.toast,
-    this.missingPropertiesToConfirm,
-    this.channelPropertiesToReview,
+    this.syncPlan,
   });
 
   const UserSettingsState.initial()
@@ -31,16 +30,19 @@ class UserSettingsState {
       errorMessage = null,
       domainError = null,
       toast = null,
-      missingPropertiesToConfirm = null,
-      channelPropertiesToReview = null;
+      syncPlan = null;
 
   final UserSettings? settings;
   final UserSettingsStatus status;
   final String? errorMessage;
   final DomainError? domainError;
   final UserSettingsToast? toast;
-  final List<ChannelProperty>? missingPropertiesToConfirm;
-  final List<ChannelProperty>? channelPropertiesToReview;
+
+  /// What the last sync found, resolved against the properties that exist —
+  /// non-null exactly while a screen still has to show it. One field instead of
+  /// the two lists it replaces (all listings + the missing ones), because the
+  /// screen had to re-derive the difference and got it wrong.
+  final LodgifySyncPlan? syncPlan;
 
   UserSettingsState copyWith({
     UserSettings? settings,
@@ -49,9 +51,8 @@ class UserSettingsState {
     DomainError? domainError,
     UserSettingsToast? toast,
     bool clearToast = false,
-    List<ChannelProperty>? missingPropertiesToConfirm,
-    List<ChannelProperty>? channelPropertiesToReview,
-    bool clearMissingProperties = false,
+    LodgifySyncPlan? syncPlan,
+    bool clearSyncPlan = false,
     bool clearDomainError = false,
   }) {
     return UserSettingsState(
@@ -60,12 +61,7 @@ class UserSettingsState {
       errorMessage: errorMessage ?? this.errorMessage,
       domainError: clearDomainError ? null : domainError ?? this.domainError,
       toast: clearToast ? null : toast ?? this.toast,
-      missingPropertiesToConfirm: clearMissingProperties
-          ? null
-          : missingPropertiesToConfirm ?? this.missingPropertiesToConfirm,
-      channelPropertiesToReview: clearMissingProperties
-          ? null
-          : channelPropertiesToReview ?? this.channelPropertiesToReview,
+      syncPlan: clearSyncPlan ? null : syncPlan ?? this.syncPlan,
     );
   }
 
@@ -77,8 +73,7 @@ class UserSettingsState {
         'hasSettings=${settings != null}, '
         'hasApiKey=$hasApiKey, '
         'lodgifyConnected=${settings?.lodgifyConnected}, '
-        'missingCount=${missingPropertiesToConfirm?.length ?? 0}, '
-        'reviewCount=${channelPropertiesToReview?.length ?? 0}, '
+        'syncPlan=${syncPlan ?? '-'}, '
         'toast=${toast?.message}, '
         'hasError=${domainError != null})';
   }

@@ -5,12 +5,17 @@ import 'package:hosthub_console/features/properties/properties.dart';
 
 import 'menu_item.dart';
 
-/// Keeps the shell body on the property-setup page until there is a property to
-/// show, so a fresh account lands on the one screen that can move it forward
-/// instead of on empty dashboards.
+/// Keeps the shell body on Properties until there is a property to show, so a
+/// fresh account lands on the one screen that can move it forward instead of on
+/// empty dashboards.
 ///
-/// Settings stays reachable — including its admin section: that is where the
-/// cause of "no properties" is fixed.
+/// It sends them to the real list rather than to a setup screen of its own: the
+/// empty state of Properties already offers the two routes into *Property
+/// toevoegen*, and a second screen saying the same thing is how the manual
+/// create form ended up existing twice.
+///
+/// Account stays reachable — including its admin section: that is where the
+/// cause of "no properties" (a missing Lodgify connection) is fixed.
 class PropertySetupGate extends StatelessWidget {
   const PropertySetupGate({
     super.key,
@@ -29,6 +34,6 @@ class PropertySetupGate extends StatelessWidget {
         state.properties.isEmpty &&
         selectedItem != MenuItem.settings;
 
-    return needsSetup ? const PropertySetupPage() : child;
+    return needsSetup ? const PropertiesPage() : child;
   }
 }
