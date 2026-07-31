@@ -56,13 +56,24 @@ declare
   v_airbnb  numeric(6, 3) := 15.5;
   v_other   numeric(6, 3) := 0;
 begin
+  -- A plain `select ... into` overwrites the declared defaults with NULL when
+  -- admin_settings has zero rows (a fresh database, before the app has ever
+  -- written that row) — it does not leave the DECLARE defaults in place. Scalar
+  -- subqueries avoid that: they evaluate to NULL on no rows, so coalesce can
+  -- still fall back.
   if to_regclass('public.admin_settings') is not null then
-    select coalesce(booking_channel_fee_percentage, 15),
-           coalesce(airbnb_channel_fee_percentage, 15.5),
-           coalesce(other_channel_fee_percentage, 0)
-      into v_booking, v_airbnb, v_other
-      from public.admin_settings
-     limit 1;
+    v_booking := coalesce(
+      (select booking_channel_fee_percentage from public.admin_settings limit 1),
+      v_booking
+    );
+    v_airbnb := coalesce(
+      (select airbnb_channel_fee_percentage from public.admin_settings limit 1),
+      v_airbnb
+    );
+    v_other := coalesce(
+      (select other_channel_fee_percentage from public.admin_settings limit 1),
+      v_other
+    );
   end if;
 
   insert into public.account_channel_defaults
