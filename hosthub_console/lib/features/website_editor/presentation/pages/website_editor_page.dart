@@ -136,8 +136,14 @@ class _WebsiteEditorView extends StatelessWidget {
               : null,
           // §11d: with the preview hidden the editor takes the full width but
           // centres its content — a form line does not become more readable by
-          // being 1600px wide.
-          contentMaxWidth: state.previewVisible ? null : 760,
+          // being 1600px wide. Beside the preview there is no measure at all:
+          // the preset's 1040px `.set-wide` cap is written for form pages, and
+          // on this one it would leave the editor at 512 and hand the live site
+          // the 528 that remain. `null` would not lift it — that is the value
+          // that inherits the preset.
+          contentMaxWidth: state.previewVisible
+              ? StyledWebPageScaffold.noContentMeasure
+              : 760,
           leftChild: EditorColumn(
             state: state,
             siteId: siteId,

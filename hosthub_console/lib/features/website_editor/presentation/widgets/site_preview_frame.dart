@@ -54,8 +54,8 @@ class SitePreviewFrame extends StatelessWidget {
   /// Desktop window vs phone bezel.
   final SitePreviewFrameDevice device;
 
-  /// Maximum content width for the desktop frame. Mobile clamps to a phone
-  /// width regardless.
+  /// Maximum content width for the desktop frame; [double.infinity] fills the
+  /// pane. Mobile clamps to a phone width regardless.
   final double maxWidth;
 
   /// Overrides the default card-hover drop shadow.

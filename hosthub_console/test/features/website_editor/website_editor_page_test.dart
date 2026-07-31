@@ -64,7 +64,9 @@ Future<SiteContentCubit> pumpEditor(
               leftPaneSize: state.previewVisible
                   ? const StyledPaneSize.fixed(512)
                   : null,
-              contentMaxWidth: state.previewVisible ? null : 760,
+              contentMaxWidth: state.previewVisible
+                  ? StyledWebPageScaffold.noContentMeasure
+                  : 760,
               leftChild: EditorColumn(state: state),
               rightChild: PreviewPane(state: state),
               showRightPane: state.previewVisible,
@@ -317,8 +319,13 @@ void main() {
       find.byType(StyledWebPageScaffold),
     );
 
-    // Beside the preview the column is fixed; the width cap does not apply.
-    expect(scaffold().contentMaxWidth, isNull);
+    // Beside the preview the column is fixed and the page has no measure —
+    // stated, because `null` would inherit the preset's 1040px cap and strand
+    // the live site in the 528px that leaves.
+    expect(
+      scaffold().contentMaxWidth,
+      StyledWebPageScaffold.noContentMeasure,
+    );
 
     cubit.togglePreview();
     await tester.pumpAndSettle();

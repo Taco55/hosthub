@@ -62,6 +62,9 @@ class PreviewPane extends StatelessWidget {
           ? SitePreviewFrameDevice.mobile
           : SitePreviewFrameDevice.desktop,
       expandContent: isLive,
+      // The mock is a schematic and stays a 660px window; the real site is the
+      // thing being judged, so it gets the pane's full width in both axes.
+      maxWidth: isLive ? double.infinity : 660,
       child: isLive
           ? LiveSiteFrame(
               url: liveUrl,
