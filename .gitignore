@@ -65,3 +65,7 @@ CLAUDE.md
 # dan wordt het bestand nooit geschreven. Deze regel blijft als vangnet voor een
 # Deno die die instelling niet kent.
 supabase/functions/**/deno.lock
+
+# Nooit worktrees (zie AGENTS.md). Deze regel is het vangnet: een geneste
+# checkout hier mag nooit meegecommit worden.
+**/.claude/worktrees/

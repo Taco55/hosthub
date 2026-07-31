@@ -16,3 +16,7 @@ Voor deze repo is dit de bron die Codex/Claude leest.
   Die libraries liggen **buiten** deze repo en worden door andere projecten gebruikt — zie de
   library-first regel in `AGENTS_CORE.md`.
 - Werk direct op `main`; geen feature branches.
+- **Nooit git worktrees.** Geen `git worktree add`, geen agents of achtergrondtaken in een
+  eigen worktree, ook niet "even geïsoleerd". Alles gebeurt in deze checkout. Een worktree
+  onder de repo is een geneste checkout die de kans loopt meegecommit te worden; daarom
+  staat `**/.claude/worktrees/` ook in `.gitignore`.
