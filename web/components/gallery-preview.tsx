@@ -40,6 +40,7 @@ export function GalleryPreview({ id, title, ctaLabel, href, images }: GalleryPre
           <button
             key={image.src}
             type="button"
+            data-cms-media-item=""
             className="group relative overflow-hidden rounded-2xl border border-border/60 bg-white shadow-sm"
             onClick={() => setIndex(image.fullIndex)}
           >
@@ -51,6 +52,8 @@ export function GalleryPreview({ id, title, ctaLabel, href, images }: GalleryPre
                 priority={imageIndex === 0}
                 className="object-cover transition-transform duration-300 group-hover:scale-105"
                 sizes={image.sizes}
+                data-cms-media="images.homeGallery"
+                data-cms-media-index={imageIndex}
               />
             </div>
           </button>

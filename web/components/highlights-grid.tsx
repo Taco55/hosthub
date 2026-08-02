@@ -36,6 +36,15 @@ export function HighlightsGrid({ highlights, icons, images }: HighlightsGridProp
                 fill
                 className="object-cover object-center"
                 sizes={image?.sizes ?? "(min-width: 768px) 22vw, (min-width: 640px) 45vw, 100vw"}
+                // One photo bound to one row, so it rides the field channel
+                // rather than a slot: the draft carries a url and the bridge
+                // points the image at it.
+                {...cmsField(
+                  "page/home",
+                  "highlights",
+                  highlight.id ?? index,
+                  "image",
+                )}
               />
             </div>
             <div className="flex flex-col items-center justify-center gap-4 p-4 text-center">

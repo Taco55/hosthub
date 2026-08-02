@@ -125,6 +125,11 @@ export function HeroCrossfadeBackground({
             sizes={currentImage.sizes}
             priority={currentImage.src === firstImage.src}
             className="object-cover object-top"
+            // The crossfade shows one photo at a time, so only the visible
+            // layer is addressable: the draft repoints slot position 0, which
+            // is the photo an owner is looking at while they pick.
+            data-cms-media="images.heroPhotos"
+            data-cms-media-index={0}
         />
       </div>
       {shouldAnimate ? (

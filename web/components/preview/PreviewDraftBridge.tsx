@@ -52,6 +52,26 @@ function isConsoleOrigin(origin: string): boolean {
   return candidate.protocol === "https:" && candidate.hostname === `admin.${site}`;
 }
 
+/**
+ * Points one image at a url.
+ *
+ * `srcset` has to go: next/image renders a set of optimizer urls per width,
+ * and a browser picking from it would ignore the src we just set. Losing the
+ * responsive variants costs nothing here — the preview is one viewport, and
+ * the published page rebuilds the set on the next render.
+ */
+function setImageSource(image: HTMLImageElement, url: string) {
+  if (image.getAttribute("src") === url && !image.getAttribute("srcset")) {
+    return;
+  }
+  image.removeAttribute("srcset");
+  image.setAttribute("src", url);
+  const picture = image.closest("picture");
+  picture
+    ?.querySelectorAll("source")
+    .forEach((source) => source.removeAttribute("srcset"));
+}
+
 function applyDraft(fields: Record<string, unknown>) {
   const elements = document.querySelectorAll<HTMLElement>("[data-cms-field]");
   elements.forEach((element) => {
@@ -59,11 +79,52 @@ function applyDraft(fields: Record<string, unknown>) {
     if (!address) return;
     const value = fields[address];
     if (typeof value !== "string") return;
+    // A photo field holds a url, not a sentence: the element is the picture,
+    // so the draft points it somewhere rather than writing into it.
+    if (element instanceof HTMLImageElement) {
+      if (value) setImageSource(element, value);
+      return;
+    }
     // Only touch what actually changed: writing textContent on every keystroke
     // for every field would fight the browser's own layout work.
     if (element.textContent !== value) {
       element.textContent = value;
     }
+  });
+}
+
+/**
+ * Repoints a whole photo slot — the hero set, the homepage grid, the gallery.
+ *
+ * These are ordered lists rather than single fields, so the page marks each
+ * rendered image with its slot and position and the draft walks them in step.
+ * A shorter selection hides the images it no longer covers; a longer one
+ * cannot grow the page from here, and the frame reloads on save anyway.
+ */
+function applyMedia(media: Record<string, unknown>) {
+  Object.entries(media).forEach(([slot, value]) => {
+    if (!Array.isArray(value)) return;
+    const urls = value.filter((url): url is string => typeof url === "string");
+    const images = Array.from(
+      document.querySelectorAll<HTMLImageElement>(
+        `img[data-cms-media="${CSS.escape(slot)}"]`,
+      ),
+    ).sort(
+      (a, b) =>
+        Number(a.dataset.cmsMediaIndex ?? 0) -
+        Number(b.dataset.cmsMediaIndex ?? 0),
+    );
+
+    images.forEach((image, index) => {
+      const url = urls[index];
+      const holder = image.closest<HTMLElement>("[data-cms-media-item]") ?? image;
+      if (!url) {
+        holder.style.display = "none";
+        return;
+      }
+      holder.style.removeProperty("display");
+      setImageSource(image, url);
+    });
   });
 }
 
@@ -118,6 +179,7 @@ export function PreviewDraftBridge({ locale }: { locale: string }) {
             type?: string;
             locale?: string;
             fields?: Record<string, unknown>;
+            media?: Record<string, unknown>;
             address?: string | null;
           }
         | null;
@@ -128,6 +190,7 @@ export function PreviewDraftBridge({ locale }: { locale: string }) {
       if (data.type === DRAFT_MESSAGE) {
         const fields = data.fields ?? {};
         applyDraft(fields);
+        applyMedia(data.media ?? {});
         // Values that are not rendered as text cannot be written into the DOM
         // — the map query recomputes its embed from this instead.
         window.dispatchEvent(

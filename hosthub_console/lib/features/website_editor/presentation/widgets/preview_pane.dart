@@ -6,6 +6,7 @@ import 'package:hosthub_console/core/widgets/foundation/foundation.dart';
 
 import 'package:hosthub_console/core/config/app_config.dart';
 
+import '../../application/media_library_cubit.dart';
 import '../../application/site_content_cubit.dart';
 import '../../domain/editor_schema.dart';
 import '../website_editor_status_colors.dart';
@@ -71,7 +72,8 @@ class PreviewPane extends StatelessWidget {
               locale: state.previewLanguage,
               // The unsaved draft included — the pane says "live preview" and
               // this is what makes that true.
-              fields: state.previewFieldValues,
+              fields: _previewFields(context, state),
+              media: _previewMedia(context, state),
               // §E: focus a field and the preview points at where it lands.
               focusedAddress: state.focusedAddress,
             )
@@ -113,6 +115,38 @@ class PreviewPane extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The draft the preview renders, with every photo already resolved.
+///
+/// A photo field holds a storage path, and the page needs a url — the console
+/// is the side that can resolve one, so it does it here rather than teaching
+/// the preview about buckets.
+Map<String, String> _previewFields(BuildContext context, SiteContentState state) {
+  final media = context.read<MediaLibraryCubit?>();
+  final values = state.previewFieldValues;
+  if (media == null) return values;
+  return {
+    for (final entry in values.entries)
+      entry.key: entry.key.endsWith('.image') && entry.value.isNotEmpty
+          ? media.publicUrlOf(entry.value)
+          : entry.value,
+  };
+}
+
+/// The photo slots as ordered urls, keyed the way the page marks them.
+Map<String, List<String>> _previewMedia(
+  BuildContext context,
+  SiteContentState state,
+) {
+  final media = context.read<MediaLibraryCubit?>();
+  if (media == null) return const {};
+  return {
+    for (final slot in state.mediaKeys.keys)
+      slot: [
+        for (final path in state.mediaPathsOf(slot)) media.publicUrlOf(path),
+      ],
+  };
 }
 
 class _PreviewToolbar extends StatelessWidget {

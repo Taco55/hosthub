@@ -8,12 +8,14 @@ class LiveSiteFrame extends StatelessWidget {
     required this.url,
     required this.locale,
     required this.fields,
+    this.media = const {},
     this.focusedAddress,
   });
 
   final String url;
   final String locale;
   final Map<String, String> fields;
+  final Map<String, List<String>> media;
   final String? focusedAddress;
 
   @override

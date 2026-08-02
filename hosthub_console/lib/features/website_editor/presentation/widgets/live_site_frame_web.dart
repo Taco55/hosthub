@@ -23,6 +23,7 @@ class LiveSiteFrame extends StatefulWidget {
     required this.url,
     required this.locale,
     required this.fields,
+    this.media = const {},
     this.focusedAddress,
   });
 
@@ -33,6 +34,11 @@ class LiveSiteFrame extends StatefulWidget {
 
   /// `cms address -> value`, e.g. `cabin/main:hero.title`.
   final Map<String, String> fields;
+
+  /// Photo slots as resolved public urls, keyed the way the page marks them
+  /// (`images.heroPhotos`). Separate from [fields] because a slot is an
+  /// ordered list of pictures, not one value bound to one element.
+  final Map<String, List<String>> media;
 
   /// The address the cursor is in, or null.
   ///
@@ -86,7 +92,8 @@ class _LiveSiteFrameState extends State<LiveSiteFrame> {
     // Value comparison, not identity: the map is rebuilt from state on every
     // rebuild, so identity would post on every frame.
     if (widget.locale != oldWidget.locale ||
-        !mapEquals(widget.fields, oldWidget.fields)) {
+        !mapEquals(widget.fields, oldWidget.fields) ||
+        !_sameMedia(widget.media, oldWidget.media)) {
       _sendDraft();
     }
     if (widget.focusedAddress != oldWidget.focusedAddress) {
@@ -118,11 +125,24 @@ class _LiveSiteFrameState extends State<LiveSiteFrame> {
         : '${uri.scheme}://${uri.host}';
   }
 
+  static bool _sameMedia(
+    Map<String, List<String>> a,
+    Map<String, List<String>> b,
+  ) {
+    if (a.length != b.length) return false;
+    for (final entry in a.entries) {
+      final other = b[entry.key];
+      if (other == null || !listEquals(entry.value, other)) return false;
+    }
+    return true;
+  }
+
   void _sendDraft() {
     final payload = <String, Object?>{
       'type': _draftMessage,
       'locale': widget.locale,
       'fields': widget.fields,
+      'media': widget.media,
     };
     _iframe.contentWindow?.postMessage(payload.jsify(), _previewOrigin.toJS);
   }
