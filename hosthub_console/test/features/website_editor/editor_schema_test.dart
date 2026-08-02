@@ -205,8 +205,33 @@ void main() {
     expect(fields, contains('home.galleryAlt'));
     expect(fields, contains('gallery.allAlt'));
     // The files themselves are language-independent and are not text fields.
-    expect(fields.where((key) => key.endsWith('.photos')), isEmpty);
-    expect(fields.where((key) => key == 'home.gallery'), isEmpty);
+    expect(fields.where((key) => key.startsWith('images.')), isEmpty);
+  });
+
+  test('a media key addresses the document path the website reads', () {
+    // The repository writes `images[key.split('.').last]` and the website
+    // reads `images.heroPhotos` / `.homeGallery` / `.galleryAll`. A media key
+    // that is not the full path silently writes somewhere nobody reads and
+    // never matches on the way back, leaving every photo picker empty.
+    final mediaKeys = [
+      for (final cards in kPageCards.values)
+        for (final card in cards)
+          for (final row in card.rows)
+            if (row is MediaRow) row.mediaKey,
+    ];
+
+    expect(mediaKeys, isNotEmpty);
+    for (final key in mediaKeys) {
+      expect(
+        key,
+        startsWith('images.'),
+        reason: '$key must be the images.<slot> path, not a short name',
+      );
+    }
+    expect(
+      mediaKeys,
+      containsAll(['images.heroPhotos', 'images.homeGallery', 'images.galleryAll']),
+    );
   });
 
   test('a read-only card contributes no editable field', () {

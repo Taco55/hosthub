@@ -292,7 +292,13 @@ const Map<String, List<EditorCard>> kPageCards = {
         FieldRow('cabin.hero.title'),
         FieldRow('cabin.meta.locationShort'),
         MediaRow(
-          'hero.photos',
+          // The media key IS the document path: the repository writes
+          // `images[key.split('.').last]` and reads back `images.<key>`, and
+          // the website reads `images.heroPhotos`. A short name like
+          // `hero.photos` lands on `images.photos`, which nothing reads, and
+          // never matches on the way back — so the picker stays empty and
+          // saving is a no-op.
+          'images.heroPhotos',
           altFieldKey: 'cabin.hero.photosAlt',
           minItems: 1,
           maxItems: 5,
@@ -335,7 +341,7 @@ const Map<String, List<EditorCard>> kPageCards = {
       id: 'homeGallery',
       rows: [
         MediaRow(
-          'home.gallery',
+          'images.homeGallery',
           altFieldKey: 'home.galleryAlt',
           minItems: 5,
           maxItems: 8,
@@ -595,7 +601,7 @@ const Map<String, List<EditorCard>> kPageCards = {
       id: 'galleryAll',
       rows: [
         MediaRow(
-          'gallery.all',
+          'images.galleryAll',
           altFieldKey: 'gallery.allAlt',
           minItems: 6,
           maxItems: 40,
