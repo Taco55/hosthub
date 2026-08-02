@@ -68,7 +68,7 @@ void main() {
             ),
     };
 
-    final keys = effectiveFieldsFor('home', order).map((f) => f.key).toSet();
+    final keys = kDefaultTemplate.fieldsFor('home', order).map((f) => f.key).toSet();
     expect(keys, contains('cabin.amenities.title'));
     expect(keys, contains('cabin.amenities.groups.g1.title'));
     expect(keys, contains('cabin.amenities.groups.g1.items.i1.text'));

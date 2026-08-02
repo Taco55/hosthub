@@ -5,7 +5,6 @@ import 'package:styled_widgets/styled_widgets.dart';
 import 'package:hosthub_console/core/widgets/foundation/foundation.dart';
 
 import '../../application/site_content_cubit.dart';
-import '../../domain/website_content.dart';
 import '../website_editor_status_colors.dart';
 import '../website_editor_strings.dart';
 import 'editor_card_view.dart';
@@ -185,7 +184,8 @@ class _PageTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<SiteContentCubit>();
-    final selected = kWebsitePages.indexOf(state.pageKey);
+    final tabs = state.template.tabPages;
+    final selected = tabs.indexOf(state.pageKey);
     return Padding(
       padding: const EdgeInsets.fromLTRB(22, 4, 22, 8),
       child: Align(
@@ -193,11 +193,11 @@ class _PageTabs extends StatelessWidget {
         child: StyledSegmentedControl(
           variant: StyledSegmentedControlVariant.plain,
           segments: [
-            for (final page in kWebsitePages)
+            for (final page in tabs)
               StyledSegment(label: pageName(context, page)),
           ],
           selectedIndex: selected < 0 ? 0 : selected,
-          onChanged: (i) => cubit.selectPage(kWebsitePages[i]),
+          onChanged: (i) => cubit.selectPage(tabs[i]),
         ),
       ),
     );

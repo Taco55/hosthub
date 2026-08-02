@@ -271,25 +271,129 @@ class EditorCard {
   final bool readOnly;
 }
 
-/// The pages of the website (tabs in the editor) — one tab per route the
-/// public site actually serves. There is no chalet page and no contact page:
-/// that content renders on the homepage (README fase 2 §0). Privacy has no
-/// tab either; it lives under Settings → Legal (§A.6).
-const List<String> kWebsitePages = ['home', 'practical', 'area', 'gallery'];
+/// One page of a website template: its cards, in the order the page renders
+/// them, and whether the editor offers it as a tab.
+class TemplatePage {
+  const TemplatePage({
+    required this.key,
+    required this.cards,
+    this.showAsTab = true,
+  });
+
+  final String key;
+  final List<EditorCard> cards;
+
+  /// Whether this page is one of the editor's tabs.
+  ///
+  /// Legal is false: it is a page of the site but not a tab of the editor. A
+  /// fifth tab invites editing exactly what you do not want casually edited,
+  /// so it is reached through Site-instellingen instead — while running
+  /// through the same schema, the same translation model and the same
+  /// explicit save as everything else.
+  final bool showAsTab;
+}
+
+/// What one website template offers the editor: its pages, in order.
+///
+/// An instance rather than a set of globals. The schema used to be top-level
+/// consts read straight from the cubit, the repository, two widgets and the
+/// tests, so a second template — different sections, a different order — had
+/// nowhere to exist. Order is the list: the tabs, the publish dialog's
+/// per-page breakdown and the field enumeration all read the same one, which
+/// is why `legal` no longer arrives first anywhere.
+class WebsiteTemplate {
+  const WebsiteTemplate({required this.id, required this.pages});
+
+  final String id;
+  final List<TemplatePage> pages;
+
+  /// Page keys in template order, tabs only.
+  List<String> get tabPages => [
+    for (final page in pages)
+      if (page.showAsTab) page.key,
+  ];
+
+  /// Every page key in template order, tabs and the rest.
+  List<String> get pageKeys => [for (final page in pages) page.key];
+
+  List<EditorCard> cardsOf(String pageKey) {
+    for (final page in pages) {
+      if (page.key == pageKey) return page.cards;
+    }
+    return const [];
+  }
+
+  /// The fields of one page, with its repeatable lists expanded against the
+  /// row ids the content actually holds.
+  List<EditorField> fieldsFor(
+    String pageKey,
+    Map<String, List<String>> listOrder,
+  ) {
+    final fields = <EditorField>[];
+    for (final card in cardsOf(pageKey)) {
+      for (final row in card.rows) {
+        fields.addAll(_fieldsOfRow(row, card.id, listOrder));
+      }
+    }
+    return fields;
+  }
+
+  /// Every repeatable list in the template, with the row type that owns it —
+  /// what the repository enumerates to learn which lists to read row ids for.
+  List<({String listKey, String? itemsListKey})> get lists => [
+    for (final page in pages)
+      for (final card in page.cards)
+        for (final row in card.rows)
+          ...switch (row) {
+            ListRow(:final listKey) => [(listKey: listKey, itemsListKey: null)],
+            PairListRow(:final listKey, :final fixedRows) =>
+              fixedRows == null ? [(listKey: listKey, itemsListKey: null)] : [],
+            RowListRow(:final listKey) => [
+              (listKey: listKey, itemsListKey: null),
+            ],
+            GroupListRow(:final listKey, :final itemsListKey) => [
+              (listKey: listKey, itemsListKey: itemsListKey),
+            ],
+            FieldRow() || MediaRow() || ExternalRow() => const [],
+          },
+  ];
+
+  /// The row that owns a list key, or null when it is unknown.
+  EditorRow? rowForList(String listKey) {
+    for (final page in pages) {
+      for (final card in page.cards) {
+        for (final row in card.rows) {
+          if (_rowOwnsList(row, listKey)) return row;
+        }
+      }
+    }
+    return null;
+  }
+}
 
 /// The legal document's page key.
-///
-/// Deliberately outside [kWebsitePages]: it is a page of the site but not a tab
-/// of the editor. A fifth tab invites editing exactly what you do not want
-/// casually edited, so it is reached through Site-instellingen instead — while
-/// running through the same schema, the same translation model and the same
-/// explicit save as everything else.
 const String kLegalPage = 'legal';
 
-/// The editor's page schema: README §A.1–A.4, card for card, in page order —
-/// so scrolling the editor and scrolling the preview are the same movement.
-const Map<String, List<EditorCard>> kPageCards = {
-  kLegalPage: [
+/// The one template today: the chalet site this editor was built for.
+const WebsiteTemplate kDefaultTemplate = WebsiteTemplate(
+  id: 'chalet-v1',
+  pages: [
+    TemplatePage(
+      key: 'home',
+      cards: _homeCards,
+    ),
+    TemplatePage(
+      key: 'practical',
+      cards: _practicalCards,
+    ),
+    TemplatePage(key: 'area', cards: _areaCards),
+    TemplatePage(key: 'gallery', cards: _galleryCards),
+    // Last, and not a tab: see TemplatePage.showAsTab.
+    TemplatePage(key: kLegalPage, cards: _legalCards, showAsTab: false),
+  ],
+);
+
+const List<EditorCard> _legalCards = [
     EditorCard(
       id: 'privacy',
       rows: [
@@ -303,8 +407,9 @@ const Map<String, List<EditorCard>> kPageCards = {
         ),
       ],
     ),
-  ],
-  'home': [
+];
+
+const List<EditorCard> _homeCards = [
     // Site chrome: the name in the header, tab title and share card, and the
     // line beside it in the footer. It sits on Home because that is where the
     // owner meets the header first, but it is one set for the whole site —
@@ -479,8 +584,9 @@ const Map<String, List<EditorCard>> kPageCards = {
         ),
       ],
     ),
-  ],
-  'practical': [
+];
+
+const List<EditorCard> _practicalCards = [
     EditorCard(
       id: 'practicalHeader',
       rows: [
@@ -615,8 +721,9 @@ const Map<String, List<EditorCard>> kPageCards = {
         ),
       ],
     ),
-  ],
-  'area': [
+];
+
+const List<EditorCard> _areaCards = [
     EditorCard(
       id: 'areaIntro',
       rows: [FieldRow('area.intro', multiline: true)],
@@ -634,8 +741,9 @@ const Map<String, List<EditorCard>> kPageCards = {
         ),
       ],
     ),
-  ],
-  'gallery': [
+];
+
+const List<EditorCard> _galleryCards = [
     EditorCard(
       id: 'galleryHeader',
       rows: [FieldRow('home.tagline', multiline: true)],
@@ -651,8 +759,8 @@ const Map<String, List<EditorCard>> kPageCards = {
         ),
       ],
     ),
-  ],
-};
+];
+
 
 /// The field key of one list row: `<listKey>.<rowId>[.<sub>]`.
 String listFieldKey(String listKey, String rowId, String? sub) =>
@@ -721,19 +829,6 @@ class EditorField extends Equatable {
 /// rows one field per row id in [listOrder] (identity from the content, order
 /// from the content). Media rows contribute their alt-text field; the image
 /// keys themselves are not translatable text.
-List<EditorField> effectiveFieldsFor(
-  String pageKey,
-  Map<String, List<String>> listOrder,
-) {
-  final fields = <EditorField>[];
-  for (final card in kPageCards[pageKey] ?? const <EditorCard>[]) {
-    for (final row in card.rows) {
-      fields.addAll(_fieldsOfRow(row, card.id, listOrder));
-    }
-  }
-  return fields;
-}
-
 List<EditorField> _fieldsOfRow(
   EditorRow row,
   String cardId,
@@ -919,49 +1014,24 @@ List<EditorField> _fieldsOfRow(
 
 /// Every repeatable list in the schema, with the row type that owns it — what
 /// the repository enumerates to learn which lists to read row ids for.
-List<({String listKey, String? itemsListKey})> get kSchemaLists => [
-  for (final cards in kPageCards.values)
-    for (final card in cards)
-      for (final row in card.rows)
-        ...switch (row) {
-          ListRow(:final listKey) => [(listKey: listKey, itemsListKey: null)],
-          PairListRow(:final listKey, :final fixedRows) =>
-            fixedRows == null ? [(listKey: listKey, itemsListKey: null)] : [],
-          RowListRow(:final listKey) => [
-            (listKey: listKey, itemsListKey: null),
-          ],
-          GroupListRow(:final listKey, :final itemsListKey) => [
-            (listKey: listKey, itemsListKey: itemsListKey),
-          ],
-          FieldRow() || MediaRow() || ExternalRow() => const [],
-        },
-];
 
 /// The schema row that owns a list key, or null when it is unknown. Used by
 /// the cubit to learn a list's subfield and by the renderer to look up limits.
-EditorRow? schemaRowForList(String listKey) {
-  for (final cards in kPageCards.values) {
-    for (final card in cards) {
-      for (final row in card.rows) {
-        switch (row) {
-          case ListRow(listKey: final key):
-          case PairListRow(listKey: final key):
-          case RowListRow(listKey: final key):
-          case GroupListRow(listKey: final key):
-            if (key == listKey) return row;
-            // A group's nested item list is addressed through its group.
-            if (row is GroupListRow &&
-                listKey.startsWith('${row.listKey}.') &&
-                listKey.endsWith('.${row.itemsListKey}')) {
-              return row;
-            }
-          case FieldRow():
-          case MediaRow():
-          case ExternalRow():
-            break;
-        }
-      }
-    }
+/// Whether a row owns [listKey] — its own list, or a group's nested items,
+/// which are addressed through the group.
+bool _rowOwnsList(EditorRow row, String listKey) {
+  switch (row) {
+    case ListRow(listKey: final key):
+    case PairListRow(listKey: final key):
+    case RowListRow(listKey: final key):
+    case GroupListRow(listKey: final key):
+      if (key == listKey) return true;
+      return row is GroupListRow &&
+          listKey.startsWith('${row.listKey}.') &&
+          listKey.endsWith('.${row.itemsListKey}');
+    case FieldRow():
+    case MediaRow():
+    case ExternalRow():
+      return false;
   }
-  return null;
 }

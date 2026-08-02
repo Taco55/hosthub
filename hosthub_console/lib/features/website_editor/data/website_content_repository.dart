@@ -174,7 +174,7 @@ class WebsiteContentRepository extends SupabaseRepository {
   /// Resolves an editor field key to the document and the JSON path inside it.
   ///
   /// One table, one lookup: adding a field is a line here plus its row in
-  /// the page schema ([kPageCards]), not a branch in a read function and a
+  /// the page schema ([WebsiteTemplate]), not a branch in a read function and a
   /// matching branch in a write function. `{id}` in a pattern captures a
   /// stable row id and lands in the path at the [_rowId] position.
   static const List<
@@ -949,7 +949,7 @@ class WebsiteContentRepository extends SupabaseRepository {
       }
 
       final listOrder = <String, List<String>>{};
-      for (final list in kSchemaLists) {
+      for (final list in kDefaultTemplate.lists) {
         final content = sourceDocumentFor(list.listKey);
         final ids = listRowIdsIn(list.listKey, content);
         listOrder[list.listKey] = ids;
@@ -973,8 +973,9 @@ class WebsiteContentRepository extends SupabaseRepository {
       }
 
       final fieldKeys = <String>[
-        for (final page in kPageCards.keys)
-          for (final field in effectiveFieldsFor(page, listOrder)) field.key,
+        for (final page in kDefaultTemplate.pageKeys)
+          for (final field in kDefaultTemplate.fieldsFor(page, listOrder))
+            field.key,
       ];
 
       final source = <String, String>{

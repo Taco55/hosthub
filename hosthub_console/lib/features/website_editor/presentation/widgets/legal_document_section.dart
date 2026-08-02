@@ -96,7 +96,7 @@ class _LegalDocumentViewState extends State<_LegalDocumentView> {
           );
         }
 
-        final cards = kPageCards[kLegalPage] ?? const <EditorCard>[];
+        final cards = state.template.cardsOf(kLegalPage);
 
         return StyledSection(
           header: context.s.legalSectionTitle,

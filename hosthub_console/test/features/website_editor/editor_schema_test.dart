@@ -10,7 +10,7 @@ import 'package:hosthub_console/features/website_editor/website_editor.dart';
 /// expanded against one row id per list so nested lists are covered too.
 List<EditorField> _allSchemaFields() {
   final listOrder = <String, List<String>>{};
-  for (final list in kSchemaLists) {
+  for (final list in kDefaultTemplate.lists) {
     listOrder[list.listKey] = ['x1'];
     final items = list.itemsListKey;
     if (items != null) {
@@ -18,7 +18,7 @@ List<EditorField> _allSchemaFields() {
     }
   }
   return [
-    for (final page in kPageCards.keys) ...effectiveFieldsFor(page, listOrder),
+    for (final page in kDefaultTemplate.pageKeys) ...kDefaultTemplate.fieldsFor(page, listOrder),
   ];
 }
 
@@ -45,13 +45,32 @@ Future<BuildContext> _localizedContext(WidgetTester tester) async {
 }
 
 void main() {
+  test('the template orders its own pages, tabs and all', () {
+    // Order is the list, not a map's key order. It used to be the latter, and
+    // `legal` — which is not even a tab — came first in everything that walked
+    // the pages, including the publish dialog's per-page breakdown.
+    expect(kDefaultTemplate.pageKeys, [
+      'home',
+      'practical',
+      'area',
+      'gallery',
+      kLegalPage,
+    ]);
+    expect(kDefaultTemplate.pageKeys.first, isNot(kLegalPage));
+    expect(kDefaultTemplate.tabPages, isNot(contains(kLegalPage)));
+    // Every page reachable by key carries cards; a typo would read as empty.
+    for (final key in kDefaultTemplate.pageKeys) {
+      expect(kDefaultTemplate.cardsOf(key), isNotEmpty, reason: '$key is empty');
+    }
+  });
+
   test('the tabs are the routes the site serves', () {
-    expect(kWebsitePages, ['home', 'practical', 'area', 'gallery']);
+    expect(kDefaultTemplate.tabPages, ['home', 'practical', 'area', 'gallery']);
     // There is no chalet page and no contact page: that content renders on
     // the homepage (README fase 2 §0). Privacy is Settings → Legal.
-    expect(kWebsitePages, isNot(contains('chalet')));
-    expect(kWebsitePages, isNot(contains('contact')));
-    expect(kWebsitePages, isNot(contains('privacy')));
+    expect(kDefaultTemplate.tabPages, isNot(contains('chalet')));
+    expect(kDefaultTemplate.tabPages, isNot(contains('contact')));
+    expect(kDefaultTemplate.tabPages, isNot(contains('privacy')));
   });
 
   test('every field has a document and a JSON path', () {
@@ -92,8 +111,8 @@ void main() {
     final context = await _localizedContext(tester);
 
     // A card without a title would render an empty header.
-    for (final page in kPageCards.keys) {
-      for (final card in kPageCards[page]!) {
+    for (final page in kDefaultTemplate.pageKeys) {
+      for (final card in kDefaultTemplate.cardsOf(page)) {
         final title = cardTitle(context, card.id);
         expect(title, isNotEmpty, reason: 'card ${card.id} has no title');
         expect(
@@ -116,7 +135,7 @@ void main() {
     }
 
     // Every list names itself and its rows.
-    for (final list in kSchemaLists) {
+    for (final list in kDefaultTemplate.lists) {
       expect(
         listTitle(context, list.listKey),
         isNot(list.listKey),
@@ -249,8 +268,8 @@ void main() {
     // that is not the full path silently writes somewhere nobody reads and
     // never matches on the way back, leaving every photo picker empty.
     final mediaKeys = [
-      for (final cards in kPageCards.values)
-        for (final card in cards)
+      for (final page in kDefaultTemplate.pages)
+        for (final card in page.cards)
           for (final row in card.rows)
             if (row is MediaRow) row.mediaKey,
     ];
@@ -273,8 +292,8 @@ void main() {
     // Nothing is read-only today: the agreements card claimed a Lodgify
     // source that never existed and is editable now. The rule still holds for
     // whatever declares itself read-only next.
-    for (final cards in kPageCards.values) {
-      for (final card in cards.where((card) => card.readOnly)) {
+    for (final page in kDefaultTemplate.pages) {
+      for (final card in page.cards.where((card) => card.readOnly)) {
         expect(
           _allSchemaFields().where((f) => f.cardId == card.id),
           isEmpty,
@@ -288,7 +307,7 @@ void main() {
     // They render on the live Practical page and nothing syncs them from
     // Lodgify, so a read-only card left the owner unable to change their own
     // payment and cancellation terms.
-    final agreements = kPageCards['practical']!.firstWhere(
+    final agreements = kDefaultTemplate.cardsOf('practical').firstWhere(
       (card) => card.id == 'agreements',
     );
 

@@ -427,15 +427,16 @@ opschoning een tweede template op.
 |---|-------|-------|--------|----------|
 | G1 | Documenten op identiteit i.p.v. positie (`document: <int>` → record); unmapped-key fallback weg | console | done | 43ff4e2; `_fieldPaths` noemt `kDocCabin`…`kDocPrivacy`, `_documentFor` geeft null i.p.v. `page/home`, beide lezers guarden; ankertest pint één sleutel per document; 558 tests groen |
 | G2 | Template-namen uit de generieke laag (autofocus als schemavlag, media-subs één keer benoemd, dode mock-sleutels, hardcoded domein) | console | done | 9efd814; `FieldRow.autofocus` + `RowListRow.imageSub/altSub`; schematische preview las `hero.headline`/`highlights.0` die het schema nooit had; preview-chrome toonde een echte klantdomein als placeholder → `wePreviewNoDomain`; preview-url-test pint nu de taalbinding i.p.v. de hostnaam |
-| G3 | `WebsiteTemplate` als instantie: schema + padtabel bereikbaar vanuit state (de structurele blokkade) | console | todo | 54 verwijzingen over 9 bestanden (kPageCards 18, kWebsitePages 9, effectiveFieldsFor 9, locationOf 6, kLegalPage 5, kSchemaLists 4, schemaRowForList 3) |
+| G3 | `WebsiteTemplate` als instantie: schema bereikbaar vanuit state (de structurele blokkade) | console | done | G3-COMMIT; `WebsiteTemplate`/`TemplatePage` met geordende pagina's + `kDefaultTemplate`; `kPageCards`/`kWebsitePages`/`effectiveFieldsFor`/`kSchemaLists`/`schemaRowForList` weg, methodes op de instantie; `SiteContentState.template` (default `kDefaultTemplate`) — de getters die veldadressen oplossen zitten op de state, dus daar moest hij landen; 9 bestanden, 560 tests groen. **Padtabel volgt in G3b:** `_fieldPaths` + `locationOf` staan nog statisch op de repository |
+| G3b | Padtabel + `locationOf` van statisch naar de template | console | todo | `_fieldPaths` (68 patronen) en de resolutie-helpers staan nog `static` op de repository; G3 bracht alleen de kaarten naar de instantie |
 | G4 | Labels als data op kaart/rij i.p.v. 13 switches (ArbLabel voor gedeeld vocabulaire, TextLabel voor template-copy) | console | todo | ~150 cases → ~120 ARB-keys; `fixedGroupTitle` mapt array-index → label |
-| G5 | Geordende pagina's incl. legal (`showAsTab: false`); heft de `kPageCards.keys`-lek in de publiceer-dialoog op | console | todo | publish_modal loopt `changedPages` = Map-key-volgorde, met `legal` eerst en niet in de tabs |
+| G5 | Geordende pagina's incl. legal (`showAsTab: false`); heft de `kPageCards.keys`-lek in de publiceer-dialoog op | console | done | Meegelift op G3: `pages` ís de volgorde, `legal` staat laatst en `showAsTab: false`. Test pint `pageKeys` = home/practical/area/gallery/legal en dat legal nooit eerst komt of een tab is |
 | G6 | Media-slot-routing uit de template i.p.v. `contentType == 'site_config'` + `split('.').last` | console | todo | |
 | G7 | `site_translations.page` schrijft de echte pagina i.p.v. de constante `'home'` | console+supabase | todo | unieke sleutel is `site_id,page,field_key,language`; met één template onschadelijk, met twee een botsing |
 | G8 | Gegenereerd adres-manifest + conformance-check console↔web | console+web | todo | het adrescontract `contentType/slug:json.path` staat nu twee keer, in twee talen; drie drifts vandaag handmatig gevonden |
 
 ## next_lens
-RUN 8 loopt: G1 en G2 done, **G3** is de volgende (structurele blokkade — G4 t/m G8 hangen eraan).
+RUN 8 loopt: G1, G2, G3 en G5 done. Volgende: **G3b** (padtabel `_fieldPaths` + `locationOf` van statisch naar de template — het tweede deel van de blokkade), daarna G4 (labels als data), G6 (media-routing), G7 (`page`-kolom), G8 (adres-manifest).
 
 RUN 7 (fase 2-handoff): F-pre t/m F7 done.  _(historische regel hieronder liep achter op de eigen tabel)_ Volgende was: **F4** (vertaalmodus op schaal —
 `Nieuw`-badge op een rij die in de bron is bijgekomen, kaart-rollup `N gewijzigd` via de nieuwe

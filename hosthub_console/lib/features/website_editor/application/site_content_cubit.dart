@@ -34,6 +34,7 @@ enum ContentLoadStatus { loading, ready, failed }
 /// [SiteContentCubit.save]; there is no autosave anywhere in this cubit.
 class SiteContentState extends Equatable {
   const SiteContentState({
+    this.template = kDefaultTemplate,
     required this.propertyName,
     required this.sourceLanguage,
     required this.locales,
@@ -66,6 +67,16 @@ class SiteContentState extends Equatable {
     this.onlyChangedFields = false,
     this.focusedFieldKey,
   });
+
+  /// Which template this site's website is built from — its pages, their
+  /// order and the cards on them.
+  ///
+  /// A field rather than a global: the schema used to be a top-level const, so
+  /// every site in the console necessarily had the same one. Reachable from
+  /// state is what lets a second template exist at all, and the getters below
+  /// (which resolve field addresses) are why it has to live here rather than
+  /// only on the repository.
+  final WebsiteTemplate template;
 
   final String propertyName;
   final String sourceLanguage;
@@ -223,12 +234,12 @@ class SiteContentState extends Equatable {
   /// The editable fields for the current page (list rows are repeatable
   /// and derived from the content the owner sees, drafts included).
   List<EditorField> get fields =>
-      effectiveFieldsFor(pageKey, effectiveListOrder);
+      template.fieldsFor(pageKey, effectiveListOrder);
 
   /// Every editable field across all pages (translate/publish scope).
   List<EditorField> get allFields => [
-    for (final page in kPageCards.keys)
-      ...effectiveFieldsFor(page, effectiveListOrder),
+    for (final page in template.pageKeys)
+      ...template.fieldsFor(page, effectiveListOrder),
   ];
 
   /// The field with this key on the current page, or null when the schema and
@@ -348,7 +359,7 @@ class SiteContentState extends Equatable {
   /// The changed fields of one page in one language — the number the publish
   /// dialog's per-page breakdown reports.
   List<EditorField> changedFieldsOnPage(String language, String page) => [
-    for (final field in effectiveFieldsFor(page, effectiveListOrder))
+    for (final field in template.fieldsFor(page, effectiveListOrder))
       if (isFieldChanged(language, field.key)) field,
   ];
 
@@ -369,8 +380,8 @@ class SiteContentState extends Equatable {
   /// Pages of the site that have at least one changed field in this language
   /// — what the publish dialog reports per language (§D.2).
   List<String> changedPages(String language) => [
-    for (final page in kPageCards.keys)
-      if (effectiveFieldsFor(
+    for (final page in template.pageKeys)
+      if (template.fieldsFor(
         page,
         effectiveListOrder,
       ).any((f) => isFieldChanged(language, f.key)))
@@ -391,7 +402,7 @@ class SiteContentState extends Equatable {
   /// entirely — header included (CONFORMANCE §5): a card kept as an empty
   /// husk is what makes a filtered lane unreadable.
   List<EditorCard> get visibleCards {
-    final cards = kPageCards[pageKey] ?? const <EditorCard>[];
+    final cards = template.cardsOf(pageKey);
     if (!onlyChangedFields || isSourceMode) return cards;
     return [
       for (final card in cards)
@@ -435,6 +446,7 @@ class SiteContentState extends Equatable {
   }
 
   SiteContentState copyWith({
+    WebsiteTemplate? template,
     String? sourceLanguage,
     List<String>? locales,
     String? pageKey,
@@ -473,6 +485,7 @@ class SiteContentState extends Equatable {
     bool clearLoadError = false,
   }) {
     return SiteContentState(
+      template: template ?? this.template,
       propertyName: propertyName,
       sourceLanguage: sourceLanguage ?? this.sourceLanguage,
       locales: locales ?? this.locales,
@@ -521,6 +534,7 @@ class SiteContentState extends Equatable {
 
   @override
   List<Object?> get props => [
+    template.id,
     propertyName,
     sourceLanguage,
     locales,
@@ -730,8 +744,8 @@ class SiteContentCubit extends Cubit<SiteContentState> {
   static SiteContentState _seedState() {
     final source = Map<String, String>.from(WebsiteSeed.home['nl']!);
     final seedFields = [
-      for (final page in kPageCards.keys)
-        ...effectiveFieldsFor(page, WebsiteSeed.listOrder),
+      for (final page in kDefaultTemplate.pageKeys)
+        ...kDefaultTemplate.fieldsFor(page, WebsiteSeed.listOrder),
     ];
     final translations = <String, Map<String, TranslatedField>>{};
     for (final lang in WebsiteSeed.locales.where((l) => l != 'nl')) {
@@ -1237,7 +1251,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
 
   /// Every field key a row of [listKey] owns, for the row id given.
   List<String> _rowFieldKeys(String listKey, String rowId) {
-    final row = schemaRowForList(listKey);
+    final row = state.template.rowForList(listKey);
     switch (row) {
       case ListRow(:final sub):
         return [listFieldKey(listKey, rowId, sub)];
@@ -1272,7 +1286,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
 
   /// The nested list keys a row of [listKey] encloses (a group's items).
   List<String> _nestedListKeys(String listKey, String rowId) {
-    final row = schemaRowForList(listKey);
+    final row = state.template.rowForList(listKey);
     if (row is! GroupListRow) return const [];
     if (listKey.endsWith('.${row.itemsListKey}')) return const [];
     return [groupItemsListKey(listKey, rowId, row.itemsListKey)];

@@ -58,7 +58,7 @@ Future<SiteContentCubit> _pumpCard(
     baseTheme: ThemeData.light(),
     brightness: Brightness.light,
   );
-  final card = kPageCards[page]!.firstWhere((c) => c.id == cardId);
+  final card = kDefaultTemplate.cardsOf(page).firstWhere((c) => c.id == cardId);
 
   await tester.pumpWidget(
     MaterialApp(
