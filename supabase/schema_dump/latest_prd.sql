@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict r094w73V1TYZnpmh16bhKJELWPzeMcdI0cJs7EDQakTavOt17aneh0CC3Oc4hUa
+\restrict zLumoyeQYOVjg6rqMf1vtdnwZ0m9Zk2CfSVHxizEx2jD4EUjrZbthfNR2fO8KE8
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -838,7 +838,8 @@ CREATE TABLE public.properties (
     other_cost_fixed numeric DEFAULT 0 NOT NULL,
     channel_settings jsonb,
     owner_profile_id uuid DEFAULT public.account_owner_for(auth.uid()),
-    lodgify_synced_at timestamp with time zone
+    lodgify_synced_at timestamp with time zone,
+    site_id uuid
 );
 
 
@@ -849,6 +850,13 @@ ALTER TABLE public.properties OWNER TO postgres;
 --
 
 COMMENT ON COLUMN public.properties.lodgify_synced_at IS 'When this row''s Lodgify-owned columns (address, rooms, prices, …) were last written from the Lodgify API. Null means never synced: those columns hold defaults, not Lodgify data.';
+
+
+--
+-- Name: COLUMN properties.site_id; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.properties.site_id IS 'The site whose website this property owns. NULL falls back to name matching.';
 
 
 --
@@ -1343,6 +1351,13 @@ CREATE INDEX idx_properties_owner_profile_id ON public.properties USING btree (o
 
 
 --
+-- Name: idx_properties_site_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_properties_site_id ON public.properties USING btree (site_id);
+
+
+--
 -- Name: idx_site_invitations_email; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1593,6 +1608,14 @@ ALTER TABLE ONLY public.profiles
 
 ALTER TABLE ONLY public.properties
     ADD CONSTRAINT properties_owner_profile_id_fkey FOREIGN KEY (owner_profile_id) REFERENCES public.profiles(id) ON DELETE SET NULL;
+
+
+--
+-- Name: properties properties_site_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.properties
+    ADD CONSTRAINT properties_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.sites(id) ON DELETE SET NULL;
 
 
 --
@@ -2420,5 +2443,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON T
 -- PostgreSQL database dump complete
 --
 
-\unrestrict r094w73V1TYZnpmh16bhKJELWPzeMcdI0cJs7EDQakTavOt17aneh0CC3Oc4hUa
+\unrestrict zLumoyeQYOVjg6rqMf1vtdnwZ0m9Zk2CfSVHxizEx2jD4EUjrZbthfNR2fO8KE8
 

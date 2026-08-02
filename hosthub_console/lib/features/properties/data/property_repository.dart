@@ -11,12 +11,20 @@ class PropertySummary {
     required this.id,
     required this.name,
     this.lodgifyId,
+    this.siteId,
     this.channelOverrides = ChannelOverrides.none,
   });
 
   final int id;
   final String name;
   final String? lodgifyId;
+
+  /// The site whose website this property owns (`properties.site_id`).
+  ///
+  /// Null means the link was never made, and the console falls back to
+  /// matching a site by name — which is a guess, and the reason this column
+  /// exists. See migration 20260802140000.
+  final String? siteId;
 
   /// Only what this property states for itself. What it actually charges is
   /// [ChannelSettingsResolver.effectiveChannelSettings] of its id — a property
@@ -30,6 +38,7 @@ class PropertySummary {
       id: id,
       name: name?.isNotEmpty == true ? name! : id.toString(),
       lodgifyId: (map['lodgify_id'] as String?)?.trim(),
+      siteId: (map['site_id'] as String?)?.trim(),
       channelOverrides: ChannelOverrides.fromMap(
         map['channel_settings'] as Map<String, dynamic>?,
       ),
@@ -213,7 +222,7 @@ class PropertyRepository extends SupabaseRepository {
       final response = await supabase
           .from('properties')
           .insert(payload)
-          .select('id, name, lodgify_id, channel_settings')
+          .select('id, name, lodgify_id, site_id, channel_settings')
           .single();
       return PropertySummary.fromMap(response);
     } catch (error, stack) {
@@ -263,7 +272,7 @@ class PropertyRepository extends SupabaseRepository {
             if (!linking) 'lodgify_synced_at': null,
           })
           .eq('id', propertyId)
-          .select('id, name, lodgify_id, channel_settings')
+          .select('id, name, lodgify_id, site_id, channel_settings')
           .single();
       return PropertySummary.fromMap(response);
     } catch (error, stack) {

@@ -105,7 +105,7 @@ class SiteContextCubit extends Cubit<SiteContextState> {
         return;
       }
       final property = _propertyContext.state.currentProperty;
-      final site = _resolvePreferredSite(sites, property?.name);
+      final site = resolveSiteFor(sites, property);
 
       String? primaryDomain;
       String? bookingUrl;
@@ -265,14 +265,34 @@ class SiteContextCubit extends Cubit<SiteContextState> {
     }
   }
 
-  /// Same matching as SitesPage._resolvePreferredSite: exact normalized name,
-  /// then substring overlap, then the first site.
+  /// The site a property's website lives on.
+  ///
+  /// The stated link (`properties.site_id`) wins. Name matching is only the
+  /// fallback for a property that was never linked — it is a guess, and a
+  /// guess must not decide which site an owner edits when the answer is
+  /// recorded. Shared with SitesPage so both land on the same site.
+  static SiteSummary resolveSiteFor(
+    List<SiteSummary> sites,
+    PropertySummary? property,
+  ) {
+    final linked = property?.siteId;
+    if (linked != null && linked.isNotEmpty) {
+      for (final site in sites) {
+        if (site.id == linked) return site;
+      }
+      // Linked to a site this account can no longer see (deleted, or access
+      // revoked). Fall through rather than show nothing.
+    }
+    return _resolvePreferredSite(sites, property?.name);
+  }
+
+  /// Exact normalized name, then substring overlap, then the oldest site.
   static SiteSummary _resolvePreferredSite(
     List<SiteSummary> sites,
     String? propertyName,
   ) {
     final normalizedProperty = _normalize(propertyName ?? '');
-    if (normalizedProperty.isEmpty) return sites.first;
+    if (normalizedProperty.isEmpty) return _oldest(sites);
 
     for (final site in sites) {
       if (_normalize(site.name) == normalizedProperty) return site;
@@ -284,8 +304,15 @@ class SiteContextCubit extends Cubit<SiteContextState> {
         return site;
       }
     }
-    return sites.first;
+    return _oldest(sites);
   }
+
+  /// The account's original site — the one it has been running. The list
+  /// arrives newest-first, so "the first site" used to mean that creating any
+  /// new site silently repointed the editor at it.
+  static SiteSummary _oldest(List<SiteSummary> sites) => sites.reduce(
+    (a, b) => a.createdAt.isBefore(b.createdAt) ? a : b,
+  );
 
   static String _normalize(String value) =>
       value.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');

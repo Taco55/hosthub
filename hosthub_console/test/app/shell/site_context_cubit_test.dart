@@ -199,4 +199,80 @@ void main() {
     expect(repository.writes, contains('doc:doc-en=https://book.new.example'));
     expect(cubit.state.bookingUrl, 'https://book.new.example');
   });
+
+  // -- which site a property's website lives on -----------------------------
+
+  group('resolveSiteFor', () {
+    // Newest first, the way fetchSites() orders it.
+    final newest = _namedSite(
+      'site-new',
+      'Trysil Panorama (test)',
+      DateTime.utc(2026, 8, 2),
+    );
+    final oldest = _namedSite(
+      'site-old',
+      'Trysil Panorama',
+      DateTime.utc(2026, 2, 19),
+    );
+    final sites = [newest, oldest];
+
+    PropertySummary property({String? siteId, String name = 'Some Cabin'}) =>
+        PropertySummary(id: 1, name: name, siteId: siteId);
+
+    test('the stated link wins over any name resemblance', () {
+      // The name says "Trysil Panorama", the link says otherwise. The link is
+      // a fact; the name is a coincidence.
+      final resolved = SiteContextCubit.resolveSiteFor(
+        sites,
+        property(siteId: 'site-new', name: 'Trysil Panorama'),
+      );
+
+      expect(resolved.id, 'site-new');
+    });
+
+    test('an unlinked property still matches on name', () {
+      final resolved = SiteContextCubit.resolveSiteFor(
+        sites,
+        property(name: 'Trysil Panorama'),
+      );
+
+      expect(resolved.id, 'site-old');
+    });
+
+    test('no link and no name match lands on the oldest site', () {
+      // The regression this column exists for: with a property name that
+      // resembles neither site, the fallback took the first of a newest-first
+      // list — so creating any second site silently repointed the editor at
+      // it.
+      final resolved = SiteContextCubit.resolveSiteFor(
+        sites,
+        property(name: 'Cosy ski-in/out mountain cabin with sauna'),
+      );
+
+      expect(resolved.id, 'site-old');
+    });
+
+    test('a link to a site the account cannot see falls back, not fails', () {
+      final resolved = SiteContextCubit.resolveSiteFor(
+        sites,
+        property(siteId: 'site-deleted', name: 'Trysil Panorama'),
+      );
+
+      expect(resolved.id, 'site-old');
+    });
+
+    test('no property at all still resolves to the oldest site', () {
+      expect(SiteContextCubit.resolveSiteFor(sites, null).id, 'site-old');
+    });
+  });
 }
+
+SiteSummary _namedSite(String id, String name, DateTime createdAt) =>
+    SiteSummary(
+      id: id,
+      name: name,
+      defaultLocale: 'nl',
+      locales: const ['nl'],
+      timezone: 'Europe/Oslo',
+      createdAt: createdAt,
+    );

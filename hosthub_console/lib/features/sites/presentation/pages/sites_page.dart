@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
+import 'package:hosthub_console/app/shell/application/site_context_cubit.dart';
 import 'package:hosthub_console/features/cms/cms.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
@@ -45,6 +46,9 @@ class _SitesPageState extends State<SitesPage> {
     return Uri.encodeComponent(normalized);
   }
 
+  /// Delegates to [SiteContextCubit.resolveSiteFor] rather than keeping a
+  /// second copy: this page redirects to a site while the sidebar scopes to
+  /// one, and the two disagreeing is worse than either being wrong.
   SiteSummary _resolvePreferredSite(
     List<SiteSummary> sites,
     PropertySummary? currentProperty,
@@ -52,31 +56,7 @@ class _SitesPageState extends State<SitesPage> {
     if (sites.isEmpty) {
       throw StateError('Cannot resolve preferred site for an empty list.');
     }
-    final propertyName = currentProperty?.name.trim();
-    if (propertyName == null || propertyName.isEmpty) {
-      return sites.first;
-    }
-    final normalizedPropertyName = _normalizeComparableName(propertyName);
-
-    for (final site in sites) {
-      if (_normalizeComparableName(site.name) == normalizedPropertyName) {
-        return site;
-      }
-    }
-
-    for (final site in sites) {
-      final normalizedSiteName = _normalizeComparableName(site.name);
-      final overlaps =
-          normalizedSiteName.contains(normalizedPropertyName) ||
-          normalizedPropertyName.contains(normalizedSiteName);
-      if (overlaps) return site;
-    }
-
-    return sites.first;
-  }
-
-  String _normalizeComparableName(String value) {
-    return value.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+    return SiteContextCubit.resolveSiteFor(sites, currentProperty);
   }
 
   Future<void> _createSite() async {
