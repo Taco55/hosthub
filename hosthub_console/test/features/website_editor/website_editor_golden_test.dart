@@ -56,6 +56,12 @@ void main() {
                 padding: EdgeInsets.zero,
                 paneGap: 0,
                 leftPaneSize: const StyledPaneSize.fixed(512),
+                // As the page runs it (the drag handle is what put a 9px
+                // channel of page background between the panes, so the
+                // baselines have to be taken with it on).
+                resizableLeftPane: true,
+                minLeftPaneWidth: 400,
+                maxLeftPaneWidth: 900,
                 leftChild: EditorColumn(state: state),
                 rightChild: PreviewPane(state: state),
                 showRightPane: true,
