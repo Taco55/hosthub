@@ -248,6 +248,14 @@ class WebsiteContentRepository extends SupabaseRepository {
       document: 1,
       path: ['highlights', _rowId, 'alt'],
     ),
+    // One storage path per row — the highlight's own photo, which the grid
+    // renders beside the title. Not an `images.*` slot: those are ordered
+    // lists for a whole section, this is a single file bound to one row.
+    (
+      pattern: 'home.highlights.{id}.image',
+      document: 1,
+      path: ['highlights', _rowId, 'image'],
+    ),
 
     // -- Home: house rules (card 8) — the section the page did not render --
     (pattern: 'cabin.rules.title', document: 0, path: ['houseRules', 'title']),

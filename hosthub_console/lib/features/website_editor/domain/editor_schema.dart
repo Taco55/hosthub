@@ -796,13 +796,23 @@ List<EditorField> _fieldsOfRow(
               rowId: rowId,
             ),
           // The photo is language-independent; its alt text is not (§C.4).
-          if (media)
+          // Both are fields: the row holds one image, so it is a path on a
+          // scalar key rather than one of the `images.*` list slots.
+          if (media) ...[
+            EditorField(
+              key: listFieldKey(listKey, rowId, 'image'),
+              cardId: cardId,
+              listKey: listKey,
+              rowId: rowId,
+              sharedValue: true,
+            ),
             EditorField(
               key: listFieldKey(listKey, rowId, 'alt'),
               cardId: cardId,
               listKey: listKey,
               rowId: rowId,
             ),
+          ],
         ],
       ];
 

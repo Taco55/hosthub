@@ -365,6 +365,7 @@ class _RowListRowView extends StatelessWidget {
             _RowMedia(
               state: state,
               rowLabel: '$itemLabel ${index + 1}',
+              imageFieldKey: listFieldKey(row.listKey, rowId, 'image'),
               altFieldKey: listFieldKey(row.listKey, rowId, 'alt'),
             ),
         ],
@@ -697,25 +698,69 @@ class _RowMedia extends StatelessWidget {
   const _RowMedia({
     required this.state,
     required this.rowLabel,
+    required this.imageFieldKey,
     required this.altFieldKey,
   });
 
   final SiteContentState state;
   final String rowLabel;
+  final String imageFieldKey;
   final String altFieldKey;
+
+  Future<void> _pick(BuildContext context, MediaLibraryCubit media) async {
+    final content = context.read<SiteContentCubit>();
+    final current = state.valueFor(state.sourceLanguage, imageFieldKey);
+    final chosen = await showMediaPicker(
+      context,
+      cubit: media,
+      title: rowLabel,
+      mode: MediaPickerMode.single,
+      initialSelection: current.isEmpty ? const [] : [current],
+      maxSelection: 1,
+    );
+    if (chosen == null) return;
+    content.editSourceField(imageFieldKey, chosen.isEmpty ? '' : chosen.first);
+  }
 
   @override
   Widget build(BuildContext context) {
+    // The photo is one file on the row, so it is a field holding a storage
+    // path — not one of the `images.*` list slots. Picking is source-mode
+    // only: a translation changes the words, never which photo is shown.
+    final media = context.read<MediaLibraryCubit?>();
+    final path = state.valueFor(state.sourceLanguage, imageFieldKey);
+    final canPick = state.isSourceMode && media != null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        StyledNotice(
-          tone: StyledNoticeTone.neutral,
-          icon: Icons.image_outlined,
-          message: state.isSourceMode
-              ? context.s.weRowMediaPending
-              : context.s.weSharedPhotosNote,
-        ),
+        if (!state.isSourceMode)
+          StyledNotice(
+            tone: StyledNoticeTone.neutral,
+            icon: Icons.image_outlined,
+            message: context.s.weSharedPhotosNote,
+          )
+        else
+          StyledMediaStrip(
+            itemCount: path.isEmpty ? 0 : 1,
+            imageBuilder: (context, _) => media == null
+                ? const ColoredBox(color: Colors.transparent)
+                : Image.network(
+                    media.publicUrlOf(path),
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, _, __) =>
+                        const Icon(Icons.broken_image_outlined, size: 18),
+                  ),
+            maxItems: 1,
+            addLabel: context.s.weMediaChoose,
+            onAdd: canPick ? () => _pick(context, media) : null,
+            onRemove: canPick && path.isNotEmpty
+                ? (_) => context.read<SiteContentCubit>().editSourceField(
+                    imageFieldKey,
+                    '',
+                  )
+                : null,
+          ),
         SizedBox(height: context.styledSpacing.sm),
         _SubField(
           state: state,
