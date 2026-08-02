@@ -1,0 +1,41 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "main": ".open-next/worker.js",
+  // A second deployment of this same app, serving ONLY test.trysilpanorama.com.
+  //
+  // The production worker (hosthub-sites) answers the whole zone through the
+  // `*.trysilpanorama.com/*` route, so deploying website code would put it in
+  // front of every customer site at once. This worker takes a MORE SPECIFIC
+  // route, which Cloudflare prefers, so the test host can run unreleased code
+  // while the live sites stay on whatever hosthub-sites was last deployed.
+  //
+  // Keep in sync with wrangler.jsonc — this file differs only in `name`, the
+  // matching self-reference, and `routes`.
+  "name": "hosthub-sites-test",
+  "compatibility_date": "2024-12-30",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "routes": [
+    {
+      "pattern": "test.trysilpanorama.com/*",
+      "zone_name": "trysilpanorama.com"
+    }
+  ],
+  "vars": {
+    "CMS_ENABLED": "true",
+    "CMS_QUERY_TIMEOUT_MS": "1200",
+    "CMS_DOMAIN_LOOKUP_ENABLED": "true"
+  },
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "hosthub-sites-test"
+    }
+  ],
+  "images": {
+    "binding": "IMAGES"
+  }
+}
