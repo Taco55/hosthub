@@ -23,8 +23,18 @@ class MediaRepository extends SupabaseRepository {
   /// The public URL of a stored file — what a document holds and what the
   /// website renders. Public by design (a public site's photos are public);
   /// the API path is what the policies scope.
-  String publicUrlOf(String storagePath) =>
-      supabase.storage.from(bucket).getPublicUrl(storagePath);
+  ///
+  /// A value that is already a URL (or a repo path like `/images/hero/x.jpg`)
+  /// is returned untouched, mirroring `mediaPublicUrl` in `web/lib/media-url.ts` —
+  /// a site can be half-migrated without either side mangling the other's paths.
+  String publicUrlOf(String storagePath) => _isResolvedImageSrc(storagePath)
+      ? storagePath
+      : supabase.storage.from(bucket).getPublicUrl(storagePath);
+
+  static bool _isResolvedImageSrc(String value) =>
+      value.startsWith('http://') ||
+      value.startsWith('https://') ||
+      value.startsWith('/');
 
   Future<List<MediaFile>> loadLibrary(String siteId) async {
     try {
