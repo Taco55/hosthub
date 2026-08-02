@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { primaryHeroImage } from "@/lib/content";
+import { detectLocale } from "@/lib/detect-locale";
 import { resolveBookingUrl } from "@/lib/booking-url";
 import { getLocalizedContent, getSiteConfig } from "@/lib/content-provider";
 import { getDictionary, isLocale, type Locale } from "@/lib/i18n";
@@ -86,7 +87,11 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
 export default async function LocaleLayout({ children, params }: LayoutProps) {
   const { locale } = await params;
   if (!isLocale(locale)) {
-    notFound();
+    // `/practical` lands here as locale="practical". The Proxy used to prefix
+    // a detected language and redirect; it cannot (see lib/detect-locale.ts),
+    // so this does. A segment that is not a route either resolves to a 404
+    // one hop later, which is where it would have ended up anyway.
+    redirect(`/${await detectLocale()}/${locale}`);
   }
 
   const runtimeSite = await resolveRuntimeSiteContext();
