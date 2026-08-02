@@ -69,3 +69,8 @@ supabase/functions/**/deno.lock
 # Nooit worktrees (zie AGENTS.md). Deze regel is het vangnet: een geneste
 # checkout hier mag nooit meegecommit worden.
 **/.claude/worktrees/
+
+# Lokale gemakssymlink naar de shared-libraries checkout (zie AGENTS.md /
+# shared-libraries-checkout memory) — wijst naar een absoluut pad op deze
+# machine, dus nooit meecommitten.
+**/.claude/shared
