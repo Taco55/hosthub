@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { cn } from "@/lib/utils";
 import { Menu, X } from "lucide-react";
+import { cmsField } from "@/lib/cms-field";
 
 type HeaderProps = {
   locale: Locale;
@@ -110,7 +111,7 @@ export function Header({ locale, siteName, bookingHref }: HeaderProps) {
               <Menu className="h-5 w-5" />
             </button>
             <Link href={base} className="font-sans text-xl font-semibold tracking-tight">
-              {siteName}
+              <span {...cmsField("site_config/main", "name")}>{siteName}</span>
             </Link>
           </div>
           <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
@@ -150,7 +151,7 @@ export function Header({ locale, siteName, bookingHref }: HeaderProps) {
           >
             <div className="flex items-center justify-between">
               <span className="font-sans text-lg font-semibold tracking-tight text-foreground">
-                {siteName}
+                <span {...cmsField("site_config/main", "name")}>{siteName}</span>
               </span>
               <button
                 type="button"

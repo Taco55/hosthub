@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { Locale, getDictionary } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
+import { cmsField } from "@/lib/cms-field";
 
 type FooterProps = {
   locale: Locale;
@@ -26,8 +27,18 @@ export function Footer({
     <footer className="border-t border-border/60 bg-background/80">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-10 sm:px-8 lg:px-10 md:flex-row md:items-center md:justify-between">
         <div className="space-y-2">
-          <div className="font-sans text-lg font-semibold">{siteName}</div>
-          <p className="text-sm text-muted-foreground">{siteLocation}</p>
+          <div
+            className="font-sans text-lg font-semibold"
+            {...cmsField("site_config/main", "name")}
+          >
+            {siteName}
+          </div>
+          <p
+            className="text-sm text-muted-foreground"
+            {...cmsField("site_config/main", "location")}
+          >
+            {siteLocation}
+          </p>
         </div>
         <nav className="flex flex-wrap items-center gap-4 text-sm font-medium">
           <Link href={base}>{t.nav.home}</Link>
