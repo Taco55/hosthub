@@ -14,6 +14,16 @@
 
 export type TextRow = { id?: string; text: string };
 
+/**
+ * A text list as a document may hold it: rows since the stable-row-id
+ * migration, plain strings in the repo's seed data and the older snapshots.
+ *
+ * Renderers must run it through [textRows] rather than mapping it directly —
+ * handing a row object to React is the "Objects are not valid as a React
+ * child" crash, and this union is what makes the compiler say so.
+ */
+export type TextList = Array<string | TextRow>;
+
 /** Normalizes a text list to rows, keeping ids where the data has them. */
 export function textRows(value: unknown): TextRow[] {
   if (!Array.isArray(value)) return [];

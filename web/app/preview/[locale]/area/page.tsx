@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { Snowflake, Sun } from "lucide-react";
 
 import { SectionHeading } from "@/components/section-heading";
+import { cmsField } from "@/lib/cms-field";
+import { rowFieldPath, textRows } from "@/lib/cms-rows";
 import { cmsFieldAddress } from "@/lib/cms-field";
 import { Container } from "@/components/site/Container";
 import { Card, CardContent } from "@/components/ui/card";
@@ -44,20 +46,47 @@ export default async function PreviewAreaPage({ params }: PageProps) {
           {area.sections.map((section, index) => {
             const Icon = icons[index % icons.length];
             return (
-              <Card key={section.title} className="bg-white">
+              <Card key={section.id ?? index} className="bg-white">
                 <CardContent className="space-y-4 pt-6">
                   <div className="flex items-center gap-3">
                     <IconBadge icon={<Icon />} />
-                    <div className="font-sans text-lg font-medium text-[color:rgb(var(--heading-warm-light))] md:text-xl">
+                    <div
+                      className="font-sans text-lg font-medium text-[color:rgb(var(--heading-warm-light))] md:text-xl"
+                      {...cmsField(
+                        "page/area",
+                        "sections",
+                        section.id ?? index,
+                        "title",
+                      )}
+                    >
                       {section.title}
                     </div>
                   </div>
-                  <p className="text-base leading-7 text-slate-600">{section.description}</p>
+                  <p
+                    className="text-base leading-7 text-slate-600"
+                    {...cmsField(
+                      "page/area",
+                      "sections",
+                      section.id ?? index,
+                      "description",
+                    )}
+                  >
+                    {section.description}
+                  </p>
                   <ul className="space-y-2 text-base leading-7 text-slate-600">
-                    {section.bullets.map((bullet) => (
-                      <li key={bullet} className="flex gap-2">
+                    {textRows(section.bullets).map((row, bulletIndex) => (
+                      <li key={row.id ?? bulletIndex} className="flex gap-2">
                         <span className="mt-2 h-1.5 w-1.5 rounded-full bg-foreground/50" />
-                        <span>{bullet}</span>
+                        <span
+                          {...cmsField(
+                            "page/area",
+                            "sections",
+                            section.id ?? index,
+                            ...rowFieldPath("bullets", row, bulletIndex),
+                          )}
+                        >
+                          {row.text}
+                        </span>
                       </li>
                     ))}
                   </ul>

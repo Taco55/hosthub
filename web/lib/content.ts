@@ -1,15 +1,16 @@
+import type { TextList } from "./cms-rows";
 import type { Locale } from "./i18n";
 
 type Localized<T> = Record<Locale, T>;
 
-export type DistanceItem = { label: string; value: string };
+export type DistanceItem = { id?: string; label: string; value: string };
 export type AmenityGroup = {
   /** Stable row id (post row-id migration); addresses editor bindings. */
   id?: string;
   title: string;
-  items: string[];
+  items: TextList;
 };
-export type PolicyBlock = { title: string; items: string[] };
+export type PolicyBlock = { id?: string; title: string; items: TextList };
 
 export type CabinContent = {
   meta: {
@@ -27,7 +28,7 @@ export type CabinContent = {
   description: Array<string | import("./cms-rows").TextRow>;
   layoutAndFacilities: {
     title: string;
-    items: string[];
+    items: TextList;
   };
   location: {
     title: string;
@@ -48,7 +49,7 @@ export type CabinContent = {
   };
   houseRules: {
     title: string;
-    bullets: string[];
+    bullets: TextList;
     checkIn: string;
     checkOut: string;
     checkInNote: string;
@@ -64,9 +65,10 @@ export type CabinContent = {
 export type LayoutFacilitiesContent = {
   title: string;
   sections: Array<{
+    id?: string;
     title: string;
     intro?: string;
-    bullets: string[];
+    bullets: TextList;
   }>;
 };
 
@@ -76,11 +78,14 @@ export type PracticalQuickFact = {
 };
 
 export type PracticalTransportColumn = {
+  /** Stable row id; the console addresses the column by it. */
+  id?: string;
   title: string;
-  bullets: string[];
+  bullets: TextList;
 };
 
 export type KeyFactContent = {
+  id?: string;
   value: string;
   label: string;
 };
@@ -97,11 +102,11 @@ export type PracticalContent = {
     checkIn: string;
     checkOutLabel: string;
     checkOut: string;
-    bullets: string[];
+    bullets: TextList;
   };
   parkingCharging: {
     title: string;
-    bullets: string[];
+    bullets: TextList;
     callout: string;
   };
   layoutFacilities: LayoutFacilitiesContent;
@@ -111,11 +116,11 @@ export type PracticalContent = {
   };
   goodToKnow: {
     title: string;
-    bullets: string[];
+    bullets: TextList;
   };
   contactHelp: {
     title: string;
-    bullets: string[];
+    bullets: TextList;
   };
   agreementsAndPayment: {
     title: string;
@@ -769,9 +774,10 @@ export type PracticalTitles = {
 };
 
 export type AreaSection = {
+  id?: string;
   title: string;
   description: string;
-  bullets: string[];
+  bullets: TextList;
 };
 
 export type LocalizedImage = {
@@ -839,7 +845,7 @@ export type LocalizedContent = {
   };
   privacy: {
     intro: string;
-    bullets: string[];
+    bullets: TextList;
   };
 };
 

@@ -5,7 +5,8 @@ import { Car, Clock, PhoneCall, ShieldCheck } from "lucide-react";
 import { QuickFactsRow } from "@/components/practical/QuickFactsRow";
 import { TransportCard } from "@/components/practical/TransportCard";
 import { SectionHeading } from "@/components/section-heading";
-import { cmsFieldAddress } from "@/lib/cms-field";
+import { cmsField, cmsFieldAddress } from "@/lib/cms-field";
+import { rowFieldPath, textRows } from "@/lib/cms-rows";
 import { Container } from "@/components/site/Container";
 import { Policies } from "@/components/site/Policies";
 import { LayoutFacilitiesCard } from "@/components/sections/LayoutFacilitiesCard";
@@ -91,8 +92,13 @@ export default async function PracticalPage({ params }: PageProps) {
                   </div>
                 </div>
                 <ul className="list-disc list-inside space-y-2">
-                  {arrivalAccess.bullets.map((item) => (
-                    <li key={item}>{item}</li>
+                  {textRows(arrivalAccess.bullets).map((row, index) => (
+                    <li
+                      key={row.id ?? index}
+                      {...cmsField("page/practical", ...rowFieldPath("arrivalAccess.bullets", row, index))}
+                    >
+                      {row.text}
+                    </li>
                   ))}
                 </ul>
                 </CardContent>
@@ -104,9 +110,14 @@ export default async function PracticalPage({ params }: PageProps) {
                 </CardHeader>
                 <CardContent className="space-y-3 text-base leading-7 text-slate-600">
                   <ul className="list-disc list-inside space-y-2">
-                    {parkingCharging.bullets.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
+                    {textRows(parkingCharging.bullets).map((row, index) => (
+                    <li
+                      key={row.id ?? index}
+                      {...cmsField("page/practical", ...rowFieldPath("parkingCharging.bullets", row, index))}
+                    >
+                      {row.text}
+                    </li>
+                  ))}
                   </ul>
                   <p className="rounded-lg bg-accent/10 px-3 py-2 text-sm text-slate-600">
                     {parkingCharging.callout}
@@ -120,9 +131,14 @@ export default async function PracticalPage({ params }: PageProps) {
                 </CardHeader>
                 <CardContent className="text-base leading-7 text-slate-600">
                   <ul className="list-disc list-inside space-y-2">
-                    {practical.goodToKnow.bullets.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
+                    {textRows(practical.goodToKnow.bullets).map((row, index) => (
+                    <li
+                      key={row.id ?? index}
+                      {...cmsField("page/practical", ...rowFieldPath("goodToKnow.bullets", row, index))}
+                    >
+                      {row.text}
+                    </li>
+                  ))}
                   </ul>
                 </CardContent>
               </Card>
@@ -141,8 +157,13 @@ export default async function PracticalPage({ params }: PageProps) {
               </CardHeader>
               <CardContent className="text-base leading-7 text-slate-600">
                 <ul className="list-disc list-inside space-y-2">
-                  {practical.contactHelp.bullets.map((item) => (
-                    <li key={item}>{item}</li>
+                  {textRows(practical.contactHelp.bullets).map((row, index) => (
+                    <li
+                      key={row.id ?? index}
+                      {...cmsField("page/practical", ...rowFieldPath("contactHelp.bullets", row, index))}
+                    >
+                      {row.text}
+                    </li>
                   ))}
                 </ul>
               </CardContent>

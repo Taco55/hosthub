@@ -3,12 +3,13 @@ import { AmenityTile } from "@/components/site/AmenityTile";
 import { amenityRegistry } from "@/lib/amenities/amenityRegistry";
 import { homeAmenityGroups } from "@/lib/amenities/homeAmenities";
 import { cmsField } from "@/lib/cms-field";
+import { rowFieldPath, textRows, type TextList } from "@/lib/cms-rows";
 import { getDictionary, type Dictionary, type Locale } from "@/lib/i18n";
 
 type AmenityGroupContent = {
   id?: string;
   title: string;
-  items: string[];
+  items: TextList;
 };
 
 type AmenitiesGroupedProps = {
@@ -62,11 +63,21 @@ export function AmenitiesGrouped({ title, locale, groups }: AmenitiesGroupedProp
               {group.title}
             </h3>
             <div className="mx-auto grid w-full max-w-3xl grid-cols-2 gap-4 md:grid-cols-4">
-              {group.items.map((item) => (
+              {textRows(group.items).map((row, itemIndex) => (
                 // An item the owner typed cannot carry an icon from a registry
                 // keyed by ids, so every tile gets the same neutral mark. That
                 // is the price of the items being editable at all.
-                <AmenityTile key={item} label={item} />
+                <AmenityTile
+                  key={row.id ?? itemIndex}
+                  label={row.text}
+                  {...cmsField(
+                    "cabin/main",
+                    "amenities",
+                    "groups",
+                    group.id ?? groupIndex,
+                    ...rowFieldPath("items", row, itemIndex),
+                  )}
+                />
               ))}
             </div>
           </div>

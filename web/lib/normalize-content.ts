@@ -16,7 +16,7 @@ import type {
   LocalizedContent,
   PracticalContent,
 } from "./content";
-import { rowTexts, textRows } from "./cms-rows";
+import { textRows } from "./cms-rows";
 import { mediaPublicUrl } from "./media-url";
 
 type AnyRecord = Record<string, unknown>;
@@ -25,9 +25,11 @@ function isRecord(value: unknown): value is AnyRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-/** Replaces `key` (a text list) with plain strings, in place on the copy. */
+/** Normalizes `key` (a text list) to rows, in place on the copy. Rows, not
+ * strings: the renderer needs each row's id to address it, which is what
+ * lets the live preview patch a line while the owner types it. */
 function normalizeTextList(target: AnyRecord, key: string) {
-  if (key in target) target[key] = rowTexts(target[key]);
+  if (key in target) target[key] = textRows(target[key]);
 }
 
 export function normalizeCabinContent(doc: CabinContent): CabinContent {
