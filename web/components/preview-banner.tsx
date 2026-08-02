@@ -71,8 +71,14 @@ export function PreviewBanner({
       <span>Preview mode</span>
       <span className="text-white/70">—</span>
       <span className="text-white/90">{message}</span>
+      {/* A new tab, not this one. The preview is nearly always inside the
+          console's preview pane, where an in-place navigation swaps the pane's
+          whole reason for existing for the published site — and the console
+          only reloads that frame on a save, so there is no way back. */}
       <a
         href={`/${locale}`}
+        target="_blank"
+        rel="noreferrer"
         className="ml-2 rounded bg-white/20 px-3 py-0.5 text-white transition-colors hover:bg-white/30"
       >
         View production site
