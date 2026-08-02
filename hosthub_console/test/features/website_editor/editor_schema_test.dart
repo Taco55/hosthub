@@ -198,6 +198,33 @@ void main() {
     }
   });
 
+  test('a field resolves to the document that actually holds it', () {
+    // The path table addressed documents by index into a list until now, so
+    // inserting one entry repointed every later pattern — silently, because a
+    // path that is not there reads as an empty string rather than throwing.
+    // These are the anchors: if a key ever answers a different document, the
+    // editor is reading and writing someone else's content.
+    const expected = {
+      'cabin.hero.title': 'cabin/main',
+      'home.tagline': 'page/home',
+      'practical.header.title': 'page/practical',
+      'area.intro': 'page/area',
+      'contact.title': 'contact_form/main',
+      'site.name': 'site_config/main',
+      'legal.privacy.intro': 'page/privacy',
+    };
+
+    expected.forEach((key, document) {
+      final location = WebsiteContentRepository.locationOf(key);
+      expect(location, isNotNull, reason: '$key is not mapped');
+      expect(
+        '${location!.contentType}/${location.slug}',
+        document,
+        reason: '$key must live in $document',
+      );
+    });
+  });
+
   test('a media row contributes no field the site cannot read', () {
     final fields = _allSchemaFields().map((f) => f.key).toList();
 

@@ -134,24 +134,39 @@ class WebsiteContentRepository extends SupabaseRepository {
 
   static const String page = 'home';
 
+  /// Every document this editor may write, by identity rather than position.
+  ///
+  /// `_fieldPaths` used to address these by index into a list. Inserting an
+  /// entry in the middle silently repointed every later pattern at the wrong
+  /// document — and because a missing path reads as an empty string, that
+  /// showed up as a blank editor and a save into someone else's document
+  /// rather than as an error.
+  static const kDocCabin = (contentType: 'cabin', slug: 'main');
+  static const kDocHome = (contentType: 'page', slug: 'home');
+  static const kDocPractical = (contentType: 'page', slug: 'practical');
+  static const kDocArea = (contentType: 'page', slug: 'area');
+  static const kDocContactForm = (contentType: 'contact_form', slug: 'main');
+  static const kDocGallery = (contentType: 'page', slug: 'gallery');
+
+  /// Photo choices: one set for the whole site, so they live in site_config
+  /// rather than in a locale's page (README §C.4 — the photo is
+  /// language-independent, its alt text is not).
+  static const kDocSiteConfig = (contentType: 'site_config', slug: 'main');
+
+  /// Privacy. A route on the site, but not a tab in the editor: it is a legal
+  /// document with a different author and a yearly rhythm, so it is edited
+  /// under Site-instellingen → Juridisch (§A.6).
+  static const kDocPrivacy = (contentType: 'page', slug: 'privacy');
+
   static const List<({String contentType, String slug})> _documents = [
-    (contentType: 'cabin', slug: 'main'),
-    (contentType: 'page', slug: 'home'),
-    (contentType: 'page', slug: 'practical'),
-    (contentType: 'page', slug: 'area'),
-    (contentType: 'contact_form', slug: 'main'),
-    // The gallery tab is a route, so it is a document — created on first
-    // write, like every other document this editor may reach first.
-    (contentType: 'page', slug: 'gallery'),
-    // Photo choices: one set for the whole site, so they live in site_config
-    // rather than in a locale's page (README §C.4 — the photo is
-    // language-independent, its alt text is not).
-    (contentType: 'site_config', slug: 'main'),
-    // Privacy. A route on the site, but not a tab in the editor: it is a legal
-    // document with a different author and a yearly rhythm, so it is edited
-    // under Site-instellingen → Juridisch (§A.6). Same document machinery,
-    // same translation model, different place.
-    (contentType: 'page', slug: 'privacy'),
+    kDocCabin,
+    kDocHome,
+    kDocPractical,
+    kDocArea,
+    kDocContactForm,
+    kDocGallery,
+    kDocSiteConfig,
+    kDocPrivacy,
   ];
 
   // -- field <-> document JSON mapping ------------------------------------
@@ -162,34 +177,40 @@ class WebsiteContentRepository extends SupabaseRepository {
   /// the page schema ([kPageCards]), not a branch in a read function and a
   /// matching branch in a write function. `{id}` in a pattern captures a
   /// stable row id and lands in the path at the [_rowId] position.
-  static const List<({String pattern, int document, List<Object> path})>
+  static const List<
+    ({
+      String pattern,
+      ({String contentType, String slug}) document,
+      List<Object> path,
+    })
+  >
   _fieldPaths = [
     // -- Home: hero (README §A.1 card 1) --
-    (pattern: 'cabin.hero.title', document: 0, path: ['hero', 'title']),
-    (pattern: 'cabin.hero.subtitle', document: 0, path: ['hero', 'subtitle']),
+    (pattern: 'cabin.hero.title', document: kDocCabin, path: ['hero', 'title']),
+    (pattern: 'cabin.hero.subtitle', document: kDocCabin, path: ['hero', 'subtitle']),
     (
       pattern: 'cabin.meta.locationShort',
-      document: 0,
+      document: kDocCabin,
       path: ['meta', 'locationShort'],
     ),
-    (pattern: 'cabin.meta.name', document: 0, path: ['meta', 'name']),
+    (pattern: 'cabin.meta.name', document: kDocCabin, path: ['meta', 'name']),
 
     // -- Home: key facts (card 2) --
     (
       pattern: 'home.keyFacts.{id}.label',
-      document: 1,
+      document: kDocHome,
       path: ['keyFacts', _rowId, 'label'],
     ),
     (
       pattern: 'home.keyFacts.{id}.value',
-      document: 1,
+      document: kDocHome,
       path: ['keyFacts', _rowId, 'value'],
     ),
 
     // -- Home: description (card 3) --
     (
       pattern: 'cabin.description.{id}.text',
-      document: 0,
+      document: kDocCabin,
       path: ['description', _rowId, 'text'],
     ),
 
@@ -198,53 +219,53 @@ class WebsiteContentRepository extends SupabaseRepository {
     // -- Home: amenities (card 5) — two nesting levels, the maximum --
     (
       pattern: 'cabin.amenities.title',
-      document: 0,
+      document: kDocCabin,
       path: ['amenities', 'title'],
     ),
     (
       pattern: 'cabin.amenities.groups.{id}.title',
-      document: 0,
+      document: kDocCabin,
       path: ['amenities', 'groups', _rowId, 'title'],
     ),
     (
       pattern: 'cabin.amenities.groups.{id}.items.{id}.text',
-      document: 0,
+      document: kDocCabin,
       path: ['amenities', 'groups', _rowId, 'items', _rowId, 'text'],
     ),
 
     // -- Home: location & distances (card 6) --
-    (pattern: 'cabin.location.title', document: 0, path: ['location', 'title']),
+    (pattern: 'cabin.location.title', document: kDocCabin, path: ['location', 'title']),
     (
       pattern: 'cabin.location.distances.{id}.label',
-      document: 0,
+      document: kDocCabin,
       path: ['location', 'distances', _rowId, 'label'],
     ),
     (
       pattern: 'cabin.location.distances.{id}.value',
-      document: 0,
+      document: kDocCabin,
       path: ['location', 'distances', _rowId, 'value'],
     ),
     // Site-wide chrome, in site_config: rendered on every page, one set for
     // the whole site, per language where the text is language-dependent.
-    (pattern: 'site.mapEmbedUrl', document: 6, path: ['mapEmbedUrl']),
-    (pattern: 'site.mapLinkUrl', document: 6, path: ['mapLinkUrl']),
-    (pattern: 'site.name', document: 6, path: ['name']),
-    (pattern: 'site.location', document: 6, path: ['location']),
+    (pattern: 'site.mapEmbedUrl', document: kDocSiteConfig, path: ['mapEmbedUrl']),
+    (pattern: 'site.mapLinkUrl', document: kDocSiteConfig, path: ['mapLinkUrl']),
+    (pattern: 'site.name', document: kDocSiteConfig, path: ['name']),
+    (pattern: 'site.location', document: kDocSiteConfig, path: ['location']),
 
     // -- Home: highlights (card 7) --
     (
       pattern: 'home.highlights.{id}.title',
-      document: 1,
+      document: kDocHome,
       path: ['highlights', _rowId, 'title'],
     ),
     (
       pattern: 'home.highlights.{id}.description',
-      document: 1,
+      document: kDocHome,
       path: ['highlights', _rowId, 'description'],
     ),
     (
       pattern: 'home.highlights.{id}.alt',
-      document: 1,
+      document: kDocHome,
       path: ['highlights', _rowId, 'alt'],
     ),
     // One storage path per row — the highlight's own photo, which the grid
@@ -252,76 +273,76 @@ class WebsiteContentRepository extends SupabaseRepository {
     // lists for a whole section, this is a single file bound to one row.
     (
       pattern: 'home.highlights.{id}.image',
-      document: 1,
+      document: kDocHome,
       path: ['highlights', _rowId, 'image'],
     ),
 
     // -- Home: house rules (card 8) — the section the page did not render --
-    (pattern: 'cabin.rules.title', document: 0, path: ['houseRules', 'title']),
+    (pattern: 'cabin.rules.title', document: kDocCabin, path: ['houseRules', 'title']),
     (
       pattern: 'cabin.rules.bullets.{id}.text',
-      document: 0,
+      document: kDocCabin,
       path: ['houseRules', 'bullets', _rowId, 'text'],
     ),
     (
       pattern: 'cabin.rules.checkIn',
-      document: 0,
+      document: kDocCabin,
       path: ['houseRules', 'checkIn'],
     ),
     (
       pattern: 'cabin.rules.checkOut',
-      document: 0,
+      document: kDocCabin,
       path: ['houseRules', 'checkOut'],
     ),
     (
       pattern: 'cabin.rules.cleaningNote',
-      document: 0,
+      document: kDocCabin,
       path: ['houseRules', 'cleaningNote'],
     ),
     (
       pattern: 'cabin.rules.wifiNote',
-      document: 0,
+      document: kDocCabin,
       path: ['houseRules', 'wifiNote'],
     ),
 
     // -- Home: contact form (card 9). The four fields are fixed — the form
     // has a backend contract — so the slot is a document key, not a row id.
-    (pattern: 'contact.title', document: 4, path: ['title']),
-    (pattern: 'contact.subtitle', document: 4, path: ['subtitle']),
+    (pattern: 'contact.title', document: kDocContactForm, path: ['title']),
+    (pattern: 'contact.subtitle', document: kDocContactForm, path: ['subtitle']),
     (
       pattern: 'contact.form.fields.{id}.label',
-      document: 4,
+      document: kDocContactForm,
       path: ['form', _key, 'label'],
     ),
     (
       pattern: 'contact.form.fields.{id}.placeholder',
-      document: 4,
+      document: kDocContactForm,
       path: ['form', _key, 'placeholder'],
     ),
-    (pattern: 'contact.form.submit', document: 4, path: ['form', 'submit']),
-    (pattern: 'contact.form.success', document: 4, path: ['form', 'success']),
-    (pattern: 'contact.form.error', document: 4, path: ['form', 'error']),
+    (pattern: 'contact.form.submit', document: kDocContactForm, path: ['form', 'submit']),
+    (pattern: 'contact.form.success', document: kDocContactForm, path: ['form', 'success']),
+    (pattern: 'contact.form.error', document: kDocContactForm, path: ['form', 'error']),
 
     // -- Practical (§A.2) --
-    (pattern: 'practical.header.title', document: 2, path: ['header', 'title']),
+    (pattern: 'practical.header.title', document: kDocPractical, path: ['header', 'title']),
     (
       pattern: 'practical.header.subtitle',
-      document: 2,
+      document: kDocPractical,
       path: ['header', 'subtitle'],
     ),
     (
       pattern: 'practical.quickFacts.{id}.label',
-      document: 2,
+      document: kDocPractical,
       path: ['quickFacts', _rowId, 'label'],
     ),
     (
       pattern: 'practical.quickFacts.{id}.value',
-      document: 2,
+      document: kDocPractical,
       path: ['quickFacts', _rowId, 'value'],
     ),
     (
       pattern: 'practical.arrival.title',
-      document: 2,
+      document: kDocPractical,
       path: ['arrivalAccess', 'title'],
     ),
     // The label is content the Practical page renders, not a system fact, so
@@ -330,143 +351,143 @@ class WebsiteContentRepository extends SupabaseRepository {
     // one `{id}` pattern.
     (
       pattern: 'practical.arrival.checkIn.label',
-      document: 2,
+      document: kDocPractical,
       path: ['arrivalAccess', 'checkInLabel'],
     ),
     (
       pattern: 'practical.arrival.checkIn.value',
-      document: 2,
+      document: kDocPractical,
       path: ['arrivalAccess', 'checkIn'],
     ),
     (
       pattern: 'practical.arrival.checkOut.label',
-      document: 2,
+      document: kDocPractical,
       path: ['arrivalAccess', 'checkOutLabel'],
     ),
     (
       pattern: 'practical.arrival.checkOut.value',
-      document: 2,
+      document: kDocPractical,
       path: ['arrivalAccess', 'checkOut'],
     ),
     (
       pattern: 'practical.arrival.bullets.{id}.text',
-      document: 2,
+      document: kDocPractical,
       path: ['arrivalAccess', 'bullets', _rowId, 'text'],
     ),
     (
       pattern: 'practical.parking.title',
-      document: 2,
+      document: kDocPractical,
       path: ['parkingCharging', 'title'],
     ),
     (
       pattern: 'practical.parking.callout',
-      document: 2,
+      document: kDocPractical,
       path: ['parkingCharging', 'callout'],
     ),
     (
       pattern: 'practical.parking.bullets.{id}.text',
-      document: 2,
+      document: kDocPractical,
       path: ['parkingCharging', 'bullets', _rowId, 'text'],
     ),
     (
       pattern: 'practical.layout.title',
-      document: 2,
+      document: kDocPractical,
       path: ['layoutFacilities', 'title'],
     ),
     (
       pattern: 'practical.layout.sections.{id}.title',
-      document: 2,
+      document: kDocPractical,
       path: ['layoutFacilities', 'sections', _rowId, 'title'],
     ),
     (
       pattern: 'practical.layout.sections.{id}.intro',
-      document: 2,
+      document: kDocPractical,
       path: ['layoutFacilities', 'sections', _rowId, 'intro'],
     ),
     (
       pattern: 'practical.layout.sections.{id}.bullets.{id}.text',
-      document: 2,
+      document: kDocPractical,
       path: ['layoutFacilities', 'sections', _rowId, 'bullets', _rowId, 'text'],
     ),
     (
       pattern: 'practical.transport.title',
-      document: 2,
+      document: kDocPractical,
       path: ['transport', 'title'],
     ),
     (
       pattern: 'practical.agreements.title',
-      document: 2,
+      document: kDocPractical,
       path: ['agreementsAndPayment', 'title'],
     ),
     (
       pattern: 'practical.agreements.blocks.{id}.title',
-      document: 2,
+      document: kDocPractical,
       path: ['agreementsAndPayment', 'blocks', _rowId, 'title'],
     ),
     (
       pattern: 'practical.agreements.blocks.{id}.items.{id}.text',
-      document: 2,
+      document: kDocPractical,
       path: ['agreementsAndPayment', 'blocks', _rowId, 'items', _rowId, 'text'],
     ),
     (
       pattern: 'practical.transport.columns.{id}.title',
-      document: 2,
+      document: kDocPractical,
       path: ['transport', 'columns', _rowId, 'title'],
     ),
     (
       pattern: 'practical.transport.columns.{id}.bullets.{id}.text',
-      document: 2,
+      document: kDocPractical,
       path: ['transport', 'columns', _rowId, 'bullets', _rowId, 'text'],
     ),
     (
       pattern: 'practical.goodToKnow.title',
-      document: 2,
+      document: kDocPractical,
       path: ['goodToKnow', 'title'],
     ),
     (
       pattern: 'practical.goodToKnow.bullets.{id}.text',
-      document: 2,
+      document: kDocPractical,
       path: ['goodToKnow', 'bullets', _rowId, 'text'],
     ),
     (
       pattern: 'practical.contactHelp.title',
-      document: 2,
+      document: kDocPractical,
       path: ['contactHelp', 'title'],
     ),
     (
       pattern: 'practical.contactHelp.bullets.{id}.text',
-      document: 2,
+      document: kDocPractical,
       path: ['contactHelp', 'bullets', _rowId, 'text'],
     ),
 
     // -- Area (§A.3). The intro of a section is spelled `description` in this
     // document and `intro` on Practical; the path table is where that lives.
-    (pattern: 'area.intro', document: 3, path: ['intro']),
+    (pattern: 'area.intro', document: kDocArea, path: ['intro']),
     (
       pattern: 'area.sections.{id}.title',
-      document: 3,
+      document: kDocArea,
       path: ['sections', _rowId, 'title'],
     ),
     (
       pattern: 'area.sections.{id}.intro',
-      document: 3,
+      document: kDocArea,
       path: ['sections', _rowId, 'description'],
     ),
     (
       pattern: 'area.sections.{id}.bullets.{id}.text',
-      document: 3,
+      document: kDocArea,
       path: ['sections', _rowId, 'bullets', _rowId, 'text'],
     ),
 
     // -- Gallery (§A.4). The tagline lands on more than one page; its hint
     // says so, because a field that surfaces twice must not be a surprise.
-    (pattern: 'home.tagline', document: 1, path: ['tagline']),
+    (pattern: 'home.tagline', document: kDocHome, path: ['tagline']),
 
     // -- Legal: privacy (§A.6), edited under Site-instellingen --
-    (pattern: 'legal.privacy.intro', document: 7, path: ['intro']),
+    (pattern: 'legal.privacy.intro', document: kDocPrivacy, path: ['intro']),
     (
       pattern: 'legal.privacy.bullets.{id}.text',
-      document: 7,
+      document: kDocPrivacy,
       path: ['bullets', _rowId, 'text'],
     ),
   ];
@@ -478,7 +499,7 @@ class WebsiteContentRepository extends SupabaseRepository {
     for (final entry in _fieldPaths) {
       final captures = _match(entry.pattern, fieldKey);
       if (captures == null) continue;
-      final document = _documents[entry.document];
+      final document = entry.document;
       var next = 0;
       return EditorFieldLocation(
         contentType: document.contentType,
@@ -524,7 +545,7 @@ class WebsiteContentRepository extends SupabaseRepository {
       if (arrayEnd < 0) continue;
       var next = 0;
       return (
-        document: _documents[entry.document],
+        document: entry.document,
         arrayPath: [
           for (final segment in entry.path.sublist(0, arrayEnd))
             if (segment == _rowId)
@@ -583,9 +604,15 @@ class WebsiteContentRepository extends SupabaseRepository {
     return cursor == fieldKey.length ? captures : null;
   }
 
-  static ({String contentType, String slug}) _documentFor(String fieldKey) {
+  /// The document a field key lives in, or null when the key is not mapped.
+  ///
+  /// Null rather than a default: this used to answer `page/home` for an
+  /// unmapped key, so "I do not know this field" and "it is on the home page"
+  /// were the same reply — and a write then marked home dirty over a field it
+  /// could not store.
+  static ({String contentType, String slug})? _documentFor(String fieldKey) {
     final location = locationOf(fieldKey);
-    if (location == null) return _documents[1];
+    if (location == null) return null;
     return (contentType: location.contentType, slug: location.slug);
   }
 
@@ -905,6 +932,7 @@ class WebsiteContentRepository extends SupabaseRepository {
 
       String? documentValue(String fieldKey, String locale) {
         final doc = _documentFor(fieldKey);
+        if (doc == null) return null;
         final content = contentByDocLocale['${_documentKeyOf(doc)}:$locale'];
         if (content == null) return null;
         return readField(fieldKey, doc.contentType, content);
@@ -1008,6 +1036,7 @@ class WebsiteContentRepository extends SupabaseRepository {
 
       String? publishedValue(String fieldKey, String locale) {
         final doc = _documentFor(fieldKey);
+        if (doc == null) return null;
         final content = publishedByDocLocale['${_documentKeyOf(doc)}:$locale'];
         if (content == null) return null;
         return readField(fieldKey, doc.contentType, content);
