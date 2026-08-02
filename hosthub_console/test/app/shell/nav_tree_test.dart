@@ -191,6 +191,73 @@ void main() {
     });
   });
 
+  group('adding a property from the rail', () {
+    /// The `+` in the Properties heading. Found by its tooltip rather than by
+    /// the icon, because the tooltip is what says which action it is.
+    Finder addAction() => find.byTooltip('Add property');
+
+    testWidgets('the Properties heading offers it', (tester) async {
+      await pumpShell(
+        tester,
+        surface: const Size(1400, 900),
+        properties: account,
+      );
+
+      expect(addAction(), findsOneWidget);
+    });
+
+    testWidgets('tapping it opens the same two routes as the list', (
+      tester,
+    ) async {
+      await pumpShell(
+        tester,
+        surface: const Size(1400, 900),
+        properties: account,
+      );
+
+      await tester.tap(addAction());
+      await tester.pumpAndSettle();
+
+      // Lodgify first, manual second — the modal the list's add row opens too.
+      expect(find.text('Bring over from Lodgify'), findsOneWidget);
+      expect(find.text('Create manually'), findsOneWidget);
+    });
+
+    testWidgets('a one-property account has no Properties heading to put it '
+        'on', (tester) async {
+      await pumpShell(tester, surface: const Size(1400, 900));
+
+      // §5: the group label is the property's own name, and the design puts the
+      // `+` only on the multi-property heading.
+      expect(find.text('PROPERTIES'), findsNothing);
+      expect(addAction(), findsNothing);
+    });
+
+    testWidgets('the collapsed rail does not take taps on the faded heading', (
+      tester,
+    ) async {
+      await pumpShell(
+        tester,
+        surface: const Size(900, 800),
+        properties: account,
+      );
+
+      // The heading keeps its box on the rail so nothing below it moves, and
+      // fades its contents instead. Faded out, neither the label's destination
+      // nor the action may still be a target — the label is the one that
+      // matters, because it keeps its width where the action is clipped to
+      // nothing. This harness has no GoRouter, so a label that still took the
+      // tap would surface as a thrown lookup rather than as a navigation.
+      await tester.tap(find.text('PROPERTIES'), warnIfMissed: false);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(addAction(), warnIfMissed: false);
+      await tester.pumpAndSettle();
+      expect(find.text('Bring over from Lodgify'), findsNothing);
+    });
+  });
+
   testWidgets('every property carries a distinct chip', (tester) async {
     await pumpShell(
       tester,

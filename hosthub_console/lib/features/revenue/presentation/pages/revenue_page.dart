@@ -160,7 +160,7 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
               '${dateFormatter.format(periodRange.start)} - ${dateFormatter.format(periodRange.end)}';
 
           // One filtered set feeds the KPIs, the chart, the table, the totals
-          // row, the export and the detail modal — §3'context.s "one filter, one source
+          // row, the export and the detail modal — §3's "one filter, one source
           // of truth". The selection covers the properties actually loaded, so
           // the occupancy divisor and the booking set can never disagree.
           // What the user last chose for *this* page, clamped to the properties
@@ -196,7 +196,7 @@ class _RevenuePageBodyState extends State<_RevenuePageBody> {
               .map(
                 (entry) => _RevenueRow.fromEntry(
                   entry,
-                  // Per booking, for the booking'context.s own property — the resolver
+                  // Per booking, for the booking's own property — the resolver
                   // answers for any property, not for "the current one".
                   channelSettings: channelSettingsForBooking(
                     channelSettings,
@@ -947,7 +947,7 @@ class _RevenueMonthChart extends StatelessWidget {
     return StyledSection(
       isFirstSection: true,
       headerInsideGroup: true,
-      // The page pane already pads its content; the section'context.s own 24 would
+      // The page pane already pads its content; the section's own 24 would
       // indent the chart card past the period control, the KPI tiles and the
       // table, which all sit flush against the pane.
       horizontalPadding: 0,

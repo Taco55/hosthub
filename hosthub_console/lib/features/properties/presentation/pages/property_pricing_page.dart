@@ -515,7 +515,7 @@ class _PayoutPreview extends StatelessWidget {
     );
 
     // Cleaning + linen are shown together, service and other on their own
-    // lines, matching the design'context.s row breakdown.
+    // lines, matching the design's row breakdown.
     final cleaningAndLinen =
         config.cleaningCost.resolve(
           guests: _previewGuests,

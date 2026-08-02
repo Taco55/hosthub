@@ -130,10 +130,19 @@ class _WebsiteEditorView extends StatelessWidget {
           paneGap: 0,
           // Fixed editor column beside the preview; when the preview is hidden
           // the column expands to fill the width (null → Expanded pane) instead
-          // of stranding a 512px column beside empty space.
+          // of stranding a column beside empty space. The width is draggable
+          // via the pane divider and persists in the cubit's state.
           leftPaneSize: state.previewVisible
-              ? const StyledPaneSize.fixed(512)
+              ? StyledPaneSize.fixed(state.editorPaneWidth)
               : null,
+          resizableLeftPane: state.previewVisible,
+          // Below ~400 the two-column form rows and the language lane stop
+          // fitting; above ~900 the live site is too narrow to judge.
+          minLeftPaneWidth: 400,
+          maxLeftPaneWidth: 900,
+          onLeftPaneWidthChanged: context
+              .read<SiteContentCubit>()
+              .setEditorPaneWidth,
           // §11d: with the preview hidden the editor takes the full width but
           // centres its content — a form line does not become more readable by
           // being 1600px wide. Beside the preview there is no measure at all:

@@ -169,7 +169,7 @@ class _PropertyDetailsPageState extends State<PropertyDetailsPage> {
     bool isLoading = false,
   }) {
     return StyledWebPageScaffold(
-      // Design: the cards *are* this page'context.s surfaces. A pane card around them
+      // Design: the cards *are* this page's surfaces. A pane card around them
       // would draw a second border around every one of them.
       decorateLeftPane: false,
       overline: context.s.propertyDetailsOverline,
@@ -191,7 +191,7 @@ class _PropertyDetailsPageState extends State<PropertyDetailsPage> {
         builder: (context) => ListView(
           padding: EdgeInsets.only(
             top: context.styledSpacing.lg,
-            // The page'context.s bottom padding, spent at the end of the list, so the
+            // The page's bottom padding, spent at the end of the list, so the
             // last card does not sit against the window edge.
             bottom: StyledWebPageScaffoldScope.of(context).contentBottomInset,
           ),
@@ -238,7 +238,7 @@ class _SyncAction extends StatelessWidget {
       },
       // Design `.btn-sm`: 34 high, 13px sides, a 12.5px label and a 15px
       // glyph — a toolbar action, quieter than the 40-high `.btn` a form
-      // submits with. Its colours are the preset'context.s outlined button.
+      // submits with. Its colours are the preset's outlined button.
       child: StyledButton(
         variant: StyledButtonVariant.secondary,
         title: canSync
@@ -519,7 +519,7 @@ class _RawData extends StatelessWidget {
             context.styledSpacing.lg,
             context.styledSpacing.lg,
           ),
-          // `pre.raw` is block content: it fills the card'context.s width rather than
+          // `pre.raw` is block content: it fills the card's width rather than
           // shrinking to the width of its longest line.
           childrenCrossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

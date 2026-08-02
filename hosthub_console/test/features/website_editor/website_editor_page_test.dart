@@ -62,8 +62,12 @@ Future<SiteContentCubit> pumpEditor(
               // Mirrors WebsiteEditorPage's own bindings so the preview
               // toggle behaves here as it does in the app.
               leftPaneSize: state.previewVisible
-                  ? const StyledPaneSize.fixed(512)
+                  ? StyledPaneSize.fixed(state.editorPaneWidth)
                   : null,
+              resizableLeftPane: state.previewVisible,
+              minLeftPaneWidth: 400,
+              maxLeftPaneWidth: 900,
+              onLeftPaneWidthChanged: cubit.setEditorPaneWidth,
               contentMaxWidth: state.previewVisible
                   ? StyledWebPageScaffold.noContentMeasure
                   : 760,
@@ -322,16 +326,47 @@ void main() {
     // Beside the preview the column is fixed and the page has no measure —
     // stated, because `null` would inherit the preset's 1040px cap and strand
     // the live site in the 528px that leaves.
-    expect(
-      scaffold().contentMaxWidth,
-      StyledWebPageScaffold.noContentMeasure,
-    );
+    expect(scaffold().contentMaxWidth, StyledWebPageScaffold.noContentMeasure);
 
     cubit.togglePreview();
     await tester.pumpAndSettle();
 
     // §11d: full width, but the form still reads at a sane measure.
     expect(scaffold().contentMaxWidth, 760);
+  });
+
+  testWidgets('dragging the pane divider resizes the editor column', (
+    tester,
+  ) async {
+    final cubit = await pumpEditor(tester);
+
+    final divider = find.byWidgetPredicate(
+      (w) => w is MouseRegion && w.cursor == SystemMouseCursors.resizeColumn,
+    );
+    expect(divider, findsOneWidget);
+
+    final before = tester.getSize(find.byType(EditorColumn)).width;
+    await tester.drag(divider, const Offset(120, 0));
+    await tester.pumpAndSettle();
+
+    expect(tester.getSize(find.byType(EditorColumn)).width, before + 120);
+    // The drag is committed to the cubit, so it survives a preview toggle.
+    expect(cubit.state.editorPaneWidth, before + 120);
+  });
+
+  testWidgets('the editor column cannot be dragged below its minimum', (
+    tester,
+  ) async {
+    final cubit = await pumpEditor(tester);
+
+    final divider = find.byWidgetPredicate(
+      (w) => w is MouseRegion && w.cursor == SystemMouseCursors.resizeColumn,
+    );
+    await tester.drag(divider, const Offset(-600, 0));
+    await tester.pumpAndSettle();
+
+    expect(cubit.state.editorPaneWidth, 400);
+    expect(tester.getSize(find.byType(EditorColumn)).width, 400);
   });
 
   testWidgets('preview binds to the selected language and device toggles', (

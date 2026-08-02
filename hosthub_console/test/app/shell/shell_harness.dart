@@ -22,6 +22,7 @@ import 'package:hosthub_console/features/profile/profile.dart';
 import 'package:hosthub_console/features/properties/properties.dart';
 import 'package:hosthub_console/features/server_settings/application/server_settings_cubit.dart';
 import 'package:hosthub_console/features/server_settings/domain/admin_settings.dart';
+import 'package:hosthub_console/features/user_settings/user_settings.dart';
 
 /// Shared harness for the shell tests: watch-only stand-ins for the blocs the
 /// menu reads, plus a pump that pins the surface size (the responsive
@@ -89,6 +90,25 @@ class _FakeServerSettingsCubit extends Cubit<ServerSettingsState>
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+/// Account settings as the rail needs them: only *Property toevoegen* reads
+/// this, and only to decide whether the Lodgify route is offered.
+class _FakeUserSettingsCubit extends Cubit<UserSettingsState>
+    implements UserSettingsCubit {
+  _FakeUserSettingsCubit({required bool lodgifyConnected})
+    : super(
+        UserSettingsState(
+          status: UserSettingsStatus.ready,
+          settings: UserSettings(
+            profileId: 'p1',
+            lodgifyConnected: lodgifyConnected,
+          ),
+        ),
+      );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 /// A source with nothing in it: the rail's unread badge is absent, which is
 /// what these tests assert about every state but the one that has messages.
 class _SilentMessagingRepository implements MessagingRepository {
@@ -124,6 +144,7 @@ Future<SidebarModeCubit> pumpShell(
   required Size surface,
   ConsoleRoute route = const ConsoleRoute.portfolio(PortfolioSection.bookings),
   List<PropertySummary> properties = defaultShellProperties,
+  bool lodgifyConnected = true,
 }) async {
   // setSurfaceSize drives layout, view.physicalSize drives MediaQuery — the
   // breakpoints read the latter.
@@ -141,6 +162,9 @@ Future<SidebarModeCubit> pumpShell(
   final sidebarModeCubit = SidebarModeCubit();
   final inboxCubit = InboxCubit(repository: _SilentMessagingRepository());
   final accountDefaultsCubit = _FakeAccountDefaultsCubit();
+  final userSettingsCubit = _FakeUserSettingsCubit(
+    lodgifyConnected: lodgifyConnected,
+  );
   final guard = NavigationGuardController();
   addTearDown(authBloc.close);
   addTearDown(profileCubit.close);
@@ -149,6 +173,7 @@ Future<SidebarModeCubit> pumpShell(
   addTearDown(sidebarModeCubit.close);
   addTearDown(inboxCubit.close);
   addTearDown(accountDefaultsCubit.close);
+  addTearDown(userSettingsCubit.close);
   addTearDown(guard.dispose);
 
   await tester.pumpWidget(
@@ -163,6 +188,7 @@ Future<SidebarModeCubit> pumpShell(
         BlocProvider<AccountChannelDefaultsCubit>.value(
           value: accountDefaultsCubit,
         ),
+        BlocProvider<UserSettingsCubit>.value(value: userSettingsCubit),
         ChangeNotifierProvider<NavigationGuardController>.value(value: guard),
       ],
       child: MaterialApp(

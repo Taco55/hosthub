@@ -41,6 +41,7 @@ class SiteContentState extends Equatable {
     required this.previewLanguage,
     required this.previewDevice,
     required this.previewVisible,
+    this.editorPaneWidth = 512,
     required this.source,
     required this.translations,
     required this.dirty,
@@ -76,6 +77,11 @@ class SiteContentState extends Equatable {
   /// Whether the right-hand live preview pane is shown. Editing works the same
   /// either way; hiding it just gives the editor column the full width.
   final bool previewVisible;
+
+  /// Width of the editor column beside the live preview, in logical pixels.
+  /// Dragged via the pane divider; persists across preview toggles and page
+  /// switches for the rest of the session.
+  final double editorPaneWidth;
 
   /// Saved source-language text per field key.
   final Map<String, String> source;
@@ -435,6 +441,7 @@ class SiteContentState extends Equatable {
     String? previewLanguage,
     PreviewDevice? previewDevice,
     bool? previewVisible,
+    double? editorPaneWidth,
     Map<String, String>? source,
     Map<String, Map<String, TranslatedField>>? translations,
     Map<String, List<String>>? listOrder,
@@ -473,6 +480,7 @@ class SiteContentState extends Equatable {
       previewLanguage: previewLanguage ?? this.previewLanguage,
       previewDevice: previewDevice ?? this.previewDevice,
       previewVisible: previewVisible ?? this.previewVisible,
+      editorPaneWidth: editorPaneWidth ?? this.editorPaneWidth,
       source: source ?? this.source,
       translations: translations ?? this.translations,
       listOrder: listOrder ?? this.listOrder,
@@ -520,6 +528,7 @@ class SiteContentState extends Equatable {
     previewLanguage,
     previewDevice,
     previewVisible,
+    editorPaneWidth,
     source,
     translations,
     listOrder,
@@ -900,6 +909,10 @@ class SiteContentCubit extends Cubit<SiteContentState> {
   /// shown again.
   void togglePreview() =>
       emit(state.copyWith(previewVisible: !state.previewVisible));
+
+  /// Persists the editor column width after the user drags the pane divider.
+  void setEditorPaneWidth(double width) =>
+      emit(state.copyWith(editorPaneWidth: width));
 
   // -- editing: draft layer only --------------------------------------------
 

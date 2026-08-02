@@ -392,7 +392,7 @@ class _InterfaceLanguageTile extends StatelessWidget with StyledTileLike {
       onChanged: (code) {
         if (code == null || code == currentLocale.languageCode) return;
         // Interface language is strictly user scope: changing it must never
-        // change the property'context.s source language (design §4b).
+        // change the property's source language (design §4b).
         context.read<UserSettingsCubit>().changeLanguage(code);
       },
     );

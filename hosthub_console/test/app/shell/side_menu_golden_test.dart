@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:hosthub_console/features/properties/properties.dart';
+
 import 'shell_harness.dart';
 
 /// Golden baselines for the responsive navigation strategy (design handoff
@@ -51,6 +53,29 @@ void main() {
     await expectLater(
       find.byType(MaterialApp),
       matchesGoldenFile('goldens/nav_04_rail_tap_expanded.png'),
+    );
+  });
+
+  testWidgets('golden: the Properties heading with its add action', (
+    tester,
+  ) async {
+    // The other goldens render a one-property account, which has no Properties
+    // heading at all — so this is the only one that shows the `+` beside the
+    // count, and the only place the heading's three parts are held to a layout.
+    await pumpShell(
+      tester,
+      surface: const Size(1400, 900),
+      properties: const [
+        PropertySummary(id: 1, name: 'Trysil Panorama'),
+        PropertySummary(id: 2, name: 'Hemsedal Lodge'),
+        PropertySummary(id: 3, name: 'Geilo Fjellhytte'),
+        PropertySummary(id: 4, name: 'Voss Fjordhus'),
+      ],
+    );
+
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('goldens/nav_06_properties_group.png'),
     );
   });
 

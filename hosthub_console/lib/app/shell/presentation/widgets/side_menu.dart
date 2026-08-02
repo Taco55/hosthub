@@ -61,18 +61,18 @@ class SideMenu extends StatelessWidget {
         );
 
         return StyledSideMenu(
-          // §7'context.s rail geometry. The icon box is fixed and the side inset is the
-          // nav'context.s own padding, which together put every icon centre at
-          // `kSidebarSideInset + kSidebarIconBox / 2` = 34px from the rail'context.s
+          // §7's rail geometry. The icon box is fixed and the side inset is the
+          // nav's own padding, which together put every icon centre at
+          // `kSidebarSideInset + kSidebarIconBox / 2` = 34px from the rail's
           // left edge — in both states, because neither value changes with the
           // width.
           iconBox: kSidebarIconBox,
           sideInset: kSidebarSideInset,
           tileHeight: kSidebarTopLevelRowHeight,
           branchTileHeight: kSidebarPropertyRowHeight,
-          // A one-property account renders its property'context.s sections flat at the
+          // A one-property account renders its property's sections flat at the
           // top level (§5), so they take the top-level icon box and no indent —
-          // still the child row'context.s own height and radius.
+          // still the child row's own height and radius.
           childTileHeight: isSingleProperty
               ? kSidebarFlatSubItemRowHeight
               : kSidebarSubItemRowHeight,
@@ -98,6 +98,7 @@ class SideMenu extends StatelessWidget {
               channelSettings: channelSettings,
             ),
             onNavigate: (path) => _go(context, path),
+            onAddProperty: () => showAddPropertyModal(context),
             // The badge counts what the console already knows; opening
             // Berichten is what goes and asks the source for more.
             unreadMessageCount: context.watch<InboxCubit>().state.unreadCount(),

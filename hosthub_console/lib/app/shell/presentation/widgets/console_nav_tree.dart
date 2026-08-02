@@ -51,6 +51,7 @@ List<StyledNavGroup> buildConsoleNavGroups({
   required ConsoleRoute route,
   required List<ConsoleNavProperty> properties,
   required void Function(String path) onNavigate,
+  required VoidCallback onAddProperty,
   int unreadMessageCount = 0,
 }) {
   final openPropertyId = route.propertyId;
@@ -113,6 +114,16 @@ List<StyledNavGroup> buildConsoleNavGroups({
         // properties. A convenience, never a step you must pass through.
         onLabelTap: () => onNavigate(ConsoleRoute.propertiesPath),
         labelSelected: route.isPropertiesList,
+        // Adding a property is rare enough that it must not take a row of its
+        // own next to Berichten and Boekingen, and general enough that it
+        // should not be reachable only from the list — so it rides along with
+        // the heading that already counts them. Same modal as the list's own
+        // add row: one flow, two ways in.
+        action: StyledNavGroupAction(
+          icon: Icons.add,
+          onTap: onAddProperty,
+          tooltip: s.propertiesListAdd,
+        ),
         entries: [
           for (final property in properties)
             _propertyBranch(

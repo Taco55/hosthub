@@ -354,7 +354,7 @@ class _SourceLanguageSection extends StatelessWidget {
             languageDisplayName(context, interfaceLanguage),
           ),
           enabled: canAdopt,
-          // Disabled = dimmed row, not the theme'context.s dark disabled surface —
+          // Disabled = dimmed row, not the theme's dark disabled surface —
           // inside an inset group that slab reads as a rendering glitch.
           disabledBackgroundColor: Colors.transparent,
           onTap: canAdopt
