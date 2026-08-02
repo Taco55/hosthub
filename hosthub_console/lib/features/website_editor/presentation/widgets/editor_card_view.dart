@@ -579,7 +579,8 @@ class _MediaRowView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final altField = state.fieldFor(row.altFieldKey);
+    final altKey = row.altFieldKey;
+    final altField = altKey == null ? null : state.fieldFor(altKey);
     // The library is optional: the demo/seed editor runs without a site, and
     // then there is nothing to pick from. The strip still renders what the
     // content holds, so the card is never a blank.

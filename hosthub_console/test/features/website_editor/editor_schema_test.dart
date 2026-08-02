@@ -198,14 +198,22 @@ void main() {
     }
   });
 
-  test('a media row contributes its alt text and no image field', () {
+  test('a media row contributes no field the site cannot read', () {
     final fields = _allSchemaFields().map((f) => f.key).toList();
-    // Alt text is a sentence that gets read out: content, so per language.
-    expect(fields, contains('cabin.hero.photosAlt'));
-    expect(fields, contains('home.galleryAlt'));
-    expect(fields, contains('gallery.allAlt'));
+
     // The files themselves are language-independent and are not text fields.
     expect(fields.where((key) => key.startsWith('images.')), isEmpty);
+
+    // Nor is there a summarizing alt text: the hero's alt comes from
+    // cabin.meta.name and both galleries caption per image, so the three
+    // per-set fields that used to live here wrote text nothing rendered.
+    for (final dead in const [
+      'cabin.hero.photosAlt',
+      'home.galleryAlt',
+      'gallery.allAlt',
+    ]) {
+      expect(fields, isNot(contains(dead)), reason: '$dead is unread');
+    }
   });
 
   test('a media key addresses the document path the website reads', () {
@@ -235,13 +243,35 @@ void main() {
   });
 
   test('a read-only card contributes no editable field', () {
-    // §A.2: the Lodgify terms are read-only; the card states its source.
+    // Nothing is read-only today: the agreements card claimed a Lodgify
+    // source that never existed and is editable now. The rule still holds for
+    // whatever declares itself read-only next.
+    for (final cards in kPageCards.values) {
+      for (final card in cards.where((card) => card.readOnly)) {
+        expect(
+          _allSchemaFields().where((f) => f.cardId == card.id),
+          isEmpty,
+          reason: '${card.id} is read-only and must contribute no field',
+        );
+      }
+    }
+  });
+
+  test('the agreements terms are the owner\'s, not an external feed', () {
+    // They render on the live Practical page and nothing syncs them from
+    // Lodgify, so a read-only card left the owner unable to change their own
+    // payment and cancellation terms.
     final agreements = kPageCards['practical']!.firstWhere(
       (card) => card.id == 'agreements',
     );
-    expect(agreements.readOnly, isTrue);
-    expect(agreements.rows.single, isA<ExternalRow>());
-    expect(_allSchemaFields().where((f) => f.cardId == 'agreements'), isEmpty);
+
+    expect(agreements.readOnly, isFalse);
+    expect(agreements.rows.whereType<ExternalRow>(), isEmpty);
+    final keys = _allSchemaFields()
+        .where((f) => f.cardId == 'agreements')
+        .map((f) => f.key);
+    expect(keys, contains('practical.agreements.title'));
+    expect(keys.any((k) => k.startsWith('practical.agreements.blocks.')), isTrue);
   });
 
   test('the highlight row carries title, subline and its alt text', () {

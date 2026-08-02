@@ -196,11 +196,11 @@ class GroupListRow extends EditorRow {
   final bool fixedTitles;
 }
 
-/// A set of images plus one summarizing alt-text field (README §C).
+/// A set of images, optionally with one summarizing alt-text field (§C).
 class MediaRow extends EditorRow {
   const MediaRow(
     this.mediaKey, {
-    required this.altFieldKey,
+    this.altFieldKey,
     required this.minItems,
     required this.maxItems,
     this.grid = false,
@@ -210,9 +210,14 @@ class MediaRow extends EditorRow {
   /// Where the file keys live in `site_config` (`images.heroPhotos`).
   final String mediaKey;
 
-  /// The summarizing alt text — a sentence that gets read out, so content,
-  /// so per language (README §C.4).
-  final String altFieldKey;
+  /// A summarizing alt text — a sentence that gets read out, so content, so
+  /// per language (§C.4).
+  ///
+  /// Null when the site does not render one. All three sets are null today:
+  /// the hero's alt comes from `cabin.meta.name`, and both galleries caption
+  /// per image rather than per set, so a summarising field wrote text nothing
+  /// could ever read.
+  final String? altFieldKey;
   final int minItems;
   final int maxItems;
 
@@ -299,7 +304,6 @@ const Map<String, List<EditorCard>> kPageCards = {
           // never matches on the way back — so the picker stays empty and
           // saving is a no-op.
           'images.heroPhotos',
-          altFieldKey: 'cabin.hero.photosAlt',
           minItems: 1,
           maxItems: 5,
           primaryBadge: true,
@@ -342,7 +346,6 @@ const Map<String, List<EditorCard>> kPageCards = {
       rows: [
         MediaRow(
           'images.homeGallery',
-          altFieldKey: 'home.galleryAlt',
           minItems: 5,
           maxItems: 8,
           grid: true,
@@ -410,7 +413,6 @@ const Map<String, List<EditorCard>> kPageCards = {
           fixedRows: ['cabin.rules.checkIn', 'cabin.rules.checkOut'],
           fixedRowsAreValues: true,
         ),
-        FieldRow('cabin.rules.checkInNote', multiline: true),
         FieldRow('cabin.rules.cleaningNote', multiline: true),
         FieldRow('cabin.rules.wifiNote', multiline: true),
       ],
@@ -567,10 +569,22 @@ const Map<String, List<EditorCard>> kPageCards = {
         ),
       ],
     ),
+    // Was read-only, sourced from Lodgify. Nothing syncs Lodgify into this
+    // section — not the console, not the website, not a function — so the
+    // owner saw their own payment and cancellation terms on the live page
+    // with no way to change them. Same shape as practical.transport.columns.
     EditorCard(
       id: 'agreements',
-      readOnly: true,
-      rows: [ExternalRow(source: 'lodgify', lineCount: 3)],
+      rows: [
+        FieldRow('practical.agreements.title'),
+        GroupListRow(
+          'practical.agreements.blocks',
+          titleSub: 'title',
+          itemsListKey: 'items',
+          itemsSub: 'text',
+          maxItems: 6,
+        ),
+      ],
     ),
   ],
   'area': [
@@ -602,7 +616,6 @@ const Map<String, List<EditorCard>> kPageCards = {
       rows: [
         MediaRow(
           'images.galleryAll',
-          altFieldKey: 'gallery.allAlt',
           minItems: 6,
           maxItems: 40,
           grid: true,
@@ -863,9 +876,11 @@ List<EditorField> _fieldsOfRow(
       return fields;
 
     case MediaRow(:final altFieldKey):
-      // The files are language-independent; the summarizing alt text is the
-      // translatable field of a media row.
-      return [EditorField(key: altFieldKey, cardId: cardId)];
+      // The files are language-independent, so a media row's only field is
+      // its summarizing alt text — and only when the site renders one.
+      return altFieldKey == null
+          ? const []
+          : [EditorField(key: altFieldKey, cardId: cardId)];
 
     case ExternalRow():
       // Read-only: its content belongs to another system.

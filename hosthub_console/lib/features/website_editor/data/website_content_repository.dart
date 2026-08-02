@@ -173,7 +173,6 @@ class WebsiteContentRepository extends SupabaseRepository {
       path: ['meta', 'locationShort'],
     ),
     (pattern: 'cabin.meta.name', document: 0, path: ['meta', 'name']),
-    (pattern: 'cabin.hero.photosAlt', document: 0, path: ['hero', 'photosAlt']),
 
     // -- Home: key facts (card 2) --
     (
@@ -195,7 +194,6 @@ class WebsiteContentRepository extends SupabaseRepository {
     ),
 
     // -- Home: gallery selection (card 4) --
-    (pattern: 'home.galleryAlt', document: 1, path: ['galleryAlt']),
 
     // -- Home: amenities (card 5) — two nesting levels, the maximum --
     (
@@ -273,11 +271,6 @@ class WebsiteContentRepository extends SupabaseRepository {
       pattern: 'cabin.rules.checkOut',
       document: 0,
       path: ['houseRules', 'checkOut'],
-    ),
-    (
-      pattern: 'cabin.rules.checkInNote',
-      document: 0,
-      path: ['houseRules', 'checkInNote'],
     ),
     (
       pattern: 'cabin.rules.cleaningNote',
@@ -400,6 +393,21 @@ class WebsiteContentRepository extends SupabaseRepository {
       path: ['transport', 'title'],
     ),
     (
+      pattern: 'practical.agreements.title',
+      document: 2,
+      path: ['agreementsAndPayment', 'title'],
+    ),
+    (
+      pattern: 'practical.agreements.blocks.{id}.title',
+      document: 2,
+      path: ['agreementsAndPayment', 'blocks', _rowId, 'title'],
+    ),
+    (
+      pattern: 'practical.agreements.blocks.{id}.items.{id}.text',
+      document: 2,
+      path: ['agreementsAndPayment', 'blocks', _rowId, 'items', _rowId, 'text'],
+    ),
+    (
       pattern: 'practical.transport.columns.{id}.title',
       document: 2,
       path: ['transport', 'columns', _rowId, 'title'],
@@ -452,7 +460,6 @@ class WebsiteContentRepository extends SupabaseRepository {
     // -- Gallery (§A.4). The tagline lands on more than one page; its hint
     // says so, because a field that surfaces twice must not be a surprise.
     (pattern: 'home.tagline', document: 1, path: ['tagline']),
-    (pattern: 'gallery.allAlt', document: 5, path: ['galleryAlt']),
 
     // -- Legal: privacy (§A.6), edited under Site-instellingen --
     (pattern: 'legal.privacy.intro', document: 7, path: ['intro']),

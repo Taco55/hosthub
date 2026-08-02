@@ -211,8 +211,6 @@ String fieldLabel(BuildContext context, String fieldKey) {
     case 'cabin.rules.checkOut':
     case 'practical.arrival.checkOut':
       return context.s.weFieldCheckOut;
-    case 'cabin.rules.checkInNote':
-      return context.s.weFieldCheckInNote;
     case 'cabin.rules.cleaningNote':
       return context.s.weFieldCleaningNote;
     case 'cabin.rules.wifiNote':
@@ -235,10 +233,6 @@ String fieldLabel(BuildContext context, String fieldKey) {
       return context.s.weFormFieldMessage;
     case 'area.intro':
       return context.s.weFieldIntro;
-    case 'cabin.hero.photosAlt':
-    case 'home.galleryAlt':
-    case 'gallery.allAlt':
-      return context.s.weFieldAltSummary;
     case 'cabin.amenities.title':
     case 'cabin.location.title':
     case 'cabin.rules.title':
@@ -249,6 +243,7 @@ String fieldLabel(BuildContext context, String fieldKey) {
     case 'practical.transport.title':
     case 'practical.goodToKnow.title':
     case 'practical.contactHelp.title':
+    case 'practical.agreements.title':
     case 'contact.title':
       return context.s.weFieldTitle;
     default:
@@ -307,6 +302,8 @@ String listTitle(BuildContext context, String listKey) {
       return context.s.weListSections;
     case 'practical.transport.columns':
       return context.s.weListColumns;
+    case 'practical.agreements.blocks':
+      return context.s.weListSections;
     default:
       return listKey;
   }
@@ -340,6 +337,8 @@ String listItemLabel(BuildContext context, String listKey) {
       return context.s.weItemSection;
     case 'practical.transport.columns':
       return context.s.weItemColumn;
+    case 'practical.agreements.blocks':
+      return context.s.weItemSection;
     default:
       return context.s.weItemLine;
   }

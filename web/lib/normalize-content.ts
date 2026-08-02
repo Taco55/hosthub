@@ -97,10 +97,18 @@ export function normalizePracticalContent(
       practical[key] = section;
     }
   }
-  for (const key of ["layoutFacilities", "transport"]) {
+  // Grouped lists: the group holds its own text list under its own key.
+  // `agreementsAndPayment` is here because the console can now edit it, and an
+  // edited list arrives as [{ id, text }] rows — handing those to React is the
+  // "Objects are not valid as a React child" crash.
+  const groupedLists: [string, string, string][] = [
+    ["layoutFacilities", "sections", "bullets"],
+    ["transport", "columns", "bullets"],
+    ["agreementsAndPayment", "blocks", "items"],
+  ];
+  for (const [key, groupsKey, itemsKey] of groupedLists) {
     const block = practical[key];
     if (!isRecord(block)) continue;
-    const groupsKey = key === "transport" ? "columns" : "sections";
     const groups = block[groupsKey];
     if (!Array.isArray(groups)) continue;
     practical[key] = {
@@ -108,7 +116,7 @@ export function normalizePracticalContent(
       [groupsKey]: groups.map((group) => {
         if (!isRecord(group)) return group;
         const normalized = { ...group };
-        normalizeTextList(normalized, "bullets");
+        normalizeTextList(normalized, itemsKey);
         return normalized;
       }),
     };
