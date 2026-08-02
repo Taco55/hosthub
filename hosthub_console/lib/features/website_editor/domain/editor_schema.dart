@@ -42,6 +42,7 @@ class FieldRow extends EditorRow {
     this.key, {
     this.multiline = false,
     this.visibility = FieldVisibility.inPage,
+    this.autofocus = false,
   });
 
   /// Stable field key, e.g. `cabin.hero.title`.
@@ -51,6 +52,13 @@ class FieldRow extends EditorRow {
   /// Where this field surfaces. Anything but [FieldVisibility.inPage] carries
   /// a note in the UI; the schema test refuses a field without one.
   final FieldVisibility visibility;
+
+  /// Whether the cursor starts here when the editor opens in source mode.
+  ///
+  /// A property of the schema, not of the renderer: which field a template
+  /// wants the cursor in is the template's business, and the widget layer
+  /// naming one field key was the last such literal it carried.
+  final bool autofocus;
 }
 
 /// A repeatable list of single-value rows, keyed `<listKey>.<rowId>.<sub>`.
@@ -157,6 +165,12 @@ class RowListRow extends EditorRow {
 
   /// Whether each row carries one image (chosen through the media picker).
   final bool media;
+
+  /// The subfields a media row adds: the picture and the words read out in
+  /// its place. Named once here — the schema expansion, the renderer and the
+  /// cubit's new-row keys all used to spell them independently.
+  static const String imageSub = 'image';
+  static const String altSub = 'alt';
 }
 
 /// A list of groups, each a title plus its own list of items (README §B.3).
@@ -302,7 +316,7 @@ const Map<String, List<EditorCard>> kPageCards = {
     EditorCard(
       id: 'hero',
       rows: [
-        FieldRow('cabin.hero.title'),
+        FieldRow('cabin.hero.title', autofocus: true),
         FieldRow('cabin.meta.locationShort'),
         MediaRow(
           // The media key IS the document path: the repository writes
@@ -828,14 +842,14 @@ List<EditorField> _fieldsOfRow(
           // scalar key rather than one of the `images.*` list slots.
           if (media) ...[
             EditorField(
-              key: listFieldKey(listKey, rowId, 'image'),
+              key: listFieldKey(listKey, rowId, RowListRow.imageSub),
               cardId: cardId,
               listKey: listKey,
               rowId: rowId,
               sharedValue: true,
             ),
             EditorField(
-              key: listFieldKey(listKey, rowId, 'alt'),
+              key: listFieldKey(listKey, rowId, RowListRow.altSub),
               cardId: cardId,
               listKey: listKey,
               rowId: rowId,

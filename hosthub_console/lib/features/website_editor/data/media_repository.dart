@@ -11,9 +11,12 @@ import '../domain/media_file.dart';
 /// The site's media library: rows in `cms_media`, bytes in the `site-media`
 /// bucket.
 ///
-/// Both live under the site's own folder (`<siteId>/<uuid>.<ext>`), which is
+/// Both live under the site's own folder (`<siteId>/<uuid>.webp`), which is
 /// what the storage policies read to decide whether a byte may cross a tenant
 /// boundary — so the path is not a convention here, it is the boundary.
+///
+/// Every upload is stored twice, master and thumb (see [MediaVariants]); the
+/// library has one row for the pair, because they are one photo.
 class MediaRepository extends SupabaseRepository {
   MediaRepository({required SupabaseClient supabase}) : super(supabase);
 
@@ -30,6 +33,17 @@ class MediaRepository extends SupabaseRepository {
   String publicUrlOf(String storagePath) => _isResolvedImageSrc(storagePath)
       ? storagePath
       : supabase.storage.from(bucket).getPublicUrl(storagePath);
+
+  /// The URL of the small copy — what the console's grids and strips render.
+  ///
+  /// A picker showing eighty tiles at 160 pixels used to download eighty
+  /// full-size photos to do it. Anything without a thumb (an object that
+  /// predates this pipeline) falls back to the master, which is never wrong,
+  /// only larger.
+  String thumbUrlOf(String storagePath) {
+    if (_isResolvedImageSrc(storagePath)) return storagePath;
+    return publicUrlOf(MediaVariants.thumbPathOf(storagePath) ?? storagePath);
+  }
 
   static bool _isResolvedImageSrc(String value) =>
       value.startsWith('http://') ||
@@ -69,46 +83,44 @@ class MediaRepository extends SupabaseRepository {
     }
   }
 
-  /// Uploads one file and records it in the library.
+  /// Uploads one already-processed photo and records it in the library.
   ///
   /// The stored name is a fresh uuid: two photos called `IMG_2043.jpg` are two
   /// photos, and a name the owner chose must never be able to overwrite a file
   /// a page already renders. The original name is kept as the label.
+  ///
+  /// Two objects go up, the master and its thumb, at paths that derive from
+  /// each other (see [MediaVariants]). Only the master is recorded in
+  /// `cms_media` and only the master is what a document ever refers to — the
+  /// thumb is a rendering detail of the same file, not a second library entry
+  /// the owner has to know about.
   Future<MediaFile> upload({
     required String siteId,
     required String filename,
-    required Uint8List bytes,
-    required String contentType,
-    int? width,
-    int? height,
+    required ProcessedImage image,
   }) async {
-    final extension = filename.split('.').last.toLowerCase();
-    final storagePath = '$siteId/${_uuid.v4()}.$extension';
+    final storagePath = '$siteId/${_uuid.v4()}.${MediaVariants.extension}';
+    final thumbPath = MediaVariants.thumbPathOf(storagePath)!;
     try {
-      await supabase.storage
-          .from(bucket)
-          .uploadBinary(
-            storagePath,
-            bytes,
-            fileOptions: FileOptions(contentType: contentType, upsert: false),
-          );
+      await _putObject(storagePath, image.master);
+      await _putObject(thumbPath, image.thumb);
 
       await supabase.from('cms_media').insert({
         'site_id': siteId,
         'storage_path': storagePath,
         'filename': filename,
-        'mime_type': contentType,
-        'width': width,
-        'height': height,
-        'file_size_bytes': bytes.lengthInBytes,
+        'mime_type': MediaVariants.contentType,
+        'width': image.width,
+        'height': image.height,
+        'file_size_bytes': image.masterSizeBytes,
       });
 
       return MediaFile(
         storagePath: storagePath,
         filename: filename,
-        width: width,
-        height: height,
-        sizeBytes: bytes.lengthInBytes,
+        width: image.width,
+        height: image.height,
+        sizeBytes: image.masterSizeBytes,
       );
     } catch (error, stack) {
       throw mapError(
@@ -120,9 +132,27 @@ class MediaRepository extends SupabaseRepository {
     }
   }
 
+  /// A stored object never changes: the path carries a uuid and the bytes are
+  /// written once. Saying so is the difference between a CDN serving a photo
+  /// from its own edge and re-asking storage for it every hour.
+  Future<void> _putObject(String path, Uint8List bytes) => supabase.storage
+      .from(bucket)
+      .uploadBinary(
+        path,
+        bytes,
+        fileOptions: const FileOptions(
+          contentType: MediaVariants.contentType,
+          cacheControl: MediaVariants.cacheControl,
+          upsert: false,
+        ),
+      );
+
   /// Removes a file from the library and the bucket, in that order: a row
   /// without bytes shows a broken tile the owner can delete, while bytes
   /// without a row are invisible and cost storage forever.
+  ///
+  /// Both variants go: the thumb has no row of its own, so nothing would ever
+  /// come back for it.
   Future<void> delete({
     required String siteId,
     required String storagePath,
@@ -133,7 +163,11 @@ class MediaRepository extends SupabaseRepository {
           .delete()
           .eq('site_id', siteId)
           .eq('storage_path', storagePath);
-      await supabase.storage.from(bucket).remove([storagePath]);
+      final thumbPath = MediaVariants.thumbPathOf(storagePath);
+      await supabase.storage.from(bucket).remove([
+        storagePath,
+        if (thumbPath != null) thumbPath,
+      ]);
     } catch (error, stack) {
       throw mapError(
         error,

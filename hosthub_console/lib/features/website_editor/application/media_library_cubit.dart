@@ -4,6 +4,7 @@ import 'package:app_errors/app_errors.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../data/image_processor.dart' as processing;
 import '../data/media_repository.dart';
 import '../domain/media_file.dart';
 
@@ -125,15 +126,24 @@ class MediaLibraryCubit extends Cubit<MediaLibraryState> {
   MediaLibraryCubit({
     required MediaRepository repository,
     required String siteId,
+    ImageProcessor? processImage,
   }) : _repository = repository,
        _siteId = siteId,
+       _processImage = processImage ?? processing.processImage,
        super(const MediaLibraryState());
 
   final MediaRepository _repository;
   final String _siteId;
 
+  /// Injectable so a test can upload without a browser canvas; the default is
+  /// the real browser re-encode.
+  final ImageProcessor _processImage;
+
   String publicUrlOf(String storagePath) =>
       _repository.publicUrlOf(storagePath);
+
+  /// The small copy, for grids and strips.
+  String thumbUrlOf(String storagePath) => _repository.thumbUrlOf(storagePath);
 
   Future<void> load() async {
     emit(state.copyWith(loading: true, clearError: true));
@@ -200,13 +210,18 @@ class MediaLibraryCubit extends Cubit<MediaLibraryState> {
     // owner can check.
     progress(0.1);
     try {
+      // Re-encode first. What the owner picked is a camera original; what a
+      // visitor of the site should be sent is a tenth of it, and the moment to
+      // decide that is before the bytes cross the network, not after they are
+      // already in the bucket being billed for.
+      final image = await _processImage(bytes: bytes, contentType: contentType);
+      if (isClosed) return;
+      progress(0.5);
+
       final file = await _repository.upload(
         siteId: _siteId,
         filename: filename,
-        bytes: bytes,
-        contentType: contentType,
-        width: width,
-        height: height,
+        image: image,
       );
       if (isClosed) return;
       emit(

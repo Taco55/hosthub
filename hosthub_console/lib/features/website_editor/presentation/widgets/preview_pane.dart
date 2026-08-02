@@ -48,7 +48,9 @@ class PreviewPane extends StatelessWidget {
         (kCmsPreviewDomain.trim().isNotEmpty
             ? kCmsPreviewDomain.trim()
             : state.previewDomain) ??
-        'trysilpanorama.com';
+        // No linked site: the mock is a schematic, and a real customer's
+        // domain printed in its chrome would be a lie about what is on screen.
+        context.s.wePreviewNoDomain;
     final url = '$displayHost/$lang';
 
     // The real site needs room: give the embedded frame the full pane height
@@ -216,11 +218,14 @@ class _SitePreview extends StatelessWidget {
     final lang = state.previewLanguage;
     final isMobile = state.previewDevice == PreviewDevice.mobile;
 
-    final headline = state.valueFor(lang, 'hero.headline');
-    final subtitle = state.valueFor(lang, 'hero.subtitle');
+    // Read the schema's own keys, not invented ones. This used to ask for
+    // `hero.headline` and `highlights.0`, which the schema has never had, so
+    // the mock rendered three empty strings over a gradient.
+    final headline = state.valueFor(lang, 'cabin.hero.title');
+    final subtitle = state.valueFor(lang, 'cabin.meta.locationShort');
     final highlights = [
-      state.valueFor(lang, 'highlights.0'),
-      state.valueFor(lang, 'highlights.1'),
+      for (final field in state.fieldsOfList('home.highlights').take(2))
+        state.valueFor(lang, field.key),
     ];
 
     final hero = Container(

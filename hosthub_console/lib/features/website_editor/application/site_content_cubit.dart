@@ -1249,7 +1249,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
       case RowListRow(:final subs, :final media):
         return [
           for (final sub in subs) listFieldKey(listKey, rowId, sub.sub),
-          if (media) listFieldKey(listKey, rowId, 'alt'),
+          if (media) listFieldKey(listKey, rowId, RowListRow.altSub),
         ];
       case GroupListRow(
         :final titleSub,

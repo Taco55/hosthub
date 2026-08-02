@@ -2903,6 +2903,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePreviewLatest": MessageLookupByLibrary.simpleMessage(
       "Nieuwste bekijken",
     ),
+    "wePreviewNoDomain": MessageLookupByLibrary.simpleMessage(
+      "jouw-site.example",
+    ),
     "wePreviewTranslation": MessageLookupByLibrary.simpleMessage(
       "Vertaling bekijken",
     ),

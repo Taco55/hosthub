@@ -1770,6 +1770,7 @@
   "weSaveDirty": "Niet-gepubliceerde wijzigingen · vertaalt automatisch bij publiceren",
   "weSavePublished": "Gepubliceerd · alle talen",
   "wePublishAll": "Alle talen publiceren",
+  "wePreviewNoDomain": "jouw-site.example",
   "weLivePreview": "Live voorbeeld",
   "weAiTranslation": "AI-vertaling",
   "wePreviewLabel": "{language} voorbeeld",

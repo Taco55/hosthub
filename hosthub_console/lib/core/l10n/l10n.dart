@@ -10402,6 +10402,16 @@ class S {
     );
   }
 
+  /// `your-site.example`
+  String get wePreviewNoDomain {
+    return Intl.message(
+      'your-site.example',
+      name: 'wePreviewNoDomain',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Live preview`
   String get weLivePreview {
     return Intl.message(

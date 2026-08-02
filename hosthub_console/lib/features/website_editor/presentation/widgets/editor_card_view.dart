@@ -118,7 +118,7 @@ class _FieldRowView extends StatelessWidget {
       field: field,
       label: fieldLabel(context, row.key),
       hint: visibilityHint(context, row.visibility),
-      autofocus: row.key == 'cabin.hero.title' && state.isSourceMode,
+      autofocus: row.autofocus && state.isSourceMode,
     );
   }
 }
@@ -365,8 +365,8 @@ class _RowListRowView extends StatelessWidget {
             _RowMedia(
               state: state,
               rowLabel: '$itemLabel ${index + 1}',
-              imageFieldKey: listFieldKey(row.listKey, rowId, 'image'),
-              altFieldKey: listFieldKey(row.listKey, rowId, 'alt'),
+              imageFieldKey: listFieldKey(row.listKey, rowId, RowListRow.imageSub),
+              altFieldKey: listFieldKey(row.listKey, rowId, RowListRow.altSub),
             ),
         ],
       ),
@@ -595,7 +595,7 @@ class _MediaRowView extends StatelessWidget {
           imageBuilder: (context, index) => media == null
               ? const ColoredBox(color: Colors.transparent)
               : Image.network(
-                  media.publicUrlOf(paths[index]),
+                  media.thumbUrlOf(paths[index]),
                   fit: BoxFit.cover,
                   errorBuilder: (context, _, __) =>
                       const Icon(Icons.broken_image_outlined, size: 18),
@@ -747,7 +747,7 @@ class _RowMedia extends StatelessWidget {
             imageBuilder: (context, _) => media == null
                 ? const ColoredBox(color: Colors.transparent)
                 : Image.network(
-                    media.publicUrlOf(path),
+                    media.thumbUrlOf(path),
                     fit: BoxFit.cover,
                     errorBuilder: (context, _, __) =>
                         const Icon(Icons.broken_image_outlined, size: 18),

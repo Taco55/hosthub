@@ -2770,6 +2770,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePairWhat": MessageLookupByLibrary.simpleMessage("What"),
     "wePreviewLabel": m125,
     "wePreviewLatest": MessageLookupByLibrary.simpleMessage("Preview latest"),
+    "wePreviewNoDomain": MessageLookupByLibrary.simpleMessage(
+      "your-site.example",
+    ),
     "wePreviewTranslation": MessageLookupByLibrary.simpleMessage(
       "Preview translation",
     ),

@@ -381,19 +381,36 @@ void main() {
   ) async {
     final cubit = await pumpEditor(tester);
 
+    // The harness has no linked site, so the host is a localized placeholder.
+    // What this pins is the locale tracking the switcher, not the hostname.
+    Finder urlEndingIn(String suffix) => find.byWidgetPredicate(
+      (widget) => widget is Text && (widget.data ?? '').endsWith(suffix),
+      description: 'preview url ending in "$suffix"',
+    );
+
     // Source preview: browser frame with NL url + content.
-    expect(find.text('trysilpanorama.com/nl'), findsOneWidget);
+    expect(urlEndingIn('/nl'), findsOneWidget);
 
     cubit.setPreviewLanguage('en');
     await tester.pumpAndSettle();
-    expect(find.text('trysilpanorama.com/en'), findsOneWidget);
+    expect(urlEndingIn('/en'), findsOneWidget);
 
     cubit.setPreviewDevice(PreviewDevice.mobile);
     await tester.pumpAndSettle();
     // Mobile frame: status-bar time + host, no address bar.
     expect(find.text('9:41'), findsOneWidget);
-    expect(find.text('trysilpanorama.com/en'), findsNothing);
-    expect(find.text('trysilpanorama.com'), findsOneWidget);
+    expect(urlEndingIn('/en'), findsNothing);
+    // The mobile bezel shows the bare host, without the locale path.
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Text &&
+            (widget.data ?? '').endsWith('.example') &&
+            !(widget.data ?? '').contains('/'),
+        description: 'bare placeholder host',
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('stale translation shows the warning ribbon; fresh shows draft', (

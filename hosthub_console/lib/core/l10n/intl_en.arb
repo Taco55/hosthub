@@ -1766,6 +1766,7 @@
   "weSaveDirty": "Unpublished changes · auto-translates on publish",
   "weSavePublished": "Published · all languages",
   "wePublishAll": "Publish all languages",
+  "wePreviewNoDomain": "your-site.example",
   "weLivePreview": "Live preview",
   "weAiTranslation": "AI translation",
   "wePreviewLabel": "{language} preview",

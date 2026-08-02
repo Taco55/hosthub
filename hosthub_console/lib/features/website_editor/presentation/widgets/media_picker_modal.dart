@@ -230,7 +230,9 @@ class _LibraryTab extends StatelessWidget {
       maxSelection: maxSelection,
       onSelectionChanged: onSelectionChanged,
       itemBuilder: (context, file) => Image.network(
-        cubit.publicUrlOf(file.storagePath),
+        // A grid of tiles, not a gallery: the thumb is what a 160-pixel tile
+        // can show, and the master is what opening this modal used to cost.
+        cubit.thumbUrlOf(file.storagePath),
         fit: BoxFit.cover,
         errorBuilder: (context, _, __) =>
             const Icon(Icons.broken_image_outlined),

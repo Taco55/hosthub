@@ -16,14 +16,13 @@ class FakeMediaRepository implements MediaRepository {
   @override
   Future<List<MediaFile>> loadLibrary(String siteId) async => library;
 
+  final List<ProcessedImage> stored = [];
+
   @override
   Future<MediaFile> upload({
     required String siteId,
     required String filename,
-    required Uint8List bytes,
-    required String contentType,
-    int? width,
-    int? height,
+    required ProcessedImage image,
   }) async {
     final error = nextUploadError;
     if (error != null) {
@@ -31,12 +30,13 @@ class FakeMediaRepository implements MediaRepository {
       throw error;
     }
     uploaded.add(filename);
+    stored.add(image);
     return MediaFile(
-      storagePath: '$siteId/${uploaded.length}.jpg',
+      storagePath: '$siteId/${uploaded.length}.webp',
       filename: filename,
-      width: width,
-      height: height,
-      sizeBytes: bytes.lengthInBytes,
+      width: image.width,
+      height: image.height,
+      sizeBytes: image.masterSizeBytes,
     );
   }
 
@@ -60,10 +60,26 @@ class FakeMediaRepository implements MediaRepository {
   String publicUrlOf(String storagePath) => 'https://cdn.test/$storagePath';
 
   @override
+  String thumbUrlOf(String storagePath) =>
+      publicUrlOf(MediaVariants.thumbPathOf(storagePath) ?? storagePath);
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 Uint8List _bytes(int length) => Uint8List(length);
+
+/// Stands in for the browser re-encode: the cubit's contract is that it hands
+/// the repository whatever came back, not what was picked.
+Future<ProcessedImage> _fakeProcessor({
+  required Uint8List bytes,
+  required String contentType,
+}) async => ProcessedImage(
+  master: Uint8List(bytes.lengthInBytes ~/ 10),
+  thumb: Uint8List(bytes.lengthInBytes ~/ 100),
+  width: 2560,
+  height: 1707,
+);
 
 void main() {
   group('MediaLimits', () {
@@ -118,9 +134,45 @@ void main() {
     });
   });
 
+  group('MediaVariants', () {
+    test('scales to fit the box and keeps the aspect ratio', () {
+      expect(MediaVariants.fitWithin(4000, 3000, 2560), (2560, 1920));
+      expect(MediaVariants.fitWithin(3000, 4000, 2560), (1920, 2560));
+    });
+
+    test('never enlarges a photo that is already small enough', () {
+      // Upscaling invents detail and charges bytes for it.
+      expect(MediaVariants.fitWithin(1700, 1275, 2560), (1700, 1275));
+      expect(MediaVariants.fitWithin(2560, 1440, 2560), (2560, 1440));
+    });
+
+    test('an extreme ratio still yields a canvas the browser accepts', () {
+      final (width, height) = MediaVariants.fitWithin(8000, 3, 640);
+      expect(width, 640);
+      expect(height, greaterThanOrEqualTo(1));
+    });
+
+    test('a thumb path derives from its master', () {
+      expect(
+        MediaVariants.thumbPathOf('site-1/abc.webp'),
+        'site-1/abc@640w.webp',
+      );
+    });
+
+    test('a path from before the pipeline has no thumb to derive', () {
+      // The caller falls back to the master rather than requesting a file
+      // that was never written.
+      expect(MediaVariants.thumbPathOf('site-1/legacy.jpg'), isNull);
+      expect(MediaVariants.thumbPathOf('/images/hero/x.jpg'), isNull);
+    });
+  });
+
   group('MediaLibraryCubit', () {
-    MediaLibraryCubit build(FakeMediaRepository repo) =>
-        MediaLibraryCubit(repository: repo, siteId: 'site-1');
+    MediaLibraryCubit build(FakeMediaRepository repo) => MediaLibraryCubit(
+      repository: repo,
+      siteId: 'site-1',
+      processImage: _fakeProcessor,
+    );
 
     test('loads the library', () async {
       final repo = FakeMediaRepository(
@@ -134,6 +186,29 @@ void main() {
 
       expect(cubit.state.files, hasLength(1));
       expect(cubit.state.loading, isFalse);
+      await cubit.close();
+    });
+
+    test('what gets stored is the re-encode, not what was picked', () async {
+      // The whole point of the pipeline: a camera original must never be the
+      // thing a visitor of the site is sent.
+      final repo = FakeMediaRepository();
+      final cubit = build(repo);
+
+      await cubit.addUpload(
+        filename: 'holiday.jpg',
+        bytes: _bytes(4 * 1024 * 1024),
+        contentType: 'image/jpeg',
+        width: 4000,
+        height: 3000,
+      );
+
+      final stored = repo.stored.single;
+      expect(stored.masterSizeBytes, lessThan(4 * 1024 * 1024));
+      expect(stored.thumb.lengthInBytes, lessThan(stored.masterSizeBytes));
+      // The library records the copy that exists, not the one that was picked.
+      expect(cubit.state.files.single.sizeBytes, stored.masterSizeBytes);
+      expect(cubit.state.files.single.width, 2560);
       await cubit.close();
     });
 
