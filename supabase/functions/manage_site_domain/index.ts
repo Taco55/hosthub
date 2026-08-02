@@ -67,15 +67,24 @@ Deno.serve(async (req: Request) => {
   if (!domain) return jsonError(400, "invalid_domain");
 
   // ── Authorize ───────────────────────────────────────────────────────────
-  const { data: isOwner, error: accessError } = await adminClient.rpc(
-    "has_site_access",
-    { check_site_id: siteId, check_user_id: caller.id, min_role: "owner" },
-  );
+  // Deliberately the same test the site_domains RLS policy applies —
+  // is_admin OR owner. This function is now the only way that table is
+  // written, so being stricter than its policy would take away access the
+  // schema grants rather than add safety.
+  const [{ data: isOwner, error: accessError }, { data: isAdmin }] =
+    await Promise.all([
+      adminClient.rpc("has_site_access", {
+        check_site_id: siteId,
+        check_user_id: caller.id,
+        min_role: "owner",
+      }),
+      adminClient.rpc("is_admin", { user_id: caller.id }),
+    ]);
   if (accessError) {
     console.error("[manage_site_domain] access check failed", accessError);
     return jsonError(500, "Failed to verify site access");
   }
-  if (!isOwner) {
+  if (!isOwner && !isAdmin) {
     return jsonError(403, "You must be a site owner to change the domain");
   }
 

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict LRrTQVD8hQ7hBt3asXLSaHf8jaVZGXh9OR64ga7W23dDV8c81BZlnmvAsa45ebE
+\restrict r094w73V1TYZnpmh16bhKJELWPzeMcdI0cJs7EDQakTavOt17aneh0CC3Oc4hUa
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -1193,6 +1193,14 @@ ALTER TABLE ONLY public.settings
 
 
 --
+-- Name: site_domains site_domains_domain_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.site_domains
+    ADD CONSTRAINT site_domains_domain_key UNIQUE (domain);
+
+
+--
 -- Name: site_domains site_domains_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1367,6 +1375,13 @@ CREATE INDEX idx_site_members_site_id ON public.site_members USING btree (site_i
 --
 
 CREATE INDEX idx_site_translations_site_page_lang ON public.site_translations USING btree (site_id, page, language);
+
+
+--
+-- Name: site_domains_one_primary_per_site; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX site_domains_one_primary_per_site ON public.site_domains USING btree (site_id) WHERE is_primary;
 
 
 --
@@ -2405,5 +2420,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON T
 -- PostgreSQL database dump complete
 --
 
-\unrestrict LRrTQVD8hQ7hBt3asXLSaHf8jaVZGXh9OR64ga7W23dDV8c81BZlnmvAsa45ebE
+\unrestrict r094w73V1TYZnpmh16bhKJELWPzeMcdI0cJs7EDQakTavOt17aneh0CC3Oc4hUa
 
