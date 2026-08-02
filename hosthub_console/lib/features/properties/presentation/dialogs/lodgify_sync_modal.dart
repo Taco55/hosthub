@@ -67,7 +67,7 @@ String _applyLabel(BuildContext context, LodgifySyncPlan plan) {
   return context.s.lodgifySyncAddAndLinkAction;
 }
 
-class _ListingRow extends StatelessWidget {
+class _ListingRow extends StatelessWidget with StyledTileLike {
   const _ListingRow({required this.entry});
 
   final LodgifyListingPlan entry;

@@ -240,10 +240,14 @@ class _TeamSectionState extends State<_TeamSection> {
             // The add affordance as the list's last row (design `.stile.tap`
             // with the primary `+`), the same as `Taal toevoegen` — not a
             // filled button in the section header competing with the page.
+            // A StyledIconBadge rather than a bare Icon: an outlined glyph's
+            // ink doesn't fill its own box the way a solid badge does, so a
+            // bare icon reads as less indented next to the avatar above it
+            // even though both start at the exact same x.
             StyledTile(
-              leading: Icon(
-                Icons.person_add_outlined,
-                color: context.colors.primary,
+              leading: StyledIconBadge(
+                icon: Icons.person_add_outlined,
+                iconColor: context.colors.primary,
               ),
               title: context.s.accountInviteMember,
               titleColor: context.colors.primary,
@@ -273,7 +277,7 @@ class _TeamSectionState extends State<_TeamSection> {
 /// One chip style for members and invitations. Three container colours in one
 /// list (a teal pill for a role, an azure one for an invitation, primary blue on
 /// the buttons) made a role read as something to click.
-class _MemberRow extends StatelessWidget {
+class _MemberRow extends StatelessWidget with StyledTileLike {
   const _MemberRow({required this.member});
 
   final SiteMember member;
@@ -313,7 +317,7 @@ class _MemberRow extends StatelessWidget {
   }
 }
 
-class _InvitationRow extends StatelessWidget {
+class _InvitationRow extends StatelessWidget with StyledTileLike {
   const _InvitationRow({required this.invitation});
 
   final SiteInvitation invitation;
@@ -342,7 +346,8 @@ class _InvitationRow extends StatelessWidget {
   }
 }
 
-/// Design `.stile .lead.avm`: a 30px round monogram in the ice/primary pairing.
+/// Design `.stile .lead.avm`: a round monogram in the ice/primary pairing,
+/// sized like every other tile leading (`tiles.iconBadgeSize`).
 class _Avatar extends StatelessWidget {
   const _Avatar({required this.seed});
 
@@ -353,8 +358,6 @@ class _Avatar extends StatelessWidget {
     final trimmed = seed.trim();
     return StyledIconBadge.monogram(
       trimmed.isEmpty ? '?' : trimmed.characters.first.toUpperCase(),
-      size: 30,
-      borderRadius: 15,
       backgroundColor: context.colors.primaryContainer,
       iconColor: context.colors.primary,
     );
@@ -398,8 +401,9 @@ class _ConnectionsSection extends StatelessWidget {
       children: [
         StyledSecretTile(
           // Design `.stile .lead`: both rows in this card carry a leading
-          // glyph, so their titles start on the same edge.
-          leading: const Icon(Icons.vpn_key_outlined),
+          // glyph, so their titles start on the same edge — both as a
+          // StyledIconBadge, so they share the same leading width too.
+          leading: const StyledIconBadge(icon: Icons.vpn_key_outlined),
           title: context.s.lodgifyApiKeyLabel,
           subtitle: context.s.lodgifyApiKeyDescription,
           isSet: hasApiKey,
@@ -420,12 +424,10 @@ class _ConnectionsSection extends StatelessWidget {
           revealTooltip: context.s.show,
           hideTooltip: context.s.hide,
           copyTooltip: context.s.copy,
-          // Design `.btn-line.btn-sm`: one action height for every button that
-          // sits in a row on this page.
-          trailing: StyledButton.secondary(
-            title: hasApiKey ? context.s.edit : context.s.add,
-            size: StyledButtonSize.compact,
-            enabled: !isBusy,
+          // Same icon-button family as the reveal/copy actions beside it.
+          trailing: StyledToolbarButton(
+            iconData: hasApiKey ? Icons.edit_outlined : Icons.add,
+            tooltip: hasApiKey ? context.s.edit : context.s.add,
             onPressed: isBusy ? null : () => _editApiKey(context, settings),
           ),
         ),
@@ -458,7 +460,7 @@ class _ConnectionsSection extends StatelessWidget {
 ///
 /// Stateful for the clock only — `timeago` renders a relative time, so the row
 /// re-reads it every minute instead of aging silently while the page is open.
-class _LodgifyConnectionTile extends StatefulWidget {
+class _LodgifyConnectionTile extends StatefulWidget with StyledTileLike {
   const _LodgifyConnectionTile({required this.settings, required this.isBusy});
 
   final UserSettings settings;
@@ -511,7 +513,6 @@ class _LodgifyConnectionTileState extends State<_LodgifyConnectionTile> {
     return StyledTile(
       leading: StyledIconBadge.monogram(
         'LG',
-        size: 34,
         borderRadius: 10,
         backgroundColor: context.colors.secondary,
         iconColor: context.colors.onSecondary,
@@ -590,97 +591,58 @@ class _BillingSection extends StatelessWidget {
       horizontalPadding: 0,
       children: [
         StyledTile(
-          leading: const Icon(Icons.workspace_premium_outlined),
+          leading: const StyledIconBadge(icon: Icons.workspace_premium_outlined),
           title: context.s.accountBillingPlan,
           subtitle: context.s.accountBillingPlanSubtitle(propertyCount),
           value: context.s.accountBillingPlanPro,
         ),
         StyledTile(
-          leading: const Icon(Icons.credit_card_outlined),
+          leading: const StyledIconBadge(icon: Icons.credit_card_outlined),
           title: context.s.accountBillingPaymentMethod,
           value: notSetPlaceholder(context),
         ),
         StyledTile(
-          leading: const Icon(Icons.receipt_long_outlined),
+          leading: const StyledIconBadge(icon: Icons.receipt_long_outlined),
           title: context.s.accountBillingInvoices,
           value: context.s.accountBillingInvoicesValue,
         ),
-        _VatNumberTile(state: state),
+        // StyledTextTile owns the text-editing state (controller, dirty
+        // sync) itself and is already `StyledTileLike` — no bespoke
+        // StatefulWidget wrapper, and no `with StyledTileLike` to remember.
+        StyledTextTile(
+          leading: const StyledIconBadge(icon: Icons.badge_outlined),
+          title: context.s.accountBillingVatNumber,
+          subtitle: context.s.accountBillingVatHint,
+          value: state.settings.vatNumber,
+          hintText: context.s.optionalPlaceholder,
+          width: 170,
+          enabled: state.canEdit,
+          // Committed on submit rather than per keystroke: an account-level
+          // write per character is a write per character.
+          onSubmitted: (raw) => _saveVatNumber(context, state, raw),
+        ),
       ],
     );
   }
 }
 
-class _VatNumberTile extends StatefulWidget {
-  const _VatNumberTile({required this.state});
-
-  final AccountChannelDefaultsState state;
-
-  @override
-  State<_VatNumberTile> createState() => _VatNumberTileState();
-}
-
-class _VatNumberTileState extends State<_VatNumberTile> {
-  late final TextEditingController _controller = TextEditingController(
-    text: widget.state.settings.vatNumber ?? '',
+void _saveVatNumber(
+  BuildContext context,
+  AccountChannelDefaultsState state,
+  String raw,
+) {
+  final value = raw.trim();
+  final stored = state.settings.vatNumber ?? '';
+  if (value == stored) return;
+  context.read<AccountChannelDefaultsCubit>().saveSettings(
+    state.settings.copyWith(
+      vatNumber: value.isEmpty ? null : value,
+      clearVatNumber: value.isEmpty,
+    ),
   );
-
-  @override
-  void didUpdateWidget(covariant _VatNumberTile oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final stored = widget.state.settings.vatNumber ?? '';
-    if (stored != _controller.text && !_focusNode.hasFocus) {
-      _controller.text = stored;
-    }
-  }
-
-  final FocusNode _focusNode = FocusNode();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  void _commit() {
-    final value = _controller.text.trim();
-    final stored = widget.state.settings.vatNumber ?? '';
-    if (value == stored) return;
-    context.read<AccountChannelDefaultsCubit>().saveSettings(
-      widget.state.settings.copyWith(
-        vatNumber: value.isEmpty ? null : value,
-        clearVatNumber: value.isEmpty,
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return StyledTile(
-      leading: const Icon(Icons.badge_outlined),
-      title: context.s.accountBillingVatNumber,
-      subtitle: context.s.accountBillingVatHint,
-      // Design `.miniinp.wide`: 150px, left-aligned, and it says out loud that
-      // leaving it empty is fine.
-      value: SizedBox(
-        width: 170,
-        child: StyledTextField(
-          controller: _controller,
-          focusNode: _focusNode,
-          enabled: widget.state.canEdit,
-          placeholder: context.s.optionalPlaceholder,
-          // Committed on leaving the field rather than per keystroke: an
-          // account-level write per character is a write per character.
-          onEditingComplete: _commit,
-          onSubmitted: (_) => _commit(),
-        ),
-      ),
-    );
-  }
 }
 
-class _AppInfoTile extends StatefulWidget {
+class _AppInfoTile extends StatefulWidget with StyledTileLike {
   const _AppInfoTile();
 
   @override

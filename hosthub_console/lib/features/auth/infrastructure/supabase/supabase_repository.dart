@@ -74,7 +74,9 @@ abstract class SupabaseRepository {
     });
 
     final result = await query.maybeSingle();
-    return result == null ? null : Map<String, dynamic>.from(result);
+    return result == null
+        ? null
+        : Map<String, dynamic>.from(result as Map<dynamic, dynamic>);
   }
 
   Future<List<Map<String, dynamic>>> selectList(
@@ -97,7 +99,9 @@ abstract class SupabaseRepository {
     }
 
     final data = await query;
-    return (data as List).map((row) => Map<String, dynamic>.from(row)).toList();
+    return (data as List)
+        .map((row) => Map<String, dynamic>.from(row as Map<dynamic, dynamic>))
+        .toList();
   }
 
   Future<void> insert(
@@ -151,7 +155,7 @@ abstract class SupabaseRepository {
   Future<void> deleteWhere(String table, Map<String, dynamic> eq) async {
     var query = supabase.from(table).delete();
     eq.forEach((key, value) {
-      query = query.eq(key, value);
+      query = query.eq(key, value as Object);
     });
     await query;
   }

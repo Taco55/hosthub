@@ -335,4 +335,45 @@ void main() {
     // the VAT field.
     expect(find.byType(CircularProgressIndicator), findsNothing);
   });
+
+  testWidgets(
+    'every row starts on the same left edge, wrapper widget or not',
+    (tester) async {
+      // A member/invitation row, the Lodgify connection row, and the VAT and
+      // app-info rows are each built by a private widget that wraps a
+      // StyledTile rather than returning one directly. StyledSection only
+      // skips its own extra per-child padding for children it recognises as
+      // tile-like — via `with StyledTileLike` — so any such wrapper that
+      // forgets the mixin gets silently double-padded relative to a row built
+      // as a bare StyledTile/StyledSecretTile in the same section.
+      await pumpAccount(
+        tester,
+        members: [
+          _member(id: '1', role: 'owner', username: 'Marta', email: 'm@t.no'),
+        ],
+      );
+
+      final left = tester.getTopLeft(find.widgetWithText(StyledTile, 'Marta')).dx;
+      for (final title in [
+        'Invite a member',
+        'Lodgify',
+        'Pro',
+        'Payment method',
+        'Invoices',
+        'VAT or company number',
+        'App information',
+      ]) {
+        expect(
+          tester.getTopLeft(find.widgetWithText(StyledTile, title)).dx,
+          left,
+          reason: '"$title" should start on the same left edge as "Marta"',
+        );
+      }
+      expect(
+        tester.getTopLeft(find.byType(StyledSecretTile)).dx,
+        left,
+        reason: 'the API-key StyledSecretTile should start on the same edge',
+      );
+    },
+  );
 }

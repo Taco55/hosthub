@@ -156,6 +156,7 @@ class HosthubRouter {
                 BlocProvider<AccountChannelDefaultsCubit>(
                   create: (_) => AccountChannelDefaultsCubit(
                     repository: I.get<AccountChannelDefaultsRepository>(),
+                    authPort: I.get<AuthPort>(),
                   )..load(),
                 ),
               ],

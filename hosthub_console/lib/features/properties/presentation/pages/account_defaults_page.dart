@@ -232,7 +232,7 @@ class _AccountDefaultsViewState extends State<_AccountDefaultsView> {
 }
 
 /// One channel, collapsible, with its fields and who deviates from them.
-class _ChannelBlock extends StatelessWidget {
+class _ChannelBlock extends StatelessWidget with StyledTileLike {
   const _ChannelBlock({
     required this.channel,
     required this.isOpen,

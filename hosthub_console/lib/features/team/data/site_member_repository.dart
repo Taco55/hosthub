@@ -402,7 +402,7 @@ class SiteMemberRepository extends SupabaseRepository {
   Future<void> acceptPendingInvitations() async {
     if (supabase.auth.currentUser == null) return;
     try {
-      await supabase.rpc('accept_pending_invitations');
+      await supabase.rpc<void>('accept_pending_invitations');
     } catch (error, stack) {
       throw mapError(
         error,

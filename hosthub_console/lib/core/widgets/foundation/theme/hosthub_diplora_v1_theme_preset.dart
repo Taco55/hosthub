@@ -268,6 +268,11 @@ abstract final class HosthubThemePreset {
       tiles: (t) => t.copyWith(
         minHeight: 44,
         defaultPadding: const EdgeInsets.symmetric(vertical: 10),
+        // Every plain-icon tile leading (StyledIconBadge with no explicit
+        // `size`) shares this width with the avatar/monogram badges beside
+        // it, matching the app's established Lodgify-badge convention —
+        // instead of each row picking its own leading widget's natural size.
+        iconBadgeSize: 34,
       ),
       // Design `.set-card` page chrome: every page pane is a white bordered
       // card on the white page surface (`--jo-surface`, the design `.frame`

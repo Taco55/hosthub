@@ -130,7 +130,7 @@ class AccountChannelDefaultsRepository extends SupabaseRepository {
   /// read one account's defaults while writing another's.
   Future<String?> currentAccountOwnerId() async {
     try {
-      final result = await supabase.rpc(
+      final result = await supabase.rpc<dynamic>(
         'account_owner_for',
         params: {'check_user_id': currentUserId},
       );

@@ -377,7 +377,7 @@ class _BookingSettingsSectionState extends State<_BookingSettingsSection> {
 // Channel Expansion Tile
 // ---------------------------------------------------------------------------
 
-class _ChannelExpansionTile extends StatelessWidget {
+class _ChannelExpansionTile extends StatelessWidget with StyledTileLike {
   const _ChannelExpansionTile({
     required this.channelName,
     required this.leading,

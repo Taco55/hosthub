@@ -24,6 +24,7 @@ analyzer:
     - "**/build/**"
     - "**/*.g.dart"
     - "**/*.freezed.dart"
+    - lib/core/l10n/intl/**
     - packages/organize_templates/**
 
   errors:

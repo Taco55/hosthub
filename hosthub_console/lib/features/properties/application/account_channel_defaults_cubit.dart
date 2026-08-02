@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:app_errors/app_errors.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:hosthub_console/features/auth/auth.dart';
 import 'package:hosthub_console/features/properties/data/account_channel_defaults_repository.dart';
 import 'package:hosthub_console/features/properties/domain/account_channel_defaults.dart';
 import 'package:hosthub_console/features/properties/domain/account_settings.dart';
@@ -76,10 +79,30 @@ class AccountChannelDefaultsState extends Equatable {
 class AccountChannelDefaultsCubit extends Cubit<AccountChannelDefaultsState> {
   AccountChannelDefaultsCubit({
     required AccountChannelDefaultsRepository repository,
+    required AuthPort authPort,
   }) : _repository = repository,
-       super(const AccountChannelDefaultsState());
+       super(const AccountChannelDefaultsState()) {
+    // This cubit loads the moment the shell is entered, which can land inside
+    // the same beat as a Supabase token refresh (app start, another tab
+    // rotating the refresh token). That read fails with a transient
+    // unauthorized DomainError — see SupabaseRepository.currentUserId — that
+    // self-heals as soon as a session is back. Re-priming on every session
+    // event, the same way SessionBlocListeners does for the app-root cubits,
+    // closes that gap instead of leaving the tier stuck on an error card.
+    _authSubscription = authPort.onAuthStateChange.listen((change) {
+      if (change.user == null) return;
+      if (state.status == AccountChannelDefaultsStatus.error) load();
+    });
+  }
 
   final AccountChannelDefaultsRepository _repository;
+  late final StreamSubscription<AuthSessionChange> _authSubscription;
+
+  @override
+  Future<void> close() {
+    _authSubscription.cancel();
+    return super.close();
+  }
 
   Future<void> load() async {
     if (state.status == AccountChannelDefaultsStatus.loading) return;

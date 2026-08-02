@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict qzc5NZZn51M6nHHuW18lNTKfA4fmsnTddrUe5mn9j1NoU4DaMAxp7QAIGH3cdtj
+\restrict LRrTQVD8hQ7hBt3asXLSaHf8jaVZGXh9OR64ga7W23dDV8c81BZlnmvAsa45ebE
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -79,37 +79,51 @@ CREATE TYPE public.subscription_status AS ENUM (
 ALTER TYPE public.subscription_status OWNER TO postgres;
 
 --
--- Name: accept_pending_invitations(uuid, text); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: accept_pending_invitations(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.accept_pending_invitations(p_user_id uuid, p_user_email text) RETURNS void
+CREATE FUNCTION public.accept_pending_invitations() RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
-DECLARE
-    inv RECORD;
-BEGIN
-    FOR inv IN
-        SELECT id, site_id, role
-        FROM public.site_invitations
-        WHERE email = lower(trim(p_user_email))
-          AND status = 'pending'
-          AND expires_at > now()
-    LOOP
-        INSERT INTO public.site_members (site_id, profile_id, role)
-        VALUES (inv.site_id, p_user_id, inv.role)
-        ON CONFLICT (site_id, profile_id)
-            DO UPDATE SET role = EXCLUDED.role, updated_at = now();
+declare
+  v_user_id uuid := auth.uid();
+  v_email text;
+  inv record;
+begin
+  if v_user_id is null then
+    return;
+  end if;
 
-        UPDATE public.site_invitations
-        SET status = 'accepted'
-        WHERE id = inv.id;
-    END LOOP;
-END;
+  select lower(trim(u.email)) into v_email
+    from auth.users u
+   where u.id = v_user_id;
+
+  if v_email is null or v_email = '' then
+    return;
+  end if;
+
+  for inv in
+    select id, site_id, role
+      from public.site_invitations
+     where email = v_email
+       and status = 'pending'
+       and expires_at > now()
+  loop
+    insert into public.site_members (site_id, profile_id, role)
+    values (inv.site_id, v_user_id, inv.role)
+    on conflict (site_id, profile_id)
+      do update set role = excluded.role, updated_at = now();
+
+    update public.site_invitations
+       set status = 'accepted'
+     where id = inv.id;
+  end loop;
+end;
 $$;
 
 
-ALTER FUNCTION public.accept_pending_invitations(p_user_id uuid, p_user_email text) OWNER TO postgres;
+ALTER FUNCTION public.accept_pending_invitations() OWNER TO postgres;
 
 --
 -- Name: account_owner_for(uuid); Type: FUNCTION; Schema: public; Owner: postgres
@@ -270,69 +284,43 @@ $$;
 ALTER FUNCTION public.create_local_admin_user(admin_email text, admin_password text, admin_username text) OWNER TO postgres;
 
 --
--- Name: get_effective_lodgify_api_key(uuid); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: grant_account_members_on_new_site(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.get_effective_lodgify_api_key(p_user_id uuid) RETURNS text
+CREATE FUNCTION public.grant_account_members_on_new_site() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
-declare
-  v_api_key text;
 begin
-  if p_user_id is null then
-    return null;
+  if new.owner_profile_id is null then
+    return new;
   end if;
 
-  select lak.api_key
-    into v_api_key
-    from public.lodgify_api_keys lak
-   where lak.profile_id = p_user_id
-     and btrim(lak.api_key) <> ''
-   limit 1;
-
-  if v_api_key is not null then
-    return v_api_key;
-  end if;
-
-  select owner_lak.api_key
-    into v_api_key
+  -- Every distinct person already on this account, at the highest role they
+  -- hold anywhere in it. Highest, because that is the role the console shows
+  -- and therefore the one the owner believes they granted.
+  insert into public.site_members (site_id, profile_id, role)
+  select new.id,
+         sm.profile_id,
+         (array_agg(sm.role order by
+            case sm.role
+              when 'owner'  then 3
+              when 'editor' then 2
+              else 1
+            end desc))[1]
     from public.site_members sm
-    join public.sites s
-      on s.id = sm.site_id
-    join public.lodgify_api_keys owner_lak
-      on owner_lak.profile_id = s.owner_profile_id
-   where sm.profile_id = p_user_id
-     and btrim(owner_lak.api_key) <> ''
-   order by sm.created_at asc
-   limit 1;
+    join public.sites s on s.id = sm.site_id
+   where s.owner_profile_id = new.owner_profile_id
+     and s.id <> new.id
+   group by sm.profile_id
+  on conflict do nothing;
 
-  return v_api_key;
+  return new;
 end;
 $$;
 
 
-ALTER FUNCTION public.get_effective_lodgify_api_key(p_user_id uuid) OWNER TO postgres;
-
---
--- Name: get_site_lodgify_api_key(uuid); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.get_site_lodgify_api_key(p_site_id uuid) RETURNS text
-    LANGUAGE sql SECURITY DEFINER
-    SET search_path TO 'public'
-    AS $$
-  select lak.api_key
-  from public.sites s
-  join public.lodgify_api_keys lak
-    on lak.profile_id = s.owner_profile_id
-  where s.id = p_site_id
-    and btrim(lak.api_key) <> ''
-  limit 1;
-$$;
-
-
-ALTER FUNCTION public.get_site_lodgify_api_key(p_site_id uuid) OWNER TO postgres;
+ALTER FUNCTION public.grant_account_members_on_new_site() OWNER TO postgres;
 
 --
 -- Name: handle_new_user(); Type: FUNCTION; Schema: public; Owner: postgres
@@ -440,6 +428,48 @@ $$;
 ALTER FUNCTION public.is_admin(user_id uuid) OWNER TO postgres;
 
 --
+-- Name: property_account_owner(integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.property_account_owner(check_property_id integer) RETURNS uuid
+    LANGUAGE sql STABLE SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+  select owner_profile_id from public.properties where id = check_property_id;
+$$;
+
+
+ALTER FUNCTION public.property_account_owner(check_property_id integer) OWNER TO postgres;
+
+--
+-- Name: seed_account_channel_defaults(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.seed_account_channel_defaults() RETURNS trigger
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public'
+    AS $$
+begin
+  if new.owner_profile_id is null then
+    return new;
+  end if;
+
+  insert into public.account_channel_defaults
+    (owner_profile_id, channel, commission_percentage)
+  values
+    (new.owner_profile_id, 'booking', 15),
+    (new.owner_profile_id, 'airbnb', 15.5),
+    (new.owner_profile_id, 'other', 0)
+  on conflict (owner_profile_id, channel) do nothing;
+
+  return new;
+end;
+$$;
+
+
+ALTER FUNCTION public.seed_account_channel_defaults() OWNER TO postgres;
+
+--
 -- Name: set_updated_at(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -506,6 +536,49 @@ ALTER FUNCTION public.sync_lodgify_api_key_secret() OWNER TO postgres;
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
+
+--
+-- Name: account_channel_defaults; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.account_channel_defaults (
+    owner_profile_id uuid NOT NULL,
+    channel text NOT NULL,
+    commission_percentage numeric(6,3) DEFAULT 0 NOT NULL,
+    rate_markup_percentage numeric(6,3) DEFAULT 0 NOT NULL,
+    cleaning_amount numeric(12,2) DEFAULT 0 NOT NULL,
+    cleaning_type text DEFAULT 'per_booking'::text NOT NULL,
+    linen_amount numeric(12,2) DEFAULT 0 NOT NULL,
+    linen_type text DEFAULT 'per_booking'::text NOT NULL,
+    service_amount numeric(12,2) DEFAULT 0 NOT NULL,
+    service_type text DEFAULT 'per_person'::text NOT NULL,
+    other_amount numeric(12,2) DEFAULT 0 NOT NULL,
+    other_type text DEFAULT 'per_booking'::text NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT account_channel_defaults_channel_check CHECK ((channel = ANY (ARRAY['booking'::text, 'airbnb'::text, 'other'::text]))),
+    CONSTRAINT account_channel_defaults_cleaning_type_check CHECK ((cleaning_type = ANY (ARRAY['per_booking'::text, 'per_person'::text, 'per_night'::text]))),
+    CONSTRAINT account_channel_defaults_linen_type_check CHECK ((linen_type = ANY (ARRAY['per_booking'::text, 'per_person'::text, 'per_night'::text]))),
+    CONSTRAINT account_channel_defaults_other_type_check CHECK ((other_type = ANY (ARRAY['per_booking'::text, 'per_person'::text, 'per_night'::text]))),
+    CONSTRAINT account_channel_defaults_service_type_check CHECK ((service_type = ANY (ARRAY['per_booking'::text, 'per_person'::text, 'per_night'::text])))
+);
+
+
+ALTER TABLE public.account_channel_defaults OWNER TO postgres;
+
+--
+-- Name: account_settings; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.account_settings (
+    owner_profile_id uuid NOT NULL,
+    default_source_language text DEFAULT 'nl'::text NOT NULL,
+    default_languages text[] DEFAULT ARRAY['nl'::text, 'en'::text] NOT NULL,
+    vat_number text,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.account_settings OWNER TO postgres;
 
 --
 -- Name: admin_settings; Type: TABLE; Schema: public; Owner: postgres
@@ -595,11 +668,19 @@ CREATE TABLE public.cms_media (
     tags text[] DEFAULT '{}'::text[],
     sort_order integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    usage jsonb DEFAULT '[]'::jsonb NOT NULL
 );
 
 
 ALTER TABLE public.cms_media OWNER TO postgres;
+
+--
+-- Name: COLUMN cms_media.usage; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.cms_media.usage IS 'Field addresses that reference this file (["page/home:heroPhotos"]). Kept by the console when it writes image keys, so the picker can name a file''s use and block deleting one that is still on a page.';
+
 
 --
 -- Name: cms_media_collection_items; Type: TABLE; Schema: public; Owner: postgres
@@ -643,6 +724,55 @@ CREATE TABLE public.lodgify_api_keys (
 
 
 ALTER TABLE public.lodgify_api_keys OWNER TO postgres;
+
+--
+-- Name: message_threads; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.message_threads (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    property_id integer NOT NULL,
+    source text NOT NULL,
+    source_thread_id text NOT NULL,
+    channel text DEFAULT 'other'::text NOT NULL,
+    reservation_id text,
+    guest_name text,
+    guest_locale text,
+    last_message_at timestamp with time zone,
+    last_message_preview text,
+    awaiting_host boolean DEFAULT false NOT NULL,
+    read_at timestamp with time zone,
+    snoozed_until timestamp with time zone,
+    archived_at timestamp with time zone,
+    raw jsonb DEFAULT '{}'::jsonb NOT NULL,
+    synced_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.message_threads OWNER TO postgres;
+
+--
+-- Name: messages; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.messages (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    thread_id uuid NOT NULL,
+    source_message_id text,
+    direction text NOT NULL,
+    body text NOT NULL,
+    sent_at timestamp with time zone NOT NULL,
+    author_name text,
+    delivery_state text DEFAULT 'sent'::text NOT NULL,
+    raw jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT messages_delivery_state_check CHECK ((delivery_state = ANY (ARRAY['pending'::text, 'sent'::text, 'failed'::text]))),
+    CONSTRAINT messages_direction_check CHECK ((direction = ANY (ARRAY['inbound'::text, 'outbound'::text])))
+);
+
+
+ALTER TABLE public.messages OWNER TO postgres;
 
 --
 -- Name: profiles; Type: TABLE; Schema: public; Owner: postgres
@@ -903,6 +1033,22 @@ COMMENT ON COLUMN public.user_settings.portfolio_scope IS 'Per-page property fil
 
 
 --
+-- Name: account_channel_defaults account_channel_defaults_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.account_channel_defaults
+    ADD CONSTRAINT account_channel_defaults_pkey PRIMARY KEY (owner_profile_id, channel);
+
+
+--
+-- Name: account_settings account_settings_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.account_settings
+    ADD CONSTRAINT account_settings_pkey PRIMARY KEY (owner_profile_id);
+
+
+--
 -- Name: admin_settings admin_settings_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -988,6 +1134,38 @@ ALTER TABLE ONLY public.cms_media
 
 ALTER TABLE ONLY public.lodgify_api_keys
     ADD CONSTRAINT lodgify_api_keys_pkey PRIMARY KEY (profile_id);
+
+
+--
+-- Name: message_threads message_threads_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.message_threads
+    ADD CONSTRAINT message_threads_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: message_threads message_threads_source_thread_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.message_threads
+    ADD CONSTRAINT message_threads_source_thread_unique UNIQUE (source, source_thread_id);
+
+
+--
+-- Name: messages messages_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.messages
+    ADD CONSTRAINT messages_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: messages messages_source_message_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.messages
+    ADD CONSTRAINT messages_source_message_unique UNIQUE (thread_id, source_message_id);
 
 
 --
@@ -1087,6 +1265,13 @@ ALTER TABLE ONLY public.user_settings
 
 
 --
+-- Name: cms_media_site_storage_path_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX cms_media_site_storage_path_key ON public.cms_media USING btree (site_id, storage_path);
+
+
+--
 -- Name: idx_cms_doc_versions_lookup; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1119,6 +1304,27 @@ CREATE INDEX idx_cms_media_site ON public.cms_media USING btree (site_id);
 --
 
 CREATE INDEX idx_cms_media_tags ON public.cms_media USING gin (tags);
+
+
+--
+-- Name: idx_message_threads_last_message_at; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_message_threads_last_message_at ON public.message_threads USING btree (last_message_at DESC NULLS LAST);
+
+
+--
+-- Name: idx_message_threads_property; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_message_threads_property ON public.message_threads USING btree (property_id);
+
+
+--
+-- Name: idx_messages_thread_sent_at; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_messages_thread_sent_at ON public.messages USING btree (thread_id, sent_at);
 
 
 --
@@ -1161,6 +1367,13 @@ CREATE INDEX idx_site_members_site_id ON public.site_members USING btree (site_i
 --
 
 CREATE INDEX idx_site_translations_site_page_lang ON public.site_translations USING btree (site_id, page, language);
+
+
+--
+-- Name: properties properties_seed_channel_defaults; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER properties_seed_channel_defaults AFTER INSERT ON public.properties FOR EACH ROW EXECUTE FUNCTION public.seed_account_channel_defaults();
 
 
 --
@@ -1227,6 +1440,13 @@ CREATE TRIGGER set_user_settings_updated_at BEFORE UPDATE ON public.user_setting
 
 
 --
+-- Name: sites sites_grant_account_members; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER sites_grant_account_members AFTER INSERT ON public.sites FOR EACH ROW EXECUTE FUNCTION public.grant_account_members_on_new_site();
+
+
+--
 -- Name: user_settings sync_lodgify_api_key_secret_trigger; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -1238,6 +1458,22 @@ CREATE TRIGGER sync_lodgify_api_key_secret_trigger BEFORE INSERT OR UPDATE OF lo
 --
 
 CREATE TRIGGER trg_cms_version_auto_increment BEFORE INSERT ON public.cms_document_versions FOR EACH ROW EXECUTE FUNCTION public.cms_next_version();
+
+
+--
+-- Name: account_channel_defaults account_channel_defaults_owner_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.account_channel_defaults
+    ADD CONSTRAINT account_channel_defaults_owner_profile_id_fkey FOREIGN KEY (owner_profile_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+
+
+--
+-- Name: account_settings account_settings_owner_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.account_settings
+    ADD CONSTRAINT account_settings_owner_profile_id_fkey FOREIGN KEY (owner_profile_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
 
 
 --
@@ -1310,6 +1546,22 @@ ALTER TABLE ONLY public.cms_media
 
 ALTER TABLE ONLY public.lodgify_api_keys
     ADD CONSTRAINT lodgify_api_keys_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+
+
+--
+-- Name: message_threads message_threads_property_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.message_threads
+    ADD CONSTRAINT message_threads_property_id_fkey FOREIGN KEY (property_id) REFERENCES public.properties(id) ON DELETE CASCADE;
+
+
+--
+-- Name: messages messages_thread_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.messages
+    ADD CONSTRAINT messages_thread_id_fkey FOREIGN KEY (thread_id) REFERENCES public.message_threads(id) ON DELETE CASCADE;
 
 
 --
@@ -1393,6 +1645,13 @@ ALTER TABLE ONLY public.user_settings
 
 
 --
+-- Name: account_channel_defaults Account can read channel defaults; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Account can read channel defaults" ON public.account_channel_defaults FOR SELECT TO authenticated USING (public.has_account_access(owner_profile_id, auth.uid()));
+
+
+--
 -- Name: properties Account can read listings; Type: POLICY; Schema: public; Owner: postgres
 --
 
@@ -1400,10 +1659,65 @@ CREATE POLICY "Account can read listings" ON public.properties FOR SELECT TO aut
 
 
 --
+-- Name: messages Account can read messages; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Account can read messages" ON public.messages FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1
+   FROM public.message_threads t
+  WHERE ((t.id = messages.thread_id) AND public.has_account_access(public.property_account_owner(t.property_id), auth.uid())))));
+
+
+--
+-- Name: account_settings Account can read settings; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Account can read settings" ON public.account_settings FOR SELECT TO authenticated USING (public.has_account_access(owner_profile_id, auth.uid()));
+
+
+--
+-- Name: message_threads Account can read threads; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Account can read threads" ON public.message_threads FOR SELECT TO authenticated USING (public.has_account_access(public.property_account_owner(property_id), auth.uid()));
+
+
+--
 -- Name: properties Account editors manage listings; Type: POLICY; Schema: public; Owner: postgres
 --
 
 CREATE POLICY "Account editors manage listings" ON public.properties TO authenticated USING (public.has_account_access(owner_profile_id, auth.uid(), 'editor'::public.site_member_role)) WITH CHECK (public.has_account_access(owner_profile_id, auth.uid(), 'editor'::public.site_member_role));
+
+
+--
+-- Name: messages Account editors manage messages; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Account editors manage messages" ON public.messages TO authenticated USING ((EXISTS ( SELECT 1
+   FROM public.message_threads t
+  WHERE ((t.id = messages.thread_id) AND public.has_account_access(public.property_account_owner(t.property_id), auth.uid(), 'editor'::public.site_member_role))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM public.message_threads t
+  WHERE ((t.id = messages.thread_id) AND public.has_account_access(public.property_account_owner(t.property_id), auth.uid(), 'editor'::public.site_member_role)))));
+
+
+--
+-- Name: message_threads Account editors manage threads; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Account editors manage threads" ON public.message_threads TO authenticated USING (public.has_account_access(public.property_account_owner(property_id), auth.uid(), 'editor'::public.site_member_role)) WITH CHECK (public.has_account_access(public.property_account_owner(property_id), auth.uid(), 'editor'::public.site_member_role));
+
+
+--
+-- Name: account_channel_defaults Account owner manages channel defaults; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Account owner manages channel defaults" ON public.account_channel_defaults TO authenticated USING (public.has_account_access(owner_profile_id, auth.uid(), 'owner'::public.site_member_role)) WITH CHECK (public.has_account_access(owner_profile_id, auth.uid(), 'owner'::public.site_member_role));
+
+
+--
+-- Name: account_settings Account owner manages settings; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Account owner manages settings" ON public.account_settings TO authenticated USING (public.has_account_access(owner_profile_id, auth.uid(), 'owner'::public.site_member_role)) WITH CHECK (public.has_account_access(owner_profile_id, auth.uid(), 'owner'::public.site_member_role));
 
 
 --
@@ -1439,13 +1753,6 @@ CREATE POLICY "CMS collection items are publicly readable" ON public.cms_media_c
 --
 
 CREATE POLICY "CMS media collections are publicly readable" ON public.cms_media_collections FOR SELECT TO authenticated, anon USING (true);
-
-
---
--- Name: cms_media CMS media is publicly readable; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY "CMS media is publicly readable" ON public.cms_media FOR SELECT TO authenticated, anon USING (true);
 
 
 --
@@ -1488,10 +1795,24 @@ CREATE POLICY "Site domains limited to site owners" ON public.site_domains USING
 
 
 --
+-- Name: cms_media Site editors manage CMS media; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Site editors manage CMS media" ON public.cms_media TO authenticated USING (public.has_site_access(site_id, auth.uid(), 'editor'::public.site_member_role)) WITH CHECK (public.has_site_access(site_id, auth.uid(), 'editor'::public.site_member_role));
+
+
+--
 -- Name: site_translations Site editors manage translations; Type: POLICY; Schema: public; Owner: postgres
 --
 
 CREATE POLICY "Site editors manage translations" ON public.site_translations TO authenticated USING ((public.is_admin(auth.uid()) OR public.has_site_access(site_id, auth.uid(), 'editor'::public.site_member_role))) WITH CHECK ((public.is_admin(auth.uid()) OR public.has_site_access(site_id, auth.uid(), 'editor'::public.site_member_role)));
+
+
+--
+-- Name: cms_media Site members read CMS media; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY "Site members read CMS media" ON public.cms_media FOR SELECT TO authenticated USING (public.has_site_access(site_id, auth.uid(), 'viewer'::public.site_member_role));
 
 
 --
@@ -1526,17 +1847,6 @@ CREATE POLICY "Site owners can manage CMS documents" ON public.cms_documents TO 
   WHERE ((s.id = cms_documents.site_id) AND (s.owner_profile_id = auth.uid())))))) WITH CHECK ((public.is_admin(auth.uid()) OR (EXISTS ( SELECT 1
    FROM public.sites s
   WHERE ((s.id = cms_documents.site_id) AND (s.owner_profile_id = auth.uid()))))));
-
-
---
--- Name: cms_media Site owners can manage CMS media; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY "Site owners can manage CMS media" ON public.cms_media TO authenticated USING ((public.is_admin(auth.uid()) OR (EXISTS ( SELECT 1
-   FROM public.sites s
-  WHERE ((s.id = cms_media.site_id) AND (s.owner_profile_id = auth.uid())))))) WITH CHECK ((public.is_admin(auth.uid()) OR (EXISTS ( SELECT 1
-   FROM public.sites s
-  WHERE ((s.id = cms_media.site_id) AND (s.owner_profile_id = auth.uid()))))));
 
 
 --
@@ -1610,6 +1920,18 @@ CREATE POLICY "Users can update their own profile" ON public.profiles FOR UPDATE
 
 
 --
+-- Name: account_channel_defaults; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.account_channel_defaults ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: account_settings; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.account_settings ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: admin_settings; Type: ROW SECURITY; Schema: public; Owner: postgres
 --
 
@@ -1650,6 +1972,18 @@ ALTER TABLE public.cms_media_collections ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE public.lodgify_api_keys ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: message_threads; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.message_threads ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: messages; Type: ROW SECURITY; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: profiles; Type: ROW SECURITY; Schema: public; Owner: postgres
@@ -1716,19 +2050,19 @@ GRANT USAGE ON SCHEMA public TO service_role;
 
 
 --
--- Name: FUNCTION accept_pending_invitations(p_user_id uuid, p_user_email text); Type: ACL; Schema: public; Owner: postgres
+-- Name: FUNCTION accept_pending_invitations(); Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON FUNCTION public.accept_pending_invitations(p_user_id uuid, p_user_email text) TO anon;
-GRANT ALL ON FUNCTION public.accept_pending_invitations(p_user_id uuid, p_user_email text) TO authenticated;
-GRANT ALL ON FUNCTION public.accept_pending_invitations(p_user_id uuid, p_user_email text) TO service_role;
+REVOKE ALL ON FUNCTION public.accept_pending_invitations() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.accept_pending_invitations() TO authenticated;
+GRANT ALL ON FUNCTION public.accept_pending_invitations() TO service_role;
 
 
 --
 -- Name: FUNCTION account_owner_for(check_user_id uuid); Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON FUNCTION public.account_owner_for(check_user_id uuid) TO anon;
+REVOKE ALL ON FUNCTION public.account_owner_for(check_user_id uuid) FROM PUBLIC;
 GRANT ALL ON FUNCTION public.account_owner_for(check_user_id uuid) TO authenticated;
 GRANT ALL ON FUNCTION public.account_owner_for(check_user_id uuid) TO service_role;
 
@@ -1746,34 +2080,22 @@ GRANT ALL ON FUNCTION public.cms_next_version() TO service_role;
 -- Name: FUNCTION create_local_admin_user(admin_email text, admin_password text, admin_username text); Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON FUNCTION public.create_local_admin_user(admin_email text, admin_password text, admin_username text) TO anon;
-GRANT ALL ON FUNCTION public.create_local_admin_user(admin_email text, admin_password text, admin_username text) TO authenticated;
+REVOKE ALL ON FUNCTION public.create_local_admin_user(admin_email text, admin_password text, admin_username text) FROM PUBLIC;
 
 
 --
--- Name: FUNCTION get_effective_lodgify_api_key(p_user_id uuid); Type: ACL; Schema: public; Owner: postgres
+-- Name: FUNCTION grant_account_members_on_new_site(); Type: ACL; Schema: public; Owner: postgres
 --
 
-REVOKE ALL ON FUNCTION public.get_effective_lodgify_api_key(p_user_id uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.get_effective_lodgify_api_key(p_user_id uuid) TO service_role;
-
-
---
--- Name: FUNCTION get_site_lodgify_api_key(p_site_id uuid); Type: ACL; Schema: public; Owner: postgres
---
-
-REVOKE ALL ON FUNCTION public.get_site_lodgify_api_key(p_site_id uuid) FROM PUBLIC;
-GRANT ALL ON FUNCTION public.get_site_lodgify_api_key(p_site_id uuid) TO anon;
-GRANT ALL ON FUNCTION public.get_site_lodgify_api_key(p_site_id uuid) TO authenticated;
-GRANT ALL ON FUNCTION public.get_site_lodgify_api_key(p_site_id uuid) TO service_role;
+REVOKE ALL ON FUNCTION public.grant_account_members_on_new_site() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.grant_account_members_on_new_site() TO service_role;
 
 
 --
 -- Name: FUNCTION handle_new_user(); Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON FUNCTION public.handle_new_user() TO anon;
-GRANT ALL ON FUNCTION public.handle_new_user() TO authenticated;
+REVOKE ALL ON FUNCTION public.handle_new_user() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.handle_new_user() TO service_role;
 
 
@@ -1805,6 +2127,23 @@ GRANT ALL ON FUNCTION public.is_admin(user_id uuid) TO service_role;
 
 
 --
+-- Name: FUNCTION property_account_owner(check_property_id integer); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION public.property_account_owner(check_property_id integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION public.property_account_owner(check_property_id integer) TO authenticated;
+GRANT ALL ON FUNCTION public.property_account_owner(check_property_id integer) TO service_role;
+
+
+--
+-- Name: FUNCTION seed_account_channel_defaults(); Type: ACL; Schema: public; Owner: postgres
+--
+
+REVOKE ALL ON FUNCTION public.seed_account_channel_defaults() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.seed_account_channel_defaults() TO service_role;
+
+
+--
 -- Name: FUNCTION set_updated_at(); Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -1817,9 +2156,24 @@ GRANT ALL ON FUNCTION public.set_updated_at() TO service_role;
 -- Name: FUNCTION sync_lodgify_api_key_secret(); Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT ALL ON FUNCTION public.sync_lodgify_api_key_secret() TO anon;
-GRANT ALL ON FUNCTION public.sync_lodgify_api_key_secret() TO authenticated;
+REVOKE ALL ON FUNCTION public.sync_lodgify_api_key_secret() FROM PUBLIC;
 GRANT ALL ON FUNCTION public.sync_lodgify_api_key_secret() TO service_role;
+
+
+--
+-- Name: TABLE account_channel_defaults; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.account_channel_defaults TO authenticated;
+GRANT ALL ON TABLE public.account_channel_defaults TO service_role;
+
+
+--
+-- Name: TABLE account_settings; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.account_settings TO authenticated;
+GRANT ALL ON TABLE public.account_settings TO service_role;
 
 
 --
@@ -1881,6 +2235,22 @@ GRANT ALL ON TABLE public.cms_media_collections TO service_role;
 --
 
 GRANT ALL ON TABLE public.lodgify_api_keys TO service_role;
+
+
+--
+-- Name: TABLE message_threads; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.message_threads TO authenticated;
+GRANT ALL ON TABLE public.message_threads TO service_role;
+
+
+--
+-- Name: TABLE messages; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON TABLE public.messages TO authenticated;
+GRANT ALL ON TABLE public.messages TO service_role;
 
 
 --
@@ -2035,5 +2405,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON T
 -- PostgreSQL database dump complete
 --
 
-\unrestrict qzc5NZZn51M6nHHuW18lNTKfA4fmsnTddrUe5mn9j1NoU4DaMAxp7QAIGH3cdtj
+\unrestrict LRrTQVD8hQ7hBt3asXLSaHf8jaVZGXh9OR64ga7W23dDV8c81BZlnmvAsa45ebE
 

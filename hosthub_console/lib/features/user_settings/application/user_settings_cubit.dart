@@ -30,7 +30,13 @@ class UserSettingsCubit extends Cubit<UserSettingsState> {
   final SettingsCubit _settingsCubit;
   final CurrentUserProvider _currentUserProvider;
 
+  /// Caches the plaintext resolved by [revealChannelApiKey], so re-showing
+  /// or re-copying the key after it auto-hides is instant instead of paying
+  /// for another round trip to the server for a value that has not changed.
+  String? _revealedApiKeyCache;
+
   void reset() {
+    _revealedApiKeyCache = null;
     emit(const UserSettingsState.initial());
   }
 
@@ -175,6 +181,7 @@ class UserSettingsCubit extends Cubit<UserSettingsState> {
         lodgifyConnectedAt: null,
         lodgifyLastSyncedAt: null,
       );
+      _revealedApiKeyCache = null;
       await _saveSettings(
         updated,
         toast: const UserSettingsToast(
@@ -190,6 +197,7 @@ class UserSettingsCubit extends Cubit<UserSettingsState> {
       return;
     }
 
+    _revealedApiKeyCache = null;
     final updated = settings.copyWith(
       lodgifyApiKey: trimmed,
       lodgifyConnected: false,
@@ -214,8 +222,13 @@ class UserSettingsCubit extends Cubit<UserSettingsState> {
     final settings = state.settings;
     if (settings == null) return null;
 
+    final cached = _revealedApiKeyCache;
+    if (cached != null) return cached;
+
     try {
-      return await _channelManagerRepository.revealApiKey();
+      final revealed = await _channelManagerRepository.revealApiKey();
+      _revealedApiKeyCache = revealed;
+      return revealed;
     } catch (error, stack) {
       emit(
         state.copyWith(

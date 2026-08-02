@@ -17,7 +17,7 @@ class TokenResponse {
   TokenResponse({this.refreshToken, required this.accessToken, this.userId});
 
   factory TokenResponse.fromRawJson(String str) =>
-      TokenResponse.fromJson(json.decode(str));
+      TokenResponse.fromJson(json.decode(str) as Map<String, dynamic>);
 
   String toRawJson() => json.encode(toJson());
 

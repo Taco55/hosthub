@@ -365,7 +365,7 @@ String _preferredDisplayName(Profile profile) {
 /// console UI renders in. Persisted through [UserSettingsCubit]; the
 /// session-level listener syncs it into [LanguageCubit] app-wide, so the
 /// change applies immediately regardless of which screen is open.
-class _InterfaceLanguageTile extends StatelessWidget {
+class _InterfaceLanguageTile extends StatelessWidget with StyledTileLike {
   const _InterfaceLanguageTile();
 
   @override
@@ -402,7 +402,7 @@ class _InterfaceLanguageTile extends StatelessWidget {
 /// Compact side menu — collapses the rail to the 72px icon strip. Only shown
 /// from the expanded breakpoint (1100px) up: below it the rail is already
 /// compact by necessity, and in drawer mode the setting is moot.
-class _CompactSideMenuTile extends StatelessWidget {
+class _CompactSideMenuTile extends StatelessWidget with StyledTileLike {
   const _CompactSideMenuTile();
 
   @override

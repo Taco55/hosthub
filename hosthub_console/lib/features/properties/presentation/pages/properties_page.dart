@@ -124,7 +124,7 @@ class PropertiesPage extends StatelessWidget {
   }
 }
 
-class _PropertyRow extends StatelessWidget {
+class _PropertyRow extends StatelessWidget with StyledTileLike {
   const _PropertyRow({
     required this.property,
     required this.abbreviation,

@@ -57,7 +57,7 @@ class ApiClient {
     final delay = Duration(
       milliseconds: _retryBaseDelay.inMilliseconds * attempt,
     );
-    await Future.delayed(delay);
+    await Future<void>.delayed(delay);
   }
 
   void _resetAdapterAndForceCloseNextRequest() {
@@ -415,7 +415,7 @@ class ApiClient {
   }
 
   T _mapResponse<T>({
-    required Response response,
+    required Response<dynamic> response,
     required String method,
     required String endPoint,
     required T Function(dynamic data) dataConstructor,

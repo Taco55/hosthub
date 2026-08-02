@@ -131,13 +131,13 @@ class SimplifiedDioInterceptor implements Interceptor {
     }
   }
 
-  void _logHeaders({required Map headers, Styles? style}) {
+  void _logHeaders({required Map<dynamic, dynamic> headers, Styles? style}) {
     _log(key: 'Headers:', value: '', style: style);
     headers.forEach((key, value) {
       _log(
         key: '\t$key: ',
         value: (value is List && value.length == 1)
-            ? value.first
+            ? value.first.toString()
             : value.toString(),
         style: style,
       );
@@ -152,7 +152,7 @@ class SimplifiedDioInterceptor implements Interceptor {
     _log(key: 'Method: ', value: options.method, style: requestStyle);
     _log(
       key: 'Request Id: ',
-      value: options.headers['request_id'],
+      value: options.headers['request_id']?.toString() ?? '',
       style: requestStyle,
     );
 
@@ -189,7 +189,11 @@ class SimplifiedDioInterceptor implements Interceptor {
     }
   }
 
-  void logResponse(Response response, {Styles? style, bool error = false}) {
+  void logResponse(
+    Response<dynamic> response, {
+    Styles? style,
+    bool error = false,
+  }) {
     if (!error) {
       _log(key: '[Response] ->', value: '', style: style);
     }
@@ -207,7 +211,7 @@ class SimplifiedDioInterceptor implements Interceptor {
 
     _log(
       key: 'Request Id: ',
-      value: response.requestOptions.headers["request_id"],
+      value: response.requestOptions.headers['request_id']?.toString() ?? '',
       style: style,
     );
 
@@ -264,7 +268,10 @@ class SimplifiedDioInterceptor implements Interceptor {
   }
 
   @override
-  void onResponse(Response response, ResponseInterceptorHandler handler) {
+  void onResponse(
+    Response<dynamic> response,
+    ResponseInterceptorHandler handler,
+  ) {
     logResponse(response, style: responseStyle);
     _logNewLine();
 
