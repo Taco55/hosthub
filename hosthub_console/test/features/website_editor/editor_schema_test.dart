@@ -181,7 +181,7 @@ void main() {
       'cabin.location.distances.x1.value',
       'practical.quickFacts.x1.value',
       'cabin.rules.checkIn',
-      'practical.arrival.checkOut',
+      'practical.arrival.checkOut.value',
     ]) {
       expect(sharedOf(key), key, reason: '$key should be shared');
     }
@@ -189,6 +189,10 @@ void main() {
       'contact.form.fields.name.placeholder',
       'contact.form.fields.message.placeholder',
       'home.keyFacts.x1.label',
+      // The time is a shared fact; what it is *called* is copy, and Norwegian
+      // calls it "Innsjekk".
+      'practical.arrival.checkIn.label',
+      'practical.arrival.checkOut.label',
     ]) {
       expect(sharedOf(key), isNull, reason: '$key must be translated');
     }

@@ -468,6 +468,11 @@ const Map<String, List<EditorCard>> kPageCards = {
       id: 'arrival',
       rows: [
         FieldRow('practical.arrival.title'),
+        // Slots, not bare values: unlike the home page's house rules, the
+        // Practical page renders its own `checkInLabel`/`checkOutLabel` from
+        // the document (arrivalAccess), and they differ per language —
+        // "Innsjekk" in Norwegian. Treating them as a system fact left copy
+        // on the live page that no field in the console could reach.
         PairListRow(
           'practical.arrival.times',
           labelSub: 'label',
@@ -478,7 +483,6 @@ const Map<String, List<EditorCard>> kPageCards = {
             'practical.arrival.checkIn',
             'practical.arrival.checkOut',
           ],
-          fixedRowsAreValues: true,
         ),
         ListRow(
           'practical.arrival.bullets',

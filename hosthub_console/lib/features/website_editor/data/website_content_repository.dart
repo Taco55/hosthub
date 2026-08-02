@@ -322,13 +322,27 @@ class WebsiteContentRepository extends SupabaseRepository {
       document: 2,
       path: ['arrivalAccess', 'title'],
     ),
+    // The label is content the Practical page renders, not a system fact, so
+    // it is a field of its own. The document spells it `checkInLabel` beside
+    // `checkIn` rather than nesting, hence four explicit entries instead of
+    // one `{id}` pattern.
     (
-      pattern: 'practical.arrival.checkIn',
+      pattern: 'practical.arrival.checkIn.label',
+      document: 2,
+      path: ['arrivalAccess', 'checkInLabel'],
+    ),
+    (
+      pattern: 'practical.arrival.checkIn.value',
       document: 2,
       path: ['arrivalAccess', 'checkIn'],
     ),
     (
-      pattern: 'practical.arrival.checkOut',
+      pattern: 'practical.arrival.checkOut.label',
+      document: 2,
+      path: ['arrivalAccess', 'checkOutLabel'],
+    ),
+    (
+      pattern: 'practical.arrival.checkOut.value',
       document: 2,
       path: ['arrivalAccess', 'checkOut'],
     ),
