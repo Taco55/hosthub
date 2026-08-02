@@ -632,11 +632,18 @@ class WebsiteContentRepository extends SupabaseRepository {
       switch (segment) {
         case final RowId id:
           if (current is! List) return null;
-          current = current.firstWhere(
-            (row) => row is Map && row['id'] == id.value,
-            orElse: () => null,
-          );
-          if (current == null) return null;
+          // A plain loop, not firstWhere(orElse: () => null): on a list whose
+          // element type is not nullable — which a decoded document can be —
+          // that orElse is a type error at runtime, not a miss.
+          Object? found;
+          for (final row in current) {
+            if (row is Map && row['id'] == id.value) {
+              found = row;
+              break;
+            }
+          }
+          if (found == null) return null;
+          current = found;
         case final int index:
           if (current is! List || index >= current.length) return null;
           current = current[index];
@@ -655,11 +662,18 @@ class WebsiteContentRepository extends SupabaseRepository {
       switch (segment) {
         case final RowId id:
           if (current is! List) return null;
-          current = current.firstWhere(
-            (row) => row is Map && row['id'] == id.value,
-            orElse: () => null,
-          );
-          if (current == null) return null;
+          // A plain loop, not firstWhere(orElse: () => null): on a list whose
+          // element type is not nullable — which a decoded document can be —
+          // that orElse is a type error at runtime, not a miss.
+          Object? found;
+          for (final row in current) {
+            if (row is Map && row['id'] == id.value) {
+              found = row;
+              break;
+            }
+          }
+          if (found == null) return null;
+          current = found;
         case final int index:
           if (current is! List || index >= current.length) return null;
           current = current[index];
@@ -914,10 +928,16 @@ class WebsiteContentRepository extends SupabaseRepository {
         final itemsListKey = list.itemsListKey;
         if (itemsListKey == null) continue;
         // A group's items live one level deeper, addressed through the group.
+        //
+        // The lookup key keeps the enclosing `{id}` placeholder, because that
+        // is the shape _listLocationOf compares against — it strips pattern
+        // segments only up to the placeholder it is resolving. Passing
+        // `<list>.items` matched no pattern, so every group list came back
+        // with its groups but none of their items.
         for (final groupId in ids) {
           final key = groupItemsListKey(list.listKey, groupId, itemsListKey);
           listOrder[key] = listRowIdsIn(
-            '${list.listKey}.$itemsListKey',
+            '${list.listKey}.{id}.$itemsListKey',
             content,
             enclosingIds: [groupId],
           );
