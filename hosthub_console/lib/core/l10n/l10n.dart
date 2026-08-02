@@ -11093,6 +11093,76 @@ class S {
     );
   }
 
+  /// `The address guests visit, e.g. www.yourchalet.com. Saving it also sets up DNS.`
+  String get customDomainHint {
+    return Intl.message(
+      'The address guests visit, e.g. www.yourchalet.com. Saving it also sets up DNS.',
+      name: 'customDomainHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{domain} now serves this website.`
+  String customDomainSaved(String domain) {
+    return Intl.message(
+      '$domain now serves this website.',
+      name: 'customDomainSaved',
+      desc: '',
+      args: [domain],
+    );
+  }
+
+  /// `That is not a valid domain name.`
+  String get customDomainInvalid {
+    return Intl.message(
+      'That is not a valid domain name.',
+      name: 'customDomainInvalid',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `That domain already belongs to another website.`
+  String get customDomainTaken {
+    return Intl.message(
+      'That domain already belongs to another website.',
+      name: 'customDomainTaken',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Point {zone} at us first`
+  String customDomainZoneMissingTitle(String zone) {
+    return Intl.message(
+      'Point $zone at us first',
+      name: 'customDomainZoneMissingTitle',
+      desc: '',
+      args: [zone],
+    );
+  }
+
+  /// `{zone} is not managed here yet, so we cannot route it. Add the domain to Cloudflare and change its nameservers at your registrar. Once that is done, set the domain again here.`
+  String customDomainZoneMissingMessage(String zone) {
+    return Intl.message(
+      '$zone is not managed here yet, so we cannot route it. Add the domain to Cloudflare and change its nameservers at your registrar. Once that is done, set the domain again here.',
+      name: 'customDomainZoneMissingMessage',
+      desc: '',
+      args: [zone],
+    );
+  }
+
+  /// `Could not set the domain. Please try again.`
+  String get customDomainFailed {
+    return Intl.message(
+      'Could not set the domain. Please try again.',
+      name: 'customDomainFailed',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Booking link`
   String get bookingLinkLabel {
     return Intl.message(

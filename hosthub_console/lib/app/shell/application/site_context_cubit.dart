@@ -190,6 +190,34 @@ class SiteContextCubit extends Cubit<SiteContextState> {
     });
   }
 
+  /// Points a custom domain at this site and makes it the primary one.
+  ///
+  /// Returns the outcome instead of routing it through [state.error]: the two
+  /// refusals ([SetDomainZoneMissing], [SetDomainTaken]) each need their own
+  /// sentence at the point of asking, not an error card on the page. A real
+  /// failure still lands in the state the usual way, and returns null.
+  Future<SetDomainResult?> setCustomDomain(String domain) async {
+    final site = state.site;
+    final trimmed = domain.trim();
+    if (site == null || trimmed.isEmpty) return null;
+    try {
+      final result = await _cmsRepository.setPrimaryDomain(
+        siteId: site.id,
+        domain: trimmed,
+      );
+      if (result is SetDomainSucceeded) await resolve();
+      return result;
+    } catch (error, stack) {
+      emit(
+        state.copyWith(
+          status: SiteContextStatus.error,
+          error: DomainError.from(error, stack: stack),
+        ),
+      );
+      return null;
+    }
+  }
+
   /// Updates the booking link in every language's site-config document — the
   /// link is shared infrastructure, not translated content.
   Future<void> setBookingUrl(String url) async {

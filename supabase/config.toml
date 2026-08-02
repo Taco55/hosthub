@@ -320,3 +320,11 @@ enabled = true
 # JWT is validated inside the function via auth.getUser(token).
 verify_jwt = false
 entrypoint = "./functions/translate-message/index.ts"
+
+[functions.manage_site_domain]
+enabled = true
+# JWT is validated inside the function via auth.getUser(token), which then
+# checks has_site_access(..., 'owner') before the Cloudflare token is used.
+verify_jwt = false
+entrypoint = "./functions/manage_site_domain/index.ts"
+import_map = "./functions/manage_site_domain/deno.json"

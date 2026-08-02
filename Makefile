@@ -26,10 +26,14 @@ SUPABASE_DIR   := $(WORKSPACE_ROOT)/supabase
 # support address in their footer and the environment badge that used to come
 # from the console's own config have to be available server-side. Neither is
 # secret; they travel with the other function config.
+# CLOUDFLARE_API_TOKEN (from the shared-server file) is what manage_site_domain
+# uses to point a custom domain at the sites worker; SITES_WORKER_NAME only
+# overrides its default of "hosthub-sites".
 FUNCTION_SECRET_VARS := RESEND_API_KEY FROM_EMAIL FROM_NAME DASHBOARD_BASE_URL \
                         SUPPORT_EMAIL EMAIL_ENV_LABEL \
                         DEEPL_API_KEY TRANSLATE_PROVIDER \
-                        LIBRETRANSLATE_URL LIBRETRANSLATE_API_KEY MYMEMORY_EMAIL
+                        LIBRETRANSLATE_URL LIBRETRANSLATE_API_KEY MYMEMORY_EMAIL \
+                        CLOUDFLARE_API_TOKEN SITES_WORKER_NAME
 
 # Include shared Supabase targets
 include $(SUPABASE_DIR)/make/supabase-common.mk

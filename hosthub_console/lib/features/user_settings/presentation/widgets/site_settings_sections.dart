@@ -7,6 +7,7 @@ import 'package:styled_widgets/styled_widgets.dart';
 import 'package:hosthub_console/app/shell/application/site_context_cubit.dart';
 import 'package:hosthub_console/core/l10n/application/language_cubit.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
+import 'package:hosthub_console/features/cms/cms.dart';
 
 /// The property-scope website settings from the design handoff (§5): site
 /// details, the dynamic website-languages list, and the source-language
@@ -78,13 +79,15 @@ class _SiteDetailsSection extends StatelessWidget {
             await context.read<SiteContextCubit>().setSiteName(name);
           },
         ),
-        // Read-only (domains are infrastructure): no chevron, and an empty
-        // value renders as the dimmed "Not set" placeholder — one consistent
-        // trailing pattern across these rows.
+        // Editable, unlike the other infrastructure values here: setting it
+        // does the DNS and worker-route work too (see manage_site_domain), so
+        // the owner is not left with a field that saves but does not serve.
         StyledTile(
           leading: const Icon(Icons.language_outlined),
           title: context.s.publicDomainLabel,
           value: state.primaryDomain ?? notSetPlaceholder(context),
+          showChevron: true,
+          onTap: () => _editCustomDomain(context, state),
         ),
         StyledTile(
           leading: const Icon(Icons.link_outlined),
@@ -112,6 +115,7 @@ Future<String?> _promptTextValue(
   BuildContext context, {
   required String title,
   required String initialValue,
+  String? helperText,
 }) {
   return showStyledModal<String>(
     context,
@@ -128,9 +132,67 @@ Future<String?> _promptTextValue(
     dataBuilder: (ctx, onChanged) => StyledTextFormField(
       initialValue: initialValue,
       autofocus: true,
+      helperText: helperText,
       onChanged: onChanged,
     ),
   );
+}
+
+/// Asks for a domain and reports what became of it.
+///
+/// Every branch says something: setting a domain reaches into DNS, so silence
+/// would leave the owner guessing whether the website moved. The undelegated
+/// case gets a dialog rather than a toast — it ends in a task for them.
+Future<void> _editCustomDomain(
+  BuildContext context,
+  SiteContextState state,
+) async {
+  final domain = await _promptTextValue(
+    context,
+    title: context.s.publicDomainLabel,
+    initialValue: state.primaryDomain ?? '',
+    helperText: context.s.customDomainHint,
+  );
+  if (domain == null || !context.mounted) return;
+
+  final result = await context.read<SiteContextCubit>().setCustomDomain(domain);
+  if (!context.mounted) return;
+
+  switch (result) {
+    case SetDomainSucceeded(:final domain):
+      showStyledToast(
+        context,
+        type: ToastificationType.success,
+        description: context.s.customDomainSaved(domain),
+      );
+    case SetDomainZoneMissing(:final zone):
+      showStyledAlertDialog(
+        context,
+        title: context.s.customDomainZoneMissingTitle(zone),
+        message: context.s.customDomainZoneMissingMessage(zone),
+        actionText: context.s.ok,
+      );
+    case SetDomainTaken():
+      showStyledToast(
+        context,
+        type: ToastificationType.error,
+        description: context.s.customDomainTaken,
+      );
+    case SetDomainInvalid():
+      showStyledToast(
+        context,
+        type: ToastificationType.error,
+        description: context.s.customDomainInvalid,
+      );
+    // null: the cubit already put a real failure in its error state; the toast
+    // is what makes it visible from here.
+    case null:
+      showStyledToast(
+        context,
+        type: ToastificationType.error,
+        description: context.s.customDomainFailed,
+      );
+  }
 }
 
 // ---------------------------------------------------------------------------

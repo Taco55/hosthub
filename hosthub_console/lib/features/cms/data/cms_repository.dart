@@ -3,6 +3,43 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:hosthub_console/features/auth/infrastructure/supabase/supabase_repository.dart';
 
+/// Outcome of [CmsRepository.setPrimaryDomain]. Everything here is a "no" the
+/// owner can act on; anything they cannot act on throws a [DomainError].
+sealed class SetDomainResult {
+  const SetDomainResult();
+}
+
+/// The domain is live: DNS, the worker route and the row all point at the site.
+class SetDomainSucceeded extends SetDomainResult {
+  const SetDomainSucceeded(this.domain);
+
+  /// The hostname as the server normalized it (`HTTPS://Www.X.com/` in,
+  /// `www.x.com` out) — what the UI should show from now on.
+  final String domain;
+}
+
+/// The domain is not in this Cloudflare account, so nothing here can route it
+/// yet: the customer has to delegate [zone] first (nameservers, at their
+/// registrar). Refused rather than saved — a row for a hostname that resolves
+/// nowhere would read as "configured".
+class SetDomainZoneMissing extends SetDomainResult {
+  const SetDomainZoneMissing(this.zone);
+
+  /// The registrable domain to delegate, e.g. `example.com` for
+  /// `www.example.com`.
+  final String zone;
+}
+
+/// Another site already answers on this hostname.
+class SetDomainTaken extends SetDomainResult {
+  const SetDomainTaken();
+}
+
+/// Not a hostname the server is willing to store.
+class SetDomainInvalid extends SetDomainResult {
+  const SetDomainInvalid();
+}
+
 class SiteSummary {
   const SiteSummary({
     required this.id,
@@ -360,6 +397,81 @@ class CmsRepository extends SupabaseRepository {
         stack,
         reason: DomainErrorReason.cannotLoadData,
         context: {'op': 'fetchPrimaryDomain', 'siteId': siteId},
+      );
+    }
+  }
+
+  /// Points `domain` at this site and makes it the primary one.
+  ///
+  /// Goes through the `manage_site_domain` edge function rather than writing
+  /// the row here: a hostname only reaches the sites worker once DNS and a
+  /// worker route exist too, and the Cloudflare token that creates them must
+  /// never be in reach of a web client.
+  ///
+  /// Only genuine failures throw. The two ways an owner can be *told no* —
+  /// a domain that is not delegated to Cloudflare yet, and one that already
+  /// belongs to another site — come back as values, because each needs its own
+  /// sentence rather than an error card.
+  Future<SetDomainResult> setPrimaryDomain({
+    required String siteId,
+    required String domain,
+  }) async {
+    try {
+      final accessToken = supabase.auth.currentSession?.accessToken;
+      if (accessToken == null || accessToken.isEmpty) {
+        throw DomainErrorCode.unauthorized.err(
+          reason: DomainErrorReason.cannotSaveData,
+          message: 'No access token available for setPrimaryDomain call',
+          context: const {'op': 'setPrimaryDomain', 'auth_session': 'missing'},
+        );
+      }
+
+      final response = await supabase.functions.invoke(
+        'manage_site_domain',
+        body: {'siteId': siteId, 'domain': domain},
+        headers: {'Authorization': 'Bearer $accessToken'},
+      );
+
+      final data = response.data;
+      final saved = data is Map ? data['domain'] as String? : null;
+      if (saved == null || saved.isEmpty) {
+        throw DomainErrorCode.serverError.err(
+          reason: DomainErrorReason.cannotSaveData,
+          message: 'manage_site_domain returned no domain',
+          context: {'op': 'setPrimaryDomain', 'siteId': siteId},
+        );
+      }
+      return SetDomainSucceeded(saved);
+    } on FunctionException catch (error, stack) {
+      final body = error.details is Map
+          ? error.details as Map<dynamic, dynamic>
+          : const <dynamic, dynamic>{};
+      switch (body['error']) {
+        case 'zone_not_found':
+          return SetDomainZoneMissing(
+            (body['zone'] as String?) ?? domain.trim().toLowerCase(),
+          );
+        case 'domain_taken':
+          return const SetDomainTaken();
+        case 'invalid_domain':
+          return const SetDomainInvalid();
+      }
+      throw mapError(
+        error,
+        stack,
+        reason: DomainErrorReason.cannotSaveData,
+        context: {
+          'op': 'setPrimaryDomain',
+          'siteId': siteId,
+          'status': error.status,
+        },
+      );
+    } catch (error, stack) {
+      throw mapError(
+        error,
+        stack,
+        reason: DomainErrorReason.cannotSaveData,
+        context: {'op': 'setPrimaryDomain', 'siteId': siteId},
       );
     }
   }
