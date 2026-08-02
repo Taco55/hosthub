@@ -224,11 +224,12 @@ class WebsiteContentRepository extends SupabaseRepository {
       document: 0,
       path: ['location', 'distances', _rowId, 'value'],
     ),
-    (
-      pattern: 'cabin.location.mapQuery',
-      document: 0,
-      path: ['location', 'mapQuery'],
-    ),
+    // Site-wide chrome, in site_config: rendered on every page, one set for
+    // the whole site, per language where the text is language-dependent.
+    (pattern: 'site.mapEmbedUrl', document: 6, path: ['mapEmbedUrl']),
+    (pattern: 'site.mapLinkUrl', document: 6, path: ['mapLinkUrl']),
+    (pattern: 'site.name', document: 6, path: ['name']),
+    (pattern: 'site.location', document: 6, path: ['location']),
 
     // -- Home: highlights (card 7) --
     (

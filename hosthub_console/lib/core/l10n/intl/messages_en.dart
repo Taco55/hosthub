@@ -29,323 +29,332 @@ class MessageLookup extends MessageLookupByLibrary {
   static String m2(count) =>
       "${Intl.plural(count, one: '1 property with its own value stays unchanged.', other: '${count} properties with their own values stay unchanged.')}";
 
-  static String m3(name) => "Remove ${name}?";
+  static String m3(count) =>
+      "${Intl.plural(count, zero: 'No properties yet', one: '1 property', other: '${count} properties')}";
 
-  static String m4(language) =>
+  static String m4(count) =>
+      "${Intl.plural(count, one: '1 from Lodgify', other: '${count} from Lodgify')}";
+
+  static String m5(count) =>
+      "${Intl.plural(count, one: '1 manual', other: '${count} manual')}";
+
+  static String m6(name) => "Remove ${name}?";
+
+  static String m7(language) =>
       "One-time action: sets the source language to ${language}.";
 
-  static String m5(version, environment) =>
+  static String m8(version, environment) =>
       "Version ${version} · ${environment}";
 
-  static String m6(language) =>
+  static String m9(language) =>
       "You\'ll write your website in ${language} from now on. The other languages are re-translated from the new source on publish; locked fields keep your wording.";
 
-  static String m7(language) => "Change the source language to ${language}?";
+  static String m10(language) => "Change the source language to ${language}?";
 
-  static String m8(percentage) => "Commission ${percentage}%";
+  static String m11(percentage) => "Commission ${percentage}%";
 
-  static String m9(error) => "Failed to load content: ${error}";
+  static String m12(error) => "Failed to load content: ${error}";
 
-  static String m10(version) =>
+  static String m13(version) =>
       "Replace current content with version ${version}? The restored content will be saved as a draft for review.";
 
-  static String m11(date) => "Published ${date}";
+  static String m14(date) => "Published ${date}";
 
-  static String m12(version) => "Version ${version}";
+  static String m15(version) => "Version ${version}";
 
-  static String m13(error) => "Failed to load content documents: ${error}";
+  static String m16(error) => "Failed to load content documents: ${error}";
 
-  static String m14(publishedAt) => "Published ${publishedAt}";
+  static String m17(publishedAt) => "Published ${publishedAt}";
 
-  static String m15(status, updatedAt) => "${status} • updated ${updatedAt}";
+  static String m18(status, updatedAt) => "${status} • updated ${updatedAt}";
 
-  static String m16(slug, version) => "${slug} (v${version})";
+  static String m19(slug, version) => "${slug} (v${version})";
 
-  static String m17(following, total) =>
+  static String m20(following, total) =>
       "${Intl.plural(following, zero: 'No property follows', other: '${following} of ${total} follow')}";
 
-  static String m18(property) =>
+  static String m21(property) =>
       "${property} has its own values — open Pricing";
 
-  static String m19(error) => "Couldn\'t create user: ${error}";
+  static String m22(error) => "Couldn\'t create user: ${error}";
 
-  static String m20(domain) => "${domain} now serves this website.";
+  static String m23(domain) => "${domain} now serves this website.";
 
-  static String m21(zone) =>
+  static String m24(zone) =>
       "${zone} is not managed here yet, so we cannot route it. Add the domain to Cloudflare and change its nameservers at your registrar. Once that is done, set the domain again here.";
 
-  static String m22(zone) => "Point ${zone} at us first";
+  static String m25(zone) => "Point ${zone} at us first";
 
-  static String m23(email) =>
+  static String m26(email) =>
       "Are you sure you want to delete ${email}? This also removes the account\'s contents and cannot be undone.";
 
-  static String m24(count) => "At least ${count} characters";
+  static String m27(count) => "At least ${count} characters";
 
-  static String m25(fieldType) =>
+  static String m28(fieldType) =>
       "Field is linked to field of type \'${fieldType}\'";
 
-  static String m26(locale) => "Display name (${locale})";
+  static String m29(locale) => "Display name (${locale})";
 
-  static String m27(source) =>
+  static String m30(source) =>
       "Read, snoozed and archived are kept by HostHub itself. ${source} knows nothing about them.";
 
-  static String m28(source) => "Open in ${source}";
+  static String m31(source) => "Open in ${source}";
 
-  static String m29(count) =>
+  static String m32(count) =>
       "${Intl.plural(count, zero: 'First booking', one: '1 earlier booking', other: '${count} earlier bookings')}";
 
-  static String m30(guest, channel) => "Reply to ${guest} via ${channel}…";
+  static String m33(guest, channel) => "Reply to ${guest} via ${channel}…";
 
-  static String m31(channel) => "Your reply goes out through ${channel}";
+  static String m34(channel) => "Your reply goes out through ${channel}";
 
-  static String m32(source) => "Replying still happens in ${source}.";
+  static String m35(source) => "Replying still happens in ${source}.";
 
-  static String m33(date) => "Snoozed until ${date}";
+  static String m36(date) => "Snoozed until ${date}";
 
-  static String m34(property, dates, channel) =>
+  static String m37(property, dates, channel) =>
       "${property} · ${dates} · via ${channel}";
 
-  static String m35(property, channel) => "${property} · via ${channel}";
+  static String m38(property, channel) => "${property} · via ${channel}";
 
-  static String m36(language) => "Translate to ${language}";
+  static String m39(language) => "Translate to ${language}";
 
-  static String m37(count) =>
+  static String m40(count) =>
       "${Intl.plural(count, one: '1 unread conversation', other: '${count} unread conversations')}";
 
-  static String m38(role) => "Role: ${role}";
+  static String m41(role) => "Role: ${role}";
 
-  static String m39(date) => "Since ${date}";
+  static String m42(date) => "Since ${date}";
 
-  static String m40(name) => "Edit template details ${name}";
+  static String m43(name) => "Edit template details ${name}";
 
-  static String m41(code) => "Field name (${code})";
+  static String m44(code) => "Field name (${code})";
 
-  static String m42(count) =>
+  static String m45(count) =>
       "${count} ${Intl.plural(count, one: 'field', other: 'fields')}";
 
-  static String m43(path) => "Default seed directory: ${path}";
+  static String m46(path) => "Default seed directory: ${path}";
 
-  static String m44(path) => "JSON saved to ${path}";
+  static String m47(path) => "JSON saved to ${path}";
 
-  static String m45(code) => "Locale ${code}";
+  static String m48(code) => "Locale ${code}";
 
-  static String m46(code) => "List name (${code})";
+  static String m49(code) => "List name (${code})";
 
-  static String m47(code) => "Plural name (${code})";
+  static String m50(code) => "Plural name (${code})";
 
-  static String m48(count) =>
+  static String m51(count) =>
       "${count} sample ${Intl.plural(count, one: 'item', other: 'items')}";
 
-  static String m49(prod, dev) => "${prod} prod / ${dev} dev";
+  static String m52(prod, dev) => "${prod} prod / ${dev} dev";
 
-  static String m50(error) => "Couldn\'t load user: ${error}";
+  static String m53(error) => "Couldn\'t load user: ${error}";
 
-  static String m51(error) => "Couldn\'t load users: ${error}";
+  static String m54(error) => "Couldn\'t load users: ${error}";
 
-  static String m52(time) => "last sync ${time}";
-
-  static String m53(count) =>
-      "${Intl.plural(count, one: '1 listing brought over', other: '${count} listings brought over')}";
-
-  static String m54(name) =>
-      "Links to ${name}. The website content already on it stays.";
-
-  static String m55(count) =>
-      "${Intl.plural(count, one: '1 links to a property you created yourself', other: '${count} link to properties you created yourself')}";
+  static String m55(time) => "last sync ${time}";
 
   static String m56(count) =>
+      "${Intl.plural(count, one: '1 listing brought over', other: '${count} listings brought over')}";
+
+  static String m57(name) =>
+      "Links to ${name}. The website content already on it stays.";
+
+  static String m58(count) =>
+      "${Intl.plural(count, one: '1 links to a property you created yourself', other: '${count} link to properties you created yourself')}";
+
+  static String m59(count) =>
       "${Intl.plural(count, one: '1 new listing', other: '${count} new listings')}";
 
-  static String m57(error) => "Login failed: ${error}";
+  static String m60(error) => "Login failed: ${error}";
 
-  static String m58(email) =>
+  static String m61(email) =>
       "We sent a magic link to ${email}. Check your inbox and spam folder.";
 
-  static String m59(error) => "Couldn\'t update the password: ${error}";
+  static String m62(error) => "Couldn\'t update the password: ${error}";
 
-  static String m60(count, total) =>
+  static String m63(count, total) =>
       "${count} of ${Intl.plural(total, one: '1 property', other: '${total} properties')}";
 
-  static String m61(percentage) => "Commission ${percentage}%";
+  static String m64(percentage) => "Commission ${percentage}%";
 
-  static String m62(nights, rate) => "Gross (${nights} × ${rate})";
+  static String m65(nights, rate) => "Gross (${nights} × ${rate})";
 
-  static String m63(percentage) => "Rate markup ${percentage}%";
+  static String m66(percentage) => "Rate markup ${percentage}%";
 
-  static String m64(guests) => "Service (${guests} guests)";
+  static String m67(guests) => "Service (${guests} guests)";
 
-  static String m65(nights, guests, rate, channel) =>
+  static String m68(nights, guests, rate, channel) =>
       "${nights}-night stay · ${guests} guests · base rate ${rate}/night via ${channel}";
 
-  static String m66(error) => "Couldn\'t load profile: ${error}";
+  static String m69(error) => "Couldn\'t load profile: ${error}";
 
-  static String m67(count) =>
+  static String m70(count) =>
       "${Intl.plural(count, one: '1 booking', other: '${count} bookings')}";
 
-  static String m68(count) =>
+  static String m71(count) =>
       "${Intl.plural(count, one: '1 own value', other: '${count} own values')}";
 
-  static String m69(name) => "Delete ${name}?";
+  static String m72(name) => "Delete ${name}?";
 
-  static String m70(lodgifyId, lastSync) =>
+  static String m73(lodgifyId, lastSync) =>
       "Linked · ID ${lodgifyId} · last sync ${lastSync}";
 
-  static String m71(lodgifyId) => "Linked · ID ${lodgifyId} · never synced";
+  static String m74(lodgifyId) => "Linked · ID ${lodgifyId} · never synced";
 
-  static String m72(count) =>
+  static String m75(count) =>
       "${Intl.plural(count, one: '1 guest', other: '${count} guests')}";
 
-  static String m73(days) =>
+  static String m76(days) =>
       "${Intl.plural(days, one: 'Per night', other: 'Per ${days} nights')}";
 
-  static String m74(rating) => "${rating} out of 5";
+  static String m77(rating) => "${rating} out of 5";
 
-  static String m75(lastSync) =>
+  static String m78(lastSync) =>
       "Last sync with Lodgify: ${lastSync}. Fetches the data again now.";
 
-  static String m76(count) =>
+  static String m79(count) =>
       "${Intl.plural(count, one: '1 room', other: '${count} rooms')}";
 
-  static String m77(name) => "Unlink ${name}?";
+  static String m80(name) => "Unlink ${name}?";
 
-  static String m78(language) => "Remove ${language}?";
+  static String m81(language) => "Remove ${language}?";
 
-  static String m79(seconds) => "Resend available in ${seconds} s";
+  static String m82(seconds) => "Resend available in ${seconds} s";
 
-  static String m80(count) => "${count} new";
+  static String m83(count) => "${count} new";
 
-  static String m81(guests) => "Guests: ${guests}";
+  static String m84(guests) => "Guests: ${guests}";
 
-  static String m82(nights) => "${nights} nights";
+  static String m85(nights) => "${nights} nights";
 
-  static String m83(source) => "Source: ${source}";
+  static String m86(source) => "Source: ${source}";
 
-  static String m84(status) => "Status: ${status}";
+  static String m87(status) => "Status: ${status}";
 
-  static String m85(property) => "Bookings · ${property}";
+  static String m88(property) => "Bookings · ${property}";
 
-  static String m86(month, gross, net) =>
+  static String m89(month, gross, net) =>
       "${month}: ${gross} gross · ${net} net";
 
-  static String m87(propertyName) => "Revenue · ${propertyName}";
+  static String m90(propertyName) => "Revenue · ${propertyName}";
 
-  static String m88(nights) => "${nights} nights";
+  static String m91(nights) => "${nights} nights";
 
-  static String m89(count) => "${count} bookings";
+  static String m92(count) => "${count} bookings";
 
-  static String m90(quarter, year) => "Quarter ${quarter} ${year}";
+  static String m93(quarter, year) => "Quarter ${quarter} ${year}";
 
-  static String m91(error) => "Failed to load sites: ${error}";
+  static String m94(error) => "Failed to load sites: ${error}";
 
-  static String m92(defaultLocale, locales) =>
+  static String m95(defaultLocale, locales) =>
       "Locale: ${defaultLocale} • Locales: ${locales}";
 
-  static String m93(status) => "Subscription: ${status}";
+  static String m96(status) => "Subscription: ${status}";
 
-  static String m94(table) =>
+  static String m97(table) =>
       "Can’t load data because Supabase couldn’t find the \"${table}\" table. Deploy the latest database migrations and refresh the schema cache.";
 
-  static String m95(siteName) =>
+  static String m98(siteName) =>
       "Invite someone to collaborate on \"${siteName}\".";
 
-  static String m96(name) => "Are you sure you want to remove ${name}?";
+  static String m99(name) => "Are you sure you want to remove ${name}?";
 
-  static String m97(error) => "Couldn\'t update admin access: ${error}";
+  static String m100(error) => "Couldn\'t update admin access: ${error}";
 
-  static String m98(error) => "Couldn\'t update profile: ${error}";
+  static String m101(error) => "Couldn\'t update profile: ${error}";
 
-  static String m99(error) => "Couldn\'t delete user: ${error}";
+  static String m102(error) => "Couldn\'t delete user: ${error}";
 
-  static String m100(email) => "Verification code sent to ${email}";
+  static String m103(email) => "Verification code sent to ${email}";
 
-  static String m101(version) => "v${version}";
+  static String m104(version) => "v${version}";
 
-  static String m102(source) =>
+  static String m105(source) =>
       "Type over any field to lock it; untouched fields stay auto and follow the ${source} source.";
 
-  static String m103(language) => "You are editing the ${language} translation";
+  static String m106(language) => "You are editing the ${language} translation";
 
-  static String m104(languages) =>
+  static String m107(languages) =>
       "${languages} update automatically on publish. Locked fields keep your wording.";
 
-  static String m105(language) => "You\'re writing in ${language}";
+  static String m108(language) => "You\'re writing in ${language}";
 
-  static String m106(lang) => "Editing · ${lang}";
+  static String m109(lang) => "Editing · ${lang}";
 
-  static String m107(number) => "Experience ${number}";
+  static String m110(number) => "Experience ${number}";
 
-  static String m108(number) => "Highlight ${number}";
+  static String m111(number) => "Highlight ${number}";
 
-  static String m109(number) => "Introduction of section ${number}";
+  static String m112(number) => "Introduction of section ${number}";
 
-  static String m110(count) => "${count} changed";
+  static String m113(count) => "${count} changed";
 
-  static String m111(item) => "Add ${item}";
+  static String m114(item) => "Add ${item}";
 
-  static String m112(count, max) => "${count} of ${max}";
+  static String m115(count, max) => "${count} of ${max}";
 
-  static String m113(item) => "No ${item} yet";
+  static String m116(item) => "No ${item} yet";
 
-  static String m114(max) => "Maximum of ${max} reached";
+  static String m117(max) => "Maximum of ${max} reached";
 
-  static String m115(min) => "There must be at least ${min}";
+  static String m118(min) => "There must be at least ${min}";
 
-  static String m116(locked, total) =>
+  static String m119(locked, total) =>
       "${locked} of ${total} fields in your own words";
 
-  static String m117(count) => "Add ${count}";
+  static String m120(count) => "Add ${count}";
 
-  static String m118(count, max, min) =>
+  static String m121(count, max, min) =>
       "${count} of at most ${max} · at least ${min}";
 
-  static String m119(min) => "There must be at least ${min} photos";
+  static String m122(min) => "There must be at least ${min} photos";
 
-  static String m120(min, max) =>
+  static String m123(min, max) =>
       "${min} to ${max} photos. The media picker arrives with image management.";
 
-  static String m121(remaining) =>
+  static String m124(remaining) =>
       "Choose photos from the library or upload new ones. ${remaining} left to choose.";
 
-  static String m122(language) => "${language} preview";
+  static String m125(language) => "${language} preview";
 
-  static String m123(count) => "Publish ${count} languages";
+  static String m126(count) => "Publish ${count} languages";
 
-  static String m124(count) =>
+  static String m127(count) =>
       "${count} changed fields · locked fields keep your words";
 
-  static String m125(count) => "${count} changed fields · reviewed";
+  static String m128(count) => "${count} changed fields · reviewed";
 
-  static String m126(count) => "${count} changed fields · not reviewed yet";
+  static String m129(count) => "${count} changed fields · not reviewed yet";
 
-  static String m127(seen, total) => "${seen} of ${total} reviewed";
+  static String m130(seen, total) => "${seen} of ${total} reviewed";
 
-  static String m128(count) => "${count} fields changed since the last publish";
+  static String m131(count) => "${count} fields changed since the last publish";
 
-  static String m129(source) => "Publish ${source} only";
+  static String m132(source) => "Publish ${source} only";
 
-  static String m130(language) => "${language} · source";
+  static String m133(language) => "${language} · source";
 
-  static String m131(source) =>
+  static String m134(source) =>
       "Your ${source} content publishes as-is. The other languages are re-translated by AI, keeping anything you\'ve locked.";
 
-  static String m132(count, pages) =>
+  static String m135(count, pages) =>
       "${count} changed fields on ${pages} pages";
 
-  static String m133(lang) => "Source · ${lang}";
+  static String m136(lang) => "Source · ${lang}";
 
-  static String m134(source, count) =>
+  static String m137(source, count) =>
       "${source} + ${count} translations are live";
 
-  static String m135(languages) =>
+  static String m138(languages) =>
       "${languages} translate when you open them, or on publish";
 
-  static String m136(language) => "You change rows in the source (${language})";
+  static String m139(language) => "You change rows in the source (${language})";
 
-  static String m137(source) => "Now following the ${source} source.";
+  static String m140(source) => "Now following the ${source} source.";
 
-  static String m138(width, height) => "${width} × ${height}";
+  static String m141(width, height) => "${width} × ${height}";
 
-  static String m139(width, height) =>
+  static String m142(width, height) =>
       "Too small (${width} × ${height}). At least 1600 × 1200.";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
@@ -422,10 +431,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "accountPreferencesMovedFooter": MessageLookupByLibrary.simpleMessage(
       "Interface language and the compact side menu are yours, not the account\'s. They live with your profile at the bottom of the sidebar.",
     ),
+    "accountPropertiesCount": m3,
+    "accountPropertiesFromLodgifyCount": m4,
+    "accountPropertiesManualCount": m5,
     "accountRemoveMemberMessage": MessageLookupByLibrary.simpleMessage(
       "This user loses access to all of your properties.",
     ),
-    "accountRemoveMemberTitle": m3,
+    "accountRemoveMemberTitle": m6,
     "accountRoleAdmin": MessageLookupByLibrary.simpleMessage("Manager"),
     "accountRoleAdminDescription": MessageLookupByLibrary.simpleMessage(
       "Content, pricing and per-property deviations. No billing, no members.",
@@ -489,7 +501,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Preferences for your console experience.",
     ),
     "adminSettingsTitle": MessageLookupByLibrary.simpleMessage("Settings"),
-    "adoptInterfaceLanguageSubtitle": m4,
+    "adoptInterfaceLanguageSubtitle": m7,
     "adoptInterfaceLanguageTitle": MessageLookupByLibrary.simpleMessage(
       "Use my interface language",
     ),
@@ -507,7 +519,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "analysis": MessageLookupByLibrary.simpleMessage("Analysis"),
     "analytics": MessageLookupByLibrary.simpleMessage("Analytics"),
     "appInfoTileTitle": MessageLookupByLibrary.simpleMessage("App information"),
-    "appInfoTileValue": m5,
+    "appInfoTileValue": m8,
     "appName": MessageLookupByLibrary.simpleMessage("HostHub"),
     "appTitle": MessageLookupByLibrary.simpleMessage("HostHub"),
     "appsTitle": MessageLookupByLibrary.simpleMessage("Apps"),
@@ -581,8 +593,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "changePasswordTitle": MessageLookupByLibrary.simpleMessage(
       "Change password",
     ),
-    "changeSourceLanguageConfirmMessage": m6,
-    "changeSourceLanguageConfirmTitle": m7,
+    "changeSourceLanguageConfirmMessage": m9,
+    "changeSourceLanguageConfirmTitle": m10,
     "changesWillBeLost": MessageLookupByLibrary.simpleMessage(
       "Changes will be lost",
     ),
@@ -600,7 +612,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "channelFieldOther": MessageLookupByLibrary.simpleMessage("Other"),
     "channelFieldService": MessageLookupByLibrary.simpleMessage("Service"),
-    "channelSummaryCommission": m8,
+    "channelSummaryCommission": m11,
     "check": MessageLookupByLibrary.simpleMessage("Check"),
     "cherries": MessageLookupByLibrary.simpleMessage("Cherries"),
     "chicken": MessageLookupByLibrary.simpleMessage("Chicken"),
@@ -681,7 +693,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "cmsContentTitle": MessageLookupByLibrary.simpleMessage("Website Content"),
     "cmsDiscardButton": MessageLookupByLibrary.simpleMessage("Discard"),
     "cmsHomePageSection": MessageLookupByLibrary.simpleMessage("Home Page"),
-    "cmsLoadFailed": m9,
+    "cmsLoadFailed": m12,
     "cmsNoContent": MessageLookupByLibrary.simpleMessage(
       "No content documents found for this site.",
     ),
@@ -707,7 +719,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "cmsRemoveItem": MessageLookupByLibrary.simpleMessage("Remove"),
     "cmsRestoreButton": MessageLookupByLibrary.simpleMessage("Restore"),
-    "cmsRestoreConfirmBody": m10,
+    "cmsRestoreConfirmBody": m13,
     "cmsRestoreConfirmTitle": MessageLookupByLibrary.simpleMessage(
       "Restore version",
     ),
@@ -727,11 +739,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "cmsUnsavedChangesTitle": MessageLookupByLibrary.simpleMessage(
       "Unsaved changes",
     ),
-    "cmsVersionDate": m11,
+    "cmsVersionDate": m14,
     "cmsVersionHistory": MessageLookupByLibrary.simpleMessage(
       "Version History",
     ),
-    "cmsVersionLabel": m12,
+    "cmsVersionLabel": m15,
     "code": MessageLookupByLibrary.simpleMessage("Code"),
     "coffee": MessageLookupByLibrary.simpleMessage("Coffee"),
     "coin": MessageLookupByLibrary.simpleMessage("Coin"),
@@ -778,21 +790,21 @@ class MessageLookup extends MessageLookupByLibrary {
     "contentDocumentsEmpty": MessageLookupByLibrary.simpleMessage(
       "No documents found.",
     ),
-    "contentDocumentsLoadFailed": m13,
-    "contentDocumentsPublished": m14,
+    "contentDocumentsLoadFailed": m16,
+    "contentDocumentsPublished": m17,
     "contentDocumentsTitle": MessageLookupByLibrary.simpleMessage(
       "Content documents",
     ),
-    "contentDocumentsUpdated": m15,
-    "contentDocumentsVersionLabel": m16,
+    "contentDocumentsUpdated": m18,
+    "contentDocumentsVersionLabel": m19,
     "copied": MessageLookupByLibrary.simpleMessage("Copied"),
     "copy": MessageLookupByLibrary.simpleMessage("Copy"),
     "cost": MessageLookupByLibrary.simpleMessage("Cost"),
     "costTypePerBooking": MessageLookupByLibrary.simpleMessage("per stay"),
     "costTypePerNight": MessageLookupByLibrary.simpleMessage("per night"),
     "costTypePerPerson": MessageLookupByLibrary.simpleMessage("per guest"),
-    "coverageFollowing": m17,
-    "coverageOpenPricingTooltip": m18,
+    "coverageFollowing": m20,
+    "coverageOpenPricingTooltip": m21,
     "coverageOwnValuesAt": MessageLookupByLibrary.simpleMessage(
       "Own values at:",
     ),
@@ -804,7 +816,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "createUserDescription": MessageLookupByLibrary.simpleMessage(
       "Create a password-based account for a new user.",
     ),
-    "createUserFailed": m19,
+    "createUserFailed": m22,
     "createUserTitle": MessageLookupByLibrary.simpleMessage("Create user"),
     "created": MessageLookupByLibrary.simpleMessage("Created"),
     "croissant": MessageLookupByLibrary.simpleMessage("Croissant"),
@@ -821,12 +833,12 @@ class MessageLookup extends MessageLookupByLibrary {
     "customDomainInvalid": MessageLookupByLibrary.simpleMessage(
       "That is not a valid domain name.",
     ),
-    "customDomainSaved": m20,
+    "customDomainSaved": m23,
     "customDomainTaken": MessageLookupByLibrary.simpleMessage(
       "That domain already belongs to another website.",
     ),
-    "customDomainZoneMissingMessage": m21,
-    "customDomainZoneMissingTitle": m22,
+    "customDomainZoneMissingMessage": m24,
+    "customDomainZoneMissingTitle": m25,
     "cylinder": MessageLookupByLibrary.simpleMessage("Cylinder"),
     "darkMode": MessageLookupByLibrary.simpleMessage("Dark mode"),
     "dash": MessageLookupByLibrary.simpleMessage("Dash"),
@@ -844,7 +856,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "delete": MessageLookupByLibrary.simpleMessage("Delete"),
     "deleteButton": MessageLookupByLibrary.simpleMessage("Delete"),
     "deleteEvent": MessageLookupByLibrary.simpleMessage("Delete Event"),
-    "deleteUserConfirmation": m23,
+    "deleteUserConfirmation": m26,
     "deleteUserDescription": MessageLookupByLibrary.simpleMessage(
       "Permanently remove the account and access.",
     ),
@@ -915,7 +927,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "enterMin6Characters": MessageLookupByLibrary.simpleMessage(
       "Enter minimal 6 characters",
     ),
-    "enterMinCharacters": m24,
+    "enterMinCharacters": m27,
     "enterValidEmail": MessageLookupByLibrary.simpleMessage(
       "Enter a valid email",
     ),
@@ -1020,7 +1032,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "fastTime": MessageLookupByLibrary.simpleMessage("Fast Time"),
     "father": MessageLookupByLibrary.simpleMessage("Father"),
     "favorite": MessageLookupByLibrary.simpleMessage("Favorite"),
-    "fieldIsLinkedTo": m25,
+    "fieldIsLinkedTo": m28,
     "fieldsActionsLabel": MessageLookupByLibrary.simpleMessage("Actions"),
     "fieldsAllPropertiesHelper": MessageLookupByLibrary.simpleMessage(
       "Changes save immediately. Use JSON syntax for complex values or switch to the JSON tab for advanced edits.",
@@ -1086,7 +1098,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Field subtypes",
     ),
     "fieldsTitle": MessageLookupByLibrary.simpleMessage("Field defaults"),
-    "fieldsTranslationLabel": m26,
+    "fieldsTranslationLabel": m29,
     "fieldsTranslationsDescription": MessageLookupByLibrary.simpleMessage(
       "Set the display name for this field subtype for each supported locale.",
     ),
@@ -1182,17 +1194,17 @@ class MessageLookup extends MessageLookupByLibrary {
     "inboxLoadFailedDescription": MessageLookupByLibrary.simpleMessage(
       "The inbox shows no conversations while the source is unreachable.",
     ),
-    "inboxLocalStateNote": m27,
+    "inboxLocalStateNote": m30,
     "inboxMessageNotSent": MessageLookupByLibrary.simpleMessage("Not sent"),
     "inboxNoReservation": MessageLookupByLibrary.simpleMessage(
       "This conversation is not attached to a booking.",
     ),
     "inboxOpenBooking": MessageLookupByLibrary.simpleMessage("Open booking"),
-    "inboxOpenInSource": m28,
+    "inboxOpenInSource": m31,
     "inboxPreviouslyBooked": MessageLookupByLibrary.simpleMessage(
       "Booked before",
     ),
-    "inboxPreviouslyBookedValue": m29,
+    "inboxPreviouslyBookedValue": m32,
     "inboxQuickRepliesLabel": MessageLookupByLibrary.simpleMessage(
       "Quick replies",
     ),
@@ -1208,8 +1220,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "inboxQuickReplyThanks": MessageLookupByLibrary.simpleMessage(
       "Thanks for your message. I\'ll get back to you as soon as I can.",
     ),
-    "inboxReplyHint": m30,
-    "inboxReplyVia": m31,
+    "inboxReplyHint": m33,
+    "inboxReplyVia": m34,
     "inboxReservationHeader": MessageLookupByLibrary.simpleMessage("Booking"),
     "inboxResponseTimeNote": MessageLookupByLibrary.simpleMessage(
       "Airbnb counts your response time towards your ranking. This conversation is still waiting on you.",
@@ -1222,7 +1234,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "inboxSendFailed": MessageLookupByLibrary.simpleMessage(
       "Message not sent.",
     ),
-    "inboxSendUnsupported": m32,
+    "inboxSendUnsupported": m35,
     "inboxShowOriginal": MessageLookupByLibrary.simpleMessage("Show original"),
     "inboxSnooze": MessageLookupByLibrary.simpleMessage("Snooze"),
     "inboxSnoozeNextWeek": MessageLookupByLibrary.simpleMessage(
@@ -1232,18 +1244,18 @@ class MessageLookup extends MessageLookupByLibrary {
       "Until tomorrow",
     ),
     "inboxSnoozeWake": MessageLookupByLibrary.simpleMessage("Wake now"),
-    "inboxSnoozedUntil": m33,
+    "inboxSnoozedUntil": m36,
     "inboxSyncFailed": MessageLookupByLibrary.simpleMessage(
       "Could not refresh the messages — you are still seeing the previous state.",
     ),
     "inboxTagAnswered": MessageLookupByLibrary.simpleMessage("Answered"),
     "inboxTagAwaiting": MessageLookupByLibrary.simpleMessage("Needs a reply"),
-    "inboxThreadSubtitle": m34,
-    "inboxThreadSubtitleNoStay": m35,
+    "inboxThreadSubtitle": m37,
+    "inboxThreadSubtitleNoStay": m38,
     "inboxTitle": MessageLookupByLibrary.simpleMessage("Messages"),
     "inboxTotal": MessageLookupByLibrary.simpleMessage("Total"),
-    "inboxTranslate": m36,
-    "inboxUnreadTooltip": m37,
+    "inboxTranslate": m39,
+    "inboxUnreadTooltip": m40,
     "indicator": MessageLookupByLibrary.simpleMessage("Indicator"),
     "ingredients": MessageLookupByLibrary.simpleMessage("Ingredients"),
     "insect": MessageLookupByLibrary.simpleMessage("Insect"),
@@ -1294,8 +1306,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "like": MessageLookupByLibrary.simpleMessage("Like"),
     "lineHeight": MessageLookupByLibrary.simpleMessage("Line Height"),
     "list": MessageLookupByLibrary.simpleMessage("List"),
-    "listRoleLabel": m38,
-    "listSinceDate": m39,
+    "listRoleLabel": m41,
+    "listSinceDate": m42,
     "listsAddItemMethodsLabel": MessageLookupByLibrary.simpleMessage(
       "Add item methods",
     ),
@@ -1390,14 +1402,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "listsDetailsTitle": MessageLookupByLibrary.simpleMessage(
       "Template settings",
     ),
-    "listsEditTemplateTitle": m40,
+    "listsEditTemplateTitle": m43,
     "listsEmptyState": MessageLookupByLibrary.simpleMessage(
       "No list templates available.",
     ),
-    "listsFieldNameLabel": m41,
+    "listsFieldNameLabel": m44,
     "listsFieldNamesLabel": MessageLookupByLibrary.simpleMessage("Field names"),
     "listsFieldsLabel": MessageLookupByLibrary.simpleMessage("Fields"),
-    "listsFieldsValue": m42,
+    "listsFieldsValue": m45,
     "listsGroupByLabel": MessageLookupByLibrary.simpleMessage("Group by"),
     "listsGroupByNone": MessageLookupByLibrary.simpleMessage("No grouping"),
     "listsItemHistoryLabel": MessageLookupByLibrary.simpleMessage(
@@ -1407,7 +1419,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Item tap behavior",
     ),
     "listsJsonCopied": MessageLookupByLibrary.simpleMessage("JSON copied"),
-    "listsJsonDefaultPathLabel": m43,
+    "listsJsonDefaultPathLabel": m46,
     "listsJsonDownloadLabel": MessageLookupByLibrary.simpleMessage(
       "Download JSON",
     ),
@@ -1415,13 +1427,13 @@ class MessageLookup extends MessageLookupByLibrary {
       "Unable to save JSON",
     ),
     "listsJsonSaveLabel": MessageLookupByLibrary.simpleMessage("Save JSON"),
-    "listsJsonSavedToast": m44,
+    "listsJsonSavedToast": m47,
     "listsJsonTab": MessageLookupByLibrary.simpleMessage("JSON export"),
     "listsLabel": MessageLookupByLibrary.simpleMessage("List templates"),
     "listsLayoutTab": MessageLookupByLibrary.simpleMessage("Layout"),
-    "listsLocaleLabel": m45,
-    "listsLocaleListName": m46,
-    "listsLocaleListNamePlural": m47,
+    "listsLocaleLabel": m48,
+    "listsLocaleListName": m49,
+    "listsLocaleListNamePlural": m50,
     "listsNoFieldsForLocale": MessageLookupByLibrary.simpleMessage(
       "No fields for this locale.",
     ),
@@ -1430,8 +1442,8 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "listsOverviewSection": MessageLookupByLibrary.simpleMessage("Overview"),
     "listsSamplesLabel": MessageLookupByLibrary.simpleMessage("Sample items"),
-    "listsSamplesSingle": m48,
-    "listsSamplesSplit": m49,
+    "listsSamplesSingle": m51,
+    "listsSamplesSplit": m52,
     "listsSchemeLabel": MessageLookupByLibrary.simpleMessage("Color scheme"),
     "listsStatusActive": MessageLookupByLibrary.simpleMessage("Active"),
     "listsStatusBeta": MessageLookupByLibrary.simpleMessage("Beta"),
@@ -1467,11 +1479,11 @@ class MessageLookup extends MessageLookupByLibrary {
       "This template could not be found.",
     ),
     "listsViewLabel": MessageLookupByLibrary.simpleMessage("Default view"),
-    "loadUserFailed": m50,
+    "loadUserFailed": m53,
     "loadUserFailedMessage": MessageLookupByLibrary.simpleMessage(
       "Couldn\'t load user.",
     ),
-    "loadUsersFailed": m51,
+    "loadUsersFailed": m54,
     "location": MessageLookupByLibrary.simpleMessage("Location"),
     "locationNotFoundAlertMessage": MessageLookupByLibrary.simpleMessage(
       "Please check the address to enable automatic distance calculation, or enter the distance manually.",
@@ -1501,7 +1513,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "lodgifyConnectSuccess": MessageLookupByLibrary.simpleMessage(
       "Lodgify connected.",
     ),
-    "lodgifyLastSyncLabel": m52,
+    "lodgifyLastSyncLabel": m55,
     "lodgifyNoNewPropertiesFound": MessageLookupByLibrary.simpleMessage(
       "No new Lodgify properties found.",
     ),
@@ -1509,15 +1521,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "lodgifySyncAddAndLinkAction": MessageLookupByLibrary.simpleMessage(
       "Add and link",
     ),
-    "lodgifySyncApplied": m53,
+    "lodgifySyncApplied": m56,
     "lodgifySyncGoToProperties": MessageLookupByLibrary.simpleMessage(
       "Go to Properties",
     ),
     "lodgifySyncLabel": MessageLookupByLibrary.simpleMessage("Sync"),
     "lodgifySyncLinkAction": MessageLookupByLibrary.simpleMessage("Link"),
-    "lodgifySyncLinkSubtitle": m54,
-    "lodgifySyncOutcomeLink": m55,
-    "lodgifySyncOutcomeNew": m56,
+    "lodgifySyncLinkSubtitle": m57,
+    "lodgifySyncOutcomeLink": m58,
+    "lodgifySyncOutcomeNew": m59,
     "lodgifySyncResultTitle": MessageLookupByLibrary.simpleMessage(
       "What Lodgify has",
     ),
@@ -1535,7 +1547,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "loginFailedCheckDetails": MessageLookupByLibrary.simpleMessage(
       "Login failed. Check your information.",
     ),
-    "loginFailedWithReason": m57,
+    "loginFailedWithReason": m60,
     "loginWithGoogle": MessageLookupByLibrary.simpleMessage(
       "Log in with Google",
     ),
@@ -1544,7 +1556,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "longTime": MessageLookupByLibrary.simpleMessage("Long Time"),
     "love": MessageLookupByLibrary.simpleMessage("Love"),
     "loyaltyCard": MessageLookupByLibrary.simpleMessage("Loyalty Card"),
-    "magicLinkSentDescription": m58,
+    "magicLinkSentDescription": m61,
     "magicLinkSentDescriptionFallback": MessageLookupByLibrary.simpleMessage(
       "We sent a magic link. Check your inbox and spam folder.",
     ),
@@ -1666,7 +1678,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "passwordChangeFailed": MessageLookupByLibrary.simpleMessage(
       "Couldn\'t update the password.",
     ),
-    "passwordChangeFailedWithReason": m59,
+    "passwordChangeFailedWithReason": m62,
     "passwordChanged": MessageLookupByLibrary.simpleMessage(
       "Password updated.",
     ),
@@ -1702,7 +1714,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "portfolioFilterAll": MessageLookupByLibrary.simpleMessage(
       "All properties",
     ),
-    "portfolioFilterSome": m60,
+    "portfolioFilterSome": m63,
     "portfolioFilterTooltip": MessageLookupByLibrary.simpleMessage(
       "Choose which properties count",
     ),
@@ -1750,22 +1762,22 @@ class MessageLookup extends MessageLookupByLibrary {
     "pricingPageHeading": MessageLookupByLibrary.simpleMessage(
       "Channels & costs",
     ),
-    "pricingPayoutCommission": m61,
+    "pricingPayoutCommission": m64,
     "pricingPayoutFixedCosts": MessageLookupByLibrary.simpleMessage(
       "Cleaning + linen",
     ),
-    "pricingPayoutGross": m62,
+    "pricingPayoutGross": m65,
     "pricingPayoutHeader": MessageLookupByLibrary.simpleMessage(
       "Example payout",
     ),
-    "pricingPayoutMarkup": m63,
+    "pricingPayoutMarkup": m66,
     "pricingPayoutNet": MessageLookupByLibrary.simpleMessage("Net payout"),
     "pricingPayoutNote": MessageLookupByLibrary.simpleMessage(
       "The calculation follows the fields on the left. Open a channel to preview that one.",
     ),
     "pricingPayoutOther": MessageLookupByLibrary.simpleMessage("Other costs"),
-    "pricingPayoutService": m64,
-    "pricingPayoutSubtitle": m65,
+    "pricingPayoutService": m67,
+    "pricingPayoutSubtitle": m68,
     "pricingRateMarkup": MessageLookupByLibrary.simpleMessage(
       "Rate markup on base price",
     ),
@@ -1779,7 +1791,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "print": MessageLookupByLibrary.simpleMessage("Print"),
     "printer": MessageLookupByLibrary.simpleMessage("Printer"),
     "profileLabel": MessageLookupByLibrary.simpleMessage("Profile"),
-    "profileLoadFailed": m66,
+    "profileLoadFailed": m69,
     "profileLoadingLabel": MessageLookupByLibrary.simpleMessage(
       "Loading profile...",
     ),
@@ -1788,7 +1800,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Bring them over from Lodgify, or create one yourself to start building a website.",
     ),
     "propertiesListAdd": MessageLookupByLibrary.simpleMessage("Add property"),
-    "propertiesListBookingCount": m67,
+    "propertiesListBookingCount": m70,
     "propertiesListEmpty": MessageLookupByLibrary.simpleMessage(
       "No properties in this account yet.",
     ),
@@ -1799,11 +1811,11 @@ class MessageLookup extends MessageLookupByLibrary {
       "From Lodgify: name, prices and availability come from there, so that row can only be unlinked. Manual: entirely yours.",
     ),
     "propertiesListHeading": MessageLookupByLibrary.simpleMessage("Properties"),
-    "propertiesListOwnValues": m68,
+    "propertiesListOwnValues": m71,
     "propertyDeleteMessage": MessageLookupByLibrary.simpleMessage(
       "The property disappears from this account, along with the website content on it.",
     ),
-    "propertyDeleteTitle": m69,
+    "propertyDeleteTitle": m72,
     "propertyDeleteTooltip": MessageLookupByLibrary.simpleMessage(
       "Delete property",
     ),
@@ -1822,13 +1834,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "propertyDetailsConnectionMissing": MessageLookupByLibrary.simpleMessage(
       "No Lodgify property is linked to this property.",
     ),
-    "propertyDetailsConnectionSummary": m70,
-    "propertyDetailsConnectionSummaryNoSync": m71,
+    "propertyDetailsConnectionSummary": m73,
+    "propertyDetailsConnectionSummaryNoSync": m74,
     "propertyDetailsCountry": MessageLookupByLibrary.simpleMessage("Country"),
     "propertyDetailsEmpty": MessageLookupByLibrary.simpleMessage(
       "Select a property to see its details.",
     ),
-    "propertyDetailsGuestsCount": m72,
+    "propertyDetailsGuestsCount": m75,
     "propertyDetailsLabel": MessageLookupByLibrary.simpleMessage(
       "Property details",
     ),
@@ -1843,9 +1855,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "propertyDetailsPriceUnit": MessageLookupByLibrary.simpleMessage(
       "Price unit",
     ),
-    "propertyDetailsPriceUnitValue": m73,
+    "propertyDetailsPriceUnitValue": m76,
     "propertyDetailsRating": MessageLookupByLibrary.simpleMessage("Rating"),
-    "propertyDetailsRatingValue": m74,
+    "propertyDetailsRatingValue": m77,
     "propertyDetailsRawEmpty": MessageLookupByLibrary.simpleMessage(
       "Lodgify has not sent any raw data for this property yet.",
     ),
@@ -1870,10 +1882,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "propertyDetailsRefreshTooltip": MessageLookupByLibrary.simpleMessage(
       "Reads this property again. Link a Lodgify property to be able to sync its data.",
     ),
-    "propertyDetailsRefreshTooltipSynced": m75,
+    "propertyDetailsRefreshTooltipSynced": m78,
     "propertyDetailsRentalCard": MessageLookupByLibrary.simpleMessage("Rental"),
     "propertyDetailsRooms": MessageLookupByLibrary.simpleMessage("Rooms"),
-    "propertyDetailsRoomsCount": m76,
+    "propertyDetailsRoomsCount": m79,
     "propertyDetailsSourceNote": MessageLookupByLibrary.simpleMessage(
       "This data comes from Lodgify and is managed there. Change it in Lodgify and sync to update it here.",
     ),
@@ -1922,7 +1934,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "propertyUnlinkMessage": MessageLookupByLibrary.simpleMessage(
       "The listing stays in Lodgify. Its name and prices become yours again, and the next sync no longer updates this property.",
     ),
-    "propertyUnlinkTitle": m77,
+    "propertyUnlinkTitle": m80,
     "propertyUnlinkTooltip": MessageLookupByLibrary.simpleMessage(
       "Unlink from Lodgify",
     ),
@@ -1946,7 +1958,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "removeLanguageConfirmMessage": MessageLookupByLibrary.simpleMessage(
       "Guests can no longer view your website in this language. Saved translations are kept and come back if you re-add it.",
     ),
-    "removeLanguageConfirmTitle": m78,
+    "removeLanguageConfirmTitle": m81,
     "removeLanguageTooltip": MessageLookupByLibrary.simpleMessage(
       "Remove language",
     ),
@@ -1958,7 +1970,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "requiredField": MessageLookupByLibrary.simpleMessage(
       "This is a required field",
     ),
-    "resendAvailableIn": m79,
+    "resendAvailableIn": m82,
     "resendCode": MessageLookupByLibrary.simpleMessage("Resend code"),
     "reservationAdults": MessageLookupByLibrary.simpleMessage("Adults"),
     "reservationArrival": MessageLookupByLibrary.simpleMessage("Arrival"),
@@ -1983,7 +1995,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "reservationListColumnNew": MessageLookupByLibrary.simpleMessage("New"),
     "reservationName": MessageLookupByLibrary.simpleMessage("Name"),
     "reservationNet": MessageLookupByLibrary.simpleMessage("Net"),
-    "reservationNewCount": m80,
+    "reservationNewCount": m83,
     "reservationNights": MessageLookupByLibrary.simpleMessage("Nights"),
     "reservationNotes": MessageLookupByLibrary.simpleMessage("Notes"),
     "reservationNotesDisabledHint": MessageLookupByLibrary.simpleMessage(
@@ -2011,10 +2023,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "reservationStatus": MessageLookupByLibrary.simpleMessage("Status"),
     "reservationUpdatedAt": MessageLookupByLibrary.simpleMessage("Updated"),
     "reservations": MessageLookupByLibrary.simpleMessage("Reservations"),
-    "reservationsBarGuests": m81,
-    "reservationsBarNights": m82,
-    "reservationsBarSource": m83,
-    "reservationsBarStatus": m84,
+    "reservationsBarGuests": m84,
+    "reservationsBarNights": m85,
+    "reservationsBarSource": m86,
+    "reservationsBarStatus": m87,
     "reservationsColumnGuests": MessageLookupByLibrary.simpleMessage("Guests"),
     "reservationsColumnsTooltip": MessageLookupByLibrary.simpleMessage(
       "Columns",
@@ -2080,7 +2092,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "reservationsOutOfMonthHide": MessageLookupByLibrary.simpleMessage(
       "Hide days outside the month",
     ),
-    "reservationsPageHeading": m85,
+    "reservationsPageHeading": m88,
     "reservationsPageTitle": MessageLookupByLibrary.simpleMessage(
       "Reservations",
     ),
@@ -2133,7 +2145,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "revenueChartTitle": MessageLookupByLibrary.simpleMessage(
       "Revenue per month",
     ),
-    "revenueChartTooltip": m86,
+    "revenueChartTooltip": m89,
     "revenueColumnBooker": MessageLookupByLibrary.simpleMessage("Booker"),
     "revenueColumnCheckIn": MessageLookupByLibrary.simpleMessage("Check-in"),
     "revenueColumnCommission": MessageLookupByLibrary.simpleMessage(
@@ -2147,11 +2159,11 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "revenueColumnNights": MessageLookupByLibrary.simpleMessage("Nights"),
     "revenueFees": MessageLookupByLibrary.simpleMessage("Fees"),
-    "revenueHeading": m87,
+    "revenueHeading": m90,
     "revenueKpiAdr": MessageLookupByLibrary.simpleMessage("Avg. nightly rate"),
-    "revenueKpiAdrCaption": m88,
+    "revenueKpiAdrCaption": m91,
     "revenueKpiGross": MessageLookupByLibrary.simpleMessage("Gross revenue"),
-    "revenueKpiGrossCaption": m89,
+    "revenueKpiGrossCaption": m92,
     "revenueKpiNet": MessageLookupByLibrary.simpleMessage("Net revenue"),
     "revenueKpiNetCaption": MessageLookupByLibrary.simpleMessage("after costs"),
     "revenueKpiOccupancy": MessageLookupByLibrary.simpleMessage("Occupancy"),
@@ -2174,7 +2186,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "revenuePeriodMonth": MessageLookupByLibrary.simpleMessage("Month"),
     "revenuePeriodQuarter": MessageLookupByLibrary.simpleMessage("Quarter"),
     "revenuePeriodYear": MessageLookupByLibrary.simpleMessage("Year"),
-    "revenueQuarterLabel": m90,
+    "revenueQuarterLabel": m93,
     "revenueRefreshTooltip": MessageLookupByLibrary.simpleMessage("Refresh"),
     "revenueServiceCosts": MessageLookupByLibrary.simpleMessage(
       "Service costs",
@@ -2298,8 +2310,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "sitesEmpty": MessageLookupByLibrary.simpleMessage(
       "No sites configured yet.",
     ),
-    "sitesLoadFailed": m91,
-    "sitesLocaleSummary": m92,
+    "sitesLoadFailed": m94,
+    "sitesLocaleSummary": m95,
     "sitesNameHint": MessageLookupByLibrary.simpleMessage("Trysil Panorama"),
     "sitesNameLabel": MessageLookupByLibrary.simpleMessage("Site name"),
     "sitesNewEntryTitle": MessageLookupByLibrary.simpleMessage(
@@ -2338,14 +2350,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "statistic": MessageLookupByLibrary.simpleMessage("Statistic"),
     "steak": MessageLookupByLibrary.simpleMessage("Steak"),
     "store": MessageLookupByLibrary.simpleMessage("Store"),
-    "subscriptionChipLabel": m93,
+    "subscriptionChipLabel": m96,
     "subscriptionLabel": MessageLookupByLibrary.simpleMessage("Subscription"),
     "subtract": MessageLookupByLibrary.simpleMessage("Subtract"),
     "suitcase": MessageLookupByLibrary.simpleMessage("Suitcase"),
     "sum": MessageLookupByLibrary.simpleMessage("Sum"),
     "sun": MessageLookupByLibrary.simpleMessage("Sun"),
     "sunlight": MessageLookupByLibrary.simpleMessage("Sunlight"),
-    "supabaseTableMissing": m94,
+    "supabaseTableMissing": m97,
     "switchPropertyTitle": MessageLookupByLibrary.simpleMessage(
       "Pick a property",
     ),
@@ -2377,7 +2389,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "teamInviteMemberTitle": MessageLookupByLibrary.simpleMessage(
       "Invite member",
     ),
-    "teamInviteSiteDescription": m95,
+    "teamInviteSiteDescription": m98,
     "teamInviteUserDescription": MessageLookupByLibrary.simpleMessage(
       "Invite a user to manage your properties together.",
     ),
@@ -2391,7 +2403,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Pending invitations",
     ),
     "teamRemoveMember": MessageLookupByLibrary.simpleMessage("Remove"),
-    "teamRemoveMemberConfirm": m96,
+    "teamRemoveMemberConfirm": m99,
     "teamRemoveMemberTitle": MessageLookupByLibrary.simpleMessage(
       "Remove member",
     ),
@@ -2410,7 +2422,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "timer": MessageLookupByLibrary.simpleMessage("Timer"),
     "todoList": MessageLookupByLibrary.simpleMessage("Todo List"),
     "toggle": MessageLookupByLibrary.simpleMessage("Toggle"),
-    "toggleAdminFailed": m97,
+    "toggleAdminFailed": m100,
     "tomato": MessageLookupByLibrary.simpleMessage("Tomato"),
     "tooManyAttempts": MessageLookupByLibrary.simpleMessage(
       "Too many attempts",
@@ -2428,13 +2440,13 @@ class MessageLookup extends MessageLookupByLibrary {
       "Couldn\'t update admin rights. Try again.",
     ),
     "updateButton": MessageLookupByLibrary.simpleMessage("Update"),
-    "updateProfileFailed": m98,
+    "updateProfileFailed": m101,
     "url": MessageLookupByLibrary.simpleMessage("URL"),
     "userCreated": MessageLookupByLibrary.simpleMessage("User created."),
     "userDeleteFailed": MessageLookupByLibrary.simpleMessage(
       "Couldn\'t delete user.",
     ),
-    "userDeleteFailedWithReason": m99,
+    "userDeleteFailedWithReason": m102,
     "userDeleted": MessageLookupByLibrary.simpleMessage("User deleted."),
     "userIdLabel": MessageLookupByLibrary.simpleMessage("User ID"),
     "userSettingsAction": MessageLookupByLibrary.simpleMessage("User settings"),
@@ -2454,9 +2466,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "verificationCode": MessageLookupByLibrary.simpleMessage(
       "Verification code",
     ),
-    "verificationCodeSentText": m100,
+    "verificationCodeSentText": m103,
     "verify": MessageLookupByLibrary.simpleMessage("Verify"),
-    "versionFooter": m101,
+    "versionFooter": m104,
     "verticalLine": MessageLookupByLibrary.simpleMessage("Vertical Line"),
     "walking": MessageLookupByLibrary.simpleMessage("Walking"),
     "wallet": MessageLookupByLibrary.simpleMessage("Wallet"),
@@ -2466,16 +2478,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "weAddHighlight": MessageLookupByLibrary.simpleMessage("Add highlight"),
     "weAddPhoto": MessageLookupByLibrary.simpleMessage("Add"),
     "weAiTranslation": MessageLookupByLibrary.simpleMessage("AI translation"),
-    "weBannerEditingBody": m102,
-    "weBannerEditingTitle": m103,
-    "weBannerUnpublishedBody": m104,
+    "weBannerEditingBody": m105,
+    "weBannerEditingTitle": m106,
+    "weBannerUnpublishedBody": m107,
     "weBannerUnpublishedTitle": MessageLookupByLibrary.simpleMessage(
       "Unpublished changes",
     ),
     "weBannerWritingBody": MessageLookupByLibrary.simpleMessage(
       "Other languages translate automatically on publish — except fields you lock.",
     ),
-    "weBannerWritingTitle": m105,
+    "weBannerWritingTitle": m108,
     "weBreadcrumbWebsite": MessageLookupByLibrary.simpleMessage("Website"),
     "weCardAgreements": MessageLookupByLibrary.simpleMessage("Terms & payment"),
     "weCardAmenities": MessageLookupByLibrary.simpleMessage("Amenities"),
@@ -2542,6 +2554,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "weCardQuickFactsSub": MessageLookupByLibrary.simpleMessage(
       "The strip at the top of the page.",
     ),
+    "weCardSiteChrome": MessageLookupByLibrary.simpleMessage("Site name"),
+    "weCardSiteChromeSub": MessageLookupByLibrary.simpleMessage(
+      "Shown in the header, the browser tab and the footer of every page.",
+    ),
     "weCardSourceLodgify": MessageLookupByLibrary.simpleMessage("From Lodgify"),
     "weCardTransport": MessageLookupByLibrary.simpleMessage("Getting here"),
     "weCardTransportSub": MessageLookupByLibrary.simpleMessage(
@@ -2575,7 +2591,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "weDiscardTitle": MessageLookupByLibrary.simpleMessage(
       "Discard your unsaved changes?",
     ),
-    "weEditingChip": m106,
+    "weEditingChip": m109,
     "weErrorLoadFailed": MessageLookupByLibrary.simpleMessage(
       "Couldn\'t load the website content",
     ),
@@ -2608,19 +2624,29 @@ class MessageLookup extends MessageLookupByLibrary {
       "Cleaning and linen",
     ),
     "weFieldError": MessageLookupByLibrary.simpleMessage("Failure"),
-    "weFieldExperience": m107,
+    "weFieldExperience": m110,
     "weFieldHeadline": MessageLookupByLibrary.simpleMessage("Headline"),
     "weFieldHeroPhotos": MessageLookupByLibrary.simpleMessage("Hero photos"),
-    "weFieldHighlight": m108,
+    "weFieldHighlight": m111,
     "weFieldIntro": MessageLookupByLibrary.simpleMessage("Intro"),
     "weFieldLocationLine": MessageLookupByLibrary.simpleMessage(
       "Location line",
+    ),
+    "weFieldMapEmbedUrl": MessageLookupByLibrary.simpleMessage(
+      "Map embed link",
+    ),
+    "weFieldMapLinkUrl": MessageLookupByLibrary.simpleMessage(
+      "Open-in-maps link",
     ),
     "weFieldMapQuery": MessageLookupByLibrary.simpleMessage("Map search term"),
     "weFieldPrivacyIntro": MessageLookupByLibrary.simpleMessage("Introduction"),
     "weFieldSearchName": MessageLookupByLibrary.simpleMessage(
       "Name for search engines",
     ),
+    "weFieldSiteLocation": MessageLookupByLibrary.simpleMessage(
+      "Location line",
+    ),
+    "weFieldSiteName": MessageLookupByLibrary.simpleMessage("Name"),
     "weFieldSubline": MessageLookupByLibrary.simpleMessage("Subline"),
     "weFieldSubmit": MessageLookupByLibrary.simpleMessage("Button"),
     "weFieldSubtitle": MessageLookupByLibrary.simpleMessage("Subtitle"),
@@ -2638,7 +2664,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "weFreshNotice": MessageLookupByLibrary.simpleMessage(
       "Fresh draft, matches your latest source.",
     ),
-    "weGroupIntro": m109,
+    "weGroupIntro": m112,
     "weHidePreview": MessageLookupByLibrary.simpleMessage("Hide preview"),
     "weHintMap": MessageLookupByLibrary.simpleMessage(
       "Decides where the pin sits on the map; it is not read as text.",
@@ -2664,7 +2690,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "weItemParagraph": MessageLookupByLibrary.simpleMessage("Paragraph"),
     "weItemSection": MessageLookupByLibrary.simpleMessage("Section"),
     "weItemTime": MessageLookupByLibrary.simpleMessage("Time"),
-    "weLaneChanged": m110,
+    "weLaneChanged": m113,
     "weLangDutch": MessageLookupByLibrary.simpleMessage("Dutch"),
     "weLangEnglish": MessageLookupByLibrary.simpleMessage("English"),
     "weLangNorwegian": MessageLookupByLibrary.simpleMessage("Norwegian"),
@@ -2676,24 +2702,24 @@ class MessageLookup extends MessageLookupByLibrary {
     "weLeaveTitle": MessageLookupByLibrary.simpleMessage(
       "You have unsaved changes",
     ),
-    "weListAdd": m111,
+    "weListAdd": m114,
     "weListColumns": MessageLookupByLibrary.simpleMessage("Columns"),
-    "weListCounter": m112,
+    "weListCounter": m115,
     "weListDistances": MessageLookupByLibrary.simpleMessage("Distances"),
     "weListEmptyMessage": MessageLookupByLibrary.simpleMessage(
       "This list only appears on the website once it holds something.",
     ),
-    "weListEmptyTitle": m113,
+    "weListEmptyTitle": m116,
     "weListFacts": MessageLookupByLibrary.simpleMessage("Facts"),
     "weListFormFields": MessageLookupByLibrary.simpleMessage("Fields"),
     "weListGroups": MessageLookupByLibrary.simpleMessage("Groups"),
     "weListKeyFacts": MessageLookupByLibrary.simpleMessage("Key facts"),
     "weListLines": MessageLookupByLibrary.simpleMessage("Lines"),
-    "weListMaxReached": m114,
+    "weListMaxReached": m117,
     "weListMaxReason": MessageLookupByLibrary.simpleMessage(
       "Remove a row first",
     ),
-    "weListMinReason": m115,
+    "weListMinReason": m118,
     "weListParagraphs": MessageLookupByLibrary.simpleMessage("Paragraphs"),
     "weListSections": MessageLookupByLibrary.simpleMessage("Sections"),
     "weListTimes": MessageLookupByLibrary.simpleMessage(
@@ -2705,8 +2731,8 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "weLoadFailedRetry": MessageLookupByLibrary.simpleMessage("Try again"),
     "weLocaleSourceBadge": MessageLookupByLibrary.simpleMessage("source"),
-    "weLockedCounter": m116,
-    "weMediaAdd": m117,
+    "weLockedCounter": m119,
+    "weMediaAdd": m120,
     "weMediaCancel": MessageLookupByLibrary.simpleMessage("Cancel"),
     "weMediaChoose": MessageLookupByLibrary.simpleMessage("Choose"),
     "weMediaEmptyBody": MessageLookupByLibrary.simpleMessage(
@@ -2714,10 +2740,10 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "weMediaEmptyTitle": MessageLookupByLibrary.simpleMessage("No photos yet"),
     "weMediaFirst": MessageLookupByLibrary.simpleMessage("First"),
-    "weMediaFootnote": m118,
-    "weMediaMinReached": m119,
-    "weMediaPending": m120,
-    "weMediaPickerHint": m121,
+    "weMediaFootnote": m121,
+    "weMediaMinReached": m122,
+    "weMediaPending": m123,
+    "weMediaPickerHint": m124,
     "weMediaPickerSingleHint": MessageLookupByLibrary.simpleMessage(
       "Choose one photo from the library or upload a new one. Choosing replaces the current one.",
     ),
@@ -2742,7 +2768,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePairTime": MessageLookupByLibrary.simpleMessage("Time"),
     "wePairValue": MessageLookupByLibrary.simpleMessage("Value"),
     "wePairWhat": MessageLookupByLibrary.simpleMessage("What"),
-    "wePreviewLabel": m122,
+    "wePreviewLabel": m125,
     "wePreviewLatest": MessageLookupByLibrary.simpleMessage("Preview latest"),
     "wePreviewTranslation": MessageLookupByLibrary.simpleMessage(
       "Preview translation",
@@ -2752,14 +2778,14 @@ class MessageLookup extends MessageLookupByLibrary {
       "Publish all languages",
     ),
     "wePublishCancel": MessageLookupByLibrary.simpleMessage("Cancel"),
-    "wePublishConfirm": m123,
+    "wePublishConfirm": m126,
     "wePublishDraft": MessageLookupByLibrary.simpleMessage(
       "Draft — not reviewed yet",
     ),
     "wePublishDraftTranslatesNow": MessageLookupByLibrary.simpleMessage(
       "Not reviewed yet · translates now",
     ),
-    "wePublishFooter": m124,
+    "wePublishFooter": m127,
     "wePublishModalTitle": MessageLookupByLibrary.simpleMessage(
       "What goes live",
     ),
@@ -2771,9 +2797,9 @@ class MessageLookup extends MessageLookupByLibrary {
       "Nothing changed",
     ),
     "wePublishOpen": MessageLookupByLibrary.simpleMessage("Open"),
-    "wePublishPageSeen": m125,
-    "wePublishPageUnseen": m126,
-    "wePublishPartlySeen": m127,
+    "wePublishPageSeen": m128,
+    "wePublishPageUnseen": m129,
+    "wePublishPartlySeen": m130,
     "wePublishPerPage": MessageLookupByLibrary.simpleMessage("Per page"),
     "wePublishReady": MessageLookupByLibrary.simpleMessage("Ready"),
     "wePublishReadyNote": MessageLookupByLibrary.simpleMessage(
@@ -2791,11 +2817,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "wePublishSkippedNote": MessageLookupByLibrary.simpleMessage(
       "stays as it is live now",
     ),
-    "wePublishSourceDelta": m128,
-    "wePublishSourceOnly": m129,
-    "wePublishSourceRole": m130,
-    "wePublishSubtitle": m131,
-    "wePublishTargetDelta": m132,
+    "wePublishSourceDelta": m131,
+    "wePublishSourceOnly": m132,
+    "wePublishSourceRole": m133,
+    "wePublishSubtitle": m134,
+    "wePublishTargetDelta": m135,
     "wePublishTitle": MessageLookupByLibrary.simpleMessage(
       "Publish all languages",
     ),
@@ -2824,15 +2850,15 @@ class MessageLookup extends MessageLookupByLibrary {
       "value is shared across languages",
     ),
     "weShowPreview": MessageLookupByLibrary.simpleMessage("Show preview"),
-    "weSourceChip": m133,
+    "weSourceChip": m136,
     "weStaleNotice": MessageLookupByLibrary.simpleMessage(
       "Preview reflects an earlier source edit.",
     ),
-    "weStatusCleanBody": m134,
+    "weStatusCleanBody": m137,
     "weStatusCleanTitle": MessageLookupByLibrary.simpleMessage(
       "Everything published",
     ),
-    "weStatusSavedBody": m135,
+    "weStatusSavedBody": m138,
     "weStatusSavedTitle": MessageLookupByLibrary.simpleMessage(
       "Saved · not published",
     ),
@@ -2842,10 +2868,10 @@ class MessageLookup extends MessageLookupByLibrary {
     "weStatusUnsavedTitle": MessageLookupByLibrary.simpleMessage(
       "Unsaved changes",
     ),
-    "weStructureLocked": m136,
+    "weStructureLocked": m139,
     "weUndo": MessageLookupByLibrary.simpleMessage("Undo"),
-    "weUndoSwitchNotice": m137,
-    "weUploadDone": m138,
+    "weUndoSwitchNotice": m140,
+    "weUploadDone": m141,
     "weUploadDropTitle": MessageLookupByLibrary.simpleMessage(
       "Drag photos here or choose files",
     ),
@@ -2859,7 +2885,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "weUploadRejectedTooLarge": MessageLookupByLibrary.simpleMessage(
       "Too large. At most 8 MB.",
     ),
-    "weUploadRejectedTooSmall": m139,
+    "weUploadRejectedTooSmall": m142,
     "weUploadRejectedType": MessageLookupByLibrary.simpleMessage(
       "This file type is not supported. Export as JPG or WebP.",
     ),

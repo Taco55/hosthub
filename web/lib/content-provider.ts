@@ -22,7 +22,7 @@
  * actually on screen.
  */
 
-import type { Locale } from "./i18n";
+import { locales, type Locale } from "./i18n";
 import type {
   CabinContent,
   ContactFormSectionContent,
@@ -177,6 +177,14 @@ function mergeSiteConfig(override: Partial<SiteConfig>): SiteConfig {
   return applyMediaSlots(merged, override);
 }
 
+/** A caption for a photo the repo does not describe: present, and empty. */
+function emptyAlt(): Record<Locale, string> {
+  return Object.fromEntries(locales.map((l) => [l, ""])) as Record<
+    Locale,
+    string
+  >;
+}
+
 /**
  * Photo slots the console writes (`images.heroPhotos`, `images.homeGallery`,
  * `images.galleryAll`) win over the repo's own file lists.
@@ -201,14 +209,20 @@ function applyMediaSlots(
     ...config,
     heroImages: hero.length > 0 ? hero : config.heroImages,
     // The homepage selection is a subset of the library, not its own upload
-    // (README par. A.5): same URLs, fewer of them. Alt text stays where it is,
-    // because it is per language and lives in the page's own document.
+    // (README par. A.5): same URLs, fewer of them.
+    //
+    // Alt text is matched by src, never by position. The repo's list carries
+    // an alt per photo; a CMS selection is a different set in a different
+    // order, so pairing the two by index captioned whichever photo happened
+    // to land in that slot — a wrong description read out loud is worse than
+    // none. A photo the repo does not know keeps an empty alt until it has
+    // its own, which is the honest answer.
     gallery:
       homeGallery.length > 0
-        ? homeGallery.map((src, index) => ({
-            src,
-            alt: config.gallery[index]?.alt ?? {},
-          }))
+        ? homeGallery.map((src) => {
+            const known = config.gallery.find((image) => image.src === src);
+            return { src, alt: known?.alt ?? emptyAlt() };
+          })
         : config.gallery,
     galleryAllFilenames:
       galleryAll.length > 0 ? galleryAll : config.galleryAllFilenames,

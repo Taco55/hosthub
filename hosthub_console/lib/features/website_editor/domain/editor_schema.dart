@@ -291,6 +291,14 @@ const Map<String, List<EditorCard>> kPageCards = {
     ),
   ],
   'home': [
+    // Site chrome: the name in the header, tab title and share card, and the
+    // line beside it in the footer. It sits on Home because that is where the
+    // owner meets the header first, but it is one set for the whole site —
+    // every page renders it.
+    EditorCard(
+      id: 'siteChrome',
+      rows: [FieldRow('site.name'), FieldRow('site.location')],
+    ),
     EditorCard(
       id: 'hero',
       rows: [
@@ -376,7 +384,14 @@ const Map<String, List<EditorCard>> kPageCards = {
           maxItems: 8,
           sharedValue: true,
         ),
-        FieldRow('cabin.location.mapQuery', visibility: FieldVisibility.map),
+        // The two urls the map is actually built from. `location.mapQuery`
+        // used to sit here as "map search term", but the document never held
+        // one, and the preview's rewrite set `?q=` on an OpenStreetMap embed
+        // that positions itself with `bbox=` — so the field the owner could
+        // edit moved nothing, and the values that place the pin and the
+        // "open in maps" link could not be reached from any screen.
+        FieldRow('site.mapEmbedUrl', visibility: FieldVisibility.map),
+        FieldRow('site.mapLinkUrl', visibility: FieldVisibility.map),
       ],
     ),
     EditorCard(

@@ -185,6 +185,11 @@ void main() {
 
     // The owner's wording is one click away for the rest of the session.
     expect(find.text('Undo'), findsOneWidget);
+    // Scroll it in: the form is taller than the viewport, so a tap on an
+    // off-screen widget silently misses and the assertion below reads the
+    // unchanged state rather than the click's effect.
+    await tester.ensureVisible(find.text('Undo'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Undo'));
     await tester.pumpAndSettle();
 
@@ -193,6 +198,8 @@ void main() {
     expect(field.value, 'Manual override');
 
     // And the chip switches forward again from Auto.
+    await tester.ensureVisible(find.text('Locked'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Locked'));
     await tester.pumpAndSettle();
     expect(

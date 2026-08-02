@@ -96,6 +96,8 @@ String cardTitle(BuildContext context, String cardId) {
       return context.s.weCardContactHelp;
     case 'agreements':
       return context.s.weCardAgreements;
+    case 'siteChrome':
+      return context.s.weCardSiteChrome;
     case 'areaIntro':
       return context.s.weCardAreaIntro;
     case 'areaSections':
@@ -131,6 +133,8 @@ String? cardSubtitle(BuildContext context, String cardId) {
       return context.s.weCardLayoutSub;
     case 'transport':
       return context.s.weCardTransportSub;
+    case 'siteChrome':
+      return context.s.weCardSiteChromeSub;
     case 'areaIntro':
       return context.s.weCardAreaIntroSub;
     case 'areaSections':
@@ -166,6 +170,8 @@ IconData cardIcon(String cardId) {
       return Icons.list_alt_outlined;
     case 'location':
       return Icons.place_outlined;
+    case 'siteChrome':
+      return Icons.public;
     case 'highlights':
       return Icons.star_outline;
     case 'houseRules':
@@ -203,8 +209,14 @@ String fieldLabel(BuildContext context, String fieldKey) {
       return context.s.weFieldSubtitle;
     case 'cabin.meta.name':
       return context.s.weFieldSearchName;
-    case 'cabin.location.mapQuery':
-      return context.s.weFieldMapQuery;
+    case 'site.mapEmbedUrl':
+      return context.s.weFieldMapEmbedUrl;
+    case 'site.mapLinkUrl':
+      return context.s.weFieldMapLinkUrl;
+    case 'site.name':
+      return context.s.weFieldSiteName;
+    case 'site.location':
+      return context.s.weFieldSiteLocation;
     case 'cabin.rules.checkIn':
     case 'practical.arrival.checkIn':
       return context.s.weFieldCheckIn;

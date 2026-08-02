@@ -9457,6 +9457,61 @@ class S {
     );
   }
 
+  /// `Site name`
+  String get weCardSiteChrome {
+    return Intl.message(
+      'Site name',
+      name: 'weCardSiteChrome',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Shown in the header, the browser tab and the footer of every page.`
+  String get weCardSiteChromeSub {
+    return Intl.message(
+      'Shown in the header, the browser tab and the footer of every page.',
+      name: 'weCardSiteChromeSub',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Name`
+  String get weFieldSiteName {
+    return Intl.message('Name', name: 'weFieldSiteName', desc: '', args: []);
+  }
+
+  /// `Location line`
+  String get weFieldSiteLocation {
+    return Intl.message(
+      'Location line',
+      name: 'weFieldSiteLocation',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Map embed link`
+  String get weFieldMapEmbedUrl {
+    return Intl.message(
+      'Map embed link',
+      name: 'weFieldMapEmbedUrl',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Open-in-maps link`
+  String get weFieldMapLinkUrl {
+    return Intl.message(
+      'Open-in-maps link',
+      name: 'weFieldMapLinkUrl',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Map search term`
   String get weFieldMapQuery {
     return Intl.message(
@@ -12386,6 +12441,43 @@ class S {
       name: 'accountConnectionsFooter',
       desc: '',
       args: [],
+    );
+  }
+
+  /// `{count, plural, =0{No properties yet} =1{1 property} other{{count} properties}}`
+  String accountPropertiesCount(num count) {
+    return Intl.plural(
+      count,
+      zero: 'No properties yet',
+      one: '1 property',
+      other: '$count properties',
+      name: 'accountPropertiesCount',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `{count, plural, =1{1 from Lodgify} other{{count} from Lodgify}}`
+  String accountPropertiesFromLodgifyCount(num count) {
+    return Intl.plural(
+      count,
+      one: '1 from Lodgify',
+      other: '$count from Lodgify',
+      name: 'accountPropertiesFromLodgifyCount',
+      desc: '',
+      args: [count],
+    );
+  }
+
+  /// `{count, plural, =1{1 manual} other{{count} manual}}`
+  String accountPropertiesManualCount(num count) {
+    return Intl.plural(
+      count,
+      one: '1 manual',
+      other: '$count manual',
+      name: 'accountPropertiesManualCount',
+      desc: '',
+      args: [count],
     );
   }
 
