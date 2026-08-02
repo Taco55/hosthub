@@ -413,8 +413,31 @@ run op.
 | F6 | Publiceren: delta-tellers, per-pagina-uitklap (B14), `Openen` → taal+pagina+filter | console (+lib) | done | 9ed6796 + lib sw@7845c74 = v0.12.1 (`StyledTile.nested`). **De definitie van "gewijzigd" is verhuisd** naar *wat publiceren op de live pagina zet*: saved ≠ live, óf nieuw, óf stale (want dat wordt bij publiceren herschreven), gemeten tegen een gepubliceerde baseline die de repository per locale laadt. Daarmee kan een achtergrondvertaling de teller niet meer nullen. Reviewen is paginagranulair (`Bekeken` pas als élke gewijzigde pagina open was; `1 van 3 bekeken` zegt hoe ver), `Per pagina` klapt alleen pagina's met wijzigingen uit, `Openen` zet taal+pagina+filter en sluit de dialoog. Publiceren verschuift de baseline; een overgeslagen taal houdt de hare. +9 tests incl. de paginagranulariteitstest uit CONFORMANCE §10.6 |
 | F7 | Opruimen: HouseRules mounten, voorzieningen-items uit het document, dode sleutels weg | web+supabase | done | 166bf75. Huisregels renderen nu op de homepage (inhoud én component waren er al); voorzieningen-items komen uit het document, `homeAmenities.ts` is de seed — een zelf getypt item krijgt een neutraal vinkje in plaats van een geraden icoon. Migratie 20260727220000 haalt `experience`/`layoutAndFacilities`/`accessAndTransport`/`policies` en page/home `amenities`/`location.description`/`reviews`/`faq` uit content **én** draft (een draft die er één houdt zet hem bij de volgende publicatie terug), plus de `chalet.*`-vertaalrijen. `dead_cms_keys_test.sql` draait de migratie zélf tegen prd-vormige fixtures |
 
+
+## Run 8 queue — multi-template readiness (gestart 2026-08-02, na "alle verbeteren")
+
+Architectuurreview van de website-editor op zuiverheid/DRY/genericiteit, met het oog op een
+tweede website-template (andere secties, andere volgorde). De review vond één structurele
+blokkade waar al het andere aan hangt: `kPageCards` is een top-level `const` en `locationOf`
+is `static`, aangeroepen vanuit getters op een immutable state-object — zolang schema en
+padtabel geen instanties zijn die vanuit state bereikbaar zijn, levert geen enkele andere
+opschoning een tweede template op.
+
+| # | slice | scope | status | evidence |
+|---|-------|-------|--------|----------|
+| G1 | Documenten op identiteit i.p.v. positie (`document: <int>` → record); unmapped-key fallback weg | console | done | 43ff4e2; `_fieldPaths` noemt `kDocCabin`…`kDocPrivacy`, `_documentFor` geeft null i.p.v. `page/home`, beide lezers guarden; ankertest pint één sleutel per document; 558 tests groen |
+| G2 | Template-namen uit de generieke laag (autofocus als schemavlag, media-subs één keer benoemd, dode mock-sleutels, hardcoded domein) | console | done | 9efd814; `FieldRow.autofocus` + `RowListRow.imageSub/altSub`; schematische preview las `hero.headline`/`highlights.0` die het schema nooit had; preview-chrome toonde een echte klantdomein als placeholder → `wePreviewNoDomain`; preview-url-test pint nu de taalbinding i.p.v. de hostnaam |
+| G3 | `WebsiteTemplate` als instantie: schema + padtabel bereikbaar vanuit state (de structurele blokkade) | console | todo | 54 verwijzingen over 9 bestanden (kPageCards 18, kWebsitePages 9, effectiveFieldsFor 9, locationOf 6, kLegalPage 5, kSchemaLists 4, schemaRowForList 3) |
+| G4 | Labels als data op kaart/rij i.p.v. 13 switches (ArbLabel voor gedeeld vocabulaire, TextLabel voor template-copy) | console | todo | ~150 cases → ~120 ARB-keys; `fixedGroupTitle` mapt array-index → label |
+| G5 | Geordende pagina's incl. legal (`showAsTab: false`); heft de `kPageCards.keys`-lek in de publiceer-dialoog op | console | todo | publish_modal loopt `changedPages` = Map-key-volgorde, met `legal` eerst en niet in de tabs |
+| G6 | Media-slot-routing uit de template i.p.v. `contentType == 'site_config'` + `split('.').last` | console | todo | |
+| G7 | `site_translations.page` schrijft de echte pagina i.p.v. de constante `'home'` | console+supabase | todo | unieke sleutel is `site_id,page,field_key,language`; met één template onschadelijk, met twee een botsing |
+| G8 | Gegenereerd adres-manifest + conformance-check console↔web | console+web | todo | het adrescontract `contentType/slug:json.path` staat nu twee keer, in twee talen; drie drifts vandaag handmatig gevonden |
+
 ## next_lens
-RUN 7 (fase 2-handoff): F-pre, F0, F1, F2 en F3 done. Volgende: **F4** (vertaalmodus op schaal —
+RUN 8 loopt: G1 en G2 done, **G3** is de volgende (structurele blokkade — G4 t/m G8 hangen eraan).
+
+RUN 7 (fase 2-handoff): F-pre t/m F7 done.  _(historische regel hieronder liep achter op de eigen tabel)_ Volgende was: **F4** (vertaalmodus op schaal —
 `Nieuw`-badge op een rij die in de bron is bijgekomen, kaart-rollup `N gewijzigd` via de nieuwe
 `ContentCard.headerTrailing`, `Alleen gewijzigd`-filter = B10 in de lib; de tellers **afgeleid**
 uit de opgebouwde veldpaden), daarna F5 (media), F6 (publiceren), F7 (opruimen).
