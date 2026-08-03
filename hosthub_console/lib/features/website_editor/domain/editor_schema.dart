@@ -739,6 +739,7 @@ class WebsiteTemplate {
     required this.id,
     required this.pages,
     required this.fieldPaths,
+    this.mediaSlots = const (document: kDocSiteConfig, jsonKey: 'images'),
   });
 
   final String id;
@@ -757,6 +758,25 @@ class WebsiteTemplate {
     })
   >
   fieldPaths;
+
+  /// Where the photo slots live: one document for the whole site, and the JSON
+  /// key they sit under.
+  ///
+  /// A photo choice is language-independent, so it cannot live in a locale's
+  /// page. Both sides of the repository used to name `site_config/main` and
+  /// `images` in literals, which is two more places a second template would
+  /// have had to agree with.
+  final ({({String contentType, String slug}) document, String jsonKey})
+  mediaSlots;
+
+  /// The document JSON key a media key addresses (`images.heroPhotos` →
+  /// `heroPhotos`), or null when the key is not one of this template's slots.
+  String? mediaJsonKeyOf(String mediaKey) {
+    final prefix = '${mediaSlots.jsonKey}.';
+    return mediaKey.startsWith(prefix)
+        ? mediaKey.substring(prefix.length)
+        : null;
+  }
 
   /// Page keys in template order, tabs only.
   List<String> get tabPages => [

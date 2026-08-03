@@ -528,14 +528,15 @@ class WebsiteContentRepository extends SupabaseRepository {
 
       // Photo slots, from the source locale's site_config: they are the same
       // for every language, so one read answers for all of them.
+      final mediaDoc = kDefaultTemplate.mediaSlots.document;
       final configContent =
-          contentByDocLocale['site_config:main:$sourceLanguage'];
+          contentByDocLocale['${_documentKeyOf(mediaDoc)}:$sourceLanguage'];
       final images = configContent?['images'];
       final mediaKeys = <String, List<String>>{
         if (images is Map)
           for (final entry in images.entries)
             if (entry.value is List)
-              'images.${entry.key}': [
+              '${kDefaultTemplate.mediaSlots.jsonKey}.${entry.key}': [
                 for (final path in entry.value as List<dynamic>)
                   if (path is String) path,
               ],
@@ -714,8 +715,8 @@ class WebsiteContentRepository extends SupabaseRepository {
           if (_listLocationOf(entry.key)?.document == doc)
             entry.key: entry.value,
       };
-      // Photo slots belong to site_config; every other document ignores them.
-      final docMedia = doc.contentType == 'site_config' && doc.slug == 'main'
+      // Photo slots belong to one document; every other one ignores them.
+      final docMedia = doc == kDefaultTemplate.mediaSlots.document
           ? mediaKeys
           : const <String, List<String>>{};
       // A pure reorder or a photo choice is a document change too: the array
@@ -759,14 +760,16 @@ class WebsiteContentRepository extends SupabaseRepository {
         (listKey, order) => applyListOrder(listKey, content, order),
       );
       if (docMedia.isNotEmpty) {
+        final slotKey = kDefaultTemplate.mediaSlots.jsonKey;
         final images = Map<String, dynamic>.from(
-          content['images'] as Map? ?? const {},
+          content[slotKey] as Map? ?? const {},
         );
         docMedia.forEach((mediaKey, paths) {
           // `images.heroPhotos` -> images['heroPhotos'].
-          images[mediaKey.split('.').last] = paths;
+          final jsonKey = kDefaultTemplate.mediaJsonKeyOf(mediaKey);
+          if (jsonKey != null) images[jsonKey] = paths;
         });
-        content['images'] = images;
+        content[slotKey] = images;
       }
 
       final String documentId;

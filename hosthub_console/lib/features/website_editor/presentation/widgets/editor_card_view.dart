@@ -365,7 +365,11 @@ class _RowListRowView extends StatelessWidget {
             _RowMedia(
               state: state,
               rowLabel: '$itemLabel ${index + 1}',
-              imageFieldKey: listFieldKey(row.listKey, rowId, RowListRow.imageSub),
+              imageFieldKey: listFieldKey(
+                row.listKey,
+                rowId,
+                RowListRow.imageSub,
+              ),
               altFieldKey: listFieldKey(row.listKey, rowId, RowListRow.altSub),
             ),
         ],

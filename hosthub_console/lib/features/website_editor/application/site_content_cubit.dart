@@ -381,10 +381,9 @@ class SiteContentState extends Equatable {
   /// — what the publish dialog reports per language (§D.2).
   List<String> changedPages(String language) => [
     for (final page in template.pageKeys)
-      if (template.fieldsFor(
-        page,
-        effectiveListOrder,
-      ).any((f) => isFieldChanged(language, f.key)))
+      if (template
+          .fieldsFor(page, effectiveListOrder)
+          .any((f) => isFieldChanged(language, f.key)))
         page,
   ];
 

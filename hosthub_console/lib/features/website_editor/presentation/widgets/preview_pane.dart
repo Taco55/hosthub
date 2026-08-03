@@ -124,7 +124,10 @@ class PreviewPane extends StatelessWidget {
 /// A photo field holds a storage path, and the page needs a url — the console
 /// is the side that can resolve one, so it does it here rather than teaching
 /// the preview about buckets.
-Map<String, String> _previewFields(BuildContext context, SiteContentState state) {
+Map<String, String> _previewFields(
+  BuildContext context,
+  SiteContentState state,
+) {
   final media = context.read<MediaLibraryCubit?>();
   final values = state.previewFieldValues;
   if (media == null) return values;

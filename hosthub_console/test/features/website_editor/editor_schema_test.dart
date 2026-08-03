@@ -350,6 +350,19 @@ void main() {
         'images.galleryAll',
       ]),
     );
+
+    // And every one of them resolves against the template's own slot key, so
+    // the document routing is not a literal in the repository any more.
+    for (final key in mediaKeys) {
+      expect(
+        kDefaultTemplate.mediaJsonKeyOf(key),
+        isNotNull,
+        reason: '$key is not under ${kDefaultTemplate.mediaSlots.jsonKey}',
+      );
+    }
+    expect(kDefaultTemplate.mediaJsonKeyOf('images.heroPhotos'), 'heroPhotos');
+    expect(kDefaultTemplate.mediaJsonKeyOf('elsewhere.photos'), isNull);
+    expect(kDefaultTemplate.mediaSlots.document, kDocSiteConfig);
   });
 
   test('a read-only card contributes no editable field', () {

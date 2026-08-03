@@ -60,15 +60,21 @@ void main() {
     final order = <String, List<String>>{
       'cabin.amenities.groups': groups,
       for (final groupId in groups)
-        groupItemsListKey('cabin.amenities.groups', groupId, 'items'):
-            WebsiteContentRepository.listRowIdsIn(
-              'cabin.amenities.groups.{id}.items',
-              cabin,
-              enclosingIds: [groupId],
-            ),
+        groupItemsListKey(
+          'cabin.amenities.groups',
+          groupId,
+          'items',
+        ): WebsiteContentRepository.listRowIdsIn(
+          'cabin.amenities.groups.{id}.items',
+          cabin,
+          enclosingIds: [groupId],
+        ),
     };
 
-    final keys = kDefaultTemplate.fieldsFor('home', order).map((f) => f.key).toSet();
+    final keys = kDefaultTemplate
+        .fieldsFor('home', order)
+        .map((f) => f.key)
+        .toSet();
     expect(keys, contains('cabin.amenities.title'));
     expect(keys, contains('cabin.amenities.groups.g1.title'));
     expect(keys, contains('cabin.amenities.groups.g1.items.i1.text'));
