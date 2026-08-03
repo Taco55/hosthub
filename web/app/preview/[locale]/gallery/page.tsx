@@ -7,6 +7,7 @@ import { Container } from "@/components/site/Container";
 import { getLocalizedContent, getSiteConfig } from "@/lib/content-provider";
 import { getGalleryImages } from "@/lib/gallery";
 import { getDictionary, isLocale } from "@/lib/i18n";
+import { cmsFieldAddress } from "@/lib/cms-field";
 import {
   resolveRuntimeSiteContext,
   toSiteContentOptions,
@@ -52,7 +53,11 @@ export default async function PreviewGalleryPage({ params }: PageProps) {
   return (
     <Container className="py-10 lg:py-14">
       <div className="space-y-8">
-        <SectionHeading title={t.pages.gallery} subtitle={content.tagline} />
+        <SectionHeading
+          title={t.pages.gallery}
+          subtitle={content.tagline}
+          subtitleField={cmsFieldAddress("page/home", "tagline")}
+        />
         <GalleryGrid images={images} allLabel={t.misc.all} />
       </div>
     </Container>

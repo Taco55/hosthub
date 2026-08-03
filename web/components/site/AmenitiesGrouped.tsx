@@ -2,7 +2,7 @@ import { SectionHeading } from "@/components/section-heading";
 import { AmenityTile } from "@/components/site/AmenityTile";
 import { amenityRegistry } from "@/lib/amenities/amenityRegistry";
 import { homeAmenityGroups } from "@/lib/amenities/homeAmenities";
-import { cmsField } from "@/lib/cms-field";
+import { cmsField, cmsFieldAddress } from "@/lib/cms-field";
 import { rowFieldPath, textRows, type TextList } from "@/lib/cms-rows";
 import { getDictionary, type Dictionary, type Locale } from "@/lib/i18n";
 
@@ -46,7 +46,11 @@ export function AmenitiesGrouped({ title, locale, groups }: AmenitiesGroupedProp
 
   return (
     <section className="space-y-6 text-center">
-      <SectionHeading title={title} align="center" />
+      <SectionHeading
+        title={title}
+        titleField={cmsFieldAddress("cabin/main", "amenities", "title")}
+        align="center"
+      />
       <div className="space-y-8">
         {resolved.map((group, groupIndex) => (
           <div key={group.id ?? group.title} className="space-y-4">

@@ -96,6 +96,9 @@ export function ContactFormSection({ content }: ContactFormSectionProps) {
             />
             {/* The subtitle carries a linked email address, so it is not a
                 single text node — the live preview leaves it to a save. */}
+            {/* cms-address-exempt: contact_form/main:subtitle — the copy is
+                split around a mailto link, so there is no single text node to
+                patch; the preview picks it up on save. */}
             <div className="prose mx-auto text-base leading-7 text-slate-600">
               <p>{subtitleNodes}</p>
             </div>
@@ -164,7 +167,9 @@ export function ContactFormSection({ content }: ContactFormSectionProps) {
                 disabled={loading}
                 className="w-full rounded-md bg-slate-900 py-2 text-white disabled:opacity-70"
               >
-                {content.form.submit}
+                <span {...cmsField("contact_form/main", "form", "submit")}>
+                  {content.form.submit}
+                </span>
               </button>
 
               {shownStatus === "success" && (

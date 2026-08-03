@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { SectionHeading } from "@/components/section-heading";
-import { cmsField } from "@/lib/cms-field";
+import { cmsField, cmsFieldAddress } from "@/lib/cms-field";
 import { rowFieldPath, textRows } from "@/lib/cms-rows";
 import { Container } from "@/components/site/Container";
 import { Card, CardContent } from "@/components/ui/card";
@@ -51,7 +51,11 @@ export default async function PrivacyPage({ params }: PageProps) {
   return (
     <Container className="max-w-5xl py-10 lg:py-14">
       <div className="space-y-8">
-        <SectionHeading title={t.pages.privacy} subtitle={privacy.intro} />
+        <SectionHeading
+          title={t.pages.privacy}
+          subtitle={privacy.intro}
+          subtitleField={cmsFieldAddress("page/privacy", "intro")}
+        />
         <Card className="bg-white">
           <CardContent className="prose space-y-4 pt-6 text-base leading-7 text-slate-600">
             {textRows(privacy.bullets).map((row, index) => (

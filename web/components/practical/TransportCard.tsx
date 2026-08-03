@@ -16,7 +16,9 @@ export function TransportCard({ title, columns }: TransportCardProps) {
     <Card className="bg-white">
       <CardHeader className="flex-row items-center gap-3 pb-4">
         <IconBadge size="sm" icon={<MapPin />} />
-        <CardTitle>{title}</CardTitle>
+        <CardTitle {...cmsField("page/practical", "transport", "title")}>
+          {title}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid max-w-4xl gap-6 pl-11 md:grid-cols-3">

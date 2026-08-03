@@ -19,7 +19,9 @@ export function Policies({ title, blocks, className }: PoliciesProps) {
     <Card className={cn("mx-auto w-full max-w-4xl bg-white text-left", className)}>
       <CardHeader className="flex-row items-center gap-3 pb-4">
         <IconBadge size="sm" icon={<FileText />} />
-        <CardTitle>{title}</CardTitle>
+        <CardTitle {...cmsField("page/practical", "agreementsAndPayment", "title")}>
+          {title}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <Accordion type="multiple" className="space-y-2">

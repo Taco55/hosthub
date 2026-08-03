@@ -52,7 +52,9 @@ export default async function PreviewPracticalPage({ params }: PageProps) {
               <Card className="bg-white text-left">
                 <CardHeader className="flex-row items-center gap-3 pb-4">
                   <IconBadge size="sm" icon={<Clock />} />
-                  <CardTitle>{arrivalAccess.title}</CardTitle>
+                  <CardTitle {...cmsField("page/practical", "arrivalAccess", "title")}>
+                    {arrivalAccess.title}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4 text-base leading-7 text-slate-600">
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -88,7 +90,9 @@ export default async function PreviewPracticalPage({ params }: PageProps) {
               <Card className="bg-white text-left">
                 <CardHeader className="flex-row items-center gap-3 pb-4">
                   <IconBadge size="sm" icon={<Car />} />
-                  <CardTitle>{parkingCharging.title}</CardTitle>
+                  <CardTitle {...cmsField("page/practical", "parkingCharging", "title")}>
+                    {parkingCharging.title}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 text-base leading-7 text-slate-600">
                   <ul className="list-disc list-inside space-y-2">
@@ -101,7 +105,10 @@ export default async function PreviewPracticalPage({ params }: PageProps) {
                     </li>
                   ))}
                   </ul>
-                  <p className="rounded-lg bg-accent/10 px-3 py-2 text-sm text-slate-600">
+                  <p
+                    className="rounded-lg bg-accent/10 px-3 py-2 text-sm text-slate-600"
+                    {...cmsField("page/practical", "parkingCharging", "callout")}
+                  >
                     {parkingCharging.callout}
                   </p>
                 </CardContent>
@@ -109,7 +116,9 @@ export default async function PreviewPracticalPage({ params }: PageProps) {
               <Card className="bg-white text-left">
                 <CardHeader className="flex-row items-center gap-3 pb-4">
                   <IconBadge size="sm" icon={<ShieldCheck />} />
-                  <CardTitle>{practical.goodToKnow.title}</CardTitle>
+                  <CardTitle {...cmsField("page/practical", "goodToKnow", "title")}>
+                    {practical.goodToKnow.title}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="text-base leading-7 text-slate-600">
                   <ul className="list-disc list-inside space-y-2">
@@ -135,7 +144,9 @@ export default async function PreviewPracticalPage({ params }: PageProps) {
             <Card className="h-full bg-white text-left">
               <CardHeader className="flex-row items-center gap-3 pb-4">
                 <IconBadge size="sm" icon={<PhoneCall />} />
-                <CardTitle>{practical.contactHelp.title}</CardTitle>
+                <CardTitle {...cmsField("page/practical", "contactHelp", "title")}>
+                  {practical.contactHelp.title}
+                </CardTitle>
               </CardHeader>
               <CardContent className="text-base leading-7 text-slate-600">
                 <ul className="list-disc list-inside space-y-2">

@@ -16,6 +16,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "check:cms": "node scripts/check-cms-addresses.mjs",
     "resize-images": "node scripts/resize-images.js"
   },
   "dependencies": {

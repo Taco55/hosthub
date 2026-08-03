@@ -1,0 +1,517 @@
+{
+  "template": "chalet-v1",
+  "rowIdPlaceholder": "{id}",
+  "fields": [
+    {
+      "key": "cabin.amenities.groups.{id}.items.{id}.text",
+      "address": "cabin/main:amenities.groups.{id}.items.{id}.text",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "cabin.amenities.groups.{id}.title",
+      "address": "cabin/main:amenities.groups.{id}.title",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "cabin.amenities.title",
+      "address": "cabin/main:amenities.title",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": false
+    },
+    {
+      "key": "cabin.description.{id}.text",
+      "address": "cabin/main:description.{id}.text",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "cabin.hero.subtitle",
+      "address": "cabin/main:hero.subtitle",
+      "page": "home",
+      "visibility": "seo",
+      "isList": false
+    },
+    {
+      "key": "cabin.hero.title",
+      "address": "cabin/main:hero.title",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": false
+    },
+    {
+      "key": "cabin.rules.bullets.{id}.text",
+      "address": "cabin/main:houseRules.bullets.{id}.text",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "cabin.rules.checkIn",
+      "address": "cabin/main:houseRules.checkIn",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "cabin.rules.checkOut",
+      "address": "cabin/main:houseRules.checkOut",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "cabin.rules.cleaningNote",
+      "address": "cabin/main:houseRules.cleaningNote",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": false
+    },
+    {
+      "key": "cabin.rules.title",
+      "address": "cabin/main:houseRules.title",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": false
+    },
+    {
+      "key": "cabin.rules.wifiNote",
+      "address": "cabin/main:houseRules.wifiNote",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": false
+    },
+    {
+      "key": "cabin.location.distances.{id}.label",
+      "address": "cabin/main:location.distances.{id}.label",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "cabin.location.distances.{id}.value",
+      "address": "cabin/main:location.distances.{id}.value",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "cabin.location.title",
+      "address": "cabin/main:location.title",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": false
+    },
+    {
+      "key": "cabin.meta.locationShort",
+      "address": "cabin/main:meta.locationShort",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": false
+    },
+    {
+      "key": "cabin.meta.name",
+      "address": "cabin/main:meta.name",
+      "page": "home",
+      "visibility": "seo",
+      "isList": false
+    },
+    {
+      "key": "contact.form.fields.email.label",
+      "address": "contact_form/main:form.email.label",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "contact.form.fields.email.placeholder",
+      "address": "contact_form/main:form.email.placeholder",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "contact.form.error",
+      "address": "contact_form/main:form.error",
+      "page": "home",
+      "visibility": "stateError",
+      "isList": false
+    },
+    {
+      "key": "contact.form.fields.message.label",
+      "address": "contact_form/main:form.message.label",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "contact.form.fields.message.placeholder",
+      "address": "contact_form/main:form.message.placeholder",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "contact.form.fields.name.label",
+      "address": "contact_form/main:form.name.label",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "contact.form.fields.name.placeholder",
+      "address": "contact_form/main:form.name.placeholder",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "contact.form.fields.period.label",
+      "address": "contact_form/main:form.period.label",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "contact.form.fields.period.placeholder",
+      "address": "contact_form/main:form.period.placeholder",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "contact.form.submit",
+      "address": "contact_form/main:form.submit",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": false
+    },
+    {
+      "key": "contact.form.success",
+      "address": "contact_form/main:form.success",
+      "page": "home",
+      "visibility": "stateSuccess",
+      "isList": false
+    },
+    {
+      "key": "contact.subtitle",
+      "address": "contact_form/main:subtitle",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": false
+    },
+    {
+      "key": "contact.title",
+      "address": "contact_form/main:title",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": false
+    },
+    {
+      "key": "area.intro",
+      "address": "page/area:intro",
+      "page": "area",
+      "visibility": "inPage",
+      "isList": false
+    },
+    {
+      "key": "area.sections.{id}.bullets.{id}.text",
+      "address": "page/area:sections.{id}.bullets.{id}.text",
+      "page": "area",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "area.sections.{id}.intro",
+      "address": "page/area:sections.{id}.description",
+      "page": "area",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "area.sections.{id}.title",
+      "address": "page/area:sections.{id}.title",
+      "page": "area",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "home.highlights.{id}.alt",
+      "address": "page/home:highlights.{id}.alt",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "home.highlights.{id}.description",
+      "address": "page/home:highlights.{id}.description",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "home.highlights.{id}.image",
+      "address": "page/home:highlights.{id}.image",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "home.highlights.{id}.title",
+      "address": "page/home:highlights.{id}.title",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "home.keyFacts.{id}.label",
+      "address": "page/home:keyFacts.{id}.label",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "home.keyFacts.{id}.value",
+      "address": "page/home:keyFacts.{id}.value",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "home.tagline",
+      "address": "page/home:tagline",
+      "page": "gallery",
+      "visibility": "inPage",
+      "isList": false
+    },
+    {
+      "key": "practical.agreements.blocks.{id}.items.{id}.text",
+      "address": "page/practical:agreementsAndPayment.blocks.{id}.items.{id}.text",
+      "page": "practical",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "practical.agreements.blocks.{id}.title",
+      "address": "page/practical:agreementsAndPayment.blocks.{id}.title",
+      "page": "practical",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "practical.agreements.title",
+      "address": "page/practical:agreementsAndPayment.title",
+      "page": "practical",
+      "visibility": "inPage",
+      "isList": false
+    },
+    {
+      "key": "practical.arrival.bullets.{id}.text",
+      "address": "page/practical:arrivalAccess.bullets.{id}.text",
+      "page": "practical",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "practical.arrival.checkIn.value",
+      "address": "page/practical:arrivalAccess.checkIn",
+      "page": "practical",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "practical.arrival.checkIn.label",
+      "address": "page/practical:arrivalAccess.checkInLabel",
+      "page": "practical",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "practical.arrival.checkOut.value",
+      "address": "page/practical:arrivalAccess.checkOut",
+      "page": "practical",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "practical.arrival.checkOut.label",
+      "address": "page/practical:arrivalAccess.checkOutLabel",
+      "page": "practical",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "practical.arrival.title",
+      "address": "page/practical:arrivalAccess.title",
+      "page": "practical",
+      "visibility": "inPage",
+      "isList": false
+    },
+    {
+      "key": "practical.contactHelp.bullets.{id}.text",
+      "address": "page/practical:contactHelp.bullets.{id}.text",
+      "page": "practical",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "practical.contactHelp.title",
+      "address": "page/practical:contactHelp.title",
+      "page": "practical",
+      "visibility": "inPage",
+      "isList": false
+    },
+    {
+      "key": "practical.goodToKnow.bullets.{id}.text",
+      "address": "page/practical:goodToKnow.bullets.{id}.text",
+      "page": "practical",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "practical.goodToKnow.title",
+      "address": "page/practical:goodToKnow.title",
+      "page": "practical",
+      "visibility": "inPage",
+      "isList": false
+    },
+    {
+      "key": "practical.header.subtitle",
+      "address": "page/practical:header.subtitle",
+      "page": "practical",
+      "visibility": "inPage",
+      "isList": false
+    },
+    {
+      "key": "practical.header.title",
+      "address": "page/practical:header.title",
+      "page": "practical",
+      "visibility": "inPage",
+      "isList": false
+    },
+    {
+      "key": "practical.layout.sections.{id}.bullets.{id}.text",
+      "address": "page/practical:layoutFacilities.sections.{id}.bullets.{id}.text",
+      "page": "practical",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "practical.layout.sections.{id}.intro",
+      "address": "page/practical:layoutFacilities.sections.{id}.intro",
+      "page": "practical",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "practical.layout.sections.{id}.title",
+      "address": "page/practical:layoutFacilities.sections.{id}.title",
+      "page": "practical",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "practical.layout.title",
+      "address": "page/practical:layoutFacilities.title",
+      "page": "practical",
+      "visibility": "inPage",
+      "isList": false
+    },
+    {
+      "key": "practical.parking.bullets.{id}.text",
+      "address": "page/practical:parkingCharging.bullets.{id}.text",
+      "page": "practical",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "practical.parking.callout",
+      "address": "page/practical:parkingCharging.callout",
+      "page": "practical",
+      "visibility": "inPage",
+      "isList": false
+    },
+    {
+      "key": "practical.parking.title",
+      "address": "page/practical:parkingCharging.title",
+      "page": "practical",
+      "visibility": "inPage",
+      "isList": false
+    },
+    {
+      "key": "practical.quickFacts.{id}.label",
+      "address": "page/practical:quickFacts.{id}.label",
+      "page": "practical",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "practical.quickFacts.{id}.value",
+      "address": "page/practical:quickFacts.{id}.value",
+      "page": "practical",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "practical.transport.columns.{id}.bullets.{id}.text",
+      "address": "page/practical:transport.columns.{id}.bullets.{id}.text",
+      "page": "practical",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "practical.transport.title",
+      "address": "page/practical:transport.title",
+      "page": "practical",
+      "visibility": "inPage",
+      "isList": false
+    },
+    {
+      "key": "legal.privacy.bullets.{id}.text",
+      "address": "page/privacy:bullets.{id}.text",
+      "page": "legal",
+      "visibility": "inPage",
+      "isList": true
+    },
+    {
+      "key": "legal.privacy.intro",
+      "address": "page/privacy:intro",
+      "page": "legal",
+      "visibility": "inPage",
+      "isList": false
+    },
+    {
+      "key": "site.location",
+      "address": "site_config/main:location",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": false
+    },
+    {
+      "key": "site.mapEmbedUrl",
+      "address": "site_config/main:mapEmbedUrl",
+      "page": "home",
+      "visibility": "map",
+      "isList": false
+    },
+    {
+      "key": "site.mapLinkUrl",
+      "address": "site_config/main:mapLinkUrl",
+      "page": "home",
+      "visibility": "map",
+      "isList": false
+    },
+    {
+      "key": "site.name",
+      "address": "site_config/main:name",
+      "page": "home",
+      "visibility": "inPage",
+      "isList": false
+    }
+  ]
+}

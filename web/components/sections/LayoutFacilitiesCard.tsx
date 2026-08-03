@@ -15,7 +15,9 @@ export function LayoutFacilitiesCard({ content }: Props) {
     <Card className="h-full bg-white text-left">
       <CardHeader className="flex-row items-center gap-3 pb-4">
         <IconBadge size="sm" icon={<LayoutGrid />} />
-        <CardTitle>{content.title}</CardTitle>
+        <CardTitle {...cmsField("page/practical", "layoutFacilities", "title")}>
+          {content.title}
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6 text-left">
         {content.sections.map((section, sectionIndex) => {

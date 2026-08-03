@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { IconBadge } from "@/components/ui/IconBadge";
 import { SectionHeading } from "@/components/section-heading";
 import type { DistanceItem } from "@/lib/content";
+import { cmsFieldAddress } from "@/lib/cms-field";
 
 type LocationBlockProps = {
   title: string;
@@ -74,7 +75,13 @@ export function LocationBlock({
   return (
     <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:grid-rows-[auto_1fr] lg:gap-x-6 lg:gap-y-4 lg:items-start">
       <div className="text-center lg:col-span-2 lg:row-start-1">
-        <SectionHeading title={title} subtitle={locationShort} align="center" />
+        <SectionHeading
+          title={title}
+          titleField={cmsFieldAddress("cabin/main", "location", "title")}
+          subtitle={locationShort}
+          subtitleField={cmsFieldAddress("cabin/main", "meta", "locationShort")}
+          align="center"
+        />
       </div>
       <div className="space-y-4 text-center lg:col-start-1 lg:row-start-2">
         <ul className="space-y-3">
