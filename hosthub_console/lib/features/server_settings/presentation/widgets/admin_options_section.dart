@@ -167,16 +167,17 @@ class _AdminOptionsSectionState extends State<AdminOptionsSection> {
                         showProgressIndicatorWhenDisabled: isMutating,
                         leftIconData: isMutating ? null : Icons.save_outlined,
                         showLeftIcon: !isMutating,
-                        minHeight: 40,
                       ),
                       const SizedBox(width: 12),
-                      StyledButton(
+                      // Secondary, not red: this only refills the two switches
+                      // with their defaults. Nothing is written until Save is
+                      // pressed beside it, so there is nothing to warn about —
+                      // and a red fill here made the reversible button look
+                      // more dangerous than the one that actually saves.
+                      StyledButton.secondary(
                         title: context.s.restoreDefaults,
                         onPressed: isMutating ? null : _applyDefaults,
                         enabled: !isMutating,
-                        backgroundColor: context.colors.error,
-                        labelColor: context.colors.onError,
-                        minHeight: 40,
                       ),
                     ],
                   ),
@@ -191,7 +192,6 @@ class _AdminOptionsSectionState extends State<AdminOptionsSection> {
                       onPressed: _isCreatingUser ? null : _handleCreateUser,
                       enabled: !_isCreatingUser,
                       showProgressIndicatorWhenDisabled: _isCreatingUser,
-                      minHeight: 40,
                     ),
                   ),
                 ],

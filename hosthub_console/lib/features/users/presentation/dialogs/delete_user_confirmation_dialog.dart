@@ -18,12 +18,10 @@ Future<bool> showDeleteUserConfirmationDialog(
           StyledButton(
             title: context.s.cancelButton,
             onPressed: () => Navigator.of(context).pop(false),
-            minHeight: 40,
           ),
           StyledButton(
             title: context.s.deleteButton,
             onPressed: () => Navigator.of(context).pop(true),
-            minHeight: 40,
             backgroundColor: Theme.of(context).colorScheme.error,
             labelColor: Theme.of(context).colorScheme.onError,
           ),

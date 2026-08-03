@@ -549,6 +549,14 @@ abstract final class HosthubThemePreset {
       ),
       buttons: (t) => t.copyWith(
         cornerRadius: 12,
+        // The console's one action-button height. Without it the library falls
+        // back to 48, which is why sixteen call sites each wrote
+        // `minHeight: 40` and a page could still end up with two heights by
+        // forgetting. Said once here instead. `StyledButtonSize.compact` (36,
+        // the toolbar button's height) still wins per call site — a size
+        // resolves before the theme — so a row action can sit inside a tile
+        // without a third value being invented for it.
+        height: 40,
         // Design `.btn-line`: white, a hairline in the card-border grey, and a
         // slate label. The library's default outlined button is
         // `primary`-on-`outline`, which puts a second blue call to action in

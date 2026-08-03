@@ -56,7 +56,6 @@ Future<EditUserProfileResult?> showEditUserProfileDialog(
           StyledButton(
             title: context.s.cancelButton,
             onPressed: () => Navigator.of(context).pop(),
-            minHeight: 40,
           ),
           StyledButton(
             title: context.s.saveButton,
@@ -71,7 +70,6 @@ Future<EditUserProfileResult?> showEditUserProfileDialog(
                 ),
               );
             },
-            minHeight: 40,
           ),
         ],
       );

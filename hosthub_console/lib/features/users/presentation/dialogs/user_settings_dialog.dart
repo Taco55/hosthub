@@ -18,7 +18,6 @@ Future<void> showUserSettingsDialog(
           StyledButton(
             title: context.s.closeButton,
             onPressed: () => Navigator.of(context).pop(),
-            minHeight: 40,
           ),
         ],
       );

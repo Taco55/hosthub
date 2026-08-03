@@ -30,7 +30,6 @@ Future<bool?> showCreateUserDialog(BuildContext context) async {
           StyledButton(
             title: context.s.cancelButton,
             onPressed: () => Navigator.of(dialogContext).pop(),
-            minHeight: 40,
             backgroundColor: theme.colorScheme.surfaceContainerHighest,
             labelColor: theme.colorScheme.onSurface,
           ),

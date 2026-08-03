@@ -53,7 +53,6 @@ Future<String?> showChangeUserPasswordDialog(BuildContext context) {
           StyledButton(
             title: context.s.cancelButton,
             onPressed: () => Navigator.of(context).pop(),
-            minHeight: 40,
           ),
           StyledButton(
             title: context.s.updateButton,
@@ -61,7 +60,6 @@ Future<String?> showChangeUserPasswordDialog(BuildContext context) {
               if (formKey.currentState?.validate() != true) return;
               Navigator.of(context).pop(controller.text);
             },
-            minHeight: 40,
           ),
         ],
       );

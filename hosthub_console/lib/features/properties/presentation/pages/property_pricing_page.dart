@@ -365,7 +365,6 @@ class _BookingSettingsSectionState extends State<_BookingSettingsSection> {
             showProgressIndicatorWhenDisabled: _isSaving,
             leftIconData: _isSaving ? null : Icons.save_outlined,
             showLeftIcon: !_isSaving,
-            minHeight: 40,
           ),
         ),
       ],
