@@ -189,6 +189,20 @@ void main() {
     expect(find.byType(StyledDataTable), findsNothing);
   });
 
+  testWidgets('the list can be left the way it was entered', (tester) async {
+    await pumpProperties(tester);
+
+    // No sidebar row leads here — Account · Koppelingen does — so the header
+    // carries the way back, and names it rather than saying just "Back".
+    expect(find.byType(StyledWebBackButton), findsOneWidget);
+    expect(
+      tester.widget<StyledWebPageScaffold>(
+        find.byType(StyledWebPageScaffold),
+      ).backLabel,
+      'Account',
+    );
+  });
+
   testWidgets('an empty account is offered the same two routes', (
     tester,
   ) async {

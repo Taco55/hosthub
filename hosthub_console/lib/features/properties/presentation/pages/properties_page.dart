@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
+import 'package:hosthub_console/app/navigation/console_back.dart';
 import 'package:hosthub_console/app/navigation/console_route.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:hosthub_console/features/portfolio/domain/portfolio_chrome.dart';
@@ -73,6 +74,11 @@ class PropertiesPage extends StatelessWidget {
               ? context.s.navGroupSingleProperty
               : context.s.navGroupProperties,
           title: context.s.propertiesListHeading,
+          // The list is the one page the sidebar does not carry a row for — it
+          // hangs off Account · Koppelingen — so without this it is a screen you
+          // can only leave by picking some other destination.
+          onBack: () => leaveTo(context, ConsoleRoute.accountPath),
+          backLabel: context.s.accountTitle,
           leftChild: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
