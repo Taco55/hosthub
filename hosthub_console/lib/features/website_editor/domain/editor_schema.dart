@@ -25,6 +25,60 @@ enum FieldVisibility {
   stateError,
 }
 
+/// A path segment addressing a repeatable-list row by its stable id.
+///
+/// The array index is display order; the id is identity. Reads and writes
+/// resolve the row by scanning the array for `row['id'] == value`, so a row
+/// keeps its translations and its content when the owner drags it elsewhere.
+class RowId {
+  const RowId(this.value);
+
+  final String value;
+
+  @override
+  String toString() => value;
+
+  @override
+  bool operator ==(Object other) => other is RowId && other.value == value;
+
+  @override
+  int get hashCode => value.hashCode;
+}
+
+/// Where an editor field lives in the site's content: which document, and the
+/// path inside that document's JSON (object keys as String, row ids as
+/// [RowId], list indices as int).
+class EditorFieldLocation {
+  const EditorFieldLocation({
+    required this.contentType,
+    required this.slug,
+    required this.path,
+  });
+
+  final String contentType;
+  final String slug;
+  final List<Object> path;
+
+  /// The field's address as the website knows it, e.g.
+  /// `cabin/main:hero.title` or `page/home:highlights.0.description`.
+  ///
+  /// The live preview speaks this: the console sends values keyed by address,
+  /// and the rendered page carries the same address on the element the value is
+  /// bound to. Neither side needs to know the other's field names.
+  String get address => '$contentType/$slug:${path.join('.')}';
+}
+
+/// Marks a position in a path template where a captured segment lands.
+///
+/// [_rowId] captures a stable row id (resolved against a list); [_key]
+/// captures a fixed object key (a form field's slot, a document's own key).
+/// A pattern may carry several of both — a nested group list captures the
+/// group's id and then the item's.
+enum _Slot { rowId, key }
+
+const _rowId = _Slot.rowId;
+const _key = _Slot.key;
+
 /// One row in a card's schema (the handoff's Part D vocabulary).
 ///
 /// The schema is data, read by one renderer: what a card *is* lives here, how
@@ -271,6 +325,385 @@ class EditorCard {
   final bool readOnly;
 }
 
+/// Every document this editor may write, by identity rather than position.
+///
+/// `_fieldPaths` used to address these by index into a list. Inserting an
+/// entry in the middle silently repointed every later pattern at the wrong
+/// document — and because a missing path reads as an empty string, that
+/// showed up as a blank editor and a save into someone else's document
+/// rather than as an error.
+const kDocCabin = (contentType: 'cabin', slug: 'main');
+const kDocHome = (contentType: 'page', slug: 'home');
+const kDocPractical = (contentType: 'page', slug: 'practical');
+const kDocArea = (contentType: 'page', slug: 'area');
+const kDocContactForm = (contentType: 'contact_form', slug: 'main');
+const kDocGallery = (contentType: 'page', slug: 'gallery');
+
+/// Photo choices: one set for the whole site, so they live in site_config
+/// rather than in a locale's page (README §C.4 — the photo is
+/// language-independent, its alt text is not).
+const kDocSiteConfig = (contentType: 'site_config', slug: 'main');
+
+/// Privacy. A route on the site, but not a tab in the editor: it is a legal
+/// document with a different author and a yearly rhythm, so it is edited
+/// under Site-instellingen → Juridisch (§A.6).
+const kDocPrivacy = (contentType: 'page', slug: 'privacy');
+
+// -- field <-> document JSON mapping ------------------------------------
+
+/// Resolves an editor field key to the document and the JSON path inside it.
+///
+/// One table, one lookup: adding a field is a line here plus its row in
+/// the page schema ([WebsiteTemplate]), not a branch in a read function and a
+/// matching branch in a write function. `{id}` in a pattern captures a
+/// stable row id and lands in the path at the [_rowId] position.
+const List<
+  ({
+    String pattern,
+    ({String contentType, String slug}) document,
+    List<Object> path,
+  })
+>
+_kChaletFieldPaths = [
+  // -- Home: hero (README §A.1 card 1) --
+  (pattern: 'cabin.hero.title', document: kDocCabin, path: ['hero', 'title']),
+  (
+    pattern: 'cabin.hero.subtitle',
+    document: kDocCabin,
+    path: ['hero', 'subtitle'],
+  ),
+  (
+    pattern: 'cabin.meta.locationShort',
+    document: kDocCabin,
+    path: ['meta', 'locationShort'],
+  ),
+  (pattern: 'cabin.meta.name', document: kDocCabin, path: ['meta', 'name']),
+
+  // -- Home: key facts (card 2) --
+  (
+    pattern: 'home.keyFacts.{id}.label',
+    document: kDocHome,
+    path: ['keyFacts', _rowId, 'label'],
+  ),
+  (
+    pattern: 'home.keyFacts.{id}.value',
+    document: kDocHome,
+    path: ['keyFacts', _rowId, 'value'],
+  ),
+
+  // -- Home: description (card 3) --
+  (
+    pattern: 'cabin.description.{id}.text',
+    document: kDocCabin,
+    path: ['description', _rowId, 'text'],
+  ),
+
+  // -- Home: gallery selection (card 4) --
+
+  // -- Home: amenities (card 5) — two nesting levels, the maximum --
+  (
+    pattern: 'cabin.amenities.title',
+    document: kDocCabin,
+    path: ['amenities', 'title'],
+  ),
+  (
+    pattern: 'cabin.amenities.groups.{id}.title',
+    document: kDocCabin,
+    path: ['amenities', 'groups', _rowId, 'title'],
+  ),
+  (
+    pattern: 'cabin.amenities.groups.{id}.items.{id}.text',
+    document: kDocCabin,
+    path: ['amenities', 'groups', _rowId, 'items', _rowId, 'text'],
+  ),
+
+  // -- Home: location & distances (card 6) --
+  (
+    pattern: 'cabin.location.title',
+    document: kDocCabin,
+    path: ['location', 'title'],
+  ),
+  (
+    pattern: 'cabin.location.distances.{id}.label',
+    document: kDocCabin,
+    path: ['location', 'distances', _rowId, 'label'],
+  ),
+  (
+    pattern: 'cabin.location.distances.{id}.value',
+    document: kDocCabin,
+    path: ['location', 'distances', _rowId, 'value'],
+  ),
+  // Site-wide chrome, in site_config: rendered on every page, one set for
+  // the whole site, per language where the text is language-dependent.
+  (
+    pattern: 'site.mapEmbedUrl',
+    document: kDocSiteConfig,
+    path: ['mapEmbedUrl'],
+  ),
+  (pattern: 'site.mapLinkUrl', document: kDocSiteConfig, path: ['mapLinkUrl']),
+  (pattern: 'site.name', document: kDocSiteConfig, path: ['name']),
+  (pattern: 'site.location', document: kDocSiteConfig, path: ['location']),
+
+  // -- Home: highlights (card 7) --
+  (
+    pattern: 'home.highlights.{id}.title',
+    document: kDocHome,
+    path: ['highlights', _rowId, 'title'],
+  ),
+  (
+    pattern: 'home.highlights.{id}.description',
+    document: kDocHome,
+    path: ['highlights', _rowId, 'description'],
+  ),
+  (
+    pattern: 'home.highlights.{id}.alt',
+    document: kDocHome,
+    path: ['highlights', _rowId, 'alt'],
+  ),
+  // One storage path per row — the highlight's own photo, which the grid
+  // renders beside the title. Not an `images.*` slot: those are ordered
+  // lists for a whole section, this is a single file bound to one row.
+  (
+    pattern: 'home.highlights.{id}.image',
+    document: kDocHome,
+    path: ['highlights', _rowId, 'image'],
+  ),
+
+  // -- Home: house rules (card 8) — the section the page did not render --
+  (
+    pattern: 'cabin.rules.title',
+    document: kDocCabin,
+    path: ['houseRules', 'title'],
+  ),
+  (
+    pattern: 'cabin.rules.bullets.{id}.text',
+    document: kDocCabin,
+    path: ['houseRules', 'bullets', _rowId, 'text'],
+  ),
+  (
+    pattern: 'cabin.rules.checkIn',
+    document: kDocCabin,
+    path: ['houseRules', 'checkIn'],
+  ),
+  (
+    pattern: 'cabin.rules.checkOut',
+    document: kDocCabin,
+    path: ['houseRules', 'checkOut'],
+  ),
+  (
+    pattern: 'cabin.rules.cleaningNote',
+    document: kDocCabin,
+    path: ['houseRules', 'cleaningNote'],
+  ),
+  (
+    pattern: 'cabin.rules.wifiNote',
+    document: kDocCabin,
+    path: ['houseRules', 'wifiNote'],
+  ),
+
+  // -- Home: contact form (card 9). The four fields are fixed — the form
+  // has a backend contract — so the slot is a document key, not a row id.
+  (pattern: 'contact.title', document: kDocContactForm, path: ['title']),
+  (pattern: 'contact.subtitle', document: kDocContactForm, path: ['subtitle']),
+  (
+    pattern: 'contact.form.fields.{id}.label',
+    document: kDocContactForm,
+    path: ['form', _key, 'label'],
+  ),
+  (
+    pattern: 'contact.form.fields.{id}.placeholder',
+    document: kDocContactForm,
+    path: ['form', _key, 'placeholder'],
+  ),
+  (
+    pattern: 'contact.form.submit',
+    document: kDocContactForm,
+    path: ['form', 'submit'],
+  ),
+  (
+    pattern: 'contact.form.success',
+    document: kDocContactForm,
+    path: ['form', 'success'],
+  ),
+  (
+    pattern: 'contact.form.error',
+    document: kDocContactForm,
+    path: ['form', 'error'],
+  ),
+
+  // -- Practical (§A.2) --
+  (
+    pattern: 'practical.header.title',
+    document: kDocPractical,
+    path: ['header', 'title'],
+  ),
+  (
+    pattern: 'practical.header.subtitle',
+    document: kDocPractical,
+    path: ['header', 'subtitle'],
+  ),
+  (
+    pattern: 'practical.quickFacts.{id}.label',
+    document: kDocPractical,
+    path: ['quickFacts', _rowId, 'label'],
+  ),
+  (
+    pattern: 'practical.quickFacts.{id}.value',
+    document: kDocPractical,
+    path: ['quickFacts', _rowId, 'value'],
+  ),
+  (
+    pattern: 'practical.arrival.title',
+    document: kDocPractical,
+    path: ['arrivalAccess', 'title'],
+  ),
+  // The label is content the Practical page renders, not a system fact, so
+  // it is a field of its own. The document spells it `checkInLabel` beside
+  // `checkIn` rather than nesting, hence four explicit entries instead of
+  // one `{id}` pattern.
+  (
+    pattern: 'practical.arrival.checkIn.label',
+    document: kDocPractical,
+    path: ['arrivalAccess', 'checkInLabel'],
+  ),
+  (
+    pattern: 'practical.arrival.checkIn.value',
+    document: kDocPractical,
+    path: ['arrivalAccess', 'checkIn'],
+  ),
+  (
+    pattern: 'practical.arrival.checkOut.label',
+    document: kDocPractical,
+    path: ['arrivalAccess', 'checkOutLabel'],
+  ),
+  (
+    pattern: 'practical.arrival.checkOut.value',
+    document: kDocPractical,
+    path: ['arrivalAccess', 'checkOut'],
+  ),
+  (
+    pattern: 'practical.arrival.bullets.{id}.text',
+    document: kDocPractical,
+    path: ['arrivalAccess', 'bullets', _rowId, 'text'],
+  ),
+  (
+    pattern: 'practical.parking.title',
+    document: kDocPractical,
+    path: ['parkingCharging', 'title'],
+  ),
+  (
+    pattern: 'practical.parking.callout',
+    document: kDocPractical,
+    path: ['parkingCharging', 'callout'],
+  ),
+  (
+    pattern: 'practical.parking.bullets.{id}.text',
+    document: kDocPractical,
+    path: ['parkingCharging', 'bullets', _rowId, 'text'],
+  ),
+  (
+    pattern: 'practical.layout.title',
+    document: kDocPractical,
+    path: ['layoutFacilities', 'title'],
+  ),
+  (
+    pattern: 'practical.layout.sections.{id}.title',
+    document: kDocPractical,
+    path: ['layoutFacilities', 'sections', _rowId, 'title'],
+  ),
+  (
+    pattern: 'practical.layout.sections.{id}.intro',
+    document: kDocPractical,
+    path: ['layoutFacilities', 'sections', _rowId, 'intro'],
+  ),
+  (
+    pattern: 'practical.layout.sections.{id}.bullets.{id}.text',
+    document: kDocPractical,
+    path: ['layoutFacilities', 'sections', _rowId, 'bullets', _rowId, 'text'],
+  ),
+  (
+    pattern: 'practical.transport.title',
+    document: kDocPractical,
+    path: ['transport', 'title'],
+  ),
+  (
+    pattern: 'practical.agreements.title',
+    document: kDocPractical,
+    path: ['agreementsAndPayment', 'title'],
+  ),
+  (
+    pattern: 'practical.agreements.blocks.{id}.title',
+    document: kDocPractical,
+    path: ['agreementsAndPayment', 'blocks', _rowId, 'title'],
+  ),
+  (
+    pattern: 'practical.agreements.blocks.{id}.items.{id}.text',
+    document: kDocPractical,
+    path: ['agreementsAndPayment', 'blocks', _rowId, 'items', _rowId, 'text'],
+  ),
+  (
+    pattern: 'practical.transport.columns.{id}.title',
+    document: kDocPractical,
+    path: ['transport', 'columns', _rowId, 'title'],
+  ),
+  (
+    pattern: 'practical.transport.columns.{id}.bullets.{id}.text',
+    document: kDocPractical,
+    path: ['transport', 'columns', _rowId, 'bullets', _rowId, 'text'],
+  ),
+  (
+    pattern: 'practical.goodToKnow.title',
+    document: kDocPractical,
+    path: ['goodToKnow', 'title'],
+  ),
+  (
+    pattern: 'practical.goodToKnow.bullets.{id}.text',
+    document: kDocPractical,
+    path: ['goodToKnow', 'bullets', _rowId, 'text'],
+  ),
+  (
+    pattern: 'practical.contactHelp.title',
+    document: kDocPractical,
+    path: ['contactHelp', 'title'],
+  ),
+  (
+    pattern: 'practical.contactHelp.bullets.{id}.text',
+    document: kDocPractical,
+    path: ['contactHelp', 'bullets', _rowId, 'text'],
+  ),
+
+  // -- Area (§A.3). The intro of a section is spelled `description` in this
+  // document and `intro` on Practical; the path table is where that lives.
+  (pattern: 'area.intro', document: kDocArea, path: ['intro']),
+  (
+    pattern: 'area.sections.{id}.title',
+    document: kDocArea,
+    path: ['sections', _rowId, 'title'],
+  ),
+  (
+    pattern: 'area.sections.{id}.intro',
+    document: kDocArea,
+    path: ['sections', _rowId, 'description'],
+  ),
+  (
+    pattern: 'area.sections.{id}.bullets.{id}.text',
+    document: kDocArea,
+    path: ['sections', _rowId, 'bullets', _rowId, 'text'],
+  ),
+
+  // -- Gallery (§A.4). The tagline lands on more than one page; its hint
+  // says so, because a field that surfaces twice must not be a surprise.
+  (pattern: 'home.tagline', document: kDocHome, path: ['tagline']),
+
+  // -- Legal: privacy (§A.6), edited under Site-instellingen --
+  (pattern: 'legal.privacy.intro', document: kDocPrivacy, path: ['intro']),
+  (
+    pattern: 'legal.privacy.bullets.{id}.text',
+    document: kDocPrivacy,
+    path: ['bullets', _rowId, 'text'],
+  ),
+];
+
 /// One page of a website template: its cards, in the order the page renders
 /// them, and whether the editor offers it as a tab.
 class TemplatePage {
@@ -302,10 +735,28 @@ class TemplatePage {
 /// per-page breakdown and the field enumeration all read the same one, which
 /// is why `legal` no longer arrives first anywhere.
 class WebsiteTemplate {
-  const WebsiteTemplate({required this.id, required this.pages});
+  const WebsiteTemplate({
+    required this.id,
+    required this.pages,
+    required this.fieldPaths,
+  });
 
   final String id;
   final List<TemplatePage> pages;
+
+  /// Where each field key lives: which document, and the path inside its JSON.
+  ///
+  /// Per template, not global. The cards say what the editor offers; this says
+  /// where each of those values is stored, and a second template answers both
+  /// differently.
+  final List<
+    ({
+      String pattern,
+      ({String contentType, String slug}) document,
+      List<Object> path,
+    })
+  >
+  fieldPaths;
 
   /// Page keys in template order, tabs only.
   List<String> get tabPages => [
@@ -358,6 +809,115 @@ class WebsiteTemplate {
           },
   ];
 
+  /// Where one editor field lives: which document, and the path within its JSON.
+  /// Path segments are object keys (String), row-id lookups ([RowId]) or plain
+  /// list indices (int).
+  EditorFieldLocation? locationOf(String fieldKey) {
+    for (final entry in fieldPaths) {
+      final captures = _match(entry.pattern, fieldKey);
+      if (captures == null) continue;
+      final document = entry.document;
+      var next = 0;
+      return EditorFieldLocation(
+        contentType: document.contentType,
+        slug: document.slug,
+        path: [
+          // Each slot in the table takes the next captured segment, in order.
+          for (final segment in entry.path)
+            if (segment == _rowId)
+              RowId(captures[next++])
+            else if (segment == _key)
+              captures[next++]
+            else
+              segment,
+        ],
+      );
+    }
+    return null;
+  }
+
+  /// The document and array path a repeatable list lives at, from the same
+  /// table. [listKey] is a field-key prefix ending right before the row id;
+  /// for a nested list the enclosing ids are supplied in [enclosingIds], in
+  /// order, and land at their slots. Null for an unknown list.
+  ({({String contentType, String slug}) document, List<Object> arrayPath})?
+  listLocationOf(String listKey, {List<String> enclosingIds = const []}) {
+    for (final entry in fieldPaths) {
+      final prefix = _patternPrefixOf(entry.pattern, enclosingIds.length);
+      if (prefix != listKey) continue;
+      // The array sits at the path up to the slot that takes the row id.
+      var seen = 0;
+      var arrayEnd = -1;
+      for (var i = 0; i < entry.path.length; i++) {
+        if (entry.path[i] != _rowId && entry.path[i] != _key) continue;
+        if (seen == enclosingIds.length) {
+          arrayEnd = i;
+          break;
+        }
+        seen++;
+      }
+      if (arrayEnd < 0) continue;
+      var next = 0;
+      return (
+        document: entry.document,
+        arrayPath: [
+          for (final segment in entry.path.sublist(0, arrayEnd))
+            if (segment == _rowId)
+              RowId(enclosingIds[next++])
+            else if (segment == _key)
+              enclosingIds[next++]
+            else
+              segment,
+        ],
+      );
+    }
+    return null;
+  }
+
+  /// The literal part of a pattern up to (but excluding) placeholder
+  /// number [placeholderIndex] — `cabin.amenities.groups.{id}.items.{id}.text`
+  /// with 1 gives `cabin.amenities.groups.{id}.items`, with the earlier
+  /// placeholders left in place so a caller can compare against a list key it
+  /// built from real ids.
+  String _patternPrefixOf(String pattern, int placeholderIndex) {
+    var from = 0;
+    for (var i = 0; i < placeholderIndex; i++) {
+      final next = pattern.indexOf('{id}', from);
+      if (next == -1) return pattern;
+      from = next + '{id}'.length;
+    }
+    final placeholder = pattern.indexOf('{id}', from);
+    if (placeholder == -1) return pattern;
+    // Strip the '.' before the placeholder.
+    return pattern.substring(0, placeholder - 1);
+  }
+
+  /// Matches a field key against a pattern, returning the captured segments in
+  /// order, or null when it does not match. `{id}` captures one dot-free
+  /// segment (a row id or a fixed slot key).
+  List<String>? _match(String pattern, String fieldKey) {
+    final parts = pattern.split('{id}');
+    if (parts.length == 1) return pattern == fieldKey ? const [] : null;
+
+    final captures = <String>[];
+    var cursor = 0;
+    for (var i = 0; i < parts.length; i++) {
+      final literal = parts[i];
+      if (!fieldKey.startsWith(literal, cursor)) return null;
+      cursor += literal.length;
+      if (i == parts.length - 1) break;
+
+      // The capture runs to the next '.' — segments are dot-free.
+      final end = fieldKey.indexOf('.', cursor);
+      final stop = end == -1 ? fieldKey.length : end;
+      final capture = fieldKey.substring(cursor, stop);
+      if (capture.isEmpty) return null;
+      captures.add(capture);
+      cursor = stop;
+    }
+    return cursor == fieldKey.length ? captures : null;
+  }
+
   /// The row that owns a list key, or null when it is unknown.
   EditorRow? rowForList(String listKey) {
     for (final page in pages) {
@@ -377,15 +937,10 @@ const String kLegalPage = 'legal';
 /// The one template today: the chalet site this editor was built for.
 const WebsiteTemplate kDefaultTemplate = WebsiteTemplate(
   id: 'chalet-v1',
+  fieldPaths: _kChaletFieldPaths,
   pages: [
-    TemplatePage(
-      key: 'home',
-      cards: _homeCards,
-    ),
-    TemplatePage(
-      key: 'practical',
-      cards: _practicalCards,
-    ),
+    TemplatePage(key: 'home', cards: _homeCards),
+    TemplatePage(key: 'practical', cards: _practicalCards),
     TemplatePage(key: 'area', cards: _areaCards),
     TemplatePage(key: 'gallery', cards: _galleryCards),
     // Last, and not a tab: see TemplatePage.showAsTab.
@@ -394,373 +949,356 @@ const WebsiteTemplate kDefaultTemplate = WebsiteTemplate(
 );
 
 const List<EditorCard> _legalCards = [
-    EditorCard(
-      id: 'privacy',
-      rows: [
-        FieldRow('legal.privacy.intro', multiline: true),
-        ListRow(
-          'legal.privacy.bullets',
-          sub: 'text',
-          multiline: true,
-          repeatable: true,
-          minItems: 1,
-        ),
-      ],
-    ),
+  EditorCard(
+    id: 'privacy',
+    rows: [
+      FieldRow('legal.privacy.intro', multiline: true),
+      ListRow(
+        'legal.privacy.bullets',
+        sub: 'text',
+        multiline: true,
+        repeatable: true,
+        minItems: 1,
+      ),
+    ],
+  ),
 ];
 
 const List<EditorCard> _homeCards = [
-    // Site chrome: the name in the header, tab title and share card, and the
-    // line beside it in the footer. It sits on Home because that is where the
-    // owner meets the header first, but it is one set for the whole site —
-    // every page renders it.
-    EditorCard(
-      id: 'siteChrome',
-      rows: [FieldRow('site.name'), FieldRow('site.location')],
-    ),
-    EditorCard(
-      id: 'hero',
-      rows: [
-        FieldRow('cabin.hero.title', autofocus: true),
-        FieldRow('cabin.meta.locationShort'),
-        MediaRow(
-          // The media key IS the document path: the repository writes
-          // `images[key.split('.').last]` and reads back `images.<key>`, and
-          // the website reads `images.heroPhotos`. A short name like
-          // `hero.photos` lands on `images.photos`, which nothing reads, and
-          // never matches on the way back — so the picker stays empty and
-          // saving is a no-op.
-          'images.heroPhotos',
-          minItems: 1,
-          maxItems: 5,
-          primaryBadge: true,
-        ),
-        FieldRow(
-          'cabin.hero.subtitle',
-          multiline: true,
-          visibility: FieldVisibility.seo,
-        ),
-        FieldRow('cabin.meta.name', visibility: FieldVisibility.seo),
-      ],
-    ),
-    EditorCard(
-      id: 'keyFacts',
-      rows: [
-        PairListRow(
-          'home.keyFacts',
-          labelSub: 'label',
-          valueSub: 'value',
-          minItems: 3,
-          maxItems: 6,
-          sharedValue: true,
-        ),
-      ],
-    ),
-    EditorCard(
-      id: 'description',
-      rows: [
-        ListRow(
-          'cabin.description',
-          sub: 'text',
-          multiline: true,
-          repeatable: true,
-          maxItems: 4,
-        ),
-      ],
-    ),
-    EditorCard(
-      id: 'homeGallery',
-      rows: [
-        MediaRow(
-          'images.homeGallery',
-          minItems: 5,
-          maxItems: 8,
-          grid: true,
-        ),
-      ],
-    ),
-    EditorCard(
-      id: 'amenities',
-      rows: [
-        FieldRow('cabin.amenities.title'),
-        GroupListRow(
-          'cabin.amenities.groups',
-          titleSub: 'title',
-          itemsListKey: 'items',
-          itemsSub: 'text',
-          maxItems: 12,
-        ),
-      ],
-    ),
-    EditorCard(
-      id: 'location',
-      rows: [
-        FieldRow('cabin.location.title'),
-        PairListRow(
-          'cabin.location.distances',
-          labelSub: 'label',
-          valueSub: 'value',
-          maxItems: 8,
-          sharedValue: true,
-        ),
-        // The two urls the map is actually built from. `location.mapQuery`
-        // used to sit here as "map search term", but the document never held
-        // one, and the preview's rewrite set `?q=` on an OpenStreetMap embed
-        // that positions itself with `bbox=` — so the field the owner could
-        // edit moved nothing, and the values that place the pin and the
-        // "open in maps" link could not be reached from any screen.
-        FieldRow('site.mapEmbedUrl', visibility: FieldVisibility.map),
-        FieldRow('site.mapLinkUrl', visibility: FieldVisibility.map),
-      ],
-    ),
-    EditorCard(
-      id: 'highlights',
-      rows: [
-        RowListRow(
-          'home.highlights',
-          subs: [
-            (sub: 'title', multiline: false),
-            (sub: 'description', multiline: false),
-          ],
-          minItems: 2,
-          maxItems: 6,
-          media: true,
-        ),
-      ],
-    ),
-    EditorCard(
-      id: 'houseRules',
-      rows: [
-        FieldRow('cabin.rules.title'),
-        ListRow(
-          'cabin.rules.bullets',
-          sub: 'text',
-          repeatable: true,
-          maxItems: 8,
-        ),
-        PairListRow(
-          'cabin.rules.times',
-          labelSub: 'label',
-          valueSub: 'value',
-          sharedValue: true,
-          repeatable: false,
-          fixedRows: ['cabin.rules.checkIn', 'cabin.rules.checkOut'],
-          fixedRowsAreValues: true,
-        ),
-        FieldRow('cabin.rules.cleaningNote', multiline: true),
-        FieldRow('cabin.rules.wifiNote', multiline: true),
-      ],
-    ),
-    EditorCard(
-      id: 'contact',
-      rows: [
-        FieldRow('contact.title'),
-        FieldRow('contact.subtitle', multiline: true),
-        // The four fields are fixed: the form has a backend contract, so only
-        // the copy is the owner's.
-        PairListRow(
-          'contact.form.fields',
-          labelSub: 'label',
-          valueSub: 'placeholder',
-          repeatable: false,
-          wideValue: true,
-          fixedRows: [
-            'contact.form.fields.name',
-            'contact.form.fields.email',
-            'contact.form.fields.period',
-            'contact.form.fields.message',
-          ],
-        ),
-        FieldRow('contact.form.submit'),
-        FieldRow(
-          'contact.form.success',
-          multiline: true,
-          visibility: FieldVisibility.stateSuccess,
-        ),
-        FieldRow(
-          'contact.form.error',
-          multiline: true,
-          visibility: FieldVisibility.stateError,
-        ),
-      ],
-    ),
+  // Site chrome: the name in the header, tab title and share card, and the
+  // line beside it in the footer. It sits on Home because that is where the
+  // owner meets the header first, but it is one set for the whole site —
+  // every page renders it.
+  EditorCard(
+    id: 'siteChrome',
+    rows: [FieldRow('site.name'), FieldRow('site.location')],
+  ),
+  EditorCard(
+    id: 'hero',
+    rows: [
+      FieldRow('cabin.hero.title', autofocus: true),
+      FieldRow('cabin.meta.locationShort'),
+      MediaRow(
+        // The media key IS the document path: the repository writes
+        // `images[key.split('.').last]` and reads back `images.<key>`, and
+        // the website reads `images.heroPhotos`. A short name like
+        // `hero.photos` lands on `images.photos`, which nothing reads, and
+        // never matches on the way back — so the picker stays empty and
+        // saving is a no-op.
+        'images.heroPhotos',
+        minItems: 1,
+        maxItems: 5,
+        primaryBadge: true,
+      ),
+      FieldRow(
+        'cabin.hero.subtitle',
+        multiline: true,
+        visibility: FieldVisibility.seo,
+      ),
+      FieldRow('cabin.meta.name', visibility: FieldVisibility.seo),
+    ],
+  ),
+  EditorCard(
+    id: 'keyFacts',
+    rows: [
+      PairListRow(
+        'home.keyFacts',
+        labelSub: 'label',
+        valueSub: 'value',
+        minItems: 3,
+        maxItems: 6,
+        sharedValue: true,
+      ),
+    ],
+  ),
+  EditorCard(
+    id: 'description',
+    rows: [
+      ListRow(
+        'cabin.description',
+        sub: 'text',
+        multiline: true,
+        repeatable: true,
+        maxItems: 4,
+      ),
+    ],
+  ),
+  EditorCard(
+    id: 'homeGallery',
+    rows: [
+      MediaRow('images.homeGallery', minItems: 5, maxItems: 8, grid: true),
+    ],
+  ),
+  EditorCard(
+    id: 'amenities',
+    rows: [
+      FieldRow('cabin.amenities.title'),
+      GroupListRow(
+        'cabin.amenities.groups',
+        titleSub: 'title',
+        itemsListKey: 'items',
+        itemsSub: 'text',
+        maxItems: 12,
+      ),
+    ],
+  ),
+  EditorCard(
+    id: 'location',
+    rows: [
+      FieldRow('cabin.location.title'),
+      PairListRow(
+        'cabin.location.distances',
+        labelSub: 'label',
+        valueSub: 'value',
+        maxItems: 8,
+        sharedValue: true,
+      ),
+      // The two urls the map is actually built from. `location.mapQuery`
+      // used to sit here as "map search term", but the document never held
+      // one, and the preview's rewrite set `?q=` on an OpenStreetMap embed
+      // that positions itself with `bbox=` — so the field the owner could
+      // edit moved nothing, and the values that place the pin and the
+      // "open in maps" link could not be reached from any screen.
+      FieldRow('site.mapEmbedUrl', visibility: FieldVisibility.map),
+      FieldRow('site.mapLinkUrl', visibility: FieldVisibility.map),
+    ],
+  ),
+  EditorCard(
+    id: 'highlights',
+    rows: [
+      RowListRow(
+        'home.highlights',
+        subs: [
+          (sub: 'title', multiline: false),
+          (sub: 'description', multiline: false),
+        ],
+        minItems: 2,
+        maxItems: 6,
+        media: true,
+      ),
+    ],
+  ),
+  EditorCard(
+    id: 'houseRules',
+    rows: [
+      FieldRow('cabin.rules.title'),
+      ListRow(
+        'cabin.rules.bullets',
+        sub: 'text',
+        repeatable: true,
+        maxItems: 8,
+      ),
+      PairListRow(
+        'cabin.rules.times',
+        labelSub: 'label',
+        valueSub: 'value',
+        sharedValue: true,
+        repeatable: false,
+        fixedRows: ['cabin.rules.checkIn', 'cabin.rules.checkOut'],
+        fixedRowsAreValues: true,
+      ),
+      FieldRow('cabin.rules.cleaningNote', multiline: true),
+      FieldRow('cabin.rules.wifiNote', multiline: true),
+    ],
+  ),
+  EditorCard(
+    id: 'contact',
+    rows: [
+      FieldRow('contact.title'),
+      FieldRow('contact.subtitle', multiline: true),
+      // The four fields are fixed: the form has a backend contract, so only
+      // the copy is the owner's.
+      PairListRow(
+        'contact.form.fields',
+        labelSub: 'label',
+        valueSub: 'placeholder',
+        repeatable: false,
+        wideValue: true,
+        fixedRows: [
+          'contact.form.fields.name',
+          'contact.form.fields.email',
+          'contact.form.fields.period',
+          'contact.form.fields.message',
+        ],
+      ),
+      FieldRow('contact.form.submit'),
+      FieldRow(
+        'contact.form.success',
+        multiline: true,
+        visibility: FieldVisibility.stateSuccess,
+      ),
+      FieldRow(
+        'contact.form.error',
+        multiline: true,
+        visibility: FieldVisibility.stateError,
+      ),
+    ],
+  ),
 ];
 
 const List<EditorCard> _practicalCards = [
-    EditorCard(
-      id: 'practicalHeader',
-      rows: [
-        FieldRow('practical.header.title'),
-        FieldRow('practical.header.subtitle', multiline: true),
-      ],
-    ),
-    EditorCard(
-      id: 'quickFacts',
-      rows: [
-        PairListRow(
-          'practical.quickFacts',
-          labelSub: 'label',
-          valueSub: 'value',
-          minItems: 2,
-          maxItems: 6,
-          sharedValue: true,
-        ),
-      ],
-    ),
-    EditorCard(
-      id: 'arrival',
-      rows: [
-        FieldRow('practical.arrival.title'),
-        // Slots, not bare values: unlike the home page's house rules, the
-        // Practical page renders its own `checkInLabel`/`checkOutLabel` from
-        // the document (arrivalAccess), and they differ per language —
-        // "Innsjekk" in Norwegian. Treating them as a system fact left copy
-        // on the live page that no field in the console could reach.
-        PairListRow(
-          'practical.arrival.times',
-          labelSub: 'label',
-          valueSub: 'value',
-          sharedValue: true,
-          repeatable: false,
-          fixedRows: [
-            'practical.arrival.checkIn',
-            'practical.arrival.checkOut',
-          ],
-        ),
-        ListRow(
-          'practical.arrival.bullets',
-          sub: 'text',
-          multiline: true,
-          repeatable: true,
-          maxItems: 8,
-        ),
-      ],
-    ),
-    EditorCard(
-      id: 'parking',
-      rows: [
-        FieldRow('practical.parking.title'),
-        ListRow(
-          'practical.parking.bullets',
-          sub: 'text',
-          multiline: true,
-          repeatable: true,
-          maxItems: 6,
-        ),
-        FieldRow('practical.parking.callout', multiline: true),
-      ],
-    ),
-    EditorCard(
-      id: 'layout',
-      rows: [
-        FieldRow('practical.layout.title'),
-        GroupListRow(
-          'practical.layout.sections',
-          titleSub: 'title',
-          itemsListKey: 'bullets',
-          itemsSub: 'text',
-          introSub: 'intro',
-          maxItems: 6,
-        ),
-      ],
-    ),
-    EditorCard(
-      id: 'transport',
-      rows: [
-        FieldRow('practical.transport.title'),
-        GroupListRow(
-          'practical.transport.columns',
-          titleSub: 'title',
-          itemsListKey: 'bullets',
-          itemsSub: 'text',
-          maxItems: 5,
-          fixedTitles: true,
-        ),
-      ],
-    ),
-    EditorCard(
-      id: 'goodToKnow',
-      rows: [
-        FieldRow('practical.goodToKnow.title'),
-        ListRow(
-          'practical.goodToKnow.bullets',
-          sub: 'text',
-          multiline: true,
-          repeatable: true,
-          maxItems: 10,
-        ),
-      ],
-    ),
-    EditorCard(
-      id: 'contactHelp',
-      rows: [
-        FieldRow('practical.contactHelp.title'),
-        ListRow(
-          'practical.contactHelp.bullets',
-          sub: 'text',
-          multiline: true,
-          repeatable: true,
-          maxItems: 6,
-        ),
-      ],
-    ),
-    // Was read-only, sourced from Lodgify. Nothing syncs Lodgify into this
-    // section — not the console, not the website, not a function — so the
-    // owner saw their own payment and cancellation terms on the live page
-    // with no way to change them. Same shape as practical.transport.columns.
-    EditorCard(
-      id: 'agreements',
-      rows: [
-        FieldRow('practical.agreements.title'),
-        GroupListRow(
-          'practical.agreements.blocks',
-          titleSub: 'title',
-          itemsListKey: 'items',
-          itemsSub: 'text',
-          maxItems: 6,
-        ),
-      ],
-    ),
+  EditorCard(
+    id: 'practicalHeader',
+    rows: [
+      FieldRow('practical.header.title'),
+      FieldRow('practical.header.subtitle', multiline: true),
+    ],
+  ),
+  EditorCard(
+    id: 'quickFacts',
+    rows: [
+      PairListRow(
+        'practical.quickFacts',
+        labelSub: 'label',
+        valueSub: 'value',
+        minItems: 2,
+        maxItems: 6,
+        sharedValue: true,
+      ),
+    ],
+  ),
+  EditorCard(
+    id: 'arrival',
+    rows: [
+      FieldRow('practical.arrival.title'),
+      // Slots, not bare values: unlike the home page's house rules, the
+      // Practical page renders its own `checkInLabel`/`checkOutLabel` from
+      // the document (arrivalAccess), and they differ per language —
+      // "Innsjekk" in Norwegian. Treating them as a system fact left copy
+      // on the live page that no field in the console could reach.
+      PairListRow(
+        'practical.arrival.times',
+        labelSub: 'label',
+        valueSub: 'value',
+        sharedValue: true,
+        repeatable: false,
+        fixedRows: ['practical.arrival.checkIn', 'practical.arrival.checkOut'],
+      ),
+      ListRow(
+        'practical.arrival.bullets',
+        sub: 'text',
+        multiline: true,
+        repeatable: true,
+        maxItems: 8,
+      ),
+    ],
+  ),
+  EditorCard(
+    id: 'parking',
+    rows: [
+      FieldRow('practical.parking.title'),
+      ListRow(
+        'practical.parking.bullets',
+        sub: 'text',
+        multiline: true,
+        repeatable: true,
+        maxItems: 6,
+      ),
+      FieldRow('practical.parking.callout', multiline: true),
+    ],
+  ),
+  EditorCard(
+    id: 'layout',
+    rows: [
+      FieldRow('practical.layout.title'),
+      GroupListRow(
+        'practical.layout.sections',
+        titleSub: 'title',
+        itemsListKey: 'bullets',
+        itemsSub: 'text',
+        introSub: 'intro',
+        maxItems: 6,
+      ),
+    ],
+  ),
+  EditorCard(
+    id: 'transport',
+    rows: [
+      FieldRow('practical.transport.title'),
+      GroupListRow(
+        'practical.transport.columns',
+        titleSub: 'title',
+        itemsListKey: 'bullets',
+        itemsSub: 'text',
+        maxItems: 5,
+        fixedTitles: true,
+      ),
+    ],
+  ),
+  EditorCard(
+    id: 'goodToKnow',
+    rows: [
+      FieldRow('practical.goodToKnow.title'),
+      ListRow(
+        'practical.goodToKnow.bullets',
+        sub: 'text',
+        multiline: true,
+        repeatable: true,
+        maxItems: 10,
+      ),
+    ],
+  ),
+  EditorCard(
+    id: 'contactHelp',
+    rows: [
+      FieldRow('practical.contactHelp.title'),
+      ListRow(
+        'practical.contactHelp.bullets',
+        sub: 'text',
+        multiline: true,
+        repeatable: true,
+        maxItems: 6,
+      ),
+    ],
+  ),
+  // Was read-only, sourced from Lodgify. Nothing syncs Lodgify into this
+  // section — not the console, not the website, not a function — so the
+  // owner saw their own payment and cancellation terms on the live page
+  // with no way to change them. Same shape as practical.transport.columns.
+  EditorCard(
+    id: 'agreements',
+    rows: [
+      FieldRow('practical.agreements.title'),
+      GroupListRow(
+        'practical.agreements.blocks',
+        titleSub: 'title',
+        itemsListKey: 'items',
+        itemsSub: 'text',
+        maxItems: 6,
+      ),
+    ],
+  ),
 ];
 
 const List<EditorCard> _areaCards = [
-    EditorCard(
-      id: 'areaIntro',
-      rows: [FieldRow('area.intro', multiline: true)],
-    ),
-    EditorCard(
-      id: 'areaSections',
-      rows: [
-        GroupListRow(
-          'area.sections',
-          titleSub: 'title',
-          itemsListKey: 'bullets',
-          itemsSub: 'text',
-          introSub: 'intro',
-          maxItems: 8,
-        ),
-      ],
-    ),
+  EditorCard(id: 'areaIntro', rows: [FieldRow('area.intro', multiline: true)]),
+  EditorCard(
+    id: 'areaSections',
+    rows: [
+      GroupListRow(
+        'area.sections',
+        titleSub: 'title',
+        itemsListKey: 'bullets',
+        itemsSub: 'text',
+        introSub: 'intro',
+        maxItems: 8,
+      ),
+    ],
+  ),
 ];
 
 const List<EditorCard> _galleryCards = [
-    EditorCard(
-      id: 'galleryHeader',
-      rows: [FieldRow('home.tagline', multiline: true)],
-    ),
-    EditorCard(
-      id: 'galleryAll',
-      rows: [
-        MediaRow(
-          'images.galleryAll',
-          minItems: 6,
-          maxItems: 40,
-          grid: true,
-        ),
-      ],
-    ),
+  EditorCard(
+    id: 'galleryHeader',
+    rows: [FieldRow('home.tagline', multiline: true)],
+  ),
+  EditorCard(
+    id: 'galleryAll',
+    rows: [
+      MediaRow('images.galleryAll', minItems: 6, maxItems: 40, grid: true),
+    ],
+  ),
 ];
-
 
 /// The field key of one list row: `<listKey>.<rowId>[.<sub>]`.
 String listFieldKey(String listKey, String rowId, String? sub) =>

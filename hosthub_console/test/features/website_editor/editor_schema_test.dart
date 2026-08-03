@@ -18,7 +18,8 @@ List<EditorField> _allSchemaFields() {
     }
   }
   return [
-    for (final page in kDefaultTemplate.pageKeys) ...kDefaultTemplate.fieldsFor(page, listOrder),
+    for (final page in kDefaultTemplate.pageKeys)
+      ...kDefaultTemplate.fieldsFor(page, listOrder),
   ];
 }
 
@@ -60,7 +61,11 @@ void main() {
     expect(kDefaultTemplate.tabPages, isNot(contains(kLegalPage)));
     // Every page reachable by key carries cards; a typo would read as empty.
     for (final key in kDefaultTemplate.pageKeys) {
-      expect(kDefaultTemplate.cardsOf(key), isNotEmpty, reason: '$key is empty');
+      expect(
+        kDefaultTemplate.cardsOf(key),
+        isNotEmpty,
+        reason: '$key is empty',
+      );
     }
   });
 
@@ -217,6 +222,43 @@ void main() {
     }
   });
 
+  test('a second template answers with its own paths', () {
+    // The point of the field table living on the template: two templates can
+    // map the same key to different documents. While it was static on the
+    // repository they necessarily shared one answer, so this is the assertion
+    // that a second template is possible at all.
+    const other = WebsiteTemplate(
+      id: 'other',
+      pages: [
+        TemplatePage(
+          key: 'home',
+          cards: [
+            EditorCard(id: 'hero', rows: [FieldRow('cabin.hero.title')]),
+          ],
+        ),
+      ],
+      fieldPaths: [
+        (
+          pattern: 'cabin.hero.title',
+          document: kDocPractical,
+          path: ['somewhereElse'],
+        ),
+      ],
+    );
+
+    expect(
+      kDefaultTemplate.locationOf('cabin.hero.title')!.address,
+      'cabin/main:hero.title',
+    );
+    expect(
+      other.locationOf('cabin.hero.title')!.address,
+      'page/practical:somewhereElse',
+    );
+    // And a key the other template does not declare is simply unknown to it.
+    expect(other.locationOf('area.intro'), isNull);
+    expect(kDefaultTemplate.locationOf('area.intro'), isNotNull);
+  });
+
   test('a field resolves to the document that actually holds it', () {
     // The path table addressed documents by index into a list until now, so
     // inserting one entry repointed every later pattern — silently, because a
@@ -284,7 +326,11 @@ void main() {
     }
     expect(
       mediaKeys,
-      containsAll(['images.heroPhotos', 'images.homeGallery', 'images.galleryAll']),
+      containsAll([
+        'images.heroPhotos',
+        'images.homeGallery',
+        'images.galleryAll',
+      ]),
     );
   });
 
@@ -307,9 +353,9 @@ void main() {
     // They render on the live Practical page and nothing syncs them from
     // Lodgify, so a read-only card left the owner unable to change their own
     // payment and cancellation terms.
-    final agreements = kDefaultTemplate.cardsOf('practical').firstWhere(
-      (card) => card.id == 'agreements',
-    );
+    final agreements = kDefaultTemplate
+        .cardsOf('practical')
+        .firstWhere((card) => card.id == 'agreements');
 
     expect(agreements.readOnly, isFalse);
     expect(agreements.rows.whereType<ExternalRow>(), isEmpty);
@@ -317,7 +363,10 @@ void main() {
         .where((f) => f.cardId == 'agreements')
         .map((f) => f.key);
     expect(keys, contains('practical.agreements.title'));
-    expect(keys.any((k) => k.startsWith('practical.agreements.blocks.')), isTrue);
+    expect(
+      keys.any((k) => k.startsWith('practical.agreements.blocks.')),
+      isTrue,
+    );
   });
 
   test('the highlight row carries title, subline and its alt text', () {
