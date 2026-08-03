@@ -175,7 +175,7 @@ class _PageRow extends StatelessWidget {
 
     return StyledTile(
       nested: true,
-      title: pageName(context, page),
+      title: pageName(context, state.template, page),
       subtitle: seen
           ? context.s.wePublishPageSeen(changed)
           : context.s.wePublishPageUnseen(changed),

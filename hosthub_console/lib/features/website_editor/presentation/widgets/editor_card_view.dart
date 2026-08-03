@@ -50,9 +50,9 @@ class EditorCardView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ContentCard(
-      icon: cardIcon(card.id),
-      title: cardTitle(context, card.id),
-      subtitle: cardSubtitle(context, card.id),
+      icon: cardIcon(card),
+      title: cardTitle(context, card),
+      subtitle: cardSubtitle(context, card),
       headerTrailing: _headerTrailing(context),
       children: [
         for (final row in card.rows)
@@ -570,7 +570,7 @@ class _MediaRowView extends StatelessWidget {
     final chosen = await showMediaPicker(
       context,
       cubit: media,
-      title: mediaTitle(context, row.mediaKey),
+      title: mediaTitle(context, row),
       mode: row.maxItems == 1
           ? MediaPickerMode.single
           : MediaPickerMode.multiple,

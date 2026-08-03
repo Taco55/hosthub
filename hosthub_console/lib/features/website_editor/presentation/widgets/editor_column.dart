@@ -95,7 +95,7 @@ class _TopBar extends StatelessWidget {
     // the selected tab right below, so it is not the title.
     final resolvedName = (propertyName ?? state.propertyName).trim();
     final title = resolvedName.isEmpty
-        ? pageName(context, state.pageKey)
+        ? pageName(context, state.template, state.pageKey)
         : resolvedName;
 
     return Padding(
@@ -194,7 +194,7 @@ class _PageTabs extends StatelessWidget {
           variant: StyledSegmentedControlVariant.plain,
           segments: [
             for (final page in tabs)
-              StyledSegment(label: pageName(context, page)),
+              StyledSegment(label: pageName(context, state.template, page)),
           ],
           selectedIndex: selected < 0 ? 0 : selected,
           onChanged: (i) => cubit.selectPage(tabs[i]),

@@ -1,6 +1,9 @@
 import 'dart:math';
 
 import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart';
+
+import 'package:hosthub_console/core/l10n/l10n.dart';
 
 /// Why a field is not readable as text on its own page.
 ///
@@ -81,11 +84,11 @@ const _key = _Slot.key;
 
 /// A label the editor shows, resolved against the app's localizations.
 ///
-/// A function reference, not a key: `intl_utils` generates `S` members and a
-/// lookup by string would not survive codegen. Wrapping the reference is what
-/// lets a label be *declared* where the thing it names is declared, instead of
-/// looked up by id in a switch far away.
-typedef LabelRef = String Function(dynamic s);
+/// Takes [S] rather than a key string: `intl_utils` generates members, so a
+/// lookup by name would not survive codegen. Wrapping the access is what lets
+/// a label be *declared* where the thing it names is declared, instead of
+/// being looked up by id in a switch far away.
+typedef LabelRef = String Function(S s);
 
 /// One row in a card's schema (the handoff's Part D vocabulary).
 ///
@@ -102,6 +105,7 @@ sealed class EditorRow {
 class FieldRow extends EditorRow {
   const FieldRow(
     this.key, {
+    this.label,
     this.multiline = false,
     this.visibility = FieldVisibility.inPage,
     this.autofocus = false,
@@ -109,6 +113,11 @@ class FieldRow extends EditorRow {
 
   /// Stable field key, e.g. `cabin.hero.title`.
   final String key;
+
+  /// What the field is called. Declared here rather than looked up by key in a
+  /// switch that answered the raw key — a machine name in the UI — for a key
+  /// it did not know.
+  final LabelRef? label;
   final bool multiline;
 
   /// Where this field surfaces. Anything but [FieldVisibility.inPage] carries
@@ -130,6 +139,8 @@ class FieldRow extends EditorRow {
 class ListRow extends EditorRow {
   const ListRow(
     this.listKey, {
+    this.title,
+    this.itemLabel,
     this.sub,
     this.multiline = false,
     this.repeatable = false,
@@ -140,6 +151,13 @@ class ListRow extends EditorRow {
   /// Prefix of the row keys (`cabin.description` →
   /// `cabin.description.<id>.text`).
   final String listKey;
+
+  /// What this list is called, and the noun for one of its rows (`Regel 3`).
+  ///
+  /// Declared here rather than looked up by list key in a switch, which
+  /// answered the raw key for a list it did not know.
+  final LabelRef? title;
+  final LabelRef? itemLabel;
 
   /// The row's editable subfield (`text`, `description`); appended to the
   /// field key. Null when the row itself is the value.
@@ -160,6 +178,10 @@ class ListRow extends EditorRow {
 class PairListRow extends EditorRow {
   const PairListRow(
     this.listKey, {
+    this.title,
+    this.itemLabel,
+    this.labelLabel,
+    this.valueLabel,
     required this.labelSub,
     required this.valueSub,
     this.repeatable = true,
@@ -173,9 +195,20 @@ class PairListRow extends EditorRow {
 
   final String listKey;
 
+  /// What this list is called, and the noun for one of its rows (`Regel 3`).
+  ///
+  /// Declared here rather than looked up by list key in a switch, which
+  /// answered the raw key for a list it did not know.
+  final LabelRef? title;
+  final LabelRef? itemLabel;
+
   /// Subfield holding the label and the value (`label` / `value`).
   final String labelSub;
   final String valueSub;
+
+  /// The headers above the two columns. Null takes the generic pair wording.
+  final LabelRef? labelLabel;
+  final LabelRef? valueLabel;
   final bool repeatable;
   final int minItems;
   final int? maxItems;
@@ -210,6 +243,8 @@ class PairListRow extends EditorRow {
 class RowListRow extends EditorRow {
   const RowListRow(
     this.listKey, {
+    this.title,
+    this.itemLabel,
     required this.subs,
     this.repeatable = true,
     this.minItems = 1,
@@ -219,8 +254,15 @@ class RowListRow extends EditorRow {
 
   final String listKey;
 
+  /// What this list is called, and the noun for one of its rows (`Regel 3`).
+  ///
+  /// Declared here rather than looked up by list key in a switch, which
+  /// answered the raw key for a list it did not know.
+  final LabelRef? title;
+  final LabelRef? itemLabel;
+
   /// The row's editable subfields, in order: `(sub, multiline)`.
-  final List<({String sub, bool multiline})> subs;
+  final List<({String sub, bool multiline, LabelRef? label})> subs;
   final bool repeatable;
   final int minItems;
   final int? maxItems;
@@ -239,6 +281,8 @@ class RowListRow extends EditorRow {
 class GroupListRow extends EditorRow {
   const GroupListRow(
     this.listKey, {
+    this.title,
+    this.itemLabel,
     required this.titleSub,
     required this.itemsListKey,
     required this.itemsSub,
@@ -246,11 +290,19 @@ class GroupListRow extends EditorRow {
     this.repeatable = true,
     this.maxItems,
     this.maxItemsPerGroup,
+    this.subItemLabel,
     this.fixedTitles = false,
     this.fixedTitleLabels,
   });
 
   final String listKey;
+
+  /// What this list is called, and the noun for one of its rows (`Regel 3`).
+  ///
+  /// Declared here rather than looked up by list key in a switch, which
+  /// answered the raw key for a list it did not know.
+  final LabelRef? title;
+  final LabelRef? itemLabel;
 
   /// Subfield holding the group's own title.
   final String titleSub;
@@ -266,6 +318,9 @@ class GroupListRow extends EditorRow {
   final bool repeatable;
   final int? maxItems;
   final int? maxItemsPerGroup;
+
+  /// The noun for one item *inside* a group. Null takes the generic line.
+  final LabelRef? subItemLabel;
 
   /// Whether the group titles are fixed (`practical.transport.columns`): the
   /// title renders as a label and the group cannot be added, deleted or
@@ -286,6 +341,7 @@ class GroupListRow extends EditorRow {
 class MediaRow extends EditorRow {
   const MediaRow(
     this.mediaKey, {
+    this.title,
     this.altFieldKey,
     required this.minItems,
     required this.maxItems,
@@ -295,6 +351,9 @@ class MediaRow extends EditorRow {
 
   /// Where the file keys live in `site_config` (`images.heroPhotos`).
   final String mediaKey;
+
+  /// The picker's own heading for this set.
+  final LabelRef? title;
 
   /// A summarizing alt text — a sentence that gets read out, so content, so
   /// per language (§C.4).
@@ -331,11 +390,24 @@ class EditorCard {
   const EditorCard({
     required this.id,
     required this.rows,
+    this.title,
+    this.subtitle,
+    this.icon,
     this.readOnly = false,
   });
 
-  /// Stable card id; keys the localized title, the icon and the subtitle.
+  /// Stable card id. Keys the per-card counters and the `Alleen gewijzigd`
+  /// filter — no longer the title, which the card now carries itself.
   final String id;
+
+  /// What the card is called, and the line under it where the design has one.
+  ///
+  /// Declared here rather than looked up by id in a switch: a switch answers
+  /// a generic title for an id it does not know, so a second template's cards
+  /// would all be called "Content" and nothing would say so.
+  final LabelRef? title;
+  final LabelRef? subtitle;
+  final IconData? icon;
   final List<EditorRow> rows;
 
   /// Whether the card is a read-only surface (the section renders disabled
@@ -729,9 +801,13 @@ class TemplatePage {
     required this.key,
     required this.cards,
     this.showAsTab = true,
+    this.label,
   });
 
   final String key;
+
+  /// What the tab and the publish dialog call this page.
+  final LabelRef? label;
   final List<EditorCard> cards;
 
   /// Whether this page is one of the editor's tabs.
@@ -804,6 +880,14 @@ class WebsiteTemplate {
 
   /// Every page key in template order, tabs and the rest.
   List<String> get pageKeys => [for (final page in pages) page.key];
+
+  /// The page with this key, or null when the template has none.
+  TemplatePage? pageOf(String pageKey) {
+    for (final page in pages) {
+      if (page.key == pageKey) return page;
+    }
+    return null;
+  }
 
   List<EditorCard> cardsOf(String pageKey) {
     for (final page in pages) {
@@ -956,6 +1040,18 @@ class WebsiteTemplate {
     return cursor == fieldKey.length ? captures : null;
   }
 
+  /// What a field key is called, or null when no row declares it.
+  LabelRef? fieldLabelOf(String fieldKey) {
+    for (final page in pages) {
+      for (final card in page.cards) {
+        for (final row in card.rows) {
+          if (row is FieldRow && row.key == fieldKey) return row.label;
+        }
+      }
+    }
+    return null;
+  }
+
   /// The page a field key belongs to, or null when no card claims it.
   ///
   /// Used for the informational `page` column on a translation row. It used to
@@ -986,36 +1082,59 @@ class WebsiteTemplate {
 
 // The transport section's fixed column names. Free functions rather than
 // closures so the schema stays a `const`.
-String _columnCar(dynamic s) => s.weColumnCar as String;
-String _columnAirports(dynamic s) => s.weColumnAirports as String;
-String _columnPublicTransport(dynamic s) => s.weColumnPublicTransport as String;
-String _columnParking(dynamic s) => s.weColumnParking as String;
-String _columnNotes(dynamic s) => s.weColumnNotes as String;
+// A media row's subfields: generic editor vocabulary, shared by any template.
+String _subTitle(S s) => s.weFieldTitle;
+String _subSubline(S s) => s.weFieldSubline;
+
+String _columnCar(S s) => s.weColumnCar;
+String _columnAirports(S s) => s.weColumnAirports;
+String _columnPublicTransport(S s) => s.weColumnPublicTransport;
+String _columnParking(S s) => s.weColumnParking;
+String _columnNotes(S s) => s.weColumnNotes;
 
 /// The legal document's page key.
 const String kLegalPage = 'legal';
 
 /// The one template today: the chalet site this editor was built for.
-const WebsiteTemplate kDefaultTemplate = WebsiteTemplate(
+final WebsiteTemplate kDefaultTemplate = WebsiteTemplate(
   id: 'chalet-v1',
   fieldPaths: _kChaletFieldPaths,
   pages: [
-    TemplatePage(key: 'home', cards: _homeCards),
-    TemplatePage(key: 'practical', cards: _practicalCards),
-    TemplatePage(key: 'area', cards: _areaCards),
-    TemplatePage(key: 'gallery', cards: _galleryCards),
+    TemplatePage(key: 'home', cards: _homeCards, label: (s) => s.wePageHome),
+    TemplatePage(
+      key: 'practical',
+      cards: _practicalCards,
+      label: (s) => s.wePagePractical,
+    ),
+    TemplatePage(key: 'area', cards: _areaCards, label: (s) => s.wePageArea),
+    TemplatePage(
+      key: 'gallery',
+      cards: _galleryCards,
+      label: (s) => s.wePageGallery,
+    ),
     // Last, and not a tab: see TemplatePage.showAsTab.
-    TemplatePage(key: kLegalPage, cards: _legalCards, showAsTab: false),
+    TemplatePage(
+      key: kLegalPage,
+      cards: _legalCards,
+      showAsTab: false,
+      label: (s) => s.wePageLegal,
+    ),
   ],
 );
 
-const List<EditorCard> _legalCards = [
+final List<EditorCard> _legalCards = [
   EditorCard(
     id: 'privacy',
+    title: (s) => s.weCardPrivacy,
     rows: [
-      FieldRow('legal.privacy.intro', multiline: true),
+      FieldRow(
+        'legal.privacy.intro',
+        label: (s) => s.weFieldPrivacyIntro,
+        multiline: true,
+      ),
       ListRow(
         'legal.privacy.bullets',
+        title: (s) => s.weListLines,
         sub: 'text',
         multiline: true,
         repeatable: true,
@@ -1025,20 +1144,33 @@ const List<EditorCard> _legalCards = [
   ),
 ];
 
-const List<EditorCard> _homeCards = [
+final List<EditorCard> _homeCards = [
   // Site chrome: the name in the header, tab title and share card, and the
   // line beside it in the footer. It sits on Home because that is where the
   // owner meets the header first, but it is one set for the whole site —
   // every page renders it.
   EditorCard(
     id: 'siteChrome',
-    rows: [FieldRow('site.name'), FieldRow('site.location')],
+    title: (s) => s.weCardSiteChrome,
+    subtitle: (s) => s.weCardSiteChromeSub,
+    icon: Icons.public,
+    rows: [
+      FieldRow('site.name', label: (s) => s.weFieldSiteName),
+      FieldRow('site.location', label: (s) => s.weFieldSiteLocation),
+    ],
   ),
   EditorCard(
     id: 'hero',
+    title: (s) => s.weCardHero,
+    subtitle: (s) => s.weCardHeroSub,
+    icon: Icons.auto_awesome,
     rows: [
-      FieldRow('cabin.hero.title', autofocus: true),
-      FieldRow('cabin.meta.locationShort'),
+      FieldRow(
+        'cabin.hero.title',
+        label: (s) => s.weFieldHeadline,
+        autofocus: true,
+      ),
+      FieldRow('cabin.meta.locationShort', label: (s) => s.weFieldLocationLine),
       MediaRow(
         // The media key IS the document path: the repository writes
         // `images[key.split('.').last]` and reads back `images.<key>`, and
@@ -1047,23 +1179,34 @@ const List<EditorCard> _homeCards = [
         // never matches on the way back — so the picker stays empty and
         // saving is a no-op.
         'images.heroPhotos',
+        title: (s) => s.weMediaTitleHero,
         minItems: 1,
         maxItems: 5,
         primaryBadge: true,
       ),
       FieldRow(
         'cabin.hero.subtitle',
+        label: (s) => s.weFieldSubtitle,
         multiline: true,
         visibility: FieldVisibility.seo,
       ),
-      FieldRow('cabin.meta.name', visibility: FieldVisibility.seo),
+      FieldRow(
+        'cabin.meta.name',
+        label: (s) => s.weFieldSearchName,
+        visibility: FieldVisibility.seo,
+      ),
     ],
   ),
   EditorCard(
     id: 'keyFacts',
+    title: (s) => s.weCardKeyFacts,
+    subtitle: (s) => s.weCardKeyFactsSub,
+    icon: Icons.bed_outlined,
     rows: [
       PairListRow(
         'home.keyFacts',
+        title: (s) => s.weListKeyFacts,
+        itemLabel: (s) => s.weItemKeyFact,
         labelSub: 'label',
         valueSub: 'value',
         minItems: 3,
@@ -1074,9 +1217,13 @@ const List<EditorCard> _homeCards = [
   ),
   EditorCard(
     id: 'description',
+    title: (s) => s.weCardDescription,
+    icon: Icons.notes_outlined,
     rows: [
       ListRow(
         'cabin.description',
+        title: (s) => s.weListParagraphs,
+        itemLabel: (s) => s.weItemParagraph,
         sub: 'text',
         multiline: true,
         repeatable: true,
@@ -1086,16 +1233,25 @@ const List<EditorCard> _homeCards = [
   ),
   EditorCard(
     id: 'homeGallery',
+    title: (s) => s.weCardHomeGallery,
+    subtitle: (s) => s.weCardHomeGallerySub,
+    icon: Icons.image_outlined,
     rows: [
       MediaRow('images.homeGallery', minItems: 5, maxItems: 8, grid: true),
     ],
   ),
   EditorCard(
     id: 'amenities',
+    title: (s) => s.weCardAmenities,
+    subtitle: (s) => s.weCardAmenitiesSub,
+    icon: Icons.list_alt_outlined,
     rows: [
-      FieldRow('cabin.amenities.title'),
+      FieldRow('cabin.amenities.title', label: (s) => s.weFieldTitle),
       GroupListRow(
         'cabin.amenities.groups',
+        title: (s) => s.weListGroups,
+        itemLabel: (s) => s.weItemGroup,
+        subItemLabel: (s) => s.weItemAmenity,
         titleSub: 'title',
         itemsListKey: 'items',
         itemsSub: 'text',
@@ -1105,10 +1261,16 @@ const List<EditorCard> _homeCards = [
   ),
   EditorCard(
     id: 'location',
+    title: (s) => s.weCardLocation,
+    icon: Icons.place_outlined,
     rows: [
-      FieldRow('cabin.location.title'),
+      FieldRow('cabin.location.title', label: (s) => s.weFieldTitle),
       PairListRow(
         'cabin.location.distances',
+        title: (s) => s.weListDistances,
+        itemLabel: (s) => s.weItemDistance,
+        labelLabel: (s) => s.wePairWhat,
+        valueLabel: (s) => s.wePairDistance,
         labelSub: 'label',
         valueSub: 'value',
         maxItems: 8,
@@ -1120,18 +1282,31 @@ const List<EditorCard> _homeCards = [
       // that positions itself with `bbox=` — so the field the owner could
       // edit moved nothing, and the values that place the pin and the
       // "open in maps" link could not be reached from any screen.
-      FieldRow('site.mapEmbedUrl', visibility: FieldVisibility.map),
-      FieldRow('site.mapLinkUrl', visibility: FieldVisibility.map),
+      FieldRow(
+        'site.mapEmbedUrl',
+        label: (s) => s.weFieldMapEmbedUrl,
+        visibility: FieldVisibility.map,
+      ),
+      FieldRow(
+        'site.mapLinkUrl',
+        label: (s) => s.weFieldMapLinkUrl,
+        visibility: FieldVisibility.map,
+      ),
     ],
   ),
   EditorCard(
     id: 'highlights',
+    title: (s) => s.weCardHighlights,
+    subtitle: (s) => s.weCardHighlightsSub,
+    icon: Icons.star_outline,
     rows: [
       RowListRow(
         'home.highlights',
+        title: (s) => s.weCardHighlights,
+        itemLabel: (s) => s.weItemHighlight,
         subs: [
-          (sub: 'title', multiline: false),
-          (sub: 'description', multiline: false),
+          (sub: 'title', multiline: false, label: _subTitle),
+          (sub: 'description', multiline: false, label: _subSubline),
         ],
         minItems: 2,
         maxItems: 6,
@@ -1141,16 +1316,22 @@ const List<EditorCard> _homeCards = [
   ),
   EditorCard(
     id: 'houseRules',
+    title: (s) => s.weCardHouseRules,
+    subtitle: (s) => s.weCardHouseRulesSub,
+    icon: Icons.rule_outlined,
     rows: [
-      FieldRow('cabin.rules.title'),
+      FieldRow('cabin.rules.title', label: (s) => s.weFieldTitle),
       ListRow(
         'cabin.rules.bullets',
+        title: (s) => s.weListLines,
         sub: 'text',
         repeatable: true,
         maxItems: 8,
       ),
       PairListRow(
         'cabin.rules.times',
+        title: (s) => s.weListTimes,
+        itemLabel: (s) => s.weItemTime,
         labelSub: 'label',
         valueSub: 'value',
         sharedValue: true,
@@ -1158,19 +1339,36 @@ const List<EditorCard> _homeCards = [
         fixedRows: ['cabin.rules.checkIn', 'cabin.rules.checkOut'],
         fixedRowsAreValues: true,
       ),
-      FieldRow('cabin.rules.cleaningNote', multiline: true),
-      FieldRow('cabin.rules.wifiNote', multiline: true),
+      FieldRow(
+        'cabin.rules.cleaningNote',
+        label: (s) => s.weFieldCleaningNote,
+        multiline: true,
+      ),
+      FieldRow(
+        'cabin.rules.wifiNote',
+        label: (s) => s.weFieldWifiNote,
+        multiline: true,
+      ),
     ],
   ),
   EditorCard(
     id: 'contact',
+    title: (s) => s.weCardContact,
+    subtitle: (s) => s.weCardContactSub,
+    icon: Icons.mail_outline,
     rows: [
-      FieldRow('contact.title'),
-      FieldRow('contact.subtitle', multiline: true),
+      FieldRow('contact.title', label: (s) => s.weFieldTitle),
+      FieldRow(
+        'contact.subtitle',
+        label: (s) => s.weFieldSubtitle,
+        multiline: true,
+      ),
       // The four fields are fixed: the form has a backend contract, so only
       // the copy is the owner's.
       PairListRow(
         'contact.form.fields',
+        title: (s) => s.weListFormFields,
+        itemLabel: (s) => s.weItemFormField,
         labelSub: 'label',
         valueSub: 'placeholder',
         repeatable: false,
@@ -1182,14 +1380,16 @@ const List<EditorCard> _homeCards = [
           'contact.form.fields.message',
         ],
       ),
-      FieldRow('contact.form.submit'),
+      FieldRow('contact.form.submit', label: (s) => s.weFieldSubmit),
       FieldRow(
         'contact.form.success',
+        label: (s) => s.weFieldSuccess,
         multiline: true,
         visibility: FieldVisibility.stateSuccess,
       ),
       FieldRow(
         'contact.form.error',
+        label: (s) => s.weFieldError,
         multiline: true,
         visibility: FieldVisibility.stateError,
       ),
@@ -1197,19 +1397,30 @@ const List<EditorCard> _homeCards = [
   ),
 ];
 
-const List<EditorCard> _practicalCards = [
+final List<EditorCard> _practicalCards = [
   EditorCard(
     id: 'practicalHeader',
+    title: (s) => s.weCardHeader,
+    icon: Icons.auto_awesome,
     rows: [
-      FieldRow('practical.header.title'),
-      FieldRow('practical.header.subtitle', multiline: true),
+      FieldRow('practical.header.title', label: (s) => s.weFieldTitle),
+      FieldRow(
+        'practical.header.subtitle',
+        label: (s) => s.weFieldSubtitle,
+        multiline: true,
+      ),
     ],
   ),
   EditorCard(
     id: 'quickFacts',
+    title: (s) => s.weCardQuickFacts,
+    subtitle: (s) => s.weCardQuickFactsSub,
+    icon: Icons.schedule_outlined,
     rows: [
       PairListRow(
         'practical.quickFacts',
+        title: (s) => s.weListFacts,
+        itemLabel: (s) => s.weItemFact,
         labelSub: 'label',
         valueSub: 'value',
         minItems: 2,
@@ -1220,8 +1431,10 @@ const List<EditorCard> _practicalCards = [
   ),
   EditorCard(
     id: 'arrival',
+    title: (s) => s.weCardArrival,
+    icon: Icons.route_outlined,
     rows: [
-      FieldRow('practical.arrival.title'),
+      FieldRow('practical.arrival.title', label: (s) => s.weFieldTitle),
       // Slots, not bare values: unlike the home page's house rules, the
       // Practical page renders its own `checkInLabel`/`checkOutLabel` from
       // the document (arrivalAccess), and they differ per language —
@@ -1229,6 +1442,8 @@ const List<EditorCard> _practicalCards = [
       // on the live page that no field in the console could reach.
       PairListRow(
         'practical.arrival.times',
+        title: (s) => s.weListTimes,
+        itemLabel: (s) => s.weItemTime,
         labelSub: 'label',
         valueSub: 'value',
         sharedValue: true,
@@ -1237,6 +1452,7 @@ const List<EditorCard> _practicalCards = [
       ),
       ListRow(
         'practical.arrival.bullets',
+        title: (s) => s.weListLines,
         sub: 'text',
         multiline: true,
         repeatable: true,
@@ -1246,24 +1462,36 @@ const List<EditorCard> _practicalCards = [
   ),
   EditorCard(
     id: 'parking',
+    title: (s) => s.weCardParking,
+    icon: Icons.directions_car_outlined,
     rows: [
-      FieldRow('practical.parking.title'),
+      FieldRow('practical.parking.title', label: (s) => s.weFieldTitle),
       ListRow(
         'practical.parking.bullets',
+        title: (s) => s.weListLines,
         sub: 'text',
         multiline: true,
         repeatable: true,
         maxItems: 6,
       ),
-      FieldRow('practical.parking.callout', multiline: true),
+      FieldRow(
+        'practical.parking.callout',
+        label: (s) => s.weFieldCallout,
+        multiline: true,
+      ),
     ],
   ),
   EditorCard(
     id: 'layout',
+    title: (s) => s.weCardLayout,
+    subtitle: (s) => s.weCardLayoutSub,
+    icon: Icons.bed_outlined,
     rows: [
-      FieldRow('practical.layout.title'),
+      FieldRow('practical.layout.title', label: (s) => s.weFieldTitle),
       GroupListRow(
         'practical.layout.sections',
+        title: (s) => s.weListSections,
+        itemLabel: (s) => s.weItemSection,
         titleSub: 'title',
         itemsListKey: 'bullets',
         itemsSub: 'text',
@@ -1274,10 +1502,15 @@ const List<EditorCard> _practicalCards = [
   ),
   EditorCard(
     id: 'transport',
+    title: (s) => s.weCardTransport,
+    subtitle: (s) => s.weCardTransportSub,
+    icon: Icons.route_outlined,
     rows: [
-      FieldRow('practical.transport.title'),
+      FieldRow('practical.transport.title', label: (s) => s.weFieldTitle),
       GroupListRow(
         'practical.transport.columns',
+        title: (s) => s.weListColumns,
+        itemLabel: (s) => s.weItemColumn,
         titleSub: 'title',
         itemsListKey: 'bullets',
         itemsSub: 'text',
@@ -1297,10 +1530,13 @@ const List<EditorCard> _practicalCards = [
   ),
   EditorCard(
     id: 'goodToKnow',
+    title: (s) => s.weCardGoodToKnow,
+    icon: Icons.info_outline,
     rows: [
-      FieldRow('practical.goodToKnow.title'),
+      FieldRow('practical.goodToKnow.title', label: (s) => s.weFieldTitle),
       ListRow(
         'practical.goodToKnow.bullets',
+        title: (s) => s.weListLines,
         sub: 'text',
         multiline: true,
         repeatable: true,
@@ -1310,10 +1546,13 @@ const List<EditorCard> _practicalCards = [
   ),
   EditorCard(
     id: 'contactHelp',
+    title: (s) => s.weCardContactHelp,
+    icon: Icons.mail_outline,
     rows: [
-      FieldRow('practical.contactHelp.title'),
+      FieldRow('practical.contactHelp.title', label: (s) => s.weFieldTitle),
       ListRow(
         'practical.contactHelp.bullets',
+        title: (s) => s.weListLines,
         sub: 'text',
         multiline: true,
         repeatable: true,
@@ -1327,10 +1566,14 @@ const List<EditorCard> _practicalCards = [
   // with no way to change them. Same shape as practical.transport.columns.
   EditorCard(
     id: 'agreements',
+    title: (s) => s.weCardAgreements,
+    icon: Icons.notes_outlined,
     rows: [
-      FieldRow('practical.agreements.title'),
+      FieldRow('practical.agreements.title', label: (s) => s.weFieldTitle),
       GroupListRow(
         'practical.agreements.blocks',
+        title: (s) => s.weListSections,
+        itemLabel: (s) => s.weItemSection,
         titleSub: 'title',
         itemsListKey: 'items',
         itemsSub: 'text',
@@ -1340,13 +1583,26 @@ const List<EditorCard> _practicalCards = [
   ),
 ];
 
-const List<EditorCard> _areaCards = [
-  EditorCard(id: 'areaIntro', rows: [FieldRow('area.intro', multiline: true)]),
+final List<EditorCard> _areaCards = [
+  EditorCard(
+    id: 'areaIntro',
+    title: (s) => s.weCardAreaIntro,
+    subtitle: (s) => s.weCardAreaIntroSub,
+    icon: Icons.auto_awesome,
+    rows: [
+      FieldRow('area.intro', label: (s) => s.weFieldIntro, multiline: true),
+    ],
+  ),
   EditorCard(
     id: 'areaSections',
+    title: (s) => s.weCardAreaSections,
+    subtitle: (s) => s.weCardAreaSectionsSub,
+    icon: Icons.list_alt_outlined,
     rows: [
       GroupListRow(
         'area.sections',
+        title: (s) => s.weListSections,
+        itemLabel: (s) => s.weItemSection,
         titleSub: 'title',
         itemsListKey: 'bullets',
         itemsSub: 'text',
@@ -1357,13 +1613,25 @@ const List<EditorCard> _areaCards = [
   ),
 ];
 
-const List<EditorCard> _galleryCards = [
+final List<EditorCard> _galleryCards = [
   EditorCard(
     id: 'galleryHeader',
-    rows: [FieldRow('home.tagline', multiline: true)],
+    title: (s) => s.weCardHeader,
+    subtitle: (s) => s.weCardGalleryHeaderSub,
+    icon: Icons.auto_awesome,
+    rows: [
+      FieldRow(
+        'home.tagline',
+        label: (s) => s.weFieldSubtitle,
+        multiline: true,
+      ),
+    ],
   ),
   EditorCard(
     id: 'galleryAll',
+    title: (s) => s.weCardGalleryAll,
+    subtitle: (s) => s.weCardGalleryAllSub,
+    icon: Icons.image_outlined,
     rows: [
       MediaRow('images.galleryAll', minItems: 6, maxItems: 40, grid: true),
     ],

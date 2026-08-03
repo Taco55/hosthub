@@ -58,6 +58,10 @@ void main() {
       kLegalPage,
     ]);
     expect(kDefaultTemplate.pageKeys.first, isNot(kLegalPage));
+    // Each page names itself; the switch this replaced answered the raw key.
+    for (final page in kDefaultTemplate.pages) {
+      expect(page.label, isNotNull, reason: 'page ${page.key} has no label');
+    }
     expect(kDefaultTemplate.tabPages, isNot(contains(kLegalPage)));
     // Every page reachable by key carries cards; a typo would read as empty.
     for (final key in kDefaultTemplate.pageKeys) {
@@ -118,12 +122,14 @@ void main() {
     // A card without a title would render an empty header.
     for (final page in kDefaultTemplate.pageKeys) {
       for (final card in kDefaultTemplate.cardsOf(page)) {
-        final title = cardTitle(context, card.id);
+        final title = cardTitle(context, card);
         expect(title, isNotEmpty, reason: 'card ${card.id} has no title');
+        // A card that declares no title falls through to the generic one,
+        // which is what a second template's cards used to all read.
         expect(
-          title,
-          isNot(card.id),
-          reason: 'card ${card.id} falls through to the generic title',
+          card.title,
+          isNotNull,
+          reason: 'card ${card.id} declares no title',
         );
       }
     }
@@ -274,13 +280,17 @@ void main() {
     // map the same key to different documents. While it was static on the
     // repository they necessarily shared one answer, so this is the assertion
     // that a second template is possible at all.
-    const other = WebsiteTemplate(
+    final other = WebsiteTemplate(
       id: 'other',
       pages: [
         TemplatePage(
           key: 'home',
           cards: [
-            EditorCard(id: 'hero', rows: [FieldRow('cabin.hero.title')]),
+            EditorCard(
+              id: 'hero',
+              title: (s) => s.weCardHero,
+              rows: const [FieldRow('cabin.hero.title')],
+            ),
           ],
         ),
       ],

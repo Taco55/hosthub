@@ -34,7 +34,7 @@ enum ContentLoadStatus { loading, ready, failed }
 /// [SiteContentCubit.save]; there is no autosave anywhere in this cubit.
 class SiteContentState extends Equatable {
   const SiteContentState({
-    this.template = kDefaultTemplate,
+    WebsiteTemplate? template,
     required this.propertyName,
     required this.sourceLanguage,
     required this.locales,
@@ -66,7 +66,12 @@ class SiteContentState extends Equatable {
     this.loadStatus = ContentLoadStatus.ready,
     this.onlyChangedFields = false,
     this.focusedFieldKey,
-  });
+  }) : _template = template;
+
+  /// Set at construction; [template] reads it. Nullable because the schema
+  /// carries closures for its labels and is therefore `final`, not `const`, so
+  /// it cannot be a default parameter value.
+  final WebsiteTemplate? _template;
 
   /// Which template this site's website is built from — its pages, their
   /// order and the cards on them.
@@ -76,7 +81,7 @@ class SiteContentState extends Equatable {
   /// state is what lets a second template exist at all, and the getters below
   /// (which resolve field addresses) are why it has to live here rather than
   /// only on the repository.
-  final WebsiteTemplate template;
+  WebsiteTemplate get template => _template ?? kDefaultTemplate;
 
   final String propertyName;
   final String sourceLanguage;
@@ -484,7 +489,7 @@ class SiteContentState extends Equatable {
     bool clearLoadError = false,
   }) {
     return SiteContentState(
-      template: template ?? this.template,
+      template: template ?? _template,
       propertyName: propertyName,
       sourceLanguage: sourceLanguage ?? this.sourceLanguage,
       locales: locales ?? this.locales,
