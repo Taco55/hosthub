@@ -2,6 +2,7 @@ import "server-only";
 
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 
 import { getSiteBaseUrl } from "./site-url";
 import { getServiceClient } from "./supabase/service";
@@ -129,7 +130,20 @@ async function findSiteIdByDomain(domain: string): Promise<DomainLookup> {
   }
 }
 
-export async function resolveRuntimeSiteContext(): Promise<RuntimeSiteContext> {
+/**
+ * Which site this request is for, resolved once per request.
+ *
+ * A page asks three times over — the layout, the page body and `generateMetadata`
+ * each need it — and every one of those was its own `site_domains` query. The
+ * answer cannot change inside a request: it is derived from the request's own
+ * Host header. So this is deduplication, not caching, and nothing about it can
+ * go stale.
+ */
+export const resolveRuntimeSiteContext = cache(
+  async (): Promise<RuntimeSiteContext> => resolveRuntimeSiteContextUncached(),
+);
+
+async function resolveRuntimeSiteContextUncached(): Promise<RuntimeSiteContext> {
   const requestHeaders = await headers();
   const forwardedHost = normalizeForwardedValue(
     requestHeaders.get("x-forwarded-host"),

@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 import type { Locale } from "../i18n";
 import { supabase } from "./client";
 import { getServiceClient } from "./service";
@@ -79,20 +81,61 @@ function clientFor(includeDrafts: boolean) {
 }
 
 /**
- * Reads one CMS document from Supabase.
+ * Reads one document, once per request.
  *
- * Public reads see published content only. Preview reads (`includeDrafts`)
- * prefer the document's `draft_content` when it has one — that is the copy the
- * owner saved but has not published yet.
+ * Rendering one page asks for the same document several times over: the layout
+ * and the page each need `site_config`, and metadata needs it a third time.
+ * Every one of those was its own round trip to Supabase — a home page cost
+ * six to eight of them, all for four distinct documents. Deduplication is
+ * per-request, so it changes no content and cannot serve anything stale; it
+ * only stops asking the same question twice in the same breath.
+ *
+ * Keyed on primitives, not on the options object: `cache` memoizes by argument
+ * identity, and a fresh `{includeDrafts}` literal per call would miss every
+ * time. Drafts are part of the key — a preview and a public read of the same
+ * document are different reads.
  */
-export async function fetchDocument<T>(
+const readDocument = cache(
+  async (
+    siteId: string,
+    contentType: string,
+    slug: string,
+    locale: Locale,
+    includeDrafts: boolean,
+  ): Promise<DocumentOutcome<unknown>> =>
+    readDocumentUncached(siteId, contentType, slug, locale, includeDrafts),
+);
+
+export function fetchDocument<T>(
   siteId: string,
   contentType: string,
   slug: string,
   locale: Locale,
   options?: { includeDrafts?: boolean },
 ): Promise<DocumentOutcome<T>> {
-  const includeDrafts = Boolean(options?.includeDrafts);
+  return readDocument(
+    siteId,
+    contentType,
+    slug,
+    locale,
+    Boolean(options?.includeDrafts),
+  ) as Promise<DocumentOutcome<T>>;
+}
+
+/**
+ * Reads one CMS document from Supabase.
+ *
+ * Public reads see published content only. Preview reads (`includeDrafts`)
+ * prefer the document's `draft_content` when it has one — that is the copy the
+ * owner saved but has not published yet.
+ */
+async function readDocumentUncached(
+  siteId: string,
+  contentType: string,
+  slug: string,
+  locale: Locale,
+  includeDrafts: boolean,
+): Promise<DocumentOutcome<unknown>> {
   const { client, reason } = clientFor(includeDrafts);
   if (!client) return { status: "unavailable", reason };
 
@@ -124,10 +167,10 @@ export async function fetchDocument<T>(
     // preview reads it. Live pages render what was published, which is why a
     // save in the console can no longer change what a guest sees.
     if (includeDrafts && data.draft_content) {
-      return { status: "ok", content: data.draft_content as T, source: "draft" };
+      return { status: "ok", content: data.draft_content, source: "draft" };
     }
     if (!data.content) return { status: "missing" };
-    return { status: "ok", content: data.content as T, source: "published" };
+    return { status: "ok", content: data.content, source: "published" };
   } catch (error) {
     return {
       status: "unavailable",
