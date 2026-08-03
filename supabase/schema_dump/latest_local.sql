@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict uq3ZswSlrtflTvPkVhmhybm7fdee8zDZVRPVGd1iFylxo3a1avPi3jAWZDegBUn
+\restrict 0dJUu7EWpRLmjOOt3I4raJ2VdoWnuVMFSOq3DtHDT8ByISvcsvjOAUIauxlkZOn
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -838,7 +838,8 @@ CREATE TABLE public.properties (
     other_cost_fixed numeric DEFAULT 0 NOT NULL,
     channel_settings jsonb,
     owner_profile_id uuid DEFAULT public.account_owner_for(auth.uid()),
-    lodgify_synced_at timestamp with time zone
+    lodgify_synced_at timestamp with time zone,
+    site_id uuid
 );
 
 
@@ -849,6 +850,13 @@ ALTER TABLE public.properties OWNER TO postgres;
 --
 
 COMMENT ON COLUMN public.properties.lodgify_synced_at IS 'When this row''s Lodgify-owned columns (address, rooms, prices, …) were last written from the Lodgify API. Null means never synced: those columns hold defaults, not Lodgify data.';
+
+
+--
+-- Name: COLUMN properties.site_id; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.properties.site_id IS 'The site whose website this property owns. NULL falls back to name matching.';
 
 
 --
@@ -967,7 +975,8 @@ CREATE TABLE public.sites (
     contact_email text,
     email_from_name text,
     lodgify_property_id text,
-    lodgify_room_type_id text
+    lodgify_room_type_id text,
+    template_id text DEFAULT 'chalet-v1'::text NOT NULL
 );
 
 
@@ -999,6 +1008,13 @@ COMMENT ON COLUMN public.sites.lodgify_property_id IS 'Lodgify property/house id
 --
 
 COMMENT ON COLUMN public.sites.lodgify_room_type_id IS 'Lodgify room type id for this site''s booking funnel (falls back to env).';
+
+
+--
+-- Name: COLUMN sites.template_id; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.sites.template_id IS 'WebsiteTemplate.id in the console. Decides the editor''s pages and fields.';
 
 
 --
@@ -1193,6 +1209,14 @@ ALTER TABLE ONLY public.settings
 
 
 --
+-- Name: site_domains site_domains_domain_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.site_domains
+    ADD CONSTRAINT site_domains_domain_key UNIQUE (domain);
+
+
+--
 -- Name: site_domains site_domains_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1241,11 +1265,11 @@ ALTER TABLE ONLY public.site_translations
 
 
 --
--- Name: site_translations site_translations_site_id_page_field_key_language_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: site_translations site_translations_site_field_language_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.site_translations
-    ADD CONSTRAINT site_translations_site_id_page_field_key_language_key UNIQUE (site_id, page, field_key, language);
+    ADD CONSTRAINT site_translations_site_field_language_key UNIQUE (site_id, field_key, language);
 
 
 --
@@ -1335,6 +1359,13 @@ CREATE INDEX idx_properties_owner_profile_id ON public.properties USING btree (o
 
 
 --
+-- Name: idx_properties_site_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_properties_site_id ON public.properties USING btree (site_id);
+
+
+--
 -- Name: idx_site_invitations_email; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1367,6 +1398,13 @@ CREATE INDEX idx_site_members_site_id ON public.site_members USING btree (site_i
 --
 
 CREATE INDEX idx_site_translations_site_page_lang ON public.site_translations USING btree (site_id, page, language);
+
+
+--
+-- Name: site_domains_one_primary_per_site; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX site_domains_one_primary_per_site ON public.site_domains USING btree (site_id) WHERE is_primary;
 
 
 --
@@ -1578,6 +1616,14 @@ ALTER TABLE ONLY public.profiles
 
 ALTER TABLE ONLY public.properties
     ADD CONSTRAINT properties_owner_profile_id_fkey FOREIGN KEY (owner_profile_id) REFERENCES public.profiles(id) ON DELETE SET NULL;
+
+
+--
+-- Name: properties properties_site_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.properties
+    ADD CONSTRAINT properties_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.sites(id) ON DELETE SET NULL;
 
 
 --
@@ -2405,5 +2451,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON T
 -- PostgreSQL database dump complete
 --
 
-\unrestrict uq3ZswSlrtflTvPkVhmhybm7fdee8zDZVRPVGd1iFylxo3a1avPi3jAWZDegBUn
+\unrestrict 0dJUu7EWpRLmjOOt3I4raJ2VdoWnuVMFSOq3DtHDT8ByISvcsvjOAUIauxlkZOn
 
