@@ -705,6 +705,7 @@ class SiteContentCubit extends Cubit<SiteContentState> {
           mediaKeys: content.mediaKeys,
           publishedByLocale: content.publishedByLocale,
           previewDomain: content.previewDomain,
+          template: templateFor(content.templateId),
           dirty: false,
           loadStatus: ContentLoadStatus.ready,
           clearDraft: true,

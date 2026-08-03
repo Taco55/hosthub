@@ -455,4 +455,21 @@ void main() {
     expect(keys, contains('cabin.rules.bullets.x1.text'));
     expect(keys, contains('cabin.amenities.groups.x1.items.y1.text'));
   });
+
+  group('the template registry', () {
+    test('resolves a site to the template it records', () {
+      // `sites.template_id` is what makes a second template possible: without
+      // it every site necessarily rendered the one the console had compiled in.
+      expect(templateFor('chalet-v1').id, 'chalet-v1');
+      expect(kTemplates.keys, contains(kDefaultTemplate.id));
+    });
+
+    test('falls back to the default for an unknown or absent id', () {
+      // A site whose template was renamed, or a row written before the column
+      // existed, should still open — with the wrong labels rather than nothing.
+      expect(templateFor('a-template-that-no-longer-exists').id,
+          kDefaultTemplate.id);
+      expect(templateFor(null).id, kDefaultTemplate.id);
+    });
+  });
 }

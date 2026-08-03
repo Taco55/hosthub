@@ -17,6 +17,7 @@ class WebsitePageContent {
     this.sourceLanguage,
     this.locales,
     this.previewDomain,
+    this.templateId,
   });
 
   /// `fieldKey -> text` in the source language.
@@ -48,6 +49,10 @@ class WebsitePageContent {
   /// The site's primary public domain (from `site_domains`); null when the
   /// site has none — the editor then falls back to the schematic mock preview.
   final String? previewDomain;
+
+  /// Which template this site is built from (`sites.template_id`); null when
+  /// the row predates the column. [templateFor] resolves it.
+  final String? templateId;
 }
 
 /// Persistence for the website editor. The editor's flat field keys map onto
@@ -395,7 +400,7 @@ class WebsiteContentRepository extends SupabaseRepository {
       // caller's values are only the fallback (seed) configuration.
       final siteRow = await supabase
           .from('sites')
-          .select('default_locale, locales')
+          .select('default_locale, locales, template_id')
           .eq('id', siteId)
           .maybeSingle();
       final domainRow = await supabase
@@ -565,6 +570,7 @@ class WebsiteContentRepository extends SupabaseRepository {
         mediaKeys: mediaKeys,
         publishedByLocale: publishedByLocale,
         sourceLanguage: sourceLanguage,
+        templateId: siteRow?['template_id'] as String?,
         locales: locales,
         previewDomain: domainRow?['domain'] as String?,
       );

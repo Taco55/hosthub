@@ -1095,6 +1095,22 @@ String _columnNotes(S s) => s.weColumnNotes;
 /// The legal document's page key.
 const String kLegalPage = 'legal';
 
+/// Every template the console can render, by id.
+///
+/// One entry today. It exists so `sites.template_id` resolves to something —
+/// the column records which template a site is built from, and this is what
+/// turns that string back into a schema.
+Map<String, WebsiteTemplate> get kTemplates => {
+  kDefaultTemplate.id: kDefaultTemplate,
+};
+
+/// The template with this id, or the default when the id is unknown.
+///
+/// Falls back rather than failing: a site whose template was renamed should
+/// still open, with the wrong labels, instead of showing nothing at all.
+WebsiteTemplate templateFor(String? id) =>
+    (id == null ? null : kTemplates[id]) ?? kDefaultTemplate;
+
 /// The one template today: the chalet site this editor was built for.
 final WebsiteTemplate kDefaultTemplate = WebsiteTemplate(
   id: 'chalet-v1',

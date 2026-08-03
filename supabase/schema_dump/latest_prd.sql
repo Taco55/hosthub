@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict PEX4eZGGXaLJtFdOmVIihKQJiPumc2BRFgciFrd0oseHhGxAfzdCYX9fW0yKuzh
+\restrict D7g1Wd1pDPoSnbd6LCbM85c3baRJuzeM9ahFUJpRkWyePTVcPoiDnafg3PU9OnT
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -975,7 +975,8 @@ CREATE TABLE public.sites (
     contact_email text,
     email_from_name text,
     lodgify_property_id text,
-    lodgify_room_type_id text
+    lodgify_room_type_id text,
+    template_id text DEFAULT 'chalet-v1'::text NOT NULL
 );
 
 
@@ -1007,6 +1008,13 @@ COMMENT ON COLUMN public.sites.lodgify_property_id IS 'Lodgify property/house id
 --
 
 COMMENT ON COLUMN public.sites.lodgify_room_type_id IS 'Lodgify room type id for this site''s booking funnel (falls back to env).';
+
+
+--
+-- Name: COLUMN sites.template_id; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.sites.template_id IS 'WebsiteTemplate.id in the console. Decides the editor''s pages and fields.';
 
 
 --
@@ -2443,5 +2451,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON T
 -- PostgreSQL database dump complete
 --
 
-\unrestrict PEX4eZGGXaLJtFdOmVIihKQJiPumc2BRFgciFrd0oseHhGxAfzdCYX9fW0yKuzh
+\unrestrict D7g1Wd1pDPoSnbd6LCbM85c3baRJuzeM9ahFUJpRkWyePTVcPoiDnafg3PU9OnT
 

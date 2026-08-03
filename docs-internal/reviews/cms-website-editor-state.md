@@ -41,7 +41,7 @@ console CMS feature, then tests + backend wiring.
 | S17 | `EdgeFunctionTranslationService` (invoke `translate-content`, app_errors-mapping) | console | done | 00aeb0f; +4 tests; analyze clean. Aanvulling 5f98d10: gratis provider-keten in de function — MyMemory keyless default (live geverifieerd nl→en/no), LibreTranslate self-hosted optie, DeepL alleen nog als opt-in |
 | S18 | Persistentie: repository voor `site_translations`-hydratie + draft/publish naar `cms_documents` | console | done | 3c7b01e; veldmapping op echte site-JSON (cabin/main + page/home), autosave debounced, publish met versie-snapshots, sha256-hashes client=server; +7 tests (38 totaal groen) |
 | S19 | Velddefinities + seed voor chalet/practical/area/contact | console | done | 8900523; kPageFields→echte document-JSON, content-card UI, +4 ARB-keys, publish/stale-scope site-breed; 42 tests groen |
-| S20 | Deploy/verify | supabase | ready (deploy = user) | Lokaal: function serve → OPTIONS 200 + nette 401 ✓. Prd: `site_translations`-migratie via psql toegepast ✓. `SUPABASE_ACCESS_TOKEN` + `DEEPL_API_KEY` staan nu in hosthub-prd.env; Makefile `FUNCTION_SECRET_VARS` uitgebreid (e396d54). Ontgrendeld — uitvoeren via `make functions-deploy ENV=prd` + `make functions-secrets-set ENV=prd` (interactieve `prd`-bevestiging, dus door user). |
+| S20 | Deploy/verify | supabase | done | Lokaal: function serve → OPTIONS 200 + nette 401 ✓. Prd: `site_translations`-migratie via psql toegepast ✓. `SUPABASE_ACCESS_TOKEN` + `DEEPL_API_KEY` staan nu in hosthub-prd.env; Makefile `FUNCTION_SECRET_VARS` uitgebreid (e396d54). **Uitgevoerd 2026-08-03:** `make functions-deploy ENV=prd` + `make functions-secrets-set ENV=prd` gedraaid; de edge functions (incl. `manage_site_domain`) staan op prd met hun secrets. |
 | S21 | Console-shell migreren naar `StyledSideMenu` (B1-adoptie) + editor live in navigatie | console | done | 63bda6d; /sites/:siteId → WebsiteEditorPage (legacy JSON-editor → /sites/:siteId/documents), settings/team-shortcuts in topbar; rail = StyledSideMenu-compositie (hardcoded strings → ARB); 47 tests groen |
 | S22 | `StyledBrowserFrame` → app-lokaal (`SitePreviewFrame`) + `StyledSplitView` → `StyledWebPageScaffold`-consolidatie | beide | done | sw@3bf18be+ca6a638, console@4934032; scaffold kreeg showHeader/paneGap/fixed-left/right-fills (4 lib-tests); goldens geregenereerd |
 
@@ -434,21 +434,29 @@ opschoning een tweede template op.
 | G6 | Media-slot-routing uit de template i.p.v. `contentType == 'site_config'` + `split('.').last` | console | done | 2574427; `WebsiteTemplate.mediaSlots` (document + JSON-sleutel) met `mediaJsonKeyOf`; beide kanten van de repository noemden `site_config/main` en `images` in literals — twee plekken die een tweede template ook had moeten raden. `split('.').last` gaf bovendien stil een verkeerde sleutel voor een slot dat niet onder `images.` hangt; nu null en overslaan. Test dekt dat élke schema-mediasleutel tegen de template-sleutel resolvet |
 | G7 | `site_translations.page` schrijft de echte pagina i.p.v. de constante `'home'` | console+supabase | done | 326d35c + migratie `20260802180000_site_translations_identity.sql` (prd toegepast, idempotent). **De unieke sleutel klopte niet:** hij bevatte `page`, dat altijd `'home'` was — de kolom beweerde iets onwaars én was een val, want de echte pagina schrijven zou de upsert-`ON CONFLICT` laten missen en een tweede rij invoegen. Eén site draait één template, dus `site_id` scopet de veldsleutel al; identiteit is nu `(site_id, field_key, language)` en `page` is informatief. `WebsiteTemplate.pageOfField` levert 'm; test dekt lijstrijen, legal en een sleutel die geen kaart claimt |
 | G8 | Gegenereerd adres-manifest + conformance-check console↔web | console+web | done | 6becbe9; `web/cms-address-manifest.json` (73 adressen) uit `kDefaultTemplate`, geschreven én bewaakt door `cms_address_manifest_test.dart` (regenereren: `UPDATE_CMS_MANIFEST=1 flutter test …`). `npm run check:cms` faalt op twee richtingen: een adres dat de site gebruikt maar de console niet aanbiedt (dode luisteraar), en een `inPage`-tekstveld dat geen element markeert (focus wijst nergens heen). **De check vond meteen 15 ongemarkeerde velden** — kaarttitels op Praktisch, voorzieningen/locatie, privacy-intro, home-tagline, submit-knop — allemaal gemarkeerd. Eén gemotiveerde uitzondering in de bron (`cms-address-exempt`): de contact-subtitel is rond een mailto-link gesplitst, dus er is geen enkele tekstknoop om te patchen |
+| G9 | `sites.template_id`: welke template een site gebruikt, end-to-end | console+supabase | done | migratie `20260803090000_sites_template_id.sql` (`NOT NULL DEFAULT 'chalet-v1'`, idempotent; prd én lokaal toegepast, beide sites `chalet-v1`). Registry `kTemplates` + `templateFor(id)` in het domein; `SiteSummary.templateId` en de editor-siteselect lezen de kolom; `WebsitePageContent.templateId` draagt hem naar `SiteContentCubit`, die `template: templateFor(...)` emit — daarmee is de laatste plek waar de console de template *aannam* weg. **Bewust een fallback i.p.v. falen:** een onbekende of ontbrekende id levert `kDefaultTemplate`, want een site waarvan de template hernoemd is moet nog opengaan (met de verkeerde labels) i.p.v. helemaal niet. +2 tests in `editor_schema_test.dart`; analyze clean, 567 tests groen |
 
 ## next_lens
-RUN 8 loopt: G1, G2, G3 en G5 done. G3b done — **de structurele blokkade is weg**: kaarten én padtabel zitten per template. RUN 8 KLAAR: G1 t/m G8 done. De multi-template blokkade is volledig opgeheven — kaarten, padtabel, media-routing, volgorde én labels zitten per template, en het adrescontract met de website wordt door `npm run check:cms` bewaakt. Wat een tweede template nog vraagt is de *website*-kant (`sites.template_id` + een render-tree per template, review §7 stap 9); de console is er klaar voor. (labels als data), G6 (media-routing), G7 (`page`-kolom), G8 (adres-manifest).
+RUN 8 KLAAR: G1 t/m G9 done. De multi-template blokkade is aan de console-kant volledig
+opgeheven — kaarten, padtabel, media-routing, paginavolgorde, labels én *welke template een
+site gebruikt* zitten per template, en het adrescontract met de website wordt door
+`npm run check:cms` bewaakt. Een tweede template vraagt nu alleen nog de **website**-kant
+(review §7 stap 9): een render-tree per template — `SITE_DOCUMENTS`, de zes `getXContent`-
+functies en `content.ts` kennen nog één sectievolgorde. Dat is geen blokkade meer maar werk.
 
 RUN 7 (fase 2-handoff): F-pre t/m F7 done.  _(historische regel hieronder liep achter op de eigen tabel)_ Volgende was: **F4** (vertaalmodus op schaal —
 `Nieuw`-badge op een rij die in de bron is bijgekomen, kaart-rollup `N gewijzigd` via de nieuwe
 `ContentCard.headerTrailing`, `Alleen gewijzigd`-filter = B10 in de lib; de tellers **afgeleid**
 uit de opgebouwde veldpaden), daarna F5 (media), F6 (publiceren), F7 (opruimen).
 
-**Twee dingen die vóór prd moeten** (user-gated):
-1. `styled_widgets` v0.10.0 staat gecommit + getagd maar is **niet gepusht** — de SSH-key heeft
-   een passphrase en de agent is leeg. HostHub consumeert de lib per pad, dus lokaal werkt alles;
-   andere repos zien v0.10.0 pas na `git push origin main --tags` in
-   `~/Documents/projects/shared/libraries/styled_widgets`.
-2. De migratie `20260727150000_cms_stable_row_ids.sql` staat **alleen lokaal**. Prd-aanpak zoals
+**Nog open, user-gated** _(bijgewerkt 2026-08-03 — beide punten stonden achter op de feiten)_:
+1. `styled_widgets` staat **8 commits vóór `origin/main`** (niet alleen v0.10.0; v0.10.1 t/m
+   v0.12.1 zitten erbij). HostHub consumeert de lib per pad, dus lokaal werkt alles; andere repos
+   zien niets tot `git push origin main --tags` in
+   `~/Documents/projects/shared/libraries/styled_widgets`. Pushen valt buiten deze loop.
+2. ~~De migratie `20260727150000_cms_stable_row_ids.sql` staat **alleen lokaal**.~~ **Achterhaald:
+   staat op prd** — geverifieerd 2026-08-03, alle 12 lijstrijen hebben hun stabiele id en de
+   nieuwe console draait ervoor. Historische aanpak hieronder bewaard. Prd-aanpak zoals
    eerder: dit ene bestand via `psql "$SUPABASE_DB_URL"` uit `hosthub-prd-server.env` (niet
    `make apply-migrations ENV=prd` — die replayt de baseline), daarna `NOTIFY pgrst, 'reload
    schema'`. **Let op de orde:** deze migratie en de console/web-deploy horen samen te gaan. De

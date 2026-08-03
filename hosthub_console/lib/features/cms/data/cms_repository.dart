@@ -52,6 +52,7 @@ class SiteSummary {
     this.emailFromName,
     this.lodgifyPropertyId,
     this.lodgifyRoomTypeId,
+    this.templateId,
   });
 
   final String id;
@@ -67,6 +68,12 @@ class SiteSummary {
   final String? emailFromName;
   final String? lodgifyPropertyId;
   final String? lodgifyRoomTypeId;
+
+  /// Which website template this site is built from (`sites.template_id`).
+  ///
+  /// Null when the row predates the column; the editor resolves that to the
+  /// default template rather than refusing to open.
+  final String? templateId;
 
   factory SiteSummary.fromMap(Map<String, dynamic> map) {
     return SiteSummary(
@@ -84,6 +91,7 @@ class SiteSummary {
       emailFromName: map['email_from_name'] as String?,
       lodgifyPropertyId: map['lodgify_property_id'] as String?,
       lodgifyRoomTypeId: map['lodgify_room_type_id'] as String?,
+      templateId: map['template_id'] as String?,
     );
   }
 
@@ -221,7 +229,7 @@ class CmsRepository extends SupabaseRepository {
           .from('sites')
           .select(
             'id, name, default_locale, locales, timezone, created_at, '
-            'contact_email, email_from_name, lodgify_property_id, lodgify_room_type_id',
+            'contact_email, email_from_name, lodgify_property_id, lodgify_room_type_id, template_id',
           )
           .order('created_at', ascending: false);
       return (response as List<dynamic>)
@@ -243,7 +251,7 @@ class CmsRepository extends SupabaseRepository {
           .from('sites')
           .select(
             'id, name, default_locale, locales, timezone, created_at, '
-            'contact_email, email_from_name, lodgify_property_id, lodgify_room_type_id',
+            'contact_email, email_from_name, lodgify_property_id, lodgify_room_type_id, template_id',
           )
           .eq('id', siteId)
           .maybeSingle();
