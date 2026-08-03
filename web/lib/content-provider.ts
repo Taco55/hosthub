@@ -44,6 +44,7 @@ import {
   type DocumentUnavailableReason,
 } from "./supabase/cms";
 import { mediaPublicUrls } from "./media-url";
+import { documentKeysOf, siteTemplateFor } from "./site-template";
 import {
   normalizeAreaContent,
   normalizeCabinContent,
@@ -53,22 +54,17 @@ import {
   normalizePrivacyContent,
 } from "./normalize-content";
 
-/** Every document the site renders, as `contentType/slug`. */
-const SITE_DOCUMENTS: { contentType: string; slug: string }[] = [
-  { contentType: "site_config", slug: "main" },
-  { contentType: "cabin", slug: "main" },
-  { contentType: "page", slug: "home" },
-  { contentType: "page", slug: "practical" },
-  { contentType: "page", slug: "area" },
-  { contentType: "page", slug: "privacy" },
-  { contentType: "contact_form", slug: "main" },
-];
-
 export type ContentOptions = {
   /** When true, also fetches draft documents (for preview mode). */
   preview?: boolean;
   /** Which site to read. Comes from the request host; see runtime-site-context. */
   siteId?: string;
+  /**
+   * The site's template (`sites.template_id`). Decides which documents the site
+   * is said to have — it used to be a literal list here, which would have made
+   * a second template's preview report the chalet's documents as missing.
+   */
+  templateId?: string | null;
 };
 
 /**
@@ -482,8 +478,7 @@ export async function getPreviewContentStatus(
   const draft: string[] = [];
   const published: string[] = [];
   const missing: string[] = [];
-  for (const document of SITE_DOCUMENTS) {
-    const key = `${document.contentType}/${document.slug}`;
+  for (const key of documentKeysOf(siteTemplateFor(options?.templateId))) {
     const entry = byKey.get(key);
     if (!entry) {
       missing.push(key);

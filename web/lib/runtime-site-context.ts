@@ -19,6 +19,11 @@ export type RuntimeSiteContext = {
   domain: string | null;
   baseUrl: string;
   source: RuntimeSiteContextSource;
+  /**
+   * `sites.template_id` for the resolved site; null when unresolved or when the
+   * join came back empty. [siteTemplateFor] turns it into a template.
+   */
+  templateId: string | null;
 };
 
 function normalizeForwardedValue(value: string | null): string | null {
@@ -72,7 +77,7 @@ function resolveProtocol(domain: string | null, forwardedProto: string | null) {
 }
 
 type DomainLookup =
-  | { outcome: "match"; siteId: string }
+  | { outcome: "match"; siteId: string; templateId: string | null }
   | { outcome: "no_match" }
   | { outcome: "failed" };
 
@@ -89,7 +94,10 @@ async function findSiteIdByDomain(domain: string): Promise<DomainLookup> {
   try {
     const { data, error } = await lookupClient
       .from("site_domains")
-      .select("site_id, is_primary")
+      // The template travels with the site id rather than in a second read:
+      // which template a site uses is needed on the same code path that needs
+      // the site at all, and two reads is two chances to disagree.
+      .select("site_id, is_primary, sites(template_id)")
       .eq("domain", domain)
       .order("is_primary", { ascending: false })
       .limit(1)
@@ -99,9 +107,23 @@ async function findSiteIdByDomain(domain: string): Promise<DomainLookup> {
     if (!data) return { outcome: "no_match" };
 
     const siteId = data["site_id"];
-    return typeof siteId === "string" && siteId.trim()
-      ? { outcome: "match", siteId }
-      : { outcome: "no_match" };
+    if (typeof siteId !== "string" || !siteId.trim()) {
+      return { outcome: "no_match" };
+    }
+    // PostgREST returns the embedded row as an object for a to-one join, but an
+    // array is what it gives when it cannot tell; accept both rather than
+    // dropping the template over a shape.
+    const embedded = data["sites"];
+    const siteRow = Array.isArray(embedded) ? embedded[0] : embedded;
+    const templateId = (siteRow as { template_id?: unknown } | null | undefined)
+      ?.template_id;
+    return {
+      outcome: "match",
+      siteId,
+      templateId: typeof templateId === "string" && templateId.trim()
+        ? templateId
+        : null,
+    };
   } catch {
     return { outcome: "failed" };
   }
@@ -135,6 +157,7 @@ export async function resolveRuntimeSiteContext(): Promise<RuntimeSiteContext> {
       domain,
       baseUrl,
       source: "domain_lookup",
+      templateId: lookup.templateId,
     };
   }
 
@@ -143,12 +166,15 @@ export async function resolveRuntimeSiteContext(): Promise<RuntimeSiteContext> {
     domain,
     baseUrl,
     source: lookup.outcome === "failed" ? "lookup_failed" : "unknown_domain",
+    templateId: null,
   };
 }
 
 export type SiteContentOptions = {
   preview?: boolean;
   siteId: string;
+  /** The site's template id; decides which documents the site is said to have. */
+  templateId?: string | null;
 };
 
 /**
@@ -180,7 +206,9 @@ export function toSiteContentOptions(
   context: RuntimeSiteContext,
   preview = false,
 ): SiteContentOptions {
-  if (context.siteId) return { preview, siteId: context.siteId };
+  if (context.siteId) {
+    return { preview, siteId: context.siteId, templateId: context.templateId };
+  }
   if (context.source === "lookup_failed") {
     throw new SiteLookupFailedError(context.domain);
   }

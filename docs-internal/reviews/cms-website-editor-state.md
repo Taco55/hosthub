@@ -435,14 +435,23 @@ opschoning een tweede template op.
 | G7 | `site_translations.page` schrijft de echte pagina i.p.v. de constante `'home'` | console+supabase | done | 326d35c + migratie `20260802180000_site_translations_identity.sql` (prd toegepast, idempotent). **De unieke sleutel klopte niet:** hij bevatte `page`, dat altijd `'home'` was — de kolom beweerde iets onwaars én was een val, want de echte pagina schrijven zou de upsert-`ON CONFLICT` laten missen en een tweede rij invoegen. Eén site draait één template, dus `site_id` scopet de veldsleutel al; identiteit is nu `(site_id, field_key, language)` en `page` is informatief. `WebsiteTemplate.pageOfField` levert 'm; test dekt lijstrijen, legal en een sleutel die geen kaart claimt |
 | G8 | Gegenereerd adres-manifest + conformance-check console↔web | console+web | done | 6becbe9; `web/cms-address-manifest.json` (73 adressen) uit `kDefaultTemplate`, geschreven én bewaakt door `cms_address_manifest_test.dart` (regenereren: `UPDATE_CMS_MANIFEST=1 flutter test …`). `npm run check:cms` faalt op twee richtingen: een adres dat de site gebruikt maar de console niet aanbiedt (dode luisteraar), en een `inPage`-tekstveld dat geen element markeert (focus wijst nergens heen). **De check vond meteen 15 ongemarkeerde velden** — kaarttitels op Praktisch, voorzieningen/locatie, privacy-intro, home-tagline, submit-knop — allemaal gemarkeerd. Eén gemotiveerde uitzondering in de bron (`cms-address-exempt`): de contact-subtitel is rond een mailto-link gesplitst, dus er is geen enkele tekstknoop om te patchen |
 | G9 | `sites.template_id`: welke template een site gebruikt, end-to-end | console+supabase | done | migratie `20260803090000_sites_template_id.sql` (`NOT NULL DEFAULT 'chalet-v1'`, idempotent; prd én lokaal toegepast, beide sites `chalet-v1`). Registry `kTemplates` + `templateFor(id)` in het domein; `SiteSummary.templateId` en de editor-siteselect lezen de kolom; `WebsitePageContent.templateId` draagt hem naar `SiteContentCubit`, die `template: templateFor(...)` emit — daarmee is de laatste plek waar de console de template *aannam* weg. **Bewust een fallback i.p.v. falen:** een onbekende of ontbrekende id levert `kDefaultTemplate`, want een site waarvan de template hernoemd is moet nog opengaan (met de verkeerde labels) i.p.v. helemaal niet. +2 tests in `editor_schema_test.dart`; analyze clean, 567 tests groen |
+| G10 | De website leest `sites.template_id` i.p.v. één ingebakken documentenlijst | web | done | `lib/site-template.ts` (registry + `siteTemplateFor` met dezelfde fallback als de console); `site_domains`-lookup haalt de template mee via de FK-embed `sites(template_id)` — één read, want twee reads is twee kansen om te verschillen; `RuntimeSiteContext.templateId` → `toSiteContentOptions` → `ContentOptions.templateId`, dus élke contentread heeft hem zonder extra plumbing. `SITE_DOCUMENTS` was een literal in `content-provider.ts`: de preview-banner meldde "missing" tegen de lijst van het chalet, ook voor een site met een andere template. `npm run check:cms` kreeg een **derde richting**: de documentenset hier moet exact de documenten zijn die de console-adressen noemen — bewezen door hem te laten falen (`page/privacy` weggehaald → exit 1, beide richtingen genoemd; schoon → exit 0, 7 documenten). Embed geverifieerd tegen prd (beide sites `chalet-v1`, to-one object); typecheck + build clean, lint ongewijzigd (24 pre-existing in booking-componenten); `hosthub-sites-test` gedeployed, test.trysilpanorama.com 200 op alle pagina's en drie talen, www ongemoeid (200/200/200). **Bewust niet gedaan:** de render-tree zelf (sectievolgorde, paginacomponenten, `content.ts`). Dat is geen blokkade meer maar werk, en een abstractie met één implementatie bouwen vóór er een tweede template ís, is precies de speculatieve genericiteit die deze review elders afkeurt |
 
 ## next_lens
-RUN 8 KLAAR: G1 t/m G9 done. De multi-template blokkade is aan de console-kant volledig
-opgeheven — kaarten, padtabel, media-routing, paginavolgorde, labels én *welke template een
-site gebruikt* zitten per template, en het adrescontract met de website wordt door
-`npm run check:cms` bewaakt. Een tweede template vraagt nu alleen nog de **website**-kant
-(review §7 stap 9): een render-tree per template — `SITE_DOCUMENTS`, de zes `getXContent`-
-functies en `content.ts` kennen nog één sectievolgorde. Dat is geen blokkade meer maar werk.
+RUN 8 KLAAR: G1 t/m G10 done. **De queue is leeg.** De multi-template blokkade is aan beide
+kanten opgeheven: kaarten, padtabel, media-routing, paginavolgorde, labels, *welke template een
+site gebruikt* én de documentenset van de website komen uit een template, en het contract tussen
+de twee codebases (adressen én documenten) wordt door `npm run check:cms` in drie richtingen
+bewaakt.
+
+Wat een tweede template nu nog vraagt is niets structureels meer, alleen werk dat pas met een
+échte tweede template betekenis krijgt: eigen paginacomponenten en sectievolgorde
+(`app/[locale]/…`, `content.ts`, de zes `getXContent`-functies zijn nog chalet-getypeerd). Dat is
+bewust niet vooruit gebouwd — één implementatie achter een abstractie is de speculatieve
+genericiteit die deze review elders afkeurt.
+
+Open en user-gated (buiten deze loop): `styled_widgets` pushen (8 commits vóór origin), de
+console-deploy naar prd, en E3 (visuele verificatie in een ingelogde sessie).
 
 RUN 7 (fase 2-handoff): F-pre t/m F7 done.  _(historische regel hieronder liep achter op de eigen tabel)_ Volgende was: **F4** (vertaalmodus op schaal —
 `Nieuw`-badge op een rij die in de bron is bijgekomen, kaart-rollup `N gewijzigd` via de nieuwe
