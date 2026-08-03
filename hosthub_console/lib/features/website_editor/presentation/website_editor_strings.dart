@@ -411,19 +411,11 @@ String subFieldLabel(BuildContext context, String listKey, String sub) {
 /// The fixed title of a group in a fixed-title group list
 /// (`practical.transport.columns`), by position — a fixed group cannot move.
 String fixedGroupTitle(BuildContext context, GroupListRow row, int index) {
-  if (row.listKey == 'practical.transport.columns') {
-    switch (index) {
-      case 0:
-        return context.s.weColumnCar;
-      case 1:
-        return context.s.weColumnAirports;
-      case 2:
-        return context.s.weColumnPublicTransport;
-      case 3:
-        return context.s.weColumnParking;
-      default:
-        return context.s.weColumnNotes;
-    }
+  // The row names its own fixed groups; this only picks the one at [index] and
+  // falls back to a numbered item label when a row declares none.
+  final labels = row.fixedTitleLabels;
+  if (labels != null && index < labels.length) {
+    return labels[index](context.s);
   }
   return '${listItemLabel(context, row.listKey)} ${index + 1}';
 }

@@ -222,6 +222,35 @@ void main() {
     }
   });
 
+  test('a fixed group names itself, not by position in a switch', () {
+    // The five transport columns were labelled by array index in a switch on
+    // the list key: a label resolved by position, which is the one thing the
+    // row ids exist to avoid.
+    final transport = kDefaultTemplate
+        .cardsOf('practical')
+        .expand((card) => card.rows)
+        .whereType<GroupListRow>()
+        .firstWhere((row) => row.listKey == 'practical.transport.columns');
+
+    expect(transport.fixedTitles, isTrue);
+    expect(transport.fixedTitleLabels, hasLength(transport.maxItems));
+
+    // Any row that fixes its titles has to name them, or the renderer falls
+    // back to "Item 3" for a slot the template meant something by.
+    for (final page in kDefaultTemplate.pages) {
+      for (final card in page.cards) {
+        for (final row in card.rows.whereType<GroupListRow>()) {
+          if (!row.fixedTitles) continue;
+          expect(
+            row.fixedTitleLabels,
+            isNotNull,
+            reason: '${row.listKey} fixes its titles but does not name them',
+          );
+        }
+      }
+    }
+  });
+
   test('a field key knows which page it is on', () {
     // The translation row's `page` column was the constant 'home' for every
     // field of every page, and it sat in the unique key — so it asserted

@@ -52,11 +52,7 @@ String _buildManifest() {
     (a, b) => (a['address']! as String).compareTo(b['address']! as String),
   );
 
-  return '${const JsonEncoder.withIndent('  ').convert({
-    'template': kDefaultTemplate.id,
-    'rowIdPlaceholder': _rowIdPlaceholder,
-    'fields': entries,
-  })}\n';
+  return '${const JsonEncoder.withIndent('  ').convert({'template': kDefaultTemplate.id, 'rowIdPlaceholder': _rowIdPlaceholder, 'fields': entries})}\n';
 }
 
 void main() {
@@ -85,8 +81,7 @@ void main() {
   });
 
   test('every address is unique and well formed', () {
-    final decoded =
-        jsonDecode(_buildManifest()) as Map<String, dynamic>;
+    final decoded = jsonDecode(_buildManifest()) as Map<String, dynamic>;
     final fields = (decoded['fields'] as List).cast<Map<String, dynamic>>();
     expect(fields, isNotEmpty);
 

@@ -79,6 +79,14 @@ enum _Slot { rowId, key }
 const _rowId = _Slot.rowId;
 const _key = _Slot.key;
 
+/// A label the editor shows, resolved against the app's localizations.
+///
+/// A function reference, not a key: `intl_utils` generates `S` members and a
+/// lookup by string would not survive codegen. Wrapping the reference is what
+/// lets a label be *declared* where the thing it names is declared, instead of
+/// looked up by id in a switch far away.
+typedef LabelRef = String Function(dynamic s);
+
 /// One row in a card's schema (the handoff's Part D vocabulary).
 ///
 /// The schema is data, read by one renderer: what a card *is* lives here, how
@@ -239,6 +247,7 @@ class GroupListRow extends EditorRow {
     this.maxItems,
     this.maxItemsPerGroup,
     this.fixedTitles = false,
+    this.fixedTitleLabels,
   });
 
   final String listKey;
@@ -262,6 +271,15 @@ class GroupListRow extends EditorRow {
   /// title renders as a label and the group cannot be added, deleted or
   /// reordered.
   final bool fixedTitles;
+
+  /// The labels for [fixedTitles] groups, in order.
+  ///
+  /// Declared here because they belong to this row. They used to live in a
+  /// switch keyed on the list key and then on the array *index* — a label
+  /// resolved by position, which is the one thing the row ids exist to avoid,
+  /// and the last place the presentation layer decided what a template's
+  /// sections are called.
+  final List<LabelRef>? fixedTitleLabels;
 }
 
 /// A set of images, optionally with one summarizing alt-text field (§C).
@@ -966,6 +984,14 @@ class WebsiteTemplate {
   }
 }
 
+// The transport section's fixed column names. Free functions rather than
+// closures so the schema stays a `const`.
+String _columnCar(dynamic s) => s.weColumnCar as String;
+String _columnAirports(dynamic s) => s.weColumnAirports as String;
+String _columnPublicTransport(dynamic s) => s.weColumnPublicTransport as String;
+String _columnParking(dynamic s) => s.weColumnParking as String;
+String _columnNotes(dynamic s) => s.weColumnNotes as String;
+
 /// The legal document's page key.
 const String kLegalPage = 'legal';
 
@@ -1257,6 +1283,15 @@ const List<EditorCard> _practicalCards = [
         itemsSub: 'text',
         maxItems: 5,
         fixedTitles: true,
+        // Five slots the transport section always has, named where they are
+        // declared rather than by position in a switch.
+        fixedTitleLabels: [
+          _columnCar,
+          _columnAirports,
+          _columnPublicTransport,
+          _columnParking,
+          _columnNotes,
+        ],
       ),
     ],
   ),
