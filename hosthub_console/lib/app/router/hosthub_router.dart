@@ -197,9 +197,10 @@ class HosthubRouter {
                         ),
                       ),
                     );
-                    // Text selection is a desktop affordance; on the web the
-                    // browser already provides it.
-                    return kIsWeb ? shell : SelectionArea(child: shell);
+                    // Also on the web: CanvasKit paints text to a canvas, so
+                    // the browser has nothing to select. Without this the web
+                    // console is the one place you cannot copy a heading.
+                    return SelectionArea(child: shell);
                   },
                 ),
               ),

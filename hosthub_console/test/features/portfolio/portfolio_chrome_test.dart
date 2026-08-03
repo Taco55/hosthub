@@ -25,10 +25,6 @@ void main() {
       expect(chrome.showsPropertyCount, isFalse);
     });
 
-    test('does not offer the properties list in the navigation', () {
-      // The route stays — a link to it still works.
-      expect(chrome.showsPropertiesList, isFalse);
-    });
   });
 
   group('an account with several properties', () {
@@ -39,7 +35,6 @@ void main() {
         expect(chrome.showsPropertyFilter, isTrue, reason: '$count');
         expect(chrome.showsPropertyNode, isTrue, reason: '$count');
         expect(chrome.showsPropertyCount, isTrue, reason: '$count');
-        expect(chrome.showsPropertiesList, isTrue, reason: '$count');
       }
     });
 

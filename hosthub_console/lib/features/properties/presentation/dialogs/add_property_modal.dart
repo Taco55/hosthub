@@ -1,3 +1,4 @@
+import 'package:app_errors/app_errors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:styled_widgets/styled_widgets.dart';
@@ -80,14 +81,15 @@ Future<void> showAddPropertyModal(BuildContext context) async {
                 final trimmed = name.trim();
                 if (trimmed.isEmpty) return;
                 final created = await propertyContext.createProperty(trimmed);
-                // Throwing keeps the modal on this step; the page's listener
-                // shows the DomainError the cubit put in state.
                 if (created == null) {
-                  throw propertyContext.state.error ??
-                      StateError('createProperty returned no property');
+                  await _reportCreateFailure(context, propertyContext);
                 }
               },
               builder: (context, modal) => _ManualNameField(
+                // What was typed, not what the field happens to hold: opening
+                // the error dialog over this step rebuilds it from scratch, and
+                // a retry should not start by retyping the name.
+                initialValue: name,
                 onChanged: (value) {
                   name = value;
                   final steps = modal.steps;
@@ -103,12 +105,38 @@ Future<void> showAddPropertyModal(BuildContext context) async {
   );
 }
 
+/// Say that creating failed, here, and keep the modal on its step.
+///
+/// The cubit stores the failure in its state, and Properties turns that into a
+/// dialog — but this flow is opened from the `+` on the nav tree's property
+/// headings too, which is reachable from every screen in the console. Opened
+/// from there, nothing was listening: the button did nothing, the name stayed
+/// in the field, and the only trace was a `debugPrint`. So the modal reports
+/// its own action instead of borrowing whatever page happens to be behind it.
+///
+/// Throwing after the dialog is what keeps this step open, so the typed name
+/// survives a retry. When Properties *is* behind the modal its listener fires
+/// on the same error a moment later; [showAppError] recognises the repeat and
+/// drops it, so either way the user gets exactly one dialog.
+Future<Never> _reportCreateFailure(
+  BuildContext context,
+  PropertyContextCubit propertyContext,
+) async {
+  final error = propertyContext.state.error;
+  if (error != null && context.mounted) {
+    await showAppError(context, AppError.fromDomain(context, error));
+    propertyContext.clearError();
+  }
+  throw error ?? StateError('createProperty returned no property');
+}
+
 /// Just a name: everything else about a property comes from Lodgify or from the
 /// website editor, so asking for more here would be asking for data we would
 /// then have to reconcile.
 class _ManualNameField extends StatefulWidget {
-  const _ManualNameField({required this.onChanged});
+  const _ManualNameField({required this.initialValue, required this.onChanged});
 
+  final String initialValue;
   final ValueChanged<String> onChanged;
 
   @override
@@ -116,7 +144,9 @@ class _ManualNameField extends StatefulWidget {
 }
 
 class _ManualNameFieldState extends State<_ManualNameField> {
-  final TextEditingController _controller = TextEditingController();
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initialValue,
+  );
 
   @override
   void dispose() {

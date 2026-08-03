@@ -100,7 +100,9 @@ class _FakePropertyContextCubit extends Cubit<PropertyContextState>
         const PropertyContextState(
           status: PropertyContextStatus.loaded,
           properties: [
-            PropertySummary(id: 1, name: 'Trysil Panorama'),
+            // One of each origin, so the row on Connections has a split to
+            // state rather than a single number.
+            PropertySummary(id: 1, name: 'Trysil Panorama', lodgifyId: 'LG-1'),
             PropertySummary(id: 2, name: 'Vestfjord Cabin'),
           ],
         ),
@@ -216,6 +218,26 @@ void main() {
     expect(find.text('Listings'), findsNothing);
     expect(find.byType(StyledDataTable), findsNothing);
     expect(find.text('Lodgify ID'), findsNothing);
+  });
+
+  testWidgets('Connections is the way to the properties list', (tester) async {
+    await pumpAccount(tester);
+
+    // The list is not in the rail — a row leading to the same names already
+    // rendered under it is the duplication that was taken out once. It hangs
+    // beside the connection that decides the answer instead, and states that
+    // answer up front.
+    final row = find.widgetWithText(StyledTile, 'Properties');
+    expect(row, findsOneWidget);
+    expect(
+      find.descendant(of: row, matching: find.text('2 properties · 1 from '
+          'Lodgify, 1 manual')),
+      findsOneWidget,
+    );
+
+    // It presents as a destination, which is the whole reason it is here.
+    expect(tester.widget<StyledTile>(row).showChevron, isTrue);
+    expect(tester.widget<StyledTile>(row).onTap, isNotNull);
   });
 
   testWidgets('the connection is one row: state, last sync, one action', (

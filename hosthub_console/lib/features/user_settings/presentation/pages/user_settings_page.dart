@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
+import 'package:hosthub_console/app/navigation/console_route.dart';
 import 'package:hosthub_console/app/shell/application/site_context_cubit.dart';
 import 'package:app_errors/app_errors.dart';
 import 'package:hosthub_console/core/core.dart';
@@ -432,6 +434,7 @@ class _ConnectionsSection extends StatelessWidget {
           ),
         ),
         _LodgifyConnectionTile(settings: settings, isBusy: isBusy),
+        const _PropertiesListTile(),
       ],
     );
   }
@@ -452,6 +455,44 @@ class _ConnectionsSection extends StatelessWidget {
     );
     if (result == null) return;
     cubit.updateLodgifyApiKey(result.apiKey, remove: result.remove);
+  }
+}
+
+/// The way to the properties list, stated as what the list would tell you.
+///
+/// The list is not in the rail on purpose: a row leading to a list of the same
+/// names already rendered directly under it is exactly the duplication that was
+/// taken out once before. It hangs here instead, because the question the list
+/// answers — which of these come from Lodgify and which are mine — is the
+/// question you have while looking at the connection that decides it.
+class _PropertiesListTile extends StatelessWidget with StyledTileLike {
+  const _PropertiesListTile();
+
+  @override
+  Widget build(BuildContext context) {
+    final properties = context.watch<PropertyContextCubit>().state.properties;
+    final fromLodgify = properties
+        .where((property) => property.lodgifyId?.trim().isNotEmpty ?? false)
+        .length;
+    final manual = properties.length - fromLodgify;
+
+    // Each half only when it has something to report: "3 van Lodgify, 0
+    // handmatig" states a zero where the absence already says it.
+    final breakdown = [
+      if (fromLodgify > 0) context.s.accountPropertiesFromLodgifyCount(fromLodgify),
+      if (manual > 0) context.s.accountPropertiesManualCount(manual),
+    ].join(', ');
+    final total = context.s.accountPropertiesCount(properties.length);
+
+    return StyledTile(
+      // Design `.stile .lead`: every row in this card carries a leading glyph,
+      // as a badge, so all three titles start on the same edge.
+      leading: const StyledIconBadge(icon: Icons.home_work_outlined),
+      title: context.s.propertiesListHeading,
+      subtitle: breakdown.isEmpty ? total : '$total · $breakdown',
+      showChevron: true,
+      onTap: () => context.go(ConsoleRoute.propertiesPath),
+    );
   }
 }
 

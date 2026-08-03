@@ -186,7 +186,7 @@ class _SiteContentBody extends StatelessWidget {
                 onPressed: () {
                   final siteId = context.read<CmsCubit>().state.site?.id;
                   if (siteId != null) {
-                    context.push('/sites/$siteId/settings');
+                    context.go('/sites/$siteId/settings');
                   }
                 },
               ),
@@ -197,7 +197,7 @@ class _SiteContentBody extends StatelessWidget {
                 onPressed: () {
                   final siteId = context.read<CmsCubit>().state.site?.id;
                   if (siteId != null) {
-                    context.push(
+                    context.go(
                       '/sites/$siteId/team?name=${Uri.encodeComponent(pageTitle)}',
                     );
                   }
@@ -213,7 +213,6 @@ class _SiteContentBody extends StatelessWidget {
                     showProgressIndicatorWhenDisabled: state.isPublishing,
                     leftIconData: Icons.publish,
                     showLeftIcon: true,
-                    minHeight: 40,
                   ),
                 ),
             ],
@@ -397,7 +396,6 @@ class _BottomBar extends StatelessWidget {
           },
           leftIconData: Icons.open_in_new,
           showLeftIcon: true,
-          minHeight: 40,
         ),
       ],
     );

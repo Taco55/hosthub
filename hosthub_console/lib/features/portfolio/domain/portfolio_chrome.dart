@@ -32,14 +32,16 @@ class PortfolioChrome {
   /// property to collapse it in favour of.
   bool get showsPropertyNode => !isSingleProperty;
 
-  /// The count pill on the Properties group, and the group label as a link to
-  /// the list. With one property the group label *is* the property's name.
+  /// The count pill on the Properties group. With one property the group label
+  /// *is* the property's name, and there is nothing to count.
+  ///
+  /// The group heading is a label in both shapes — never a link to the list, so
+  /// there is no destination here that a single-property account loses. The list
+  /// is reached from Account · Koppelingen. What does *not* collapse is the `+`
+  /// beside the heading: the chrome a one-property account is spared is the
+  /// filter, the count and the node to open, not the way to get a second
+  /// property.
   bool get showsPropertyCount => !isSingleProperty;
-
-  /// Whether the properties list is reachable from the navigation. The route
-  /// stays either way — a link to it still works — it simply has nothing to
-  /// offer a one-property account.
-  bool get showsPropertiesList => !isSingleProperty;
 
   @override
   bool operator ==(Object other) =>

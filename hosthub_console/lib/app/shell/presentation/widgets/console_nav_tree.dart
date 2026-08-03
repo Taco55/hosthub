@@ -97,6 +97,11 @@ List<StyledNavGroup> buildConsoleNavGroups({
         // A proper name, so it keeps its own case — the micro-label treatment is
         // for headings like PORTFOLIO, not for "Trysil Panorama".
         uppercaseLabel: false,
+        // Present at one property too: what collapses in a one-property account
+        // is the portfolio chrome — a filter, a count, a node to open — and not
+        // the way to get a second one. Adding is *more* likely here than in an
+        // account of ten, so this is the one thing that must not collapse.
+        action: _addPropertyAction(s: s, onAddProperty: onAddProperty),
         // Its four screens sit flat at the top level and are always there —
         // nothing to expand, so nothing that could be collapsed.
         entries: _propertySections(
@@ -110,20 +115,13 @@ List<StyledNavGroup> buildConsoleNavGroups({
       StyledNavGroup(
         label: s.navGroupProperties,
         count: properties.length.toString(),
-        // The group label is a destination of its own: a plain list of the
-        // properties. A convenience, never a step you must pass through.
-        onLabelTap: () => onNavigate(ConsoleRoute.propertiesPath),
-        labelSelected: route.isPropertiesList,
-        // Adding a property is rare enough that it must not take a row of its
-        // own next to Berichten and Boekingen, and general enough that it
-        // should not be reachable only from the list — so it rides along with
-        // the heading that already counts them. Same modal as the list's own
-        // add row: one flow, two ways in.
-        action: StyledNavGroupAction(
-          icon: Icons.add,
-          onTap: onAddProperty,
-          tooltip: s.propertiesListAdd,
-        ),
+        // A heading and nothing more. It carries the same treatment as ACCOUNT,
+        // which is not a destination either, so making this one navigate put an
+        // invisible click target behind a label that reads as plain text —
+        // worse than having no entry point here at all. The properties list is
+        // reached from Account · Koppelingen, where the question it answers
+        // ("which of these come from Lodgify") is actually being asked.
+        action: _addPropertyAction(s: s, onAddProperty: onAddProperty),
         entries: [
           for (final property in properties)
             _propertyBranch(
@@ -157,6 +155,22 @@ List<StyledNavGroup> buildConsoleNavGroups({
     ),
   ];
 }
+
+/// The `+` on a property group's heading.
+///
+/// One action, both shapes of the group: adding a property is rare enough that
+/// it must not take a nav row of its own beside Berichten and Boekingen, and
+/// common enough that it cannot live only on the list page. It opens the same
+/// modal as the list's own add row — one flow, two ways in.
+StyledNavGroupAction _addPropertyAction({
+  required S s,
+  required VoidCallback onAddProperty,
+}) => StyledNavGroupAction(
+  icon: Icons.add,
+  onTap: onAddProperty,
+  // The only thing naming this action: a 14px glyph says nothing on its own.
+  tooltip: s.propertiesListAdd,
+);
 
 /// The four screens of one property, in the order the design lists them.
 ///

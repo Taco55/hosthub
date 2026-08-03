@@ -4,6 +4,7 @@ import 'package:app_errors/app_errors.dart';
 import 'package:app_errors/supabase_adapter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:hosthub_console/app/app.dart';
 import 'package:hosthub_console/app/bootstrap/bootstrap.dart';
@@ -19,6 +20,13 @@ void main() {
   runZonedGuarded(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
+      // Right-click has to reach Flutter's own Copy / Paste menu. Chrome's
+      // menu knows nothing about a selection painted onto a canvas, so
+      // leaving it in place means right-clicking selected text offers
+      // everything except copying it. The trade is the browser menu itself
+      // (Back, Reload, Inspect) — still reachable from the keyboard and the
+      // Chrome menu. Drop this line to hand it back.
+      if (kIsWeb) await BrowserContextMenu.disableContextMenu();
       AuthUi.initialize(_authUiConfig);
       AppErrors.configure(
         adapters: const [supabaseAdapter],

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 
 import 'package:app_errors/app_errors.dart';
+import 'package:hosthub_console/app/navigation/console_back.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:hosthub_console/features/team/application/site_members_cubit.dart';
 import 'package:hosthub_console/features/team/domain/site_invitation.dart';
@@ -36,10 +36,8 @@ class SiteTeamPage extends StatelessWidget {
           return StyledWebPageScaffold(
             overline: siteName,
             title: context.s.teamTitle,
-            onBack: () async {
-              context.pop();
-              return false;
-            },
+            onBack: () => leaveTo(context, '/sites/$siteId'),
+            backLabel: context.s.navPropertyWebsite,
             leftChild: const Center(child: CircularProgressIndicator()),
           );
         }
@@ -49,17 +47,16 @@ class SiteTeamPage extends StatelessWidget {
           // page's own subject as the title — not a name as a subtitle.
           overline: siteName,
           title: context.s.teamTitle,
-          onBack: () async {
-            context.pop();
-            return false;
-          },
+          // The sidebar carries no row for this page, so the back button is the
+          // way out — and it must survive a cold link, which has no stack.
+          onBack: () => leaveTo(context, '/sites/$siteId'),
+          backLabel: context.s.navPropertyWebsite,
           actions: [
             StyledButton(
               title: context.s.teamInviteMemberButton,
               leftIconData: Icons.person_add_outlined,
               showLeftIcon: true,
               onPressed: () => _handleInvite(context),
-              minHeight: 40,
             ),
           ],
           isLoading: state.isInviting,

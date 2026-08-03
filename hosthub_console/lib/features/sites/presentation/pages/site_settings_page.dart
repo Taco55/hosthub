@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
+import 'package:hosthub_console/app/navigation/console_back.dart';
 import 'package:hosthub_console/app/shell/application/site_context_cubit.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:hosthub_console/features/cms/cms.dart';
@@ -117,6 +118,10 @@ class _SiteSettingsPageState extends State<SiteSettingsPage> {
             inProgress: _saving,
             onPressed: (_saving || loading) ? null : () => _save(),
           ),
+          // The sidebar carries no row for this page, so the back button is the
+          // way out — and it must survive a cold link, which has no stack.
+          onBack: () => leaveTo(context, '/sites/${widget.siteId}'),
+          backLabel: context.s.navPropertyWebsite,
           intrinsicPaneHeight: true,
           leftChild: SafeArea(
             child: loading

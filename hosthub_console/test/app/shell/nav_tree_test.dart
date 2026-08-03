@@ -223,14 +223,39 @@ void main() {
       expect(find.text('Create manually'), findsOneWidget);
     });
 
-    testWidgets('a one-property account has no Properties heading to put it '
-        'on', (tester) async {
+    testWidgets('a one-property account has it too', (tester) async {
       await pumpShell(tester, surface: const Size(1400, 900));
 
-      // §5: the group label is the property's own name, and the design puts the
-      // `+` only on the multi-property heading.
+      // The heading there is the property's own name (§5), and the action rides
+      // on it all the same: what a one-property account is spared is the
+      // portfolio chrome, not the way to get a second property — which is more
+      // likely here than in an account of ten.
       expect(find.text('PROPERTIES'), findsNothing);
-      expect(addAction(), findsNothing);
+      expect(addAction(), findsOneWidget);
+
+      await tester.tap(addAction());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Bring over from Lodgify'), findsOneWidget);
+    });
+
+    testWidgets('the heading itself is a label, not a destination', (
+      tester,
+    ) async {
+      await pumpShell(
+        tester,
+        surface: const Size(1400, 900),
+        properties: account,
+      );
+
+      // It carries the same treatment as ACCOUNT, which is not a destination
+      // either, so a click target behind it would be invisible by definition.
+      // This harness has no GoRouter: a heading that navigated would surface as
+      // a thrown lookup rather than as a route change.
+      await tester.tap(find.text('PROPERTIES'), warnIfMissed: false);
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('the collapsed rail does not take taps on the faded heading', (
@@ -243,17 +268,11 @@ void main() {
       );
 
       // The heading keeps its box on the rail so nothing below it moves, and
-      // fades its contents instead. Faded out, neither the label's destination
-      // nor the action may still be a target — the label is the one that
-      // matters, because it keeps its width where the action is clipped to
-      // nothing. This harness has no GoRouter, so a label that still took the
-      // tap would surface as a thrown lookup rather than as a navigation.
-      await tester.tap(find.text('PROPERTIES'), warnIfMissed: false);
-      await tester.pumpAndSettle();
-      expect(tester.takeException(), isNull);
-
+      // fades its contents instead. Faded out, the action must not still be a
+      // target.
       await tester.tap(addAction(), warnIfMissed: false);
       await tester.pumpAndSettle();
+
       expect(find.text('Bring over from Lodgify'), findsNothing);
     });
   });
