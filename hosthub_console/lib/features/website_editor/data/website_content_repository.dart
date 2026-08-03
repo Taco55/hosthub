@@ -78,6 +78,8 @@ class WebsiteContentRepository extends SupabaseRepository {
   WebsiteContentRepository({required SupabaseClient supabase})
     : super(supabase);
 
+  /// Legacy value for the `page` column on rows written before it carried the
+  /// field's real page. Kept only as the fallback for a key no card claims.
   static const String page = 'home';
 
   /// The template whose field paths this repository reads and writes.
@@ -491,8 +493,7 @@ class WebsiteContentRepository extends SupabaseRepository {
       final translationRows = await supabase
           .from('site_translations')
           .select('field_key, language, value, status, source_hash')
-          .eq('site_id', siteId)
-          .eq('page', page);
+          .eq('site_id', siteId);
       final rowsByLangKey = <String, Map<String, dynamic>>{
         for (final row in translationRows as List<dynamic>)
           '${row['language']}:${row['field_key']}': Map<String, dynamic>.from(
@@ -620,14 +621,16 @@ class WebsiteContentRepository extends SupabaseRepository {
     try {
       await supabase.from('site_translations').upsert({
         'site_id': siteId,
-        'page': page,
+        // Informational: identity is (site, field, language). This said
+        // 'home' for every field of every page until 20260802180000.
+        'page': kDefaultTemplate.pageOfField(fieldKey) ?? page,
         'field_key': fieldKey,
         'language': language,
         'value': field.value,
         'status': field.isLocked ? 'locked' : 'auto',
         'source_hash': field.sourceHash,
         'translated_at': DateTime.now().toUtc().toIso8601String(),
-      }, onConflict: 'site_id,page,field_key,language');
+      }, onConflict: 'site_id,field_key,language');
     } catch (error, stack) {
       throw mapError(
         error,

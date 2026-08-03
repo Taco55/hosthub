@@ -918,6 +918,21 @@ class WebsiteTemplate {
     return cursor == fieldKey.length ? captures : null;
   }
 
+  /// The page a field key belongs to, or null when no card claims it.
+  ///
+  /// Used for the informational `page` column on a translation row. It used to
+  /// be the constant 'home' for every field of every page.
+  String? pageOfField(String fieldKey) {
+    for (final page in pages) {
+      for (final card in page.cards) {
+        for (final row in card.rows) {
+          if (_rowClaimsField(row, fieldKey)) return page.key;
+        }
+      }
+    }
+    return null;
+  }
+
   /// The row that owns a list key, or null when it is unknown.
   EditorRow? rowForList(String listKey) {
     for (final page in pages) {
@@ -1555,6 +1570,18 @@ List<EditorField> _fieldsOfRow(
 
 /// The schema row that owns a list key, or null when it is unknown. Used by
 /// the cubit to learn a list's subfield and by the renderer to look up limits.
+/// Whether a row is where [fieldKey] comes from: its own key, one of its
+/// list's rows, or the alt text of its photo set.
+bool _rowClaimsField(EditorRow row, String fieldKey) => switch (row) {
+  FieldRow(:final key) => key == fieldKey,
+  ListRow(:final listKey) ||
+  PairListRow(:final listKey) ||
+  RowListRow(:final listKey) ||
+  GroupListRow(:final listKey) => fieldKey.startsWith('$listKey.'),
+  MediaRow(:final altFieldKey) => altFieldKey == fieldKey,
+  ExternalRow() => false,
+};
+
 /// Whether a row owns [listKey] — its own list, or a group's nested items,
 /// which are addressed through the group.
 bool _rowOwnsList(EditorRow row, String listKey) {

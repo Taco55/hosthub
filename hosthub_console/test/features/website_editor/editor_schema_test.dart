@@ -222,6 +222,24 @@ void main() {
     }
   });
 
+  test('a field key knows which page it is on', () {
+    // The translation row's `page` column was the constant 'home' for every
+    // field of every page, and it sat in the unique key — so it asserted
+    // something false and could not be corrected without the upsert inserting
+    // duplicates.
+    expect(kDefaultTemplate.pageOfField('cabin.hero.title'), 'home');
+    expect(kDefaultTemplate.pageOfField('practical.header.title'), 'practical');
+    expect(kDefaultTemplate.pageOfField('area.intro'), 'area');
+    expect(kDefaultTemplate.pageOfField('legal.privacy.intro'), kLegalPage);
+    // A list row's field key belongs to the page its list is on.
+    expect(
+      kDefaultTemplate.pageOfField('practical.transport.columns.x1.title'),
+      'practical',
+    );
+    // And a key no card claims says so rather than guessing a page.
+    expect(kDefaultTemplate.pageOfField('nothing.claims.this'), isNull);
+  });
+
   test('a second template answers with its own paths', () {
     // The point of the field table living on the template: two templates can
     // map the same key to different documents. While it was static on the

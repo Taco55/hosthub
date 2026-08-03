@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict xr1pb1CFPqsdy3nyNyMTdsP2gTJn4Y1IIodQtxFBVXCdIgM4BBxXrdzxGdShpRB
+\restrict PEX4eZGGXaLJtFdOmVIihKQJiPumc2BRFgciFrd0oseHhGxAfzdCYX9fW0yKuzh
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -1257,11 +1257,11 @@ ALTER TABLE ONLY public.site_translations
 
 
 --
--- Name: site_translations site_translations_site_id_page_field_key_language_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: site_translations site_translations_site_field_language_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.site_translations
-    ADD CONSTRAINT site_translations_site_id_page_field_key_language_key UNIQUE (site_id, page, field_key, language);
+    ADD CONSTRAINT site_translations_site_field_language_key UNIQUE (site_id, field_key, language);
 
 
 --
@@ -2443,5 +2443,5 @@ ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public GRANT ALL ON T
 -- PostgreSQL database dump complete
 --
 
-\unrestrict xr1pb1CFPqsdy3nyNyMTdsP2gTJn4Y1IIodQtxFBVXCdIgM4BBxXrdzxGdShpRB
+\unrestrict PEX4eZGGXaLJtFdOmVIihKQJiPumc2BRFgciFrd0oseHhGxAfzdCYX9fW0yKuzh
 
