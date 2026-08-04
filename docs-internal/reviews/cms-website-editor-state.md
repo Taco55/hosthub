@@ -436,6 +436,8 @@ opschoning een tweede template op.
 | G8 | Gegenereerd adres-manifest + conformance-check console↔web | console+web | done | 6becbe9; `web/cms-address-manifest.json` (73 adressen) uit `kDefaultTemplate`, geschreven én bewaakt door `cms_address_manifest_test.dart` (regenereren: `UPDATE_CMS_MANIFEST=1 flutter test …`). `npm run check:cms` faalt op twee richtingen: een adres dat de site gebruikt maar de console niet aanbiedt (dode luisteraar), en een `inPage`-tekstveld dat geen element markeert (focus wijst nergens heen). **De check vond meteen 15 ongemarkeerde velden** — kaarttitels op Praktisch, voorzieningen/locatie, privacy-intro, home-tagline, submit-knop — allemaal gemarkeerd. Eén gemotiveerde uitzondering in de bron (`cms-address-exempt`): de contact-subtitel is rond een mailto-link gesplitst, dus er is geen enkele tekstknoop om te patchen |
 | G9 | `sites.template_id`: welke template een site gebruikt, end-to-end | console+supabase | done | migratie `20260803090000_sites_template_id.sql` (`NOT NULL DEFAULT 'chalet-v1'`, idempotent; prd én lokaal toegepast, beide sites `chalet-v1`). Registry `kTemplates` + `templateFor(id)` in het domein; `SiteSummary.templateId` en de editor-siteselect lezen de kolom; `WebsitePageContent.templateId` draagt hem naar `SiteContentCubit`, die `template: templateFor(...)` emit — daarmee is de laatste plek waar de console de template *aannam* weg. **Bewust een fallback i.p.v. falen:** een onbekende of ontbrekende id levert `kDefaultTemplate`, want een site waarvan de template hernoemd is moet nog opengaan (met de verkeerde labels) i.p.v. helemaal niet. +2 tests in `editor_schema_test.dart`; analyze clean, 567 tests groen |
 | G10 | De website leest `sites.template_id` i.p.v. één ingebakken documentenlijst | web | done | `lib/site-template.ts` (registry + `siteTemplateFor` met dezelfde fallback als de console); `site_domains`-lookup haalt de template mee via de FK-embed `sites(template_id)` — één read, want twee reads is twee kansen om te verschillen; `RuntimeSiteContext.templateId` → `toSiteContentOptions` → `ContentOptions.templateId`, dus élke contentread heeft hem zonder extra plumbing. `SITE_DOCUMENTS` was een literal in `content-provider.ts`: de preview-banner meldde "missing" tegen de lijst van het chalet, ook voor een site met een andere template. `npm run check:cms` kreeg een **derde richting**: de documentenset hier moet exact de documenten zijn die de console-adressen noemen — bewezen door hem te laten falen (`page/privacy` weggehaald → exit 1, beide richtingen genoemd; schoon → exit 0, 7 documenten). Embed geverifieerd tegen prd (beide sites `chalet-v1`, to-one object); typecheck + build clean, lint ongewijzigd (24 pre-existing in booking-componenten); `hosthub-sites-test` gedeployed, test.trysilpanorama.com 200 op alle pagina's en drie talen, www ongemoeid (200/200/200). **Bewust niet gedaan:** de render-tree zelf (sectievolgorde, paginacomponenten, `content.ts`). Dat is geen blokkade meer maar werk, en een abstractie met één implementatie bouwen vóór er een tweede template ís, is precies de speculatieve genericiteit die deze review elders afkeurt |
+| G11 | Eén vraag per request i.p.v. één per aanroeper | web | done | 42de914; de homepage deed **tien queries voor vijf antwoorden** — drie `site_domains`-lookups (layout, body en `generateMetadata` lossen de site elk apart op, voor een waarde die binnen één request niet kán veranderen) en zeven documentreads voor vier documenten. Nu gededupliceerd met React's `cache`; sleutel is het request, dus geen versheidsrisico, en `includeDrafts` zit in de documentsleutel zodat preview en publiek gescheiden blijven. **Gemeten, niet aangenomen:** tijdelijke teller + `wrangler tail` op de testworker → exact vier reads voor één render. Latency onveranderd (~200 ms warm): de dubbelen liepen al binnen `Promise.all`, dus de winst is Supabase-belasting. Route handlers geverifieerd (`sitemap.xml` 200 met de juiste host, `robots.txt` 200, `/api/contact` valideert met 400 i.p.v. 500) — `cache` degradeert veilig buiten een page render |
+| G12 | De website krijgt een testsuite | web | done | ab8dae5; deze kant had **nul** tests tegenover 567 in de console — het bestand dat `/en` en `/no` op een 500 zette had er noch vóór noch ná de fix één. 29 tests over de zuivere grenslogica: rij-normalisatie voor élke lijst die de console kan bewerken (inclusief de gegroepeerde die de outage veroorzaakte), de adresvorm die `check:cms` uit de bron parst, mediapad-resolutie, en de fallback van de template-registry. Zonder dependency: node's eigen testrunner met type-stripping plus een resolve-hook (`web/scripts/ts-resolve.mjs`) zodat een test de app-modules kan importeren met de extensieloze relatieve paden die ze al gebruiken. Geverifieerd dat de testbestanden niet in de worker-bundle belanden. `npm test`, en `npm run verify` = typecheck + lint + check:cms + tests |
 
 ## next_lens
 RUN 8 KLAAR: G1 t/m G10 done. **De queue is leeg.** De multi-template blokkade is aan beide
@@ -450,8 +452,30 @@ Wat een tweede template nu nog vraagt is niets structureels meer, alleen werk da
 bewust niet vooruit gebouwd — één implementatie achter een abstractie is de speculatieve
 genericiteit die deze review elders afkeurt.
 
-Open en user-gated (buiten deze loop): `styled_widgets` pushen (8 commits vóór origin), de
-console-deploy naar prd, en E3 (visuele verificatie in een ingelogde sessie).
+**Afgehandeld 2026-08-03:** `styled_widgets` gepusht (analyze clean, 1043 tests groen; alle tags
+stonden al op de remote — versies 0.13 t/m 0.16.2 zijn nooit getagd, dat is een release-beslissing
+voor Taco). Console gedeployed naar prd (v0.2.0, 11:36:25Z) en in de browser geverifieerd dat hij
+boot en rendert — het echte risico van de `BrowserContextMenu`/`SelectionArea`-wijziging.
+Werkruimte gepusht (20 commits stonden alleen lokaal). Site gedeployed naar prd; alle acht
+pagina's × drie talen 200.
+
+**Vastgelegd zodat niemand het "opruimt":** `web/lib/content.ts` is **geen** duplicaat-backup maar
+de **defaultlaag** die het CMS veld-voor-veld overschrijft. `mergeSiteConfig` spreidt de hardcoded
+`site` onder élk `site_config`-document, en het CMS-document draagt maar zeven velden — `imagePaths`,
+`gallery`, `heroImages` en de contactgegevens komen dus uit `content.ts`. `primaryHeroImage` (de hero
+op vijf pagina's) wordt er rechtstreeks uit berekend. Weggooien haalt elk veld weg dat het CMS niet
+draagt. De echte weg is een migratie: die defaults naar het CMS met editor-velden erbij, dan per
+groep uit `content.ts` halen — dezelfde vorm als F7. De outage-backup is `content.generated.ts`
+(7 documenten × 3 talen, gegenereerd bij elke deploy); `CMS_SNAPSHOT_SITE_ID` komt via `.env.local`
+in de bundle, dus die laag leeft alléén voor de chalet-site en elke andere site faalt dicht.
+
+Nog open, user-gated: E3 (visuele verificatie vraagt een ingelogde sessie; er is geen Chrome met het
+account verbonden en inloggen vraagt credentials), de merknaam + logo (wacht op de naamkeuze en een
+domein), en cross-request caching — met de reads gehalveerd is de resterende winst puur
+Supabase-volume, en de prijs is versheid op een live klantsite. Dat is een productbeslissing:
+`s-maxage` op de HTML (weinig code, publiceren pas na de TTL zichtbaar) of OpenNext incremental
+cache met tags + revalidate-bij-publiceren (geen versheidsverlies, vraagt een R2-bucket en een hook
+vanuit de console).
 
 RUN 7 (fase 2-handoff): F-pre t/m F7 done.  _(historische regel hieronder liep achter op de eigen tabel)_ Volgende was: **F4** (vertaalmodus op schaal —
 `Nieuw`-badge op een rij die in de bron is bijgekomen, kaart-rollup `N gewijzigd` via de nieuwe
