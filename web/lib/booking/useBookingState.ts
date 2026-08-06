@@ -121,6 +121,16 @@ function mergeUniqueDates(prev: string[], next: string[]) {
   return Array.from(set).sort((a, b) => a.localeCompare(b));
 }
 
+/**
+ * The availability question a quote key was asked under: the two dates it
+ * starts with. A quote refusal answers for those dates, not for the guest count
+ * that happened to be set when it was asked.
+ */
+function availabilityKeyOfQuoteKey(quoteKey: string) {
+  const [arrival, departure] = quoteKey.split("|");
+  return `${arrival}|${departure}`;
+}
+
 function getQuoteErrorReason(error: unknown) {
   if (!(error instanceof LodgifyApiError)) {
     return null;
@@ -173,17 +183,49 @@ export function useBookingState(params: {
   const [range, setRange] = useState<DateRange>({ arrival: null, departure: null });
   const [guests, setGuests] = useState<Guests>({ adults: 2, children: 0, pets: 0 });
   const [promoCode, setPromoCode] = useState("");
-  const [availability, setAvailability] = useState<{
+  // Every answer carries the request it answers. "Loading" is then a question
+  // this hook can answer by looking — asked, and no answer for *these* dates
+  // yet — instead of a flag an effect has to raise on the way out and lower on
+  // the way back, which is what made a stale price outlive the dates it was
+  // for.
+  const [availabilityAnswer, setAvailabilityAnswer] = useState<{
+    key: string;
     available: boolean;
     unavailableDates: string[];
   } | null>(null);
-  const [quote, setQuote] = useState<QuoteView | null>(null);
-  const [availabilityLoading, setAvailabilityLoading] = useState(false);
-  const [quoteLoading, setQuoteLoading] = useState(false);
-  const [availabilityError, setAvailabilityError] = useState<string | null>(null);
-  const [quoteError, setQuoteError] = useState<string | null>(null);
-  const [quoteErrorReason, setQuoteErrorReason] = useState<string | null>(null);
+  const [availabilityFailure, setAvailabilityFailure] = useState<{
+    key: string;
+    message: string;
+  } | null>(null);
+  const [quoteAnswer, setQuoteAnswer] = useState<{
+    key: string;
+    view: QuoteView;
+  } | null>(null);
+  const [quoteFailure, setQuoteFailure] = useState<{
+    key: string;
+    message: string;
+    reason: string | null;
+  } | null>(null);
   const [blockedDates, setBlockedDates] = useState<string[]>([]);
+
+  /** Identifies one availability question: the dates, and nothing else. */
+  const availabilityKey =
+    range.arrival && range.departure ? `${range.arrival}|${range.departure}` : null;
+
+  // An answer counts only for the question that is on screen now.
+  const availability =
+    availabilityAnswer && availabilityAnswer.key === availabilityKey
+      ? {
+          available: availabilityAnswer.available,
+          unavailableDates: availabilityAnswer.unavailableDates,
+        }
+      : null;
+  const availabilityError =
+    availabilityFailure && availabilityFailure.key === availabilityKey
+      ? availabilityFailure.message
+      : null;
+  const availabilityLoading =
+    availabilityKey !== null && availability === null && availabilityError === null;
 
   const availabilityAbortRef = useRef<AbortController | null>(null);
   const quoteAbortRef = useRef<AbortController | null>(null);
@@ -198,28 +240,30 @@ export function useBookingState(params: {
     return Math.max(0, differenceInCalendarDays(departureDate, arrivalDate));
   }, [arrivalDate, departureDate]);
 
+  /**
+   * Identifies one quote question. Wider than the availability key: guests and
+   * a promo code change the price for the same dates, so an answer to the old
+   * combination must not be shown for the new one.
+   */
+  const quoteKey =
+    availabilityKey && availability?.available
+      ? `${availabilityKey}|${guests.adults}|${guests.children}|${guests.pets}|${promoCode.trim()}`
+      : null;
+  const quote = quoteAnswer && quoteAnswer.key === quoteKey ? quoteAnswer.view : null;
+  const quoteFailureNow =
+    quoteFailure && quoteFailure.key === quoteKey ? quoteFailure : null;
+  const quoteLoading = quoteKey !== null && quote === null && quoteFailureNow === null;
+
   useEffect(() => {
-    if (!range.arrival || !range.departure) {
-      setAvailability(null);
-      setAvailabilityLoading(false);
-      setAvailabilityError(null);
-      setQuote(null);
-      setQuoteLoading(false);
-      setQuoteError(null);
-      setQuoteErrorReason(null);
-      return;
-    }
+    // Nothing to ask without both ends of the range — and nothing to clear
+    // either, because every answer below is stamped with the dates it answers
+    // for. The effect writes state only once a reply is in.
+    if (!availabilityKey || !range.arrival || !range.departure) return;
 
     availabilityAbortRef.current?.abort();
     const controller = new AbortController();
     availabilityAbortRef.current = controller;
-
-    setAvailabilityLoading(true);
-    setAvailabilityError(null);
-    setAvailability(null);
-    setQuote(null);
-    setQuoteLoading(false);
-    setQuoteError(null);
+    const key = availabilityKey;
 
     fetchAvailability(
       { start: range.arrival, end: range.departure },
@@ -229,28 +273,27 @@ export function useBookingState(params: {
         if (controller.signal.aborted) {
           return;
         }
-        setAvailability({ available: data.available, unavailableDates: data.unavailable });
-        setAvailabilityLoading(false);
+        setAvailabilityAnswer({
+          key,
+          available: data.available,
+          unavailableDates: data.unavailable,
+        });
       })
       .catch(() => {
         if (controller.signal.aborted) {
           return;
         }
-        setAvailabilityLoading(false);
-        setAvailabilityError(t.booking.error);
+        setAvailabilityFailure({ key, message: t.booking.error });
       });
 
     return () => controller.abort();
-  }, [range.arrival, range.departure, t.booking.error]);
+  }, [availabilityKey, range.arrival, range.departure, t.booking.error]);
 
   useEffect(() => {
-    if (!range.arrival || !range.departure || !availability?.available) {
-      if (availability && !availability.available) {
-        setQuote(null);
-        setQuoteLoading(false);
-        setQuoteError(null);
-        setQuoteErrorReason(null);
-      }
+    // Same again: dates that are not available have no price to ask for, and a
+    // reply that is still in flight is described by `quoteLoading` above rather
+    // than raised here.
+    if (!quoteKey || !range.arrival || !range.departure) {
       return;
     }
 
@@ -261,10 +304,7 @@ export function useBookingState(params: {
     quoteAbortRef.current?.abort();
     const controller = new AbortController();
     quoteAbortRef.current = controller;
-
-    setQuoteLoading(true);
-    setQuoteError(null);
-    setQuoteErrorReason(null);
+    const key = quoteKey;
 
     quoteTimeoutRef.current = setTimeout(() => {
       fetchQuote(
@@ -316,47 +356,46 @@ export function useBookingState(params: {
             };
           });
 
-          setQuote({
-            rentalTitle,
-            rentalImageSrc: rentalImage.src,
-            arrival: arrivalLabel,
-            departure: departureLabel,
-            nights: data.nights || nights,
-            currency,
-            sections,
-            total: formatMoney(data.total, currency, locale),
-            taxesIncluded: data.taxesIncluded,
-            payments: paymentItems,
+          setQuoteAnswer({
+            key,
+            view: {
+              rentalTitle,
+              rentalImageSrc: rentalImage.src,
+              arrival: arrivalLabel,
+              departure: departureLabel,
+              nights: data.nights || nights,
+              currency,
+              sections,
+              total: formatMoney(data.total, currency, locale),
+              taxesIncluded: data.taxesIncluded,
+              payments: paymentItems,
+            },
           });
-          setQuoteLoading(false);
         })
         .catch((error) => {
           if (controller.signal.aborted) {
             return;
           }
-          setQuote(null);
-          setQuoteLoading(false);
           const reason = getQuoteErrorReason(error);
           const message = getQuoteErrorMessage(error, t.booking.priceError);
-          setQuoteError(message);
-          setQuoteErrorReason(reason);
+          setQuoteFailure({ key, message, reason });
 
+          // Lodgify can refuse a quote for dates its own availability call just
+          // called free. That refusal is the more specific answer, so it
+          // overwrites the availability one for the same dates.
           if (reason === "unavailable" && arrivalDate && departureDate) {
             const blockedRange = buildDateKeys(arrivalDate, departureDate);
             if (blockedRange.length) {
               setBlockedDates((prev) => mergeUniqueDates(prev, blockedRange));
-              setAvailability((prev) => {
-                const unavailableDates = mergeUniqueDates(
-                  prev?.unavailableDates ?? [],
-                  blockedRange,
-                );
-                return { available: false, unavailableDates };
-              });
-            } else {
-              setAvailability((prev) =>
-                prev ? { ...prev, available: false } : { available: false, unavailableDates: [] },
-              );
             }
+            setAvailabilityAnswer((prev) => ({
+              key: availabilityKeyOfQuoteKey(key),
+              available: false,
+              unavailableDates: mergeUniqueDates(
+                prev?.unavailableDates ?? [],
+                blockedRange,
+              ),
+            }));
           }
         });
     }, quoteDebounceMs);
@@ -369,7 +408,7 @@ export function useBookingState(params: {
     };
   }, [
     arrivalDate,
-    availability,
+    availabilityKey,
     currencyFallback,
     dateLocale,
     departureDate,
@@ -379,6 +418,7 @@ export function useBookingState(params: {
     locale,
     nights,
     promoCode,
+    quoteKey,
     range.arrival,
     range.departure,
     rentalImage.src,
@@ -398,8 +438,8 @@ export function useBookingState(params: {
     availabilityLoading,
     quoteLoading,
     availabilityError,
-    quoteError,
-    quoteErrorReason,
+    quoteError: quoteFailureNow?.message ?? null,
+    quoteErrorReason: quoteFailureNow?.reason ?? null,
     blockedDates,
     setRange,
     setGuests,

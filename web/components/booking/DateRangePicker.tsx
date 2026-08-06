@@ -90,8 +90,8 @@ export function DateRangePicker({
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [open, setOpen] = useState(false);
   const [activeMonth, setActiveMonth] = useState<Date>(new Date());
-  const [selectionError, setSelectionError] = useState<string | null>(null);
-  const [hoveredDate, setHoveredDate] = useState<Date | null>(null);
+  const [selectionErrorState, setSelectionError] = useState<string | null>(null);
+  const [hoveredDateState, setHoveredDate] = useState<Date | null>(null);
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
@@ -198,13 +198,6 @@ export function DateRangePicker({
   }, [open]);
 
   useEffect(() => {
-    if (!open) {
-      setSelectionError(null);
-      setHoveredDate(null);
-    }
-  }, [open]);
-
-  useEffect(() => {
     return () => {
       if (ignoreMonthTimeoutRef.current) {
         clearTimeout(ignoreMonthTimeoutRef.current);
@@ -236,9 +229,15 @@ export function DateRangePicker({
     setActiveMonth(month);
   };
 
+  // Plain locals, because a dependency array cannot hold `value?.from`: the
+  // compiler cannot see through the optional chain, so it gave up on the whole
+  // component ("existing memoization could not be preserved") and every useMemo
+  // here silently stopped being one.
+  const selectedFrom = value?.from;
+  const selectedTo = value?.to;
   const minNights = useMemo(
-    () => getMinNightsForArrival(value?.from ?? new Date()),
-    [value?.from],
+    () => getMinNightsForArrival(selectedFrom ?? new Date()),
+    [selectedFrom],
   );
   const minNightsLabel = useMemo(
     () => t.booking.tooltipMinNights.replace("{n}", String(minNights)),
@@ -260,22 +259,29 @@ export function DateRangePicker({
   }, [availability, minNights, minNightsLabel, t.booking.tooltipUnavailable]);
 
   const arrivalKey = useMemo(
-    () => (value?.from ? format(value.from, "yyyy-MM-dd") : null),
-    [value?.from],
+    () => (selectedFrom ? format(selectedFrom, "yyyy-MM-dd") : null),
+    [selectedFrom],
   );
   const arrivalInfo = useMemo(
     () => (arrivalKey ? dayMap.get(arrivalKey) ?? null : null),
     [arrivalKey, dayMap],
   );
+  const arrivalWindowEnd = arrivalInfo?.windowEnd;
   const maxCheckoutDate = useMemo(() => {
-    if (!arrivalInfo?.windowEnd) {
+    if (!arrivalWindowEnd) {
       return null;
     }
-    const endDate = parseDate(arrivalInfo.windowEnd);
+    const endDate = parseDate(arrivalWindowEnd);
     return endDate ? addDays(endDate, 1) : null;
-  }, [arrivalInfo?.windowEnd]);
+  }, [arrivalWindowEnd]);
 
-  const isSelectingDeparture = Boolean(value?.from && !value?.to);
+  const isSelectingDeparture = Boolean(selectedFrom && !selectedTo);
+
+  // Both are only ever true of the panel that is open now. Deriving them says
+  // that once, instead of two effects that reset them after the fact — and an
+  // effect that resets state cannot run before the render that already read it.
+  const selectionError = open ? selectionErrorState : null;
+  const hoveredDate = open && isSelectingDeparture ? hoveredDateState : null;
   const unavailableDates = useMemo(() => {
     const dates = Array.from(dayMap.entries())
       .filter(([, info]) => info.status === "unavailable")
@@ -358,21 +364,21 @@ export function DateRangePicker({
     return ranges;
   }, [dayMap]);
   const minCheckoutDate = useMemo(() => {
-    if (!value?.from) {
+    if (!selectedFrom) {
       return null;
     }
-    return addDays(value.from, minNights);
-  }, [minNights, value?.from]);
+    return addDays(selectedFrom, minNights);
+  }, [minNights, selectedFrom]);
 
   const disabledMatchers = useMemo(() => {
-    if (value?.from && !value.to) {
+    if (selectedFrom && !selectedTo) {
       return [
         { before: addDays(today, 1) },
         (date: Date) => {
-          if (!value.from) {
+          if (!selectedFrom) {
             return false;
           }
-          if (differenceInCalendarDays(date, value.from) <= 0) {
+          if (differenceInCalendarDays(date, selectedFrom) <= 0) {
             return true;
           }
           if (minCheckoutDate && differenceInCalendarDays(date, minCheckoutDate) < 0) {
@@ -412,20 +418,20 @@ export function DateRangePicker({
     maxCheckoutDate,
     minCheckoutDate,
     today,
-    value?.from,
-    value?.to,
+    selectedFrom,
+    selectedTo,
   ]);
 
   const isCheckoutSelectable = useCallback(
     (date: Date) => {
-      if (!isSelectingDeparture || !value?.from) {
+      if (!isSelectingDeparture || !selectedFrom) {
         return false;
       }
       const earliest = addDays(today, 1);
       if (differenceInCalendarDays(date, earliest) < 0) {
         return false;
       }
-      if (differenceInCalendarDays(date, value.from) <= 0) {
+      if (differenceInCalendarDays(date, selectedFrom) <= 0) {
         return false;
       }
       if (minCheckoutDate && differenceInCalendarDays(date, minCheckoutDate) < 0) {
@@ -448,7 +454,7 @@ export function DateRangePicker({
       maxCheckoutDate,
       minCheckoutDate,
       today,
-      value?.from,
+      selectedFrom,
       dayMap,
     ],
   );
@@ -466,21 +472,15 @@ export function DateRangePicker({
     [dayMap, today],
   );
 
-  useEffect(() => {
-    if (!isSelectingDeparture) {
-      setHoveredDate(null);
-    }
-  }, [isSelectingDeparture]);
-
   const hoverRange = useMemo(() => {
-    if (!isSelectingDeparture || !value?.from || !hoveredDate) {
+    if (!isSelectingDeparture || !selectedFrom || !hoveredDate) {
       return null;
     }
     if (!isCheckoutSelectable(hoveredDate)) {
       return null;
     }
-    return { from: value.from, to: hoveredDate };
-  }, [hoveredDate, isCheckoutSelectable, isSelectingDeparture, value?.from]);
+    return { from: selectedFrom, to: hoveredDate };
+  }, [hoveredDate, isCheckoutSelectable, isSelectingDeparture, selectedFrom]);
 
   const isHoverRangeMiddle = useCallback(
     (date: Date) => {
@@ -542,8 +542,8 @@ export function DateRangePicker({
     if (status === "error") {
       return t.booking.error;
     }
-    if (value?.from && value?.to) {
-      const keys = buildDateKeys(value.from, value.to);
+    if (selectedFrom && selectedTo) {
+      const keys = buildDateKeys(selectedFrom, selectedTo);
       if (!keys.length) {
         return t.booking.rangeHint;
       }
@@ -561,8 +561,8 @@ export function DateRangePicker({
     selectionError,
     status,
     t.booking,
-    value?.from,
-    value?.to,
+    selectedFrom,
+    selectedTo,
     windowHasCoverage,
   ]);
 
@@ -570,8 +570,8 @@ export function DateRangePicker({
     status === "error" ? t.booking.error : t.booking.loading;
 
   const rangeLabel =
-    value?.from && value?.to
-      ? `${format(value.from, "PPP", { locale: dateLocale })} - ${format(value.to, "PPP", {
+    selectedFrom && selectedTo
+      ? `${format(selectedFrom, "PPP", { locale: dateLocale })} - ${format(selectedTo, "PPP", {
           locale: dateLocale,
         })}`
       : t.booking.selectDates;
@@ -586,7 +586,12 @@ export function DateRangePicker({
             setOpen((prev) => {
               const next = !prev;
               if (next) {
-                setActiveMonth(value?.from ?? new Date());
+                setActiveMonth(selectedFrom ?? new Date());
+                // Opening is what clears the last visit's error and hover, in
+                // the handler that causes it rather than in an effect watching
+                // for it afterwards.
+                setSelectionError(null);
+                setHoveredDate(null);
               }
               return next;
             })
@@ -594,7 +599,7 @@ export function DateRangePicker({
           aria-expanded={open}
           aria-haspopup="dialog"
         >
-          <span className={cn(!value?.from || !value?.to ? "text-muted-foreground" : undefined)}>
+          <span className={cn(!selectedFrom || !selectedTo ? "text-muted-foreground" : undefined)}>
             {rangeLabel}
           </span>
         </button>

@@ -17,7 +17,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --disable-warning=ExperimentalWarning --import ./scripts/ts-resolve.mjs --test \"lib/**/*.test.ts\"",
-    "verify": "npm run typecheck && npm run check:cms && npm test",
+    "verify": "npm run typecheck && npm run lint && npm run check:cms && npm test",
     "check:cms": "node scripts/check-cms-addresses.mjs",
     "resize-images": "node scripts/resize-images.js"
   },

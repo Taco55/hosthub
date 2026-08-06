@@ -48,9 +48,19 @@ export function BookingWidget({ locale, checkoutUrl, currency, className }: Book
   const t = getDictionary(locale);
   const [range, setRange] = useState<DateRange | undefined>();
   const [guests, setGuests] = useState<GuestCounts>(defaultGuests);
-  const [availabilityStatus, setAvailabilityStatus] = useState<AvailabilityStatus>("idle");
-  const [quoteStatus, setQuoteStatus] = useState<QuoteStatus>("idle");
-  const [quote, setQuote] = useState<QuoteResponse | null>(null);
+  // Each answer is stamped with the selection it answers for, so "loading" is
+  // "asked, nothing back for *this* selection yet" — a thing to look up rather
+  // than a flag to raise on the way out and lower on the way back. The flags
+  // were what let a price for one set of dates sit under another.
+  const [availabilityAnswer, setAvailabilityAnswer] = useState<{
+    key: string;
+    status: Exclude<AvailabilityStatus, "idle" | "loading">;
+  } | null>(null);
+  const [quoteAnswer, setQuoteAnswer] = useState<{
+    key: string;
+    quote: QuoteResponse | null;
+    status: Exclude<QuoteStatus, "idle" | "loading">;
+  } | null>(null);
   const [calendarError, setCalendarError] = useState(false);
 
   const start = range?.from ? format(range.from, "yyyy-MM-dd") : "";
@@ -65,40 +75,51 @@ export function BookingWidget({ locale, checkoutUrl, currency, className }: Book
   const currencyFallback =
     currency ?? process.env.NEXT_PUBLIC_LODGIFY_CURRENCY ?? "NOK";
 
+  const availabilityStatus: AvailabilityStatus = !rangeKey
+    ? "idle"
+    : availabilityAnswer?.key === rangeKey
+      ? availabilityAnswer.status
+      : "loading";
+
+  // Guests change the price for the same dates, so they are part of the
+  // question the quote answers.
+  const quoteKey =
+    rangeKey && availabilityStatus === "available"
+      ? `${rangeKey}|${guests.adults}|${guests.children}|${guests.pets}`
+      : "";
+  const quoteStatus: QuoteStatus = !quoteKey
+    ? availabilityStatus === "error"
+      ? "error"
+      : "idle"
+    : quoteAnswer?.key === quoteKey
+      ? quoteAnswer.status
+      : "loading";
+  const quote = quoteAnswer?.key === quoteKey ? quoteAnswer.quote : null;
+
   useEffect(() => {
-    if (!rangeKey) {
-      setAvailabilityStatus("idle");
-      setQuoteStatus("idle");
-      setQuote(null);
-      return;
-    }
+    // Nothing to ask without a selection, and nothing to clear: the answers
+    // below carry the selection they belong to.
+    if (!rangeKey) return;
 
     const controller = new AbortController();
     let active = true;
-
-    setAvailabilityStatus("loading");
-    setQuoteStatus("idle");
-    setQuote(null);
+    const key = rangeKey;
 
     fetchAvailability({ start, end }, { signal: controller.signal })
       .then((data) => {
         if (!active) {
           return;
         }
-        const isAvailable = data.available;
-        setAvailabilityStatus(isAvailable ? "available" : "unavailable");
-        if (!isAvailable) {
-          setQuoteStatus("idle");
-          setQuote(null);
-        }
+        setAvailabilityAnswer({
+          key,
+          status: data.available ? "available" : "unavailable",
+        });
       })
       .catch(() => {
         if (!active || controller.signal.aborted) {
           return;
         }
-        setAvailabilityStatus("error");
-        setQuoteStatus("error");
-        setQuote(null);
+        setAvailabilityAnswer({ key, status: "error" });
       });
 
     return () => {
@@ -108,21 +129,17 @@ export function BookingWidget({ locale, checkoutUrl, currency, className }: Book
   }, [end, rangeKey, start]);
 
   useEffect(() => {
-    if (!rangeKey) {
-      return;
-    }
-    if (availabilityStatus !== "available") {
-      if (availabilityStatus !== "loading") {
-        setQuoteStatus("idle");
-        setQuote(null);
-      }
+    // `quoteKey` is empty unless the dates are known to be available, so this
+    // covers both early returns the effect used to make — without writing the
+    // state that says so.
+    if (!quoteKey) {
       return;
     }
 
     const controller = new AbortController();
     let active = true;
+    const key = quoteKey;
 
-    setQuoteStatus("loading");
     fetchQuote(
       {
         arrival: start,
@@ -137,15 +154,13 @@ export function BookingWidget({ locale, checkoutUrl, currency, className }: Book
         if (!active) {
           return;
         }
-        setQuote(data);
-        setQuoteStatus("ready");
+        setQuoteAnswer({ key, quote: data, status: "ready" });
       })
       .catch(() => {
         if (!active || controller.signal.aborted) {
           return;
         }
-        setQuoteStatus("error");
-        setQuote(null);
+        setQuoteAnswer({ key, quote: null, status: "error" });
       });
 
     return () => {
@@ -153,12 +168,11 @@ export function BookingWidget({ locale, checkoutUrl, currency, className }: Book
       controller.abort();
     };
   }, [
-    availabilityStatus,
     end,
     guests.adults,
     guests.children,
     guests.pets,
-    rangeKey,
+    quoteKey,
     start,
   ]);
 

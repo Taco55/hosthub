@@ -23,8 +23,17 @@ export function Header({ locale, siteName, bookingHref }: HeaderProps) {
   const isPreview = pathname.startsWith("/preview/");
   const base = isPreview ? `/preview/${locale}` : `/${locale}`;
   const isHome = pathname === base;
-  const [hasScrolledHalfhero, setHasScrolledHalfHero] = useState(false);
+  // The measurement carries the page it was taken on, so leaving the home page
+  // invalidates it by itself. It used to be a bare boolean that an effect reset
+  // on the way out — which is a write during a render the value is already
+  // wrong for, and reads as "solid header" for one frame on the way back.
+  const [heroScroll, setHeroScroll] = useState<{
+    path: string;
+    passedHalf: boolean;
+  }>({ path: pathname, passedHalf: false });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const hasScrolledHalfhero =
+    heroScroll.path === pathname && heroScroll.passedHalf;
   const isSolid = !isHome || hasScrolledHalfhero;
   const showBookingCta = Boolean(bookingHref);
   const navLinks = [
@@ -35,10 +44,9 @@ export function Header({ locale, siteName, bookingHref }: HeaderProps) {
     { href: `${base}/privacy`, label: t.nav.privacy },
   ];
   useEffect(() => {
-    if (!isHome) {
-      setHasScrolledHalfHero(false);
-      return;
-    }
+    // Nothing to measure off the home page, and nothing to clear either: a
+    // measurement from another page no longer answers for this one.
+    if (!isHome) return;
 
     const heroSelector = "[data-hero-section]";
     const onScroll = () => {
@@ -49,7 +57,7 @@ export function Header({ locale, siteName, bookingHref }: HeaderProps) {
 
       const heroBottom = hero.getBoundingClientRect().bottom;
       const heroHalf = hero.offsetHeight / 2;
-      setHasScrolledHalfHero(heroBottom <= heroHalf);
+      setHeroScroll({ path: pathname, passedHalf: heroBottom <= heroHalf });
     };
 
     onScroll();
@@ -59,7 +67,7 @@ export function Header({ locale, siteName, bookingHref }: HeaderProps) {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
     };
-  }, [isHome]);
+  }, [isHome, pathname]);
 
   useEffect(() => {
     document.body.style.overflow = isMenuOpen ? "hidden" : "";

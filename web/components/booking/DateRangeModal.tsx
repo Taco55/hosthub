@@ -107,11 +107,21 @@ export function DateRangeModal({
   const [availability, setAvailability] = useState<AvailabilityDay[]>([]);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [selectionError, setSelectionError] = useState<string | null>(null);
-  const [hoveredDate, setHoveredDate] = useState<Date | null>(null);
+  const [hoveredDateState, setHoveredDate] = useState<Date | null>(null);
   const [activeMonth, setActiveMonth] = useState<Date>(new Date());
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
-  const didInitMonthRef = useRef(false);
+  const [didInitMonth, setDidInitMonth] = useState(false);
+  /**
+   * The `value` this panel last copied in, or null while it is closed.
+   *
+   * Opening the panel adopts the dates the page holds. That used to be an
+   * effect, which runs *after* the first render — so the panel painted once
+   * with the previous visit's selection before correcting itself. Comparing
+   * during render is what React prescribes for adjusting state to props, and
+   * it lands before anything is shown.
+   */
+  const [syncedValueKey, setSyncedValueKey] = useState<string | null>(null);
   const ignoreMonthChangeRef = useRef(false);
   const ignoreMonthTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const windowStart = useMemo(() => startOfMonth(activeMonth), [activeMonth]);
@@ -125,21 +135,23 @@ export function DateRangeModal({
     [today, windowStart],
   );
 
-  useEffect(() => {
-    if (!open) {
-      return;
+  // Null while closed, so closing and reopening re-adopts the page's dates the
+  // way the effect's `open` dependency used to.
+  const valueKey = open ? `${value.arrival}|${value.departure}` : null;
+  if (valueKey !== syncedValueKey) {
+    setSyncedValueKey(valueKey);
+    if (valueKey !== null) {
+      const from = parseDate(value.arrival);
+      const to = parseDate(value.departure);
+      setSelection(from ? { from, to: to ?? undefined } : undefined);
+      setSelectionError(null);
+      setHoveredDate(null);
+      if (!didInitMonth) {
+        setActiveMonth(from ?? new Date());
+        setDidInitMonth(true);
+      }
     }
-
-    const from = parseDate(value.arrival);
-    const to = parseDate(value.departure);
-    setSelection(from ? { from, to: to ?? undefined } : undefined);
-    setSelectionError(null);
-    setHoveredDate(null);
-    if (!didInitMonthRef.current) {
-      setActiveMonth(from ?? new Date());
-      didInitMonthRef.current = true;
-    }
-  }, [open, value.arrival, value.departure]);
+  }
 
   useEffect(() => {
     return () => {
@@ -242,9 +254,14 @@ export function DateRangeModal({
     [blockedDates],
   );
 
+  // Plain locals: a dependency array cannot hold `selection?.from`. The compiler
+  // cannot see through the optional chain, so it gave up on the whole component
+  // and every useMemo below silently stopped being one.
+  const selectedFrom = selection?.from;
+  const selectedTo = selection?.to;
   const minNights = useMemo(
-    () => getMinNightsForArrival(selection?.from ?? new Date()),
-    [selection?.from],
+    () => getMinNightsForArrival(selectedFrom ?? new Date()),
+    [selectedFrom],
   );
   const minNightsLabel = useMemo(
     () => t.booking.tooltipMinNights.replace("{n}", String(minNights)),
@@ -269,22 +286,27 @@ export function DateRangeModal({
   }, [availability, blockedDateSet, minNights, minNightsLabel, t.booking.tooltipUnavailable]);
 
   const arrivalKey = useMemo(
-    () => (selection?.from ? format(selection.from, "yyyy-MM-dd") : null),
-    [selection?.from],
+    () => (selectedFrom ? format(selectedFrom, "yyyy-MM-dd") : null),
+    [selectedFrom],
   );
   const arrivalInfo = useMemo(
     () => (arrivalKey ? dayMap.get(arrivalKey) ?? null : null),
     [arrivalKey, dayMap],
   );
+  const arrivalWindowEnd = arrivalInfo?.windowEnd;
   const maxCheckoutDate = useMemo(() => {
-    if (!arrivalInfo?.windowEnd) {
+    if (!arrivalWindowEnd) {
       return null;
     }
-    const endDate = parseDate(arrivalInfo.windowEnd);
+    const endDate = parseDate(arrivalWindowEnd);
     return endDate ? addDays(endDate, 1) : null;
-  }, [arrivalInfo?.windowEnd]);
+  }, [arrivalWindowEnd]);
 
-  const isSelectingDeparture = Boolean(selection?.from && !selection?.to);
+  const isSelectingDeparture = Boolean(selectedFrom && !selectedTo);
+
+  // Only ever true of the panel that is open now — said once here instead of by
+  // an effect that resets it after a render has already read the old value.
+  const hoveredDate = open && isSelectingDeparture ? hoveredDateState : null;
   const unavailableDates = useMemo(() => {
     const dates = Array.from(dayMap.entries())
       .filter(([, info]) => info.status === "unavailable")
@@ -376,21 +398,21 @@ export function DateRangeModal({
     return ranges;
   }, [dayMap]);
   const minCheckoutDate = useMemo(() => {
-    if (!selection?.from) {
+    if (!selectedFrom) {
       return null;
     }
-    return addDays(selection.from, minNights);
-  }, [minNights, selection?.from]);
+    return addDays(selectedFrom, minNights);
+  }, [minNights, selectedFrom]);
 
   const disabledMatchers = useMemo(() => {
-    if (selection?.from && !selection.to) {
+    if (selectedFrom && !selectedTo) {
       return [
         { before: addDays(today, 1) },
         (date: Date) => {
-          if (!selection.from) {
+          if (!selectedFrom) {
             return false;
           }
-          if (differenceInCalendarDays(date, selection.from) <= 0) {
+          if (differenceInCalendarDays(date, selectedFrom) <= 0) {
             return true;
           }
           if (minCheckoutDate && differenceInCalendarDays(date, minCheckoutDate) < 0) {
@@ -429,21 +451,21 @@ export function DateRangeModal({
     disabledRanges,
     maxCheckoutDate,
     minCheckoutDate,
-    selection?.from,
-    selection?.to,
+    selectedFrom,
+    selectedTo,
     today,
   ]);
 
   const isCheckoutSelectable = useCallback(
     (date: Date) => {
-      if (!isSelectingDeparture || !selection?.from) {
+      if (!isSelectingDeparture || !selectedFrom) {
         return false;
       }
       const earliest = addDays(today, 1);
       if (differenceInCalendarDays(date, earliest) < 0) {
         return false;
       }
-      if (differenceInCalendarDays(date, selection.from) <= 0) {
+      if (differenceInCalendarDays(date, selectedFrom) <= 0) {
         return false;
       }
       if (minCheckoutDate && differenceInCalendarDays(date, minCheckoutDate) < 0) {
@@ -465,7 +487,7 @@ export function DateRangeModal({
       isSelectingDeparture,
       maxCheckoutDate,
       minCheckoutDate,
-      selection?.from,
+      selectedFrom,
       today,
       dayMap,
     ],
@@ -484,21 +506,15 @@ export function DateRangeModal({
     [dayMap, today],
   );
 
-  useEffect(() => {
-    if (!isSelectingDeparture) {
-      setHoveredDate(null);
-    }
-  }, [isSelectingDeparture]);
-
   const hoverRange = useMemo(() => {
-    if (!isSelectingDeparture || !selection?.from || !hoveredDate) {
+    if (!isSelectingDeparture || !selectedFrom || !hoveredDate) {
       return null;
     }
     if (!isCheckoutSelectable(hoveredDate)) {
       return null;
     }
-    return { from: selection.from, to: hoveredDate };
-  }, [hoveredDate, isCheckoutSelectable, isSelectingDeparture, selection?.from]);
+    return { from: selectedFrom, to: hoveredDate };
+  }, [hoveredDate, isCheckoutSelectable, isSelectingDeparture, selectedFrom]);
 
   const isHoverRangeMiddle = useCallback(
     (date: Date) => {
@@ -569,8 +585,8 @@ export function DateRangeModal({
     if (status === "error") {
       return t.booking.error;
     }
-    if (selection?.from && selection?.to) {
-      const keys = buildDateKeys(selection.from, selection.to);
+    if (selectedFrom && selectedTo) {
+      const keys = buildDateKeys(selectedFrom, selectedTo);
       if (!keys.length) {
         return t.booking.rangeHint;
       }
@@ -581,14 +597,15 @@ export function DateRangeModal({
       const isAvailable = keys.every((key) => dayMap.get(key)?.status !== "unavailable");
       return isAvailable ? t.booking.available : t.booking.unavailable;
     }
-    if (selection?.from && !selection.to) {
+    if (selectedFrom && !selectedTo) {
       return t.booking.selectCheckOutDate;
     }
     return t.booking.rangeHint;
   }, [
     dayMap,
+    selectedFrom,
+    selectedTo,
     selectionError,
-    selection,
     status,
     t.booking,
     windowHasCoverage,
@@ -627,12 +644,12 @@ export function DateRangeModal({
               }
 
               let nextRange: DateRange;
-              if (!selection?.from || selection.to) {
+              if (!selectedFrom || selectedTo) {
                 nextRange = { from: selectedDay, to: undefined };
-              } else if (selectedDay <= selection.from) {
+              } else if (selectedDay <= selectedFrom) {
                 nextRange = { from: selectedDay, to: undefined };
               } else {
-                nextRange = { from: selection.from, to: selectedDay };
+                nextRange = { from: selectedFrom, to: selectedDay };
               }
 
               setSelectionError(null);

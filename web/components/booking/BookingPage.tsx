@@ -145,18 +145,13 @@ export function BookingPage({
     return Math.max(0, differenceInCalendarDays(departureDate, arrivalDate));
   }, [range.arrival, range.departure]);
 
+  // Depends on the two objects it is handed, not on a hand-picked list of their
+  // fields: the list named five of them, so a sixth field ever mattering to the
+  // checkout URL would have gone unnoticed. Both come from `useState`, so their
+  // identity changes exactly when their contents do.
   const checkoutHref = useMemo(
-    () =>
-      buildCheckoutUrl(checkoutUrl, range, guests, currencyFallback),
-    [
-      checkoutUrl,
-      currencyFallback,
-      guests.adults,
-      guests.children,
-      guests.pets,
-      range.arrival,
-      range.departure,
-    ],
+    () => buildCheckoutUrl(checkoutUrl, range, guests, currencyFallback),
+    [checkoutUrl, currencyFallback, guests, range],
   );
 
   const canBook = Boolean(
