@@ -481,18 +481,19 @@ Lees eerst:
   `TRANSLATION.md`, `STYLED_WIDGETS_MAPPING.md`) — die map wordt tussendoor
   ververst; herlees bij designvragen in plaats van op geheugen te varen
 
-Lees daarnaast de relevante skills voordat je bijbehorende categorieën
-beoordeelt (merk-neutraal, kies de single-package kolom):
+Lees daarnaast de relevante bronnen voordat je bijbehorende categorieën
+beoordeelt:
 
-- Feature/data-flow/repository/state: `tk-feature`
-- Dart static analysis/analyzer/lints: `tk-dart-analysis`
-- Supabase/migraties/RLS/Edge Functions/secrets/deploys: `tk-supabase`
-- StyledWidgets/component-keuze/modals: `tk-styledwidgets`
-- Theming/kleuren/typografie: `tk-styling`
-- Localization/ARB/l10n: `tk-localization`
+- Cross-project kernregels (architectuurlagen, foutstroom, modals, validatie):
+  `AGENTS_CORE.md`
+- Theming/kleuren/typografie: `.agents/skills/hosthub-styling/SKILL.md`
 - Componentgids van de lib zelf:
-  `../../shared/libraries/styled_widgets/.claude/skills/styled-widgets-guide/SKILL.md`
-  (actueler dan elke kopie)
+  `../../shared/libraries/styled_widgets/skills/styled-widgets/SKILL.md`
+  en de referentie onder `reference/` (actueler dan elke kopie)
+
+Voor feature/data-flow, dart-analysis, Supabase en localisatie heeft deze repo
+nog geen eigen skill; val terug op `AGENTS_CORE.md` en `AGENTS.md`, en noteer in
+het rapport wanneer een ontbrekende skill het oordeel onzeker maakte.
 
 Werk systematisch. Rapporteer alleen concrete risico's, bugs, inconsistenties,
 onderhoudsproblemen of ontbrekende validatie/tests. Onderbouw elke bevinding
