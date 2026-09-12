@@ -163,6 +163,13 @@ original the moment either side is edited.
   and a `title`.
 - Errors are not toasts. Business errors go through `showAppError`; toasts are for
   success and info.
+- The rule covers feedback an app *renders through a library* too. A shared library
+  cannot depend on `styled_widgets`, so it must not decide how a notice looks: it
+  exposes an injectable presenter (as it already does for buttons, fields and error
+  dialogs) and keeps the raw-Material widget only as the default for consumers that
+  wire nothing. **A `SnackBar` reaching the screen of a styled app is a missing
+  wiring, not a library quirk** — add the slot in the library and wire it in the app's
+  overrides; never accept it, and never work around it in the app.
 
 ## Validation and delivery
 
