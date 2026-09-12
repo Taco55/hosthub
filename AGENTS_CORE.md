@@ -1,7 +1,7 @@
 # AGENTS_CORE.md
 
 Cross-project core rules for Taco's Flutter/Supabase projects. The canonical copy
-lives at `shared/agents/AGENTS_CORE.md` and is vendored into each repo.
+lives at `shared/tk-skills/AGENTS_CORE.md` and is vendored into each repo.
 Repo-specific facts (paths, branch policy, workspace layout) live in `AGENTS.md`
 next to this file; per-topic conventions live in that repo's own skills.
 
