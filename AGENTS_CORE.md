@@ -13,28 +13,45 @@ symlink.
 
 ## Skills first
 
-Load the relevant skill before writing code. Skills live **in the repo they describe**,
-under `.agents/skills/`, reached through a committed `.claude/skills` symlink — that
-needs no install step and no version bump, so a repo-local skill beats a shared one
-whenever it applies. A repo that does Flutter and Supabase work is expected to carry a
-skill per topic:
+Load the relevant skill before writing code. Skills come from three places, and the
+most specific one wins:
 
-| Topic | Covers |
-|---|---|
-| feature | cubits/blocs, repositories, models, pages, routes, DI (`I`/GetIt), DomainError |
-| styledwidgets | which StyledWidgets component fits, and where the repo deviates |
-| styling | theme preset, color roles, typography, tokens |
-| localization | ARB files, the `S` class, regenerating translations |
-| supabase | Edge Functions, migrations, RLS, secrets/env layout, deploys |
-| dart-analysis | `analyze`/`dart fix`/format, test scope, analyzer config |
+| Tier | Lives in | Holds |
+|---|---|---|
+| Library | the library's own repo | the API it ships to consumers |
+| Shared convention | `shared/tk-skills/skills/` | the pattern, brand-neutral, no file paths |
+| Repo | that repo's `.agents/skills/`, via a committed `.claude/skills` symlink | the bindings: key files, package names, what this repo does differently |
 
-Name them per repo (`justorganize-feature`, `diplora-feature`). A repo without these
-skills yet falls back to this file plus its own `AGENTS.md`.
+The shared tier exists because the same conventions were being written out per repo and
+drifting apart. It describes **how** a cubit, repository, theme pipeline or ARB entry is
+shaped; it never names a file or a package, because that is what makes a skill go stale
+in every repo but one.
 
-Also read the component guide that ships with the UI library itself — the
-`styled-widgets` skill at
-`shared/libraries/styled_widgets/skills/styled-widgets/SKILL.md`, with the component
-and theming reference under its `reference/`. It is more current than any copy of it.
+| Topic | Shared skill | Repo skill adds |
+|---|---|---|
+| feature | `tk-feature` | key files, DI container, route table, edge-function names |
+| styling | `tk-styling` | palette/preset files, the repo's semantic colors and text styles |
+| localization | `tk-localization` | ARB locations, the generated class, the regen command |
+| dart-analysis | `tk-dart-analysis` | analyze/test commands, analyzer config, repo guardrails |
+
+Name a repo skill after its repo (`justorganize-feature`, `diplora-feature`) and have it
+point at the shared one rather than restating it. A repo whose skill is richer than the
+shared one keeps its own — the shared tier is a floor, not a ceiling.
+
+Two topics have **no** shared skill on purpose:
+
+- **StyledWidgets components.** The generic API ships with the library itself, as the
+  `styled-widgets` skill at
+  `shared/libraries/styled_widgets/skills/styled-widgets/SKILL.md`, with the component
+  and theming reference under its `reference/`. It is more current than any copy. A
+  repo's `<repo>-styledwidgets` skill holds only that repo's deviations.
+- **Supabase.** Install the upstream `supabase` and `supabase-postgres-best-practices`
+  skills from `supabase/agent-skills`; a repo adds its own migrations, RLS and deploy
+  flow on top.
+
+Never copy another project's skill into a repo. A `diplora-feature` inside a
+non-Diplora repo names packages that do not exist there, and it drifts from the
+original the moment either side is edited.
 
 ## Tooling and workflow
 
