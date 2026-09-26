@@ -13,8 +13,13 @@ import 'package:hosthub_console/core/widgets/auth/auth_ui_styled_overrides.dart'
 import 'package:hosthub_console/core/widgets/widgets.dart';
 import 'package:hosthub_console/features/auth/auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_auth_flutter/supabase_auth_flutter.dart';
 
-const _authUiConfig = AuthUiConfig(usePathRouting: true);
+/// `SupabaseAuth.initialize` applies it, after the callback is exchanged.
+const _authUiConfig = AuthUiConfig(
+  usePathRouting: true,
+  paths: AuthUiPaths(magicLinkCallback: AuthCallbackLink.webPath),
+);
 
 void main() {
   runZonedGuarded(
@@ -27,7 +32,6 @@ void main() {
       // (Back, Reload, Inspect) — still reachable from the keyboard and the
       // Chrome menu. Drop this line to hand it back.
       if (kIsWeb) await BrowserContextMenu.disableContextMenu();
-      AuthUi.initialize(_authUiConfig);
       AppErrors.configure(
         adapters: const [supabaseAdapter],
         showDebugDetails:
@@ -43,10 +47,10 @@ void main() {
 
       setupErrorWidget();
 
-      final client = await initializeSupabase();
+      final auth = await initializeSupabase(ui: _authUiConfig);
       final prefs = await SharedPreferences.getInstance();
       await registerCoreServices(prefs: prefs);
-      await registerFeatureServices(client: client);
+      await registerFeatureServices(auth: auth);
       registerBlocs();
 
       runApp(const ConsoleApp());

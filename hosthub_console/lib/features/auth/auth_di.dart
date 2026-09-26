@@ -1,4 +1,4 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_auth_flutter/supabase_auth_flutter.dart';
 
 import 'package:hosthub_console/core/core.dart';
 import 'package:hosthub_console/features/auth/auth.dart';
@@ -7,8 +7,8 @@ import 'package:hosthub_console/features/auth/infrastructure/supabase/supabase_a
 import 'package:hosthub_console/features/auth/infrastructure/supabase/supabase_onboarding_adapter.dart';
 import 'package:hosthub_console/features/server_settings/data/admin_settings_repository.dart';
 
-void registerAuthDependencies([SupabaseClient? client]) {
-  final supabaseClient = client ?? Supabase.instance.client;
+void registerAuthDependencies(SupabaseAuthRuntime runtime) {
+  final supabaseClient = runtime.client;
 
   if (!I.isRegistered<OnboardingPort>()) {
     I.registerSingleton<OnboardingPort>(
@@ -42,6 +42,7 @@ void registerAuthDependencies([SupabaseClient? client]) {
   if (!I.isRegistered<AuthPort>()) {
     I.registerSingleton<AuthPort>(
       SupabaseAuthAdapter(
+        runtime,
         onboardingAdapter: I.get<SupabaseOnboardingAdapter>(),
       ),
       signalsReady: true,

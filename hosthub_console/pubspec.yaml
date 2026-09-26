@@ -19,6 +19,8 @@ dependencies:
     path: ../../../shared/libraries/styled_widgets
   auth_ui_flutter:
     path: ../../../shared/libraries/auth_ui_flutter
+  supabase_auth_flutter:
+    path: ../../../shared/libraries/supabase-auth-flutter
 
   flutter_localizations:
     sdk: flutter
@@ -53,6 +55,8 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_secure_storage: ^10.0.0
+  http: ^1.2.0
   build_runner: ^2.11.1
   freezed: ^3.2.3
   json_serializable: ^6.8.0

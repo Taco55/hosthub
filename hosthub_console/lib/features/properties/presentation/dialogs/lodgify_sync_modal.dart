@@ -19,24 +19,21 @@ Future<bool> showLodgifySyncModal(
   BuildContext context, {
   required LodgifySyncPlan plan,
 }) async {
-  // Recorded by the primary and read after the shell closed the modal: the
-  // decision is a side effect of confirming, not a value the body collects.
-  var applied = false;
-
-  await showStyledModal<void>(
+  final applied = await showStyledModal<bool>(
     context,
     title: context.s.lodgifySyncResultTitle,
     subtitle: _outcome(context, plan),
-    dismiss: const StyledModalDismiss<void>(isDismissible: false),
+    dismiss: const StyledModalDismiss<bool>(isDismissible: false),
     sizing: const StyledModalSizing(dialogMaxWidth: 560, bodyMaxHeight: 420),
     // With work to apply this is a confirmation; without it the modal only
     // states an outcome, so it gets an outline `Sluiten` and no filled call to
-    // action.
+    // action. Only confirming closes with `true`; `Annuleren` and `Sluiten`
+    // close without a result.
     actions: plan.hasWork
         ? StyledModalActions.confirm(
             label: _applyLabel(context, plan),
             cancelLabel: context.s.cancelButton,
-            onPressed: () => applied = true,
+            onPressed: (action) => action.close(true),
           )
         : StyledModalActions.readOnly(label: context.s.closeButton),
     builder: (context, modal) => StyledSection(
@@ -45,7 +42,7 @@ Future<bool> showLodgifySyncModal(
     ),
   );
 
-  return applied;
+  return applied ?? false;
 }
 
 /// The counts, as a sentence under the title — never in the button label.

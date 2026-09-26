@@ -47,7 +47,7 @@ Future<bool?> _showInviteDialog(
     actions: StyledModalActions.save(
       label: context.s.teamSendInvitation,
       cancelLabel: context.s.cancelButton,
-      onPressed: () async => formKey.currentState?.submit(),
+      onPressed: (action) async => formKey.currentState?.submit(action),
     ),
     // The form decides whether the invite closes the modal: a rejected address
     // keeps it open with what was typed.
@@ -88,15 +88,11 @@ class _InviteMemberFormState extends State<_InviteMemberForm> {
     super.dispose();
   }
 
-  /// Called by the modal's footer action. Throwing nothing and simply returning
-  /// keeps the modal open, which is what a failed validation should do; the
-  /// shell shows progress while this future is pending.
-  ///
-  /// The controller comes off this form's own context rather than being handed
-  /// in: the intent that drives the footer takes no arguments, and the form is
-  /// a descendant of the modal that owns it.
-  Future<void> submit() async {
-    final controller = StyledModalController.of<bool>(context);
+  /// Called by the modal's footer action with its [action] handle. Throwing
+  /// nothing and simply returning keeps the modal open, which is what a failed
+  /// validation should do; the shell shows progress while this future is
+  /// pending.
+  Future<void> submit(StyledModalActionHandle<bool> action) async {
     final form = _formKey.currentState;
     if (form == null || !form.validate()) return;
 
@@ -112,7 +108,7 @@ class _InviteMemberFormState extends State<_InviteMemberForm> {
     if (!mounted) return;
 
     if (success) {
-      controller.close(true);
+      action.close(true);
       return;
     }
     // The cubit put the DomainError in state; the page that opened this modal

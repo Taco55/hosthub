@@ -64,6 +64,18 @@ class HosthubRouter {
           ),
         ),
         GoRoute(
+          // Where a sign-in link lands. `SupabaseAuth.initialize` exchanged it
+          // before the app started, so the page only waits for the bloc and
+          // hands over — or says why the link was refused.
+          path: authUiPaths.magicLinkCallback,
+          builder: (context, state) => AuthMagicLinkRedirectPage(
+            variant: AuthLayoutVariant.web,
+            errorDisplayMode: authErrorDisplayMode,
+            onAuthenticated: (ctx) => ctx.go(homePath),
+            onBackToLogin: (ctx) => ctx.go(authUiPaths.login),
+          ),
+        ),
+        GoRoute(
           path: authUiPaths.forgotPassword,
           builder: (context, state) => AuthForgotPasswordPage(
             variant: AuthLayoutVariant.web,

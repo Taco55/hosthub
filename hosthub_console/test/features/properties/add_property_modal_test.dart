@@ -159,14 +159,19 @@ void main() {
     final s = await createManually(tester);
 
     // The dialog is the point: opened from the nav tree there is no page
-    // listener, so without this the button looks broken.
-    expect(find.byType(AlertDialog), findsOneWidget);
+    // listener, so without this the button looks broken. Found by what it
+    // says: the modal behind it is a `Dialog` too.
+    final errorStrings = AppErrorLocalizations.of(
+      tester.element(find.byType(Scaffold).first),
+    );
+    final errorDialog = find.ancestor(
+      of: find.text(errorStrings.errorSavingItem),
+      matching: find.byType(Dialog),
+    );
+    expect(errorDialog, findsOneWidget);
 
     await tester.tap(
-      find.descendant(
-        of: find.byType(AlertDialog),
-        matching: find.byType(TextButton),
-      ).last,
+      find.descendant(of: errorDialog, matching: find.byType(TextButton)).last,
     );
     for (var frame = 0; frame < 6; frame++) {
       await tester.pump(const Duration(milliseconds: 100));

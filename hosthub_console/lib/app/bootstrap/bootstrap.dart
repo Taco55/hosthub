@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:auth_ui_flutter/auth_ui_flutter.dart';
+import 'package:supabase_auth_flutter/supabase_auth_flutter.dart';
 import 'package:hosthub_console/app/bootstrap/bloc_registry.dart';
 import 'package:hosthub_console/core/core.dart';
 import 'package:hosthub_console/features/auth/auth_di.dart';
@@ -23,15 +24,16 @@ void initializeAppConfig({required bool enableLogging, bool? enableApiLogger}) {
   );
 }
 
-Future<SupabaseClient> initializeSupabase() async {
-  await Supabase.initialize(
-    url: AppConfig.current.supabaseUrl.toString(),
-    publishableKey: AppConfig.current.supabaseAnonKey,
-    authOptions: const FlutterAuthClientOptions(autoRefreshToken: true),
-  );
-
-  return Supabase.instance.client;
-}
+/// Starts Supabase the one way `supabase_auth_flutter` allows: the client,
+/// the exchange of a sign-in link the console was opened with (on
+/// `/auth/callback`), and `AuthUi` with [ui] — in that order, before `runApp`.
+Future<SupabaseAuthRuntime> initializeSupabase({required AuthUiConfig ui}) =>
+    SupabaseAuth.initialize(
+      url: AppConfig.current.supabaseUrl.toString(),
+      publishableKey: AppConfig.current.supabaseAnonKey,
+      callback: AuthCallbackLink(AppConfig.current.deepLinkScheme),
+      ui: ui,
+    );
 
 Future<void> registerCoreServices({required SharedPreferences prefs}) async {
   if (!I.isRegistered<LocalStorageManager>()) {
@@ -42,10 +44,13 @@ Future<void> registerCoreServices({required SharedPreferences prefs}) async {
   }
 }
 
-Future<void> registerFeatureServices({required SupabaseClient client}) async {
+Future<void> registerFeatureServices({
+  required SupabaseAuthRuntime auth,
+}) async {
+  final client = auth.client;
   registerServerSettingsDependencies(client);
   registerProfileDependencies(client);
-  registerAuthDependencies(client);
+  registerAuthDependencies(auth);
   registerUsersDependencies(client);
   registerCmsDependencies(client);
   registerPropertiesDependencies(client);

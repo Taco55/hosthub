@@ -5,8 +5,11 @@
       "name": "console-static",
       "runtimeExecutable": "python3",
       "runtimeArgs": [
-        "-m", "http.server", "43112",
-        "--directory", "hosthub_console/build/web"
+        "-m",
+        "http.server",
+        "43112",
+        "--directory",
+        "hosthub_console/build/web"
       ],
       "port": 43112
     },
@@ -18,6 +21,15 @@
         "cd hosthub_console && ../.fvm/flutter_sdk/bin/flutter run -d web-server --web-port 43111 --dart-define-from-file=../../hosthub_secrets/hosthub-prd.env"
       ],
       "port": 43111
+    },
+    {
+      "name": "console-dev",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "cd hosthub_console && fvm flutter run -d web-server --web-port 43000 --dart-define-from-file=../../hosthub_secrets/hosthub-dev.env"
+      ],
+      "port": 43000
     }
   ]
 }

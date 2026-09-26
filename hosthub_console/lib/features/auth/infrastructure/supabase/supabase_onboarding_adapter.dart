@@ -29,11 +29,6 @@ class SupabaseOnboardingAdapter extends SupabaseRepository {
   final String _passwordResetRedirectUri;
   final String _signInRedirectUri;
 
-  String get signInRedirectUri => _signInRedirectUri;
-
-  String resolveSignInRedirectUri([String? override]) =>
-      _resolveRedirectUri(_signInRedirectUri, override);
-
   Future<void> sendAccountCreatedEmail({
     required String email,
     String? name,

@@ -42,7 +42,7 @@ Future<LodgifyApiKeyResult?> showLodgifyApiKeyModal(
     actions: StyledModalActions.save(
       label: hasApiKey ? context.s.saveButton : context.s.add,
       cancelLabel: context.s.cancelButton,
-      onPressed: () => contentKey.currentState?.submit(),
+      onPressed: (action) => contentKey.currentState?.submit(action),
       // The leading slot exists only when there is a `Verwijderen` to put in
       // it; `Annuleren` sits next to the primary, not on the far left. It
       // destroys something, so it stays a text button and it asks first.
@@ -140,25 +140,25 @@ class _LodgifyApiKeyFormState extends State<_LodgifyApiKeyForm> {
 
   /// Asks before removing the stored credential, then closes the modal with the
   /// removal.
+  ///
+  /// The controller comes off this form's own context rather than being handed
+  /// in: a footer's leading action takes no arguments, and the form is a
+  /// descendant of the modal that owns it.
   void confirmRemove() =>
       _confirmRemove(context, StyledModalController.of(context));
 
-  /// Called by the modal's footer action.
-  ///
-  /// The controller comes off this form's own context rather than being handed
-  /// in: the intent that drives the footer takes no arguments, and the form is a
-  /// descendant of the modal that owns it.
-  void submit() {
+  /// Called by the modal's footer action with its [action] handle.
+  void submit(StyledModalActionHandle<LodgifyApiKeyResult> action) {
     if (_loading) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    final controller = StyledModalController.of<LodgifyApiKeyResult>(context);
     final value = _controller.text.trim();
-    // Nothing changed — close without a save and without a toast.
+    // Nothing changed — close without a result: no save and no toast. The
+    // body collects no data, so there is nothing for the handle to close with.
     if (value == _originalApiKey) {
-      controller.closeWithoutResult();
+      action.close();
       return;
     }
-    controller.close(LodgifyApiKeyResult.save(value));
+    action.close(LodgifyApiKeyResult.save(value));
   }
 
   @override

@@ -1,476 +1,105 @@
-import 'dart:async';
 import 'dart:convert';
-import 'dart:developer';
 
+import 'package:app_errors/app_errors.dart';
+import 'package:supabase_auth_flutter/supabase_auth_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
-import 'package:hosthub_console/core/core.dart';
-
 import 'package:hosthub_console/features/auth/domain/ports/auth_port.dart';
-import 'package:hosthub_console/features/auth/infrastructure/supabase/auth_user_existence_check.dart';
 import 'package:hosthub_console/features/auth/infrastructure/supabase/supabase_onboarding_adapter.dart';
-import 'package:hosthub_console/features/auth/infrastructure/supabase/supabase_repository.dart';
-import 'package:app_errors/app_errors.dart';
 
-class SupabaseAuthAdapter extends SupabaseRepository implements AuthPort {
-  SupabaseAuthAdapter({required SupabaseOnboardingAdapter onboardingAdapter})
-    : _userOnboardingService = onboardingAdapter,
-      super(sb.Supabase.instance.client);
+/// The console's auth on GoTrue: `supabase_auth_flutter`'s service, plus what
+/// only the console does.
+///
+/// Signing in (password, magic link, code), signing up, the session, its
+/// refresh and the exchange of a sign-in link the console was opened with come
+/// from [SupabaseAuthService]. What stays here:
+///
+/// - the console's own mails: the sign-up confirmation, its resend and the
+///   password reset go out through `send_auth_email`, whose links open the
+///   console's set-password page with the code — a mail scanner cannot use
+///   that up the way it does GoTrue's one-time link;
+/// - the codes those mails carry ([verifyOtp], [confirmResetPasswordWithOtp])
+///   and setting the password once one is verified ([confirmResetPassword]);
+/// - deleting the account through the `delete_user` function;
+/// - [onAuthStateChange], for the console's own session listeners.
+///
+/// The console's own calls throw [DomainError]s, as the rest of the console
+/// does; the inherited ones throw `auth_ui_flutter`'s `AuthError`s, which the
+/// auth screens render by kind.
+class SupabaseAuthAdapter extends SupabaseAuthService implements AuthPort {
+  SupabaseAuthAdapter(
+    super.runtime, {
+    required SupabaseOnboardingAdapter onboardingAdapter,
+  }) : _onboarding = onboardingAdapter;
 
-  final SupabaseOnboardingAdapter _userOnboardingService;
-
-  Map<String, Object?> _context(
-    String operation, [
-    Map<String, Object?> extra = const {},
-  ]) => {'service': 'SupabaseAuthAdapter', 'operation': operation, ...extra};
-
-  @override
-  bool get isGuestUser {
-    final user = supabase.auth.currentUser;
-    if (user == null) return true;
-    final provider = user.appMetadata['provider'];
-    return provider == 'anon' || provider == 'anonymous' || user.email == null;
-  }
-
-  @override
-  Future<SignInResult> signIn(String email, String password) async {
-    try {
-      final response = await supabase.auth.signInWithPassword(
-        email: email,
-        password: password,
-      );
-
-      if (response.user != null) {
-        return const SignInResult(
-          isSignedIn: true,
-          nextStep: AuthSignInStep.done,
-        );
-      }
-
-      throw DomainErrorCode.serverError.err(
-        message: 'Supabase returned a null user after signInWithPassword',
-        context: _context('signIn', {'email': email}),
-      );
-    } on DomainError {
-      rethrow;
-    } catch (error, stack) {
-      throw mapError(
-        error,
-        stack,
-        context: _context('signIn', {'email': email}),
-      );
-    }
-  }
-
-  @override
-  Future<void> signInWithOAuth(String provider) async {
-    try {
-      final redirectTo = AppConfig.current.authRedirectUri();
-      await supabase.auth.signInWithOAuth(
-        _mapOAuthProvider(provider),
-        redirectTo: redirectTo,
-        scopes: 'openid profile email',
-        queryParams: const {
-          'prompt': 'select_account',
-          'access_type': 'offline',
-        },
-      );
-    } on DomainError {
-      rethrow;
-    } catch (error, stack) {
-      throw mapError(
-        error,
-        stack,
-        context: _context('signInWithOAuth', {'provider': provider}),
-      );
-    }
-  }
+  final SupabaseOnboardingAdapter _onboarding;
 
   @override
   Stream<AuthSessionChange> get onAuthStateChange =>
-      supabase.auth.onAuthStateChange.map((authState) {
-        final user = authState.session?.user;
+      auth.onAuthStateChange.map((state) {
+        final user = state.session?.user;
         return AuthSessionChange(
           user: user == null ? null : AuthUser(id: user.id, email: user.email),
         );
       });
 
+  // ── The console's mails ──────────────────────────────────────────────
+
+  /// GoTrue's sign-up, followed by the console's confirmation mail while the
+  /// address still has to be confirmed.
   @override
-  Stream<AuthUser?> get authStateChanges =>
-      onAuthStateChange.map((change) => change.user);
-
-  @override
-  Future<SignUpResult> signUp(String email, String password) async {
-    try {
-      final trimmedEmail = email.trim();
-      final response = await supabase.auth.signUp(
-        email: trimmedEmail,
-        password: password,
-      );
-
-      final user = response.user;
-      if (user == null) {
-        throw DomainErrorCode.serverError.err(
-          message: 'Supabase did not return a user after signUp',
-          context: _context('signUp', {'email': trimmedEmail}),
-        );
-      }
-
-      final session = response.session;
-      final requiresEmailConfirmation =
-          session == null && user.emailConfirmedAt == null;
-
-      if (requiresEmailConfirmation) {
-        await _userOnboardingService.sendSignUpConfirmationEmail(
-          email: trimmedEmail,
-        );
-        return SignUpResult(
-          isSignUpComplete: false,
-          nextStep: AuthSignUpStep.confirmSignUp,
-          userId: user.id,
-        );
-      }
-
-      return SignUpResult(
-        isSignUpComplete: true,
-        nextStep: AuthSignUpStep.done,
-        userId: user.id,
-      );
-    } on DomainError {
-      rethrow;
-    } catch (error, stack) {
-      throw mapError(
-        error,
-        stack,
-        context: _context('signUp', {'email': email}),
-      );
+  Future<SignUpResult> signUp(String username, String password) async {
+    final result = await super.signUp(username, password);
+    if (result.nextStep == AuthSignUpStep.confirmSignUp) {
+      await _mailSignUpConfirmation(username);
     }
+    return result;
   }
 
-  /// Refresh the session if it's expired (or almost expired)
+  /// The confirmation mail again — the console's, like the first. Signing in
+  /// to an unconfirmed account sends it through here too.
   @override
-  Future<void> refreshSessionIfNeeded() async {
-    final session = supabase.auth.currentSession;
-    final exp = session?.expiresAt;
+  Future<void> resendSignUpCode(String username) =>
+      _mailSignUpConfirmation(username);
 
-    if (session != null && exp != null) {
-      final expiration = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
-      final now = DateTime.now();
-
-      // Add 30 seconds buffer
-      if (now.isAfter(expiration.subtract(const Duration(seconds: 30)))) {
-        try {
-          await supabase.auth.refreshSession();
-        } catch (error, stack) {
-          final mapped = mapError(
-            error,
-            stack,
-            context: _context('refreshSessionIfNeeded'),
-          );
-          if (mapped.isInvalidRefreshTokenError) {
-            throw mapped;
-          }
-          // Log and ignore — this may fail if refresh_token is expired too
-          log('Session refresh failed: $mapped');
-        }
-      }
-    }
-  }
-
+  /// The console's reset mail instead of GoTrue's; [redirectTo] overrides the
+  /// console's set-password page as its destination.
   @override
-  Future<SignUpResult> confirmSignUp(String email, String code) async {
-    try {
-      await supabase.auth.verifyOTP(
-        email: email,
-        token: code.trim(),
-        type: sb.OtpType.signup,
-      );
+  Future<void> sendResetEmail(String email, {Uri? redirectTo}) => _domain(
+    'sendResetEmail',
+    {'email': email},
+    () => _onboarding.sendPasswordResetEmail(
+      email: email,
+      redirectUriOverride: redirectTo?.toString(),
+    ),
+  );
 
-      return const SignUpResult(
-        isSignUpComplete: true,
-        nextStep: AuthSignUpStep.done,
-      );
-    } on DomainError {
-      rethrow;
-    } catch (error, stack) {
-      throw mapError(error, stack, context: _context('confirmSignUp'));
-    }
-  }
-
-  @override
-  Future<bool> resetPassword(String email) async {
-    try {
-      await _userOnboardingService.sendPasswordResetEmail(email: email);
-      return true;
-    } on DomainError {
-      rethrow;
-    } catch (error, stack) {
-      throw mapError(error, stack, context: _context('resetPassword'));
-    }
-  }
-
-  @override
-  Future<void> sendResetEmail(String email) async {
-    await resetPassword(email);
-  }
-
-  // @override
-  // Future<void> resendSignUpCode(
-  //   String username,
-  // ) async {
-  //   try {
-  //     await Amplify.Auth.resendSignUpCode(username: username);
-  //   } catch (e) {
-  //     return Future.error(e);
-  //   }
-  // }
-
-  // @override
-  // Future<bool> confirmResetPassword(
-  //   String username,
-  //   String code,
-  //   String newPassword,
-  // ) async {
-  //   try {
-  //     if (F.appOptions.isSimulateAuth == true) {
-  //       return Future.delayed(const Duration(seconds: 3), () {
-  //         return true;
-  //       });
-  //     }
-
-  //     final result = await Amplify.Auth.confirmResetPassword(
-  //       username: username,
-  //       confirmationCode: code,
-  //       newPassword: newPassword,
-  //     );
-
-  //     return result.isPasswordReset;
-  //   } catch (e) {
-  //     return Future.error(e);
-  //   }
-  // }
-
-  @override
-  bool get isLoggedIn {
-    return supabase.auth.currentUser != null;
-  }
-
-  @override
-  Future<bool> validateCurrentUserExists() async {
-    try {
-      final response = await supabase.auth.getUser();
-      return response.user != null;
-    } catch (error, stack) {
-      // Only a definitive "this account is gone" may return false: AuthBloc
-      // signs out on false. Anything else is inconclusive — an expired access
-      // token, an offline client, a 5xx — and must be thrown so the bloc keeps
-      // the session.
-      if (AuthUserExistenceCheck.provesUserIsGone(error)) return false;
-      final mapped = mapError(
-        error,
-        stack,
-        context: _context('validateCurrentUserExists'),
-      );
-      log('Session validation inconclusive, keeping session: $mapped');
-      throw mapped;
-    }
-  }
-
-  @override
-  AuthUser? get currentUser {
-    final user = supabase.auth.currentUser;
-    if (user == null) return null;
-    final provider = user.appMetadata['provider'];
-    return AuthUser(
-      id: user.id,
-      email: user.email,
-      phone: user.phone,
-      isAnonymous: provider == 'anon' || provider == 'anonymous',
-    );
-  }
-
-  @override
-  Future<void> signOut() async {
-    try {
-      await supabase.auth.signOut();
-    } on DomainError {
-      rethrow;
-    } catch (error, stack) {
-      throw mapError(error, stack, context: _context('signOut'));
-    }
-  }
-
-  @override
-  Future<void> deleteCurrentUser() async {
-    try {
-      final response = await supabase.functions.invoke(
-        'delete_user',
-        body: jsonEncode({'user_id': currentUserId}),
-        headers: const {'Content-Type': 'application/json'},
-      );
-
-      if (response.status != 200) {
-        throw DomainErrorCode.serverError.err(
-          reason: DomainErrorReason.cannotDeleteAllUserData,
-          cause: response.data,
-          context: {
-            ..._context('deleteCurrentUser'),
-            'function_status': response.status,
-          },
-        );
-      }
-    } on DomainError {
-      rethrow;
-    } catch (error, stack) {
-      throw mapError(
-        error,
-        stack,
-        reason: DomainErrorReason.cannotDeleteAllUserData,
-        context: _context('deleteCurrentUser'),
-      );
-    }
-  }
-
-  @override
-  Future<AccountDeletionResult> deleteAccount() async {
-    await deleteCurrentUser();
-    return const AccountDeletionResult.accountDeleted();
-  }
-
-  @override
-  Future<void> deleteUser(String userId) async {
-    try {
-      final response = await supabase.functions.invoke(
-        'delete_user',
-        body: jsonEncode({'user_id': userId}),
-        headers: const {'Content-Type': 'application/json'},
-      );
-
-      if (response.status != 200) {
-        throw DomainErrorCode.serverError.err(
-          reason: DomainErrorReason.cannotDeleteAllUserData,
-          cause: response.data,
-          context: {
-            ..._context('deleteUser', {'target_user_id': userId}),
-            'function_status': response.status,
-          },
-        );
-      }
-    } on DomainError {
-      rethrow;
-    } catch (error, stack) {
-      throw mapError(
-        error,
-        stack,
-        reason: DomainErrorReason.cannotDeleteAllUserData,
-        context: _context('deleteUser', {'target_user_id': userId}),
-      );
-    }
-  }
-
-  @override
-  Future<String> createUser(
-    String email,
-    String password, {
-    String? name,
-  }) async {
-    try {
-      final response = await supabase.auth.admin.createUser(
-        sb.AdminUserAttributes(email: email, password: password),
-      );
-
-      final user = response.user;
-      if (user == null) {
-        throw DomainErrorCode.serverError.err(
-          message: 'Supabase admin.createUser returned without a user',
-          context: _context('createUser', {'email': email}),
-        );
-      }
-
-      await _userOnboardingService.sendAccountCreatedEmail(
-        email: email,
-        name: name,
-      );
-
-      return user.id;
-    } on DomainError {
-      rethrow;
-    } catch (error, stack) {
-      throw mapError(
-        error,
-        stack,
-        context: _context('createUser', {'email': email}),
-      );
-    }
-  }
-
-  @override
-  Future<void> signInWithOtp(
-    String email, {
-    bool shouldCreateUser = true,
-    String? redirectTo,
-  }) async {
+  Future<void> _mailSignUpConfirmation(String email) {
     final trimmed = email.trim();
     if (trimmed.isEmpty) {
       throw DomainError.of(
         DomainErrorCode.validationFailed,
         reason: DomainErrorReason.invalidEmailFormat,
-        message: 'Cannot send OTP without a valid email',
-        context: _context('signInWithOtp', {'email': email}),
+        message: 'Cannot send a sign-up confirmation without an email',
+        context: _context('mailSignUpConfirmation'),
       );
     }
-
-    final redirectUri = _userOnboardingService.resolveSignInRedirectUri(
-      redirectTo,
+    return _domain(
+      'mailSignUpConfirmation',
+      {'email': trimmed},
+      () => _onboarding.sendSignUpConfirmationEmail(email: trimmed),
     );
-
-    try {
-      // Leverage Supabase' built-in magic link flow so new users are onboarded automatically.
-      await supabase.auth.signInWithOtp(
-        email: trimmed,
-        emailRedirectTo: redirectUri,
-        shouldCreateUser: shouldCreateUser,
-      );
-    } on DomainError {
-      rethrow;
-    } catch (error, stack) {
-      throw mapError(
-        error,
-        stack,
-        context: _context('signInWithOtp', {
-          'email': trimmed,
-          'should_create_user': shouldCreateUser,
-          if (redirectTo != null) 'redirect_override': redirectTo,
-          'resolved_redirect': redirectUri,
-        }),
-      );
-    }
   }
 
-  @override
-  Future<void> sendMagicLink(String email) async {
-    await signInWithOtp(email);
-  }
+  // ── The codes in those mails ─────────────────────────────────────────
 
-  @override
-  Future<void> confirmSignInWithOtp(String email, String code) async {
-    try {
-      await supabase.auth.verifyOTP(
-        email: email,
-        token: code.trim(),
-        type: sb.OtpType.magiclink,
-      );
-    } on DomainError {
-      rethrow;
-    } catch (error, stack) {
-      throw mapError(
-        error,
-        stack,
-        context: _context('confirmSignInWithOtp', {'email': email}),
-      );
-    }
-  }
-
+  /// Verifies the code a console mail carries and returns the session's
+  /// refresh token.
+  ///
+  /// The page it lands on does not always know which kind of code it holds,
+  /// so the type named in the link is tried first and the other kinds a
+  /// console mail can carry after it. A rate limit or a server error ends the
+  /// search: another type would only be refused the same way.
   @override
   Future<String> verifyOtp(String email, String code) async {
     final normalizedEmail = email.trim();
@@ -479,20 +108,19 @@ class SupabaseAuthAdapter extends SupabaseRepository implements AuthPort {
     try {
       await _clearMismatchedLocalSessionForOtp(normalizedEmail);
 
-      final otpTypes = _resolveOtpTypesForVerification();
       sb.AuthException? lastAuthError;
       StackTrace? lastAuthStack;
 
-      for (final otpType in otpTypes) {
+      for (final otpType in _otpTypesForVerification()) {
         try {
-          final response = await supabase.auth.verifyOTP(
+          final response = await auth.verifyOTP(
             email: normalizedEmail,
             token: normalizedCode,
             type: otpType,
           );
           final refreshToken =
               response.session?.refreshToken ??
-              supabase.auth.currentSession?.refreshToken;
+              auth.currentSession?.refreshToken;
           if (refreshToken == null || refreshToken.isEmpty) {
             throw DomainErrorCode.unauthorized.err(
               reason: DomainErrorReason.invalidVerificationCode,
@@ -508,23 +136,20 @@ class SupabaseAuthAdapter extends SupabaseRepository implements AuthPort {
           lastAuthError = error;
           lastAuthStack = stack;
           if (!_shouldTryNextOtpType(error)) {
-            throw mapError(
-              error,
-              stack,
-              context: _context('verifyOtp', {
-                'email': normalizedEmail,
-                'otp_type': otpType.name,
-              }),
-            );
+            throw _mapError(error, stack, 'verifyOtp', {
+              'email': normalizedEmail,
+              'otp_type': otpType.name,
+            });
           }
         }
       }
 
       if (lastAuthError != null) {
-        throw mapError(
+        throw _mapError(
           lastAuthError,
           lastAuthStack ?? StackTrace.current,
-          context: _context('verifyOtp', {'email': normalizedEmail}),
+          'verifyOtp',
+          {'email': normalizedEmail},
         );
       }
 
@@ -536,193 +161,156 @@ class SupabaseAuthAdapter extends SupabaseRepository implements AuthPort {
     } on DomainError {
       rethrow;
     } catch (error, stack) {
-      throw mapError(
-        error,
-        stack,
-        context: _context('verifyOtp', {'email': normalizedEmail}),
-      );
+      throw _mapError(error, stack, 'verifyOtp', {'email': normalizedEmail});
     }
   }
 
-  @override
-  Future<void> resendSignUpEmail(String email) async {
-    final trimmed = email.trim();
-    if (trimmed.isEmpty) {
-      throw DomainError.of(
-        DomainErrorCode.validationFailed,
-        reason: DomainErrorReason.invalidEmailFormat,
-        message: 'Cannot resend confirmation without a valid email',
-        context: _context('resendSignUpEmail', {'email': email}),
-      );
-    }
-
-    try {
-      await _userOnboardingService.sendSignUpConfirmationEmail(email: trimmed);
-    } on DomainError {
-      rethrow;
-    } catch (error, stack) {
-      throw mapError(
-        error,
-        stack,
-        context: _context('resendSignUpEmail', {'email': trimmed}),
-      );
-    }
-  }
-
+  /// Verifies a recovery code, which signs in, then sets the new password.
   @override
   Future<void> confirmResetPasswordWithOtp(
     String email,
     String code,
     String newPassword,
-  ) async {
-    try {
-      // Step 1: Verify the recovery OTP to establish a session.
-      await supabase.auth.verifyOTP(
-        email: email,
-        token: code.trim(),
-        type: sb.OtpType.recovery,
+  ) => _domain('confirmResetPasswordWithOtp', {'email': email}, () async {
+    await auth.verifyOTP(
+      email: email,
+      token: code.trim(),
+      type: sb.OtpType.recovery,
+    );
+    await auth.updateUser(sb.UserAttributes(password: newPassword));
+  });
+
+  /// Sets the password of the session a verified code or link established.
+  @override
+  Future<void> confirmResetPassword(String newPassword) => _domain(
+    'confirmResetPassword',
+    const {},
+    () => auth.updateUser(sb.UserAttributes(password: newPassword)),
+  );
+
+  // ── The account ──────────────────────────────────────────────────────
+
+  /// Deletes the signed-in account and its data through `delete_user`.
+  @override
+  Future<AccountDeletionResult> deleteAccount() async {
+    final userId = auth.currentUser?.id;
+    if (userId == null || userId.isEmpty) {
+      // logout: false — a missing client-side session is a local
+      // precondition, not proof that the session was revoked.
+      throw DomainErrorCode.unauthorized.err(
+        message: 'User not logged in',
+        logout: false,
+        context: _context('deleteAccount'),
       );
-      // Step 2: Update the user's password.
-      await supabase.auth.updateUser(sb.UserAttributes(password: newPassword));
+    }
+    try {
+      final response = await runtime.client.functions.invoke(
+        'delete_user',
+        body: jsonEncode({'user_id': userId}),
+        headers: const {'Content-Type': 'application/json'},
+      );
+      if (response.status != 200) {
+        throw DomainErrorCode.serverError.err(
+          reason: DomainErrorReason.cannotDeleteAllUserData,
+          cause: response.data,
+          context: {
+            ..._context('deleteAccount'),
+            'function_status': response.status,
+          },
+        );
+      }
     } on DomainError {
       rethrow;
     } catch (error, stack) {
-      throw mapError(
+      throw _mapError(
         error,
         stack,
-        context: _context('confirmResetPasswordWithOtp', {'email': email}),
+        'deleteAccount',
+        const {},
+        DomainErrorReason.cannotDeleteAllUserData,
       );
     }
+    return const AccountDeletionResult.accountDeleted();
   }
 
-  @override
-  Future<void> confirmResetPassword(String newPassword) async {
-    try {
-      await supabase.auth.updateUser(sb.UserAttributes(password: newPassword));
-    } on DomainError {
-      rethrow;
-    } catch (error, stack) {
-      throw mapError(error, stack, context: _context('confirmResetPassword'));
-    }
-  }
+  // ── Helpers ──────────────────────────────────────────────────────────
 
-  @override
-  Future<void> refreshSessionFromRefreshToken(String refreshToken) async {
-    try {
-      await supabase.auth.setSession(refreshToken);
-    } on DomainError {
-      rethrow;
-    } catch (error, stack) {
-      throw mapError(
-        error,
-        stack,
-        context: _context('refreshSessionFromRefreshToken'),
-      );
-    }
-  }
-
-  @override
-  Future<void> refreshSessionFromToken(String refreshToken) async {
-    await refreshSessionFromRefreshToken(refreshToken);
-  }
-
-  @override
-  Future<void> resendSignUpCode(String username) async {
-    await resendSignUpEmail(username);
-  }
-
+  /// A code for another address than the one signed in here would otherwise
+  /// verify into the wrong session; signing out first is best effort.
   Future<void> _clearMismatchedLocalSessionForOtp(String email) async {
     final normalizedEmail = email.trim().toLowerCase();
     if (normalizedEmail.isEmpty) return;
 
-    final currentEmail = supabase.auth.currentUser?.email?.trim().toLowerCase();
+    final currentEmail = auth.currentUser?.email?.trim().toLowerCase();
     if (currentEmail == null || currentEmail.isEmpty) return;
     if (currentEmail == normalizedEmail) return;
 
     try {
-      await supabase.auth.signOut();
+      await auth.signOut();
     } catch (_) {
       // Best effort only; OTP verification can still succeed.
     }
   }
 
-  List<sb.OtpType> _resolveOtpTypesForVerification() {
-    final candidates = <sb.OtpType>[];
-
-    void add(sb.OtpType type) {
-      if (!candidates.contains(type)) {
-        candidates.add(type);
-      }
-    }
-
-    final preferred = _otpTypeFromQuery();
-    if (preferred != null) {
-      add(preferred);
-    }
-
-    add(sb.OtpType.magiclink);
-    add(sb.OtpType.recovery);
-    add(sb.OtpType.invite);
-
-    return candidates;
-  }
+  List<sb.OtpType> _otpTypesForVerification() => {
+    ?_otpTypeFromQuery(),
+    sb.OtpType.magiclink,
+    sb.OtpType.recovery,
+    sb.OtpType.invite,
+  }.toList();
 
   sb.OtpType? _otpTypeFromQuery() {
     final params = Uri.base.queryParameters;
     final raw = params['otp_type'] ?? params['type'];
-    if (raw == null) return null;
-
-    switch (raw.trim().toLowerCase()) {
-      case 'magiclink':
-        return sb.OtpType.magiclink;
-      case 'recovery':
-        return sb.OtpType.recovery;
-      case 'invite':
-        return sb.OtpType.invite;
-      case 'signup':
-        return sb.OtpType.signup;
-      case 'email':
-        return sb.OtpType.email;
-      default:
-        return null;
-    }
+    return switch (raw?.trim().toLowerCase()) {
+      'magiclink' => sb.OtpType.magiclink,
+      'recovery' => sb.OtpType.recovery,
+      'invite' => sb.OtpType.invite,
+      'signup' => sb.OtpType.signup,
+      'email' => sb.OtpType.email,
+      _ => null,
+    };
   }
 
   bool _shouldTryNextOtpType(sb.AuthException error) {
     final status = int.tryParse(error.statusCode ?? '');
-    if (status == 429 || (status != null && status >= 500)) {
-      return false;
-    }
-
-    final message = error.message.toLowerCase();
-    if (message.contains('rate limit')) {
-      return false;
-    }
-
-    return true;
+    if (status == 429 || (status != null && status >= 500)) return false;
+    return !error.message.toLowerCase().contains('rate limit');
   }
-}
 
-sb.OAuthProvider _mapOAuthProvider(String provider) {
-  switch (provider.trim().toLowerCase()) {
-    case 'apple':
-      return sb.OAuthProvider.apple;
-    case 'azure':
-      return sb.OAuthProvider.azure;
-    case 'bitbucket':
-      return sb.OAuthProvider.bitbucket;
-    case 'discord':
-      return sb.OAuthProvider.discord;
-    case 'facebook':
-      return sb.OAuthProvider.facebook;
-    case 'github':
-      return sb.OAuthProvider.github;
-    case 'gitlab':
-      return sb.OAuthProvider.gitlab;
-    case 'google':
-      return sb.OAuthProvider.google;
-    case 'twitter':
-      return sb.OAuthProvider.twitter;
+  Future<void> _domain(
+    String operation,
+    Map<String, Object?> extra,
+    Future<void> Function() call,
+  ) async {
+    try {
+      await call();
+    } on DomainError {
+      rethrow;
+    } catch (error, stack) {
+      throw _mapError(error, stack, operation, extra);
+    }
   }
-  throw ArgumentError.value(provider, 'provider', 'Unsupported OAuth provider');
+
+  DomainError _mapError(
+    Object error,
+    StackTrace stack,
+    String operation, [
+    Map<String, Object?> extra = const {},
+    DomainErrorReason? reason,
+  ]) {
+    final base = DomainError.from(
+      error,
+      stack: stack,
+    ).ensureLogoutOnInvalidRefresh();
+    return base.copyWith(
+      reason: base.reason ?? reason,
+      context: {...?base.context, ..._context(operation, extra)},
+    );
+  }
+
+  Map<String, Object?> _context(
+    String operation, [
+    Map<String, Object?> extra = const {},
+  ]) => {'service': 'SupabaseAuthAdapter', 'operation': operation, ...extra};
 }
