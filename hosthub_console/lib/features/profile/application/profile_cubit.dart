@@ -1,4 +1,5 @@
 import 'package:app_errors/app_errors.dart';
+import 'package:app_errors/supabase_adapter.dart' show PostgrestDetail;
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -260,34 +261,16 @@ class ProfileCubit extends Cubit<ProfileState> {
     return true;
   }
 
+  /// Whether [error] is the profile row's foreign key to its auth user: the
+  /// user is gone, so the session belongs to no one. Postgres names the
+  /// constraint in its message; the details may name it too.
   bool _isMissingAuthUserForeignKey(DomainError error) {
-    bool containsProfileFk(String? value) {
-      if (value == null || value.isEmpty) return false;
-      final normalized = value.toLowerCase();
-      return normalized.contains('profiles_id_fkey') ||
-          (normalized.contains('auth.users') &&
-              normalized.contains('not present'));
-    }
-
-    final context = error.context;
-    final postgrestCode = context?['postgrest_code']?.toString();
-    if (postgrestCode != null && postgrestCode != '23503') {
-      return false;
-    }
-
-    if (containsProfileFk(error.message)) return true;
-
-    if (context != null) {
-      for (final entry in context.entries) {
-        final value = entry.value;
-        if (value == null) continue;
-        if (containsProfileFk(value.toString())) return true;
-      }
-    }
-
-    if (containsProfileFk(error.cause?.toString())) return true;
-    if (containsProfileFk(error.rootCause?.toString())) return true;
-
-    return false;
+    if (error.reason != DomainErrorReason.foreignKeyViolation) return false;
+    return [
+      error.message,
+      error.detail<PostgrestDetail>()?.details,
+    ].any((text) => text?.contains(_profileAuthUserForeignKey) ?? false);
   }
+
+  static const _profileAuthUserForeignKey = 'profiles_id_fkey';
 }
