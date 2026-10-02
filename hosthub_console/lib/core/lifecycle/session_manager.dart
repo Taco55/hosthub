@@ -1,3 +1,5 @@
+import 'package:app_errors/app_errors.dart';
+
 import 'package:hosthub_console/features/auth/auth.dart';
 
 /// Coordinates session related concerns outside of the bloc layer.
@@ -12,12 +14,17 @@ class SessionManager {
   /// Returns the currently authenticated user, if any.
   AuthUser? get currentUser => _authService.currentUser;
 
-  /// Signs out without surfacing errors to the caller.
+  /// Signs out without surfacing errors to the caller. A sign-out that fails
+  /// can leave a session behind, so the failure is reported all the same.
   Future<void> signOutSilently() async {
     try {
       await _authService.signOut();
-    } catch (_) {
-      // Ignore failures during best-effort sign-out.
+    } catch (error, stack) {
+      DomainError.report(
+        error,
+        stack: stack,
+        context: const {'op': 'signOutSilently'},
+      );
     }
   }
 }

@@ -1025,7 +1025,9 @@ class SiteContentCubit extends Cubit<SiteContentState> {
         ),
         clearError: true,
       );
-    } catch (_) {
+    } catch (error, stack) {
+      // Degrades to a toast; the report hears of it once.
+      DomainError.report(error, stack: stack);
       if (isClosed) return;
       emit(state.copyWith(errorMessage: 'reset_failed'));
     }
@@ -1346,7 +1348,9 @@ class SiteContentCubit extends Cubit<SiteContentState> {
             field: field,
           );
         }
-      } catch (_) {
+      } catch (error, stack) {
+        // Degrades to a toast and keeps the draft; the report hears of it once.
+        DomainError.report(error, stack: stack);
         if (!isClosed) {
           emit(state.copyWith(saving: false, errorMessage: 'save_failed'));
         }
@@ -1467,10 +1471,12 @@ class SiteContentCubit extends Cubit<SiteContentState> {
       // is a save failure, not a translation failure: the text is on screen.
       try {
         await _persistTranslations(written);
-      } catch (_) {
+      } catch (error, stack) {
+        DomainError.report(error, stack: stack);
         if (!isClosed) emit(state.copyWith(errorMessage: 'save_failed'));
       }
-    } catch (_) {
+    } catch (error, stack) {
+      DomainError.report(error, stack: stack);
       if (isClosed) return;
       // Degrade gracefully: keep the last good translations, surface an error.
       emit(
@@ -1536,7 +1542,10 @@ class SiteContentCubit extends Cubit<SiteContentState> {
               },
           },
         );
-      } catch (_) {
+      } catch (error, stack) {
+        // Degrades to a toast and keeps the dirty state for a retry; the report
+        // hears of it once.
+        DomainError.report(error, stack: stack);
         if (!isClosed) emit(state.copyWith(errorMessage: 'publish_failed'));
         return;
       }

@@ -313,9 +313,11 @@ class MediaLibraryCubit extends Cubit<MediaLibraryState> {
     );
     try {
       await _repository.saveUsage(siteId: _siteId, usageByPath: changed);
-    } catch (_) {
+    } catch (error, stack) {
       // Usage is a convenience the picker reads, not content: a failed write
-      // must not take the editor down with it. The next save tries again.
+      // must not take the editor down with it. The next save tries again; the
+      // report hears of it once.
+      DomainError.report(error, stack: stack);
     }
   }
 

@@ -333,9 +333,10 @@ class InboxCubit extends Cubit<InboxState> {
               : state.selectedThread,
         ),
       );
-    } catch (_) {
+    } catch (error, stack) {
       // Recording that something was read is a convenience; failing at it must
-      // not interrupt reading it.
+      // not interrupt reading it. The report hears of it once.
+      DomainError.report(error, stack: stack);
     }
   }
 

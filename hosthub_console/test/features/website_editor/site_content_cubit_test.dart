@@ -554,6 +554,46 @@ void main() {
     });
   });
 
+  group('SiteContentCubit — a failed translation', () {
+    tearDown(DomainErrors.resetForTesting);
+
+    Future<SiteContentCubit> translatingWith(Object failure) async {
+      final cubit = SiteContentCubit(
+        translationService: _FailingTranslationService(failure),
+        rowIdGenerator: _sequentialIds(),
+      );
+      addTearDown(cubit.close);
+      await cubit.translateNow(['en']);
+      return cubit;
+    }
+
+    test('degrades to the toast and is reported once', () async {
+      final reported = <DomainError>[];
+      DomainError.onUnexpectedError = reported.add;
+
+      final cubit = await translatingWith(StateError('translator down'));
+
+      expect(cubit.state.errorMessage, 'translate_failed');
+      expect(cubit.state.translating, isEmpty);
+      expect(reported, hasLength(1));
+    });
+
+    test(
+      'a failure the service already converted is not reported again',
+      () async {
+        final reported = <DomainError>[];
+        DomainError.onUnexpectedError = reported.add;
+
+        final cubit = await translatingWith(
+          DomainErrorCode.serverError.err(message: 'converted upstream'),
+        );
+
+        expect(cubit.state.errorMessage, 'translate_failed');
+        expect(reported, isEmpty);
+      },
+    );
+  });
+
   group('translation mode at scale (par. B.4 / D.1)', () {
     test('the changed count is derived from the schema, never from keys', () {
       final cubit = build();
@@ -723,4 +763,17 @@ void main() {
       },
     );
   });
+}
+
+class _FailingTranslationService implements TranslationService {
+  const _FailingTranslationService(this.failure);
+
+  final Object failure;
+
+  @override
+  Future<Map<String, String>> translateFields({
+    required String sourceLanguage,
+    required String targetLanguage,
+    required Map<String, String> sourceFields,
+  }) async => throw failure;
 }

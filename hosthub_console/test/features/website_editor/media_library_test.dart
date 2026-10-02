@@ -1,3 +1,4 @@
+import 'package:app_errors/app_errors.dart';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -334,7 +335,11 @@ void main() {
       await cubit.close();
     });
 
-    test('a failed usage write does not surface as an editor error', () async {
+    test('a failed usage write does not surface as an editor error, '
+        'and is reported once', () async {
+      final reported = <DomainError>[];
+      DomainError.onUnexpectedError = reported.add;
+      addTearDown(DomainErrors.resetForTesting);
       // Usage is a convenience the picker reads, not content.
       final repo = _UsageFailingRepository();
       final cubit = MediaLibraryCubit(repository: repo, siteId: 'site-1');
@@ -343,6 +348,7 @@ void main() {
       await cubit.syncUsage({'site-1/a.jpg': const []});
 
       expect(cubit.state.error, isNull);
+      expect(reported, hasLength(1));
       await cubit.close();
     });
   });

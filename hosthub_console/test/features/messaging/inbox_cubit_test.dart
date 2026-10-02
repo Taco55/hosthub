@@ -1,3 +1,4 @@
+import 'package:app_errors/app_errors.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:hosthub_console/features/messaging/application/inbox_cubit.dart';
@@ -168,6 +169,26 @@ void main() {
       expect(cubit.state.threads.single.unreadCount, 0);
       addTearDown(cubit.close);
     });
+
+    test('a conversation whose read cannot be recorded still opens, '
+        'and the failure is reported once', () async {
+      final reported = <DomainError>[];
+      DomainError.onUnexpectedError = reported.add;
+      addTearDown(DomainErrors.resetForTesting);
+      final repository = _FakeMessagingRepository(
+        capabilities: const MessagingCapabilities(sourceName: 'Testbron'),
+        threads: [thread(id: 'a', unread: 2)],
+        failMarkRead: true,
+      );
+      final cubit = InboxCubit(repository: repository);
+      addTearDown(cubit.close);
+
+      await cubit.load(propertyIds: const [1]);
+
+      expect(cubit.state.selectedThread?.threadId, 'a');
+      expect(cubit.state.error, isNull);
+      expect(reported, hasLength(1));
+    });
   });
 }
 
@@ -176,12 +197,14 @@ class _FakeMessagingRepository implements MessagingRepository {
     required this.capabilities,
     required List<MessageThread> threads,
     this.failSync = false,
+    this.failMarkRead = false,
   }) : _threads = [...threads];
 
   @override
   final MessagingCapabilities capabilities;
 
   final bool failSync;
+  final bool failMarkRead;
   final List<MessageThread> _threads;
 
   final List<String> sendCalls = [];
@@ -217,6 +240,7 @@ class _FakeMessagingRepository implements MessagingRepository {
   @override
   Future<MessageThread> markRead(String threadId) async {
     markReadCalls.add(threadId);
+    if (failMarkRead) throw StateError('read not recorded');
     final index = _threads.indexWhere((t) => t.threadId == threadId);
     _threads[index] = _threads[index].copyWith(
       unreadCount: 0,

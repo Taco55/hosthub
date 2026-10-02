@@ -1,3 +1,4 @@
+import 'package:app_errors/app_errors.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -134,8 +135,10 @@ class NightlyRatesCubit extends Cubit<NightlyRatesState> {
           propertyId: propertyId,
         ),
       );
-    } catch (_) {
-      // Rates are non-critical — silently keep whatever we already have.
+    } catch (error, stack) {
+      // Rates are non-critical: keep whatever we already have, and let the
+      // report hear of the failure once.
+      DomainError.report(error, stack: stack);
       if (!isClosed) {
         emit(state.copyWith(status: NightlyRatesStatus.loaded));
       }
