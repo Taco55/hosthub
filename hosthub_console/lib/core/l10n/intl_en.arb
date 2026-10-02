@@ -345,14 +345,6 @@
   "searchEmailHint": "Search by email address",
   "clearSearchTooltip": "Clear search",
   "noUsersFound": "No users found. Try a different search.",
-  "loadUsersFailed": "Couldn't load users: {error}",
-  "@loadUsersFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
   "toggleAdminFailed": "Couldn't update admin access: {error}",
   "@toggleAdminFailed": {
     "placeholders": {

@@ -349,14 +349,6 @@
   "searchEmailHint": "Zoek op e-mailadres",
   "clearSearchTooltip": "Wis zoekopdracht",
   "noUsersFound": "Geen gebruikers gevonden. Probeer een andere zoekopdracht.",
-  "loadUsersFailed": "Kon gebruikers niet laden: {error}",
-  "@loadUsersFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
   "toggleAdminFailed": "Kan adminrechten niet wijzigen: {error}",
   "@toggleAdminFailed": {
     "placeholders": {

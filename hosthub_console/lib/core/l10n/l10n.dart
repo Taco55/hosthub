@@ -2320,16 +2320,6 @@ class S {
     );
   }
 
-  /// `Couldn't load users: {error}`
-  String loadUsersFailed(String error) {
-    return Intl.message(
-      'Couldn\'t load users: $error',
-      name: 'loadUsersFailed',
-      desc: '',
-      args: [error],
-    );
-  }
-
   /// `Couldn't update admin access: {error}`
   String toggleAdminFailed(String error) {
     return Intl.message(
