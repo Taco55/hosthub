@@ -2,6 +2,9 @@ import 'package:app_errors/app_errors.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:hosthub_console/core/services/lodgify_service.dart';
+import 'package:hosthub_console/features/channel_manager/infrastructure/lodgify/lodgify_channel_manager_repository.dart';
+
 /// The repository that wraps [LodgifyService] used to let raw `DioException`s
 /// through to the cubits, so a Lodgify rate limit arrived as an unrecognisable
 /// failure instead of something the UI could name.
@@ -55,24 +58,43 @@ void main() {
       expect(error.reason, isNot(DomainErrorReason.rateLimited));
     });
 
-    test('context added by the repository survives the mapping', () {
-      final mapped = DomainError.from(
-        _lodgifyFailure(429),
-        stack: StackTrace.current,
-      );
-      final withContext = mapped.copyWith(
-        context: {
-          'repository': 'LodgifyChannelManagerRepository',
-          'op': 'fetchNightlyRates',
-          ...?mapped.context,
-          'propertyId': '42',
-        },
+    test('the report carries the repository\'s context', () async {
+      final reported = <DomainError>[];
+      DomainError.onUnexpectedError = reported.add;
+      addTearDown(DomainErrors.resetForTesting);
+      final repository = LodgifyChannelManagerRepository(
+        lodgifyService: _FailingLodgifyService(_lodgifyFailure(500)),
       );
 
-      expect(withContext.code, DomainErrorCode.tooManyRequests);
-      expect(withContext.reason, DomainErrorReason.rateLimited);
-      expect(withContext.context?['op'], 'fetchNightlyRates');
-      expect(withContext.context?['propertyId'], '42');
+      await expectLater(
+        repository.fetchProperties(),
+        throwsA(
+          isA<DomainError>()
+              .having((e) => e.code, 'code', DomainErrorCode.serverError)
+              .having((e) => e.context?['op'], 'op', 'fetchProperties'),
+        ),
+      );
+      expect(reported, hasLength(1));
+      expect(
+        reported.single.context,
+        allOf(
+          containsPair('repository', 'LodgifyChannelManagerRepository'),
+          containsPair('op', 'fetchProperties'),
+        ),
+      );
     });
   });
+}
+
+/// A service whose property list fails with [failure]; nothing reaches
+/// Supabase.
+class _FailingLodgifyService extends LodgifyService {
+  _FailingLodgifyService(this.failure);
+
+  final Object failure;
+
+  @override
+  Future<List<LodgifyPropertySummary>> fetchProperties({
+    Map<String, String> queryParameters = const {},
+  }) async => throw failure;
 }

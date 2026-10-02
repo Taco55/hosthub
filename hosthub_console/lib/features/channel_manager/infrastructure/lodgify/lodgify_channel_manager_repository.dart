@@ -32,12 +32,12 @@ class LodgifyChannelManagerRepository implements ChannelManagerRepository {
     try {
       return await body();
     } catch (error, stack) {
-      final mapped = DomainError.from(error, stack: stack);
-      throw mapped.copyWith(
+      throw DomainError.from(
+        error,
+        stack: stack,
         context: {
           'repository': 'LodgifyChannelManagerRepository',
           'op': op,
-          ...?mapped.context,
           ...context,
         },
       );
