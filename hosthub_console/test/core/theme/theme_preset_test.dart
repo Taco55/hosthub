@@ -434,8 +434,10 @@ void main() {
       expect(content.left, styled.sharedLayout.horizontalPadding);
       expect(content.left, footer.left);
       expect(content.right, footer.right);
-      // And the primary is not glued to the last field.
-      expect(content.bottom, greaterThanOrEqualTo(16));
+      // And the primary is not glued to the last field: the body measures its
+      // own rhythm (no bottom padding) and keeps the inset above the footer.
+      expect(content.bottom, 0);
+      expect(styled.modals.minBottomInset, greaterThanOrEqualTo(16));
     });
 
     test('commitments render below the content they confirm', () {
