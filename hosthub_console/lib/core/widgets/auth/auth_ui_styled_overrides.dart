@@ -104,16 +104,13 @@ const styledAuthUiOverrides = AuthUiOverridesData(
 );
 
 /// Handles app error logout by dispatching [AuthEvent.logout] on the
-/// nearest [AuthBloc].
+/// nearest [AuthBloc], when the widget tree has one.
 void handleAppErrorLogout(BuildContext context, AppError appError) {
-  try {
-    final authBloc = BlocProvider.of<AuthBloc>(context, listen: false);
-    final status = authBloc.state.status;
-    if (status == AuthStatus.loading || status == AuthStatus.unauthenticated) {
-      return;
-    }
-    authBloc.add(const AuthEvent.logout());
-  } catch (_) {
-    // AuthBloc not available in widget tree.
+  final authBloc = context.read<AuthBloc?>();
+  if (authBloc == null) return;
+  final status = authBloc.state.status;
+  if (status == AuthStatus.loading || status == AuthStatus.unauthenticated) {
+    return;
   }
+  authBloc.add(const AuthEvent.logout());
 }

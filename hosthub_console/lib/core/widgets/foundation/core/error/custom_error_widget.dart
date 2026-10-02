@@ -26,6 +26,10 @@ void setupErrorWidget() {
           }
           return sanitized;
         } catch (err, stack) {
+          // The error itself is still reported, only without the collector's
+          // diagnostics; reporting the collector's failure from inside the
+          // error handler would recurse.
+          // ignore: app_errors_check/swallowed_caught_error
           debugPrint('[FlutterError] informationCollector threw: $err');
           debugPrintStack(stackTrace: stack);
           return const <DiagnosticsNode>[];
@@ -58,6 +62,9 @@ void setupErrorWidget() {
       try {
         originalOnError(safeDetails);
       } catch (error, stackTrace) {
+        // The reporter itself failed: handing its failure back to it would
+        // recurse, so it is logged and dropped.
+        // ignore: app_errors_check/swallowed_caught_error
         debugPrint(
           'Flutter error reporting failed ($error). Falling back to simple logging.',
         );

@@ -65,7 +65,11 @@ class ApiClient {
     final currentAdapter = api.httpClientAdapter;
     try {
       currentAdapter.close(force: true);
-    } catch (_) {}
+    } catch (_) {
+      // The old adapter is replaced either way; one that fails to close only
+      // leaves its sockets to the platform.
+      // ignore: app_errors_check/swallowed_caught_error
+    }
     api.httpClientAdapter = Dio().httpClientAdapter;
   }
 

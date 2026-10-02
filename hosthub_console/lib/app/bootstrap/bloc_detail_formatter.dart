@@ -27,7 +27,10 @@ abstract final class BlocDetailFormatter {
     try {
       final status = d.status;
       if (status != null) return _stripEnumPrefix('$status');
-    } catch (_) {}
+    } catch (_) {
+      // A state without this field is skipped: the formatter only logs.
+      // ignore: app_errors_check/swallowed_caught_error
+    }
 
     return shortString(state, maxLength: maxLength);
   }
@@ -61,7 +64,10 @@ abstract final class BlocDetailFormatter {
         if (value == null) continue;
         final label = _objectLabel(value);
         if (label != null && label.isNotEmpty) parts.add('$field: $label');
-      } catch (_) {}
+      } catch (_) {
+        // A state without this field is skipped: the formatter only logs.
+        // ignore: app_errors_check/swallowed_caught_error
+      }
     }
 
     return parts.join(', ');
@@ -89,7 +95,10 @@ abstract final class BlocDetailFormatter {
         final value = _dynamicGet(d, field);
         final length = _collectionLength(value);
         if (length != null && length > 0) parts.add('#$field: $length');
-      } catch (_) {}
+      } catch (_) {
+        // A state without this field is skipped: the formatter only logs.
+        // ignore: app_errors_check/swallowed_caught_error
+      }
     }
 
     for (final field in _contextFields) {
@@ -99,14 +108,20 @@ abstract final class BlocDetailFormatter {
           final text = _stripEnumPrefix('$value');
           if (text.length <= 40) parts.add('$field: $text');
         }
-      } catch (_) {}
+      } catch (_) {
+        // A state without this field is skipped: the formatter only logs.
+        // ignore: app_errors_check/swallowed_caught_error
+      }
     }
 
     try {
       final error = d.error;
       if (error != null)
         parts.add('error: ${shortString(error, maxLength: 60)}');
-    } catch (_) {}
+    } catch (_) {
+      // A state without this field is skipped: the formatter only logs.
+      // ignore: app_errors_check/swallowed_caught_error
+    }
 
     return parts.join(', ');
   }
@@ -159,7 +174,10 @@ abstract final class BlocDetailFormatter {
         if (value != null && value is String && value.isNotEmpty) {
           return value.length <= 40 ? value : '${value.substring(0, 37)}…';
         }
-      } catch (_) {}
+      } catch (_) {
+        // A state without this field is skipped: the formatter only logs.
+        // ignore: app_errors_check/swallowed_caught_error
+      }
     }
     return null;
   }

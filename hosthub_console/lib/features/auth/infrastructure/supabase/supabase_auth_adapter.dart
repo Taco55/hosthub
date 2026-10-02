@@ -252,7 +252,8 @@ class SupabaseAuthAdapter extends SupabaseAuthService implements AuthPort {
     try {
       await auth.signOut();
     } catch (_) {
-      // Best effort only; OTP verification can still succeed.
+      // Best effort only: the verified code replaces this session anyway.
+      // ignore: app_errors_check/swallowed_caught_error
     }
   }
 

@@ -648,7 +648,8 @@ String? _json(Object? value) {
   if (value is Map && value.isEmpty) return null;
   try {
     return const JsonEncoder.withIndent('  ').convert(value);
-  } catch (_) {
+  } on JsonUnsupportedObjectError {
+    // A value JSON cannot hold still reads as its own text.
     return value.toString();
   }
 }
