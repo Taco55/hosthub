@@ -106,10 +106,12 @@ class AdminUserRepository {
           .maybeSingle();
 
       if (response == null) {
-        throw DomainErrorCode.serverError.err(
-          operation: DomainOperation.save,
-          message: 'Could not update admin status for $userId',
-          context: {'op': 'updateAdminFlag', 'user_id': userId},
+        throw DomainError.from(
+          DomainErrorCode.serverError.anomaly(
+            operation: DomainOperation.save,
+            message: 'Could not update admin status for $userId',
+            context: {'op': 'updateAdminFlag', 'user_id': userId},
+          ),
         );
       }
 
@@ -151,10 +153,12 @@ class AdminUserRepository {
           .maybeSingle();
 
       if (response == null) {
-        throw DomainErrorCode.serverError.err(
-          operation: DomainOperation.save,
-          message: 'Could not update profile for $userId',
-          context: {'op': 'updateProfileDetails', 'user_id': userId},
+        throw DomainError.from(
+          DomainErrorCode.serverError.anomaly(
+            operation: DomainOperation.save,
+            message: 'Could not update profile for $userId',
+            context: {'op': 'updateProfileDetails', 'user_id': userId},
+          ),
         );
       }
 
@@ -243,10 +247,12 @@ class AdminUserRepository {
       final data = response.data;
       final userId = data is Map ? data['user_id'] as String? : null;
       if (userId == null || userId.isEmpty) {
-        throw DomainErrorCode.serverError.err(
-          operation: DomainOperation.save,
-          message: 'admin_create_user returned no user_id',
-          context: {'op': 'createUser', 'email': trimmedEmail},
+        throw DomainError.from(
+          DomainErrorCode.serverError.anomaly(
+            operation: DomainOperation.save,
+            message: 'admin_create_user returned no user_id',
+            context: {'op': 'createUser', 'email': trimmedEmail},
+          ),
         );
       }
 

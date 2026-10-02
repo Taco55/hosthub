@@ -211,13 +211,16 @@ class SupabaseAuthAdapter extends SupabaseAuthService implements AuthPort {
         headers: const {'Content-Type': 'application/json'},
       );
       if (response.status != 200) {
-        throw DomainErrorCode.serverError.err(
-          reason: HosthubErrorReason.cannotDeleteAllUserData,
-          cause: response.data,
-          context: {
-            ..._context('deleteAccount'),
-            'function_status': response.status,
-          },
+        throw DomainError.from(
+          DomainErrorCode.serverError.anomaly(
+            reason: HosthubErrorReason.cannotDeleteAllUserData,
+            message: 'delete_user answered ${response.status}',
+            cause: response.data,
+            context: {
+              ..._context('deleteAccount'),
+              'function_status': response.status,
+            },
+          ),
         );
       }
     } on DomainError {

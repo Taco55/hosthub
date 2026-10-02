@@ -443,10 +443,12 @@ class CmsRepository extends SupabaseRepository {
       final data = response.data;
       final saved = data is Map ? data['domain'] as String? : null;
       if (saved == null || saved.isEmpty) {
-        throw DomainErrorCode.serverError.err(
-          operation: DomainOperation.save,
-          message: 'manage_site_domain returned no domain',
-          context: {'op': 'setPrimaryDomain', 'siteId': siteId},
+        throw DomainError.from(
+          DomainErrorCode.serverError.anomaly(
+            operation: DomainOperation.save,
+            message: 'manage_site_domain returned no domain',
+            context: {'op': 'setPrimaryDomain', 'siteId': siteId},
+          ),
         );
       }
       return SetDomainSucceeded(saved);

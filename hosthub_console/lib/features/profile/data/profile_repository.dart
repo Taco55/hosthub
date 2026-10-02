@@ -156,9 +156,13 @@ class ProfileRepository extends SupabaseRepository {
       );
 
       if (response.status != 200) {
-        throw DomainErrorCode.serverError.err(
-          reason: HosthubErrorReason.cannotDeleteAllUserData,
-          context: {'function_status': response.status},
+        throw DomainError.from(
+          DomainErrorCode.serverError.anomaly(
+            reason: HosthubErrorReason.cannotDeleteAllUserData,
+            message: 'delete_user answered ${response.status}',
+            cause: response.data,
+            context: {'function_status': response.status},
+          ),
         );
       }
     } catch (error, stack) {

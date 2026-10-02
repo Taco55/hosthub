@@ -132,6 +132,29 @@ void main() {
       );
     });
 
+    test('delete_user answering a status other than 200 is reported once, '
+        'naming the account data it left', () async {
+      final reported = <DomainError>[];
+      DomainError.onUnexpectedError = reported.add;
+      await adapter.confirmSignInWithOtp('host@example.com', '123456');
+      gotrue.deleteUserStatus = 202;
+
+      await expectLater(
+        adapter.deleteAccount(),
+        throwsA(
+          isA<DomainError>()
+              .having((e) => e.code, 'code', DomainErrorCode.serverError)
+              .having(
+                (e) => e.reason,
+                'reason',
+                HosthubErrorReason.cannotDeleteAllUserData,
+              ),
+        ),
+      );
+      expect(reported, hasLength(1));
+      expect(reported.single.context?['function_status'], 202);
+    });
+
     test('without a session is refused, without signing anyone out', () async {
       await expectLater(
         adapter.deleteAccount(),

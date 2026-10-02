@@ -124,10 +124,13 @@ class SiteMemberRepository extends SupabaseRepository {
 
       if (response.status != 200) {
         final data = _ensureMap(response.data);
-        throw DomainError.of(
-          DomainErrorCode.serverError,
-          message: data['error']?.toString() ?? 'Invitation failed',
-          context: {'status': response.status},
+        throw DomainError.from(
+          DomainErrorCode.serverError.anomaly(
+            operation: DomainOperation.save,
+            message: data['error']?.toString() ?? 'Invitation failed',
+            cause: response.data,
+            context: {'op': 'inviteMember', 'status': response.status},
+          ),
         );
       }
 
@@ -165,10 +168,13 @@ class SiteMemberRepository extends SupabaseRepository {
 
       if (response.status != 200) {
         final data = _ensureMap(response.data);
-        throw DomainError.of(
-          DomainErrorCode.serverError,
-          message: data['error']?.toString() ?? 'Resend failed',
-          context: {'status': response.status},
+        throw DomainError.from(
+          DomainErrorCode.serverError.anomaly(
+            operation: DomainOperation.save,
+            message: data['error']?.toString() ?? 'Resend failed',
+            cause: response.data,
+            context: {'op': 'resendInvitation', 'status': response.status},
+          ),
         );
       }
 
@@ -302,10 +308,13 @@ class SiteMemberRepository extends SupabaseRepository {
 
         if (response.status != 200) {
           final data = _ensureMap(response.data);
-          throw DomainError.of(
-            DomainErrorCode.serverError,
-            message: data['error']?.toString() ?? 'Invitation failed',
-            context: {'status': response.status},
+          throw DomainError.from(
+            DomainErrorCode.serverError.anomaly(
+              operation: DomainOperation.save,
+              message: data['error']?.toString() ?? 'Invitation failed',
+              cause: response.data,
+              context: {'op': 'inviteToAllSites', 'status': response.status},
+            ),
           );
         }
       }
