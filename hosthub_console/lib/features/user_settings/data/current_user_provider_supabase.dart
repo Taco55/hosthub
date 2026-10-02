@@ -14,9 +14,8 @@ class CurrentUserProviderSupabase implements CurrentUserProvider {
     final userId = currentUserIdOrNull;
     if (userId == null) {
       // logout: false — this is a local precondition, not a server verdict on
-      // the session. Without it the message trips the "expired session"
-      // heuristic in app_errors and a client-side read that raced the session
-      // (app start, token refresh) would force a real sign-out.
+      // the session: a client-side read that raced the session (app start,
+      // token refresh) must not force a real sign-out.
       throw DomainErrorCode.unauthorized.err(
         message: 'User not logged in',
         logout: false,

@@ -469,7 +469,10 @@ class SiteMemberRepository extends SupabaseRepository {
     if (session == null) {
       await _refreshSessionForInvite();
       if (supabase.auth.currentSession == null) {
+        // A refresh left no session: it is gone, and only signing in again
+        // brings one back.
         throw DomainErrorCode.unauthorized.err(
+          reason: DomainErrorReason.sessionExpired,
           operation: DomainOperation.save,
           message: 'No active auth session found',
         );
