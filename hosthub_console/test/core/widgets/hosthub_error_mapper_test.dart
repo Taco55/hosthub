@@ -65,6 +65,19 @@ void main() {
     expect(read(error).alert, AppErrorLocalizations.of(context).networkError);
   });
 
+  testWidgets('a wrapped lost connection reads as one, whatever the reason', (
+    tester,
+  ) async {
+    await pumpContext(tester);
+
+    final error = DomainErrorCode.serverError.err(
+      reason: HosthubErrorReason.loginOtpEmailFailed,
+      cause: DomainErrorCode.network.err(),
+    );
+
+    expect(read(error).alert, AppErrorLocalizations.of(context).networkError);
+  });
+
   testWidgets('a session that ended signs out, whatever the reason', (
     tester,
   ) async {

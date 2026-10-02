@@ -44,7 +44,7 @@ AppError? hosthubErrorMapper(
   return AppError(title: title, alert: alert, domainError: error);
 }
 
+/// The library's connection step: a timeout, or no connection by the
+/// answer [DomainError.isNetworkError], a wrapped connection failure included.
 bool _connectionFailed(DomainError error) =>
-    error.code == DomainErrorCode.network ||
-    error.code == DomainErrorCode.timeout ||
-    error.network == true;
+    error.code == DomainErrorCode.timeout || error.isNetworkError;
