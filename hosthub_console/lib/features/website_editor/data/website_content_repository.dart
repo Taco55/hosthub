@@ -578,7 +578,7 @@ class WebsiteContentRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotLoadData,
+        operation: DomainOperation.load,
         context: {'op': 'loadPageContent', 'siteId': siteId},
       );
     }
@@ -611,7 +611,7 @@ class WebsiteContentRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'saveSourceDraft', 'siteId': siteId},
       );
     }
@@ -642,7 +642,7 @@ class WebsiteContentRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {
           'op': 'saveTranslationField',
           'siteId': siteId,
@@ -690,7 +690,7 @@ class WebsiteContentRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'publishAll', 'siteId': siteId},
       );
     }

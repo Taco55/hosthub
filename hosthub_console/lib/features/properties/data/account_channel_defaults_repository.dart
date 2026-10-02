@@ -40,7 +40,7 @@ class AccountChannelDefaultsRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotLoadData,
+        operation: DomainOperation.load,
         context: {'op': 'fetchAccountChannelDefaults'},
       );
     }
@@ -70,7 +70,7 @@ class AccountChannelDefaultsRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'saveAccountChannelDefaults'},
       );
     }
@@ -93,7 +93,7 @@ class AccountChannelDefaultsRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotLoadData,
+        operation: DomainOperation.load,
         context: {'op': 'fetchAccountSettings'},
       );
     }
@@ -117,7 +117,7 @@ class AccountChannelDefaultsRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'saveAccountSettings'},
       );
     }
@@ -140,7 +140,7 @@ class AccountChannelDefaultsRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotLoadData,
+        operation: DomainOperation.load,
         context: {'op': 'currentAccountOwnerId'},
       );
     }

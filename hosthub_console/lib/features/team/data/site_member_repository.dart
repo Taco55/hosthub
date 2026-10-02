@@ -40,7 +40,7 @@ class SiteMemberRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotLoadData,
+        operation: DomainOperation.load,
         context: {'op': 'fetchMembers', 'siteId': siteId},
       );
     }
@@ -62,7 +62,7 @@ class SiteMemberRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'updateMemberRole', 'memberId': memberId},
       );
     }
@@ -75,7 +75,7 @@ class SiteMemberRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'removeMember', 'memberId': memberId},
       );
     }
@@ -100,7 +100,7 @@ class SiteMemberRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotLoadData,
+        operation: DomainOperation.load,
         context: {'op': 'fetchInvitations', 'siteId': siteId},
       );
     }
@@ -144,7 +144,7 @@ class SiteMemberRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'inviteMember', 'siteId': siteId, 'email': email},
       );
     }
@@ -178,7 +178,7 @@ class SiteMemberRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'resendInvitation', 'invitationId': invitation.id},
       );
     }
@@ -194,7 +194,7 @@ class SiteMemberRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'cancelInvitation', 'invitationId': invitationId},
       );
     }
@@ -234,7 +234,7 @@ class SiteMemberRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotLoadData,
+        operation: DomainOperation.load,
         context: {'op': 'fetchMembersForOwner'},
       );
     }
@@ -266,7 +266,7 @@ class SiteMemberRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotLoadData,
+        operation: DomainOperation.load,
         context: {'op': 'fetchInvitationsForOwner'},
       );
     }
@@ -314,7 +314,7 @@ class SiteMemberRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'inviteToAllSites', 'email': email},
       );
     }
@@ -339,7 +339,7 @@ class SiteMemberRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'removeFromAllSites', 'profileId': profileId},
       );
     }
@@ -361,7 +361,7 @@ class SiteMemberRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'cancelInvitationsByEmail', 'email': email},
       );
     }
@@ -407,7 +407,7 @@ class SiteMemberRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: const {'op': 'acceptPendingInvitations'},
       );
     }
@@ -424,7 +424,7 @@ class SiteMemberRepository extends SupabaseRepository {
       final accessToken = supabase.auth.currentSession?.accessToken;
       if (accessToken == null || accessToken.isEmpty) {
         throw DomainErrorCode.unauthorized.err(
-          reason: DomainErrorReason.cannotSaveData,
+          operation: DomainOperation.save,
           message: 'No access token available for invite call',
           context: const {'op': 'inviteSiteMember', 'auth_session': 'missing'},
         );
@@ -458,7 +458,7 @@ class SiteMemberRepository extends SupabaseRepository {
   Future<void> _ensureFreshSessionForInvite() async {
     if (supabase.auth.currentUser == null) {
       throw DomainErrorCode.unauthorized.err(
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         message: 'User not logged in',
         logout: false,
         context: const {'supabase_user': null},
@@ -470,7 +470,7 @@ class SiteMemberRepository extends SupabaseRepository {
       await _refreshSessionForInvite();
       if (supabase.auth.currentSession == null) {
         throw DomainErrorCode.unauthorized.err(
-          reason: DomainErrorReason.cannotSaveData,
+          operation: DomainOperation.save,
           message: 'No active auth session found',
         );
       }
@@ -495,7 +495,7 @@ class SiteMemberRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: const {'op': 'refreshSessionForInvite'},
       );
     }

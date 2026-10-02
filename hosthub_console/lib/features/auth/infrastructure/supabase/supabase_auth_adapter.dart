@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:app_errors/app_errors.dart';
+import 'package:hosthub_console/core/errors/hosthub_error_reason.dart';
 import 'package:supabase_auth_flutter/supabase_auth_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
@@ -211,7 +212,7 @@ class SupabaseAuthAdapter extends SupabaseAuthService implements AuthPort {
       );
       if (response.status != 200) {
         throw DomainErrorCode.serverError.err(
-          reason: DomainErrorReason.cannotDeleteAllUserData,
+          projectReason: HosthubErrorReason.cannotDeleteAllUserData,
           cause: response.data,
           context: {
             ..._context('deleteAccount'),
@@ -227,7 +228,7 @@ class SupabaseAuthAdapter extends SupabaseAuthService implements AuthPort {
         stack,
         'deleteAccount',
         const {},
-        DomainErrorReason.cannotDeleteAllUserData,
+        HosthubErrorReason.cannotDeleteAllUserData,
       );
     }
     return const AccountDeletionResult.accountDeleted();
@@ -297,17 +298,13 @@ class SupabaseAuthAdapter extends SupabaseAuthService implements AuthPort {
     StackTrace stack,
     String operation, [
     Map<String, Object?> extra = const {},
-    DomainErrorReason? reason,
-  ]) {
-    final base = DomainError.from(
-      error,
-      stack: stack,
-    ).ensureLogoutOnInvalidRefresh();
-    return base.copyWith(
-      reason: base.reason ?? reason,
-      context: {...?base.context, ..._context(operation, extra)},
-    );
-  }
+    ErrorReason? reason,
+  ]) => DomainError.from(
+    error,
+    stack: stack,
+    projectReason: reason,
+    context: _context(operation, extra),
+  );
 
   Map<String, Object?> _context(
     String operation, [

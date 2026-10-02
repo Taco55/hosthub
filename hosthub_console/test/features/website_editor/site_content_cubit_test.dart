@@ -21,7 +21,7 @@ class _FailingLoadRepository extends WebsiteContentRepository {
     required String sourceLanguage,
     required List<String> locales,
   }) async => throw DomainErrorCode.unknown.err(
-    reason: DomainErrorReason.cannotLoadData,
+    operation: DomainOperation.load,
     message: 'boom',
   );
 }
@@ -545,7 +545,7 @@ void main() {
 
       final error = cubit.state.loadError;
       expect(error, isNotNull);
-      expect(error!.reason, DomainErrorReason.cannotLoadData);
+      expect(error!.operation, DomainOperation.load);
       // A failed load is blocking; it must not degrade into the toast lane.
       expect(cubit.state.errorMessage, isNull);
 

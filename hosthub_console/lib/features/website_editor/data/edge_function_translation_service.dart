@@ -58,9 +58,13 @@ class EdgeFunctionTranslationService extends SupabaseRepository
       );
       final data = response.data;
       if (data is! Map<String, dynamic>) {
-        throw DomainErrorCode.dataFetchFailed.err(
-          message: 'Unexpected translate-content response shape',
-          context: {'data': data.runtimeType.toString()},
+        // The function's contract rules this shape out: an anomaly, reported.
+        throw DomainError.from(
+          DomainErrorCode.serverError.anomaly(
+            message: 'Unexpected translate-content response shape',
+            operation: DomainOperation.load,
+            context: {'data': data.runtimeType.toString()},
+          ),
         );
       }
       final translations = (data['translations'] as List<dynamic>? ?? const [])
@@ -75,7 +79,7 @@ class EdgeFunctionTranslationService extends SupabaseRepository
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotLoadData,
+        operation: DomainOperation.load,
         context: {
           'op': 'translateFields',
           'siteId': siteId,

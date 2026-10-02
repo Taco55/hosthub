@@ -33,7 +33,7 @@ class _StubRepository implements PropertyRepository {
     if (failing) {
       throw DomainError.of(
         DomainErrorCode.unknown,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: const {'op': 'createProperty'},
       );
     }
@@ -165,7 +165,7 @@ void main() {
       tester.element(find.byType(Scaffold).first),
     );
     final errorDialog = find.ancestor(
-      of: find.text(errorStrings.errorSavingItem),
+      of: find.text(errorStrings.saveFailed),
       matching: find.byType(Dialog),
     );
     expect(errorDialog, findsOneWidget);

@@ -119,9 +119,13 @@ class LodgifyMessagingRepository extends SupabaseRepository
       );
       final data = response.data;
       if (data is! Map<String, dynamic>) {
-        throw DomainErrorCode.dataFetchFailed.err(
-          message: 'Unexpected translate-message response shape',
-          context: {'data': data.runtimeType.toString()},
+        // The function's contract rules this shape out: an anomaly, reported.
+        throw DomainError.from(
+          DomainErrorCode.serverError.anomaly(
+            message: 'Unexpected translate-message response shape',
+            operation: DomainOperation.load,
+            context: {'data': data.runtimeType.toString()},
+          ),
         );
       }
       final translations = (data['translations'] as List<dynamic>? ?? const [])
@@ -136,7 +140,7 @@ class LodgifyMessagingRepository extends SupabaseRepository
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotLoadData,
+        operation: DomainOperation.load,
         context: {
           'op': 'translateMessages',
           'thread_id': threadId,
@@ -165,12 +169,13 @@ class LodgifyMessagingRepository extends SupabaseRepository
         },
       );
       if (response.status != 200) {
-        throw DomainErrorCode.dataFetchFailed.err(
+        throw mapProjectDomainError(
+          projectErrorCode: projectErrorCodeFromPayload(response.data),
+          statusCode: response.status,
+          operation: DomainOperation.load,
           message: 'messaging-sync returned ${response.status}',
-          context: {
-            'function_status': response.status,
-            'function_details': response.data?.toString(),
-          },
+          context: {'function_details': response.data?.toString()},
+          report: true,
         );
       }
     } catch (error, stack) {
@@ -178,7 +183,7 @@ class LodgifyMessagingRepository extends SupabaseRepository
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotLoadData,
+        operation: DomainOperation.load,
         context: {'op': 'syncThreads', 'properties': propertyIds.length},
       );
     }

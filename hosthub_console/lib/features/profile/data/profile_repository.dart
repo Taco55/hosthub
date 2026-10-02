@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:app_errors/app_errors.dart';
+import 'package:hosthub_console/core/errors/hosthub_error_reason.dart';
 
 import 'package:hosthub_console/features/auth/auth.dart';
 import 'package:hosthub_console/core/models/models.dart';
@@ -21,7 +22,7 @@ class ProfileRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotLoadData,
+        operation: DomainOperation.load,
         context: const {'op': 'getProfile'},
       );
     }
@@ -34,7 +35,7 @@ class ProfileRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotLoadData,
+        operation: DomainOperation.load,
         context: {'op': 'updateProfile', 'profile_id': profile.id},
       );
     }
@@ -62,7 +63,7 @@ class ProfileRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {
           'op': 'updateOwnProfile',
           'profile_id': profile.id,
@@ -80,7 +81,7 @@ class ProfileRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: const {'op': 'updateOwnPassword'},
       );
     }
@@ -97,7 +98,7 @@ class ProfileRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotLoadData,
+        operation: DomainOperation.load,
         context: const {'op': 'getAllProfiles'},
       );
     }
@@ -135,7 +136,7 @@ class ProfileRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotLoadData,
+        operation: DomainOperation.load,
         context: {
           'op': 'changeAccount',
           'profile_id': profile.id,
@@ -156,7 +157,7 @@ class ProfileRepository extends SupabaseRepository {
 
       if (response.status != 200) {
         throw DomainErrorCode.serverError.err(
-          reason: DomainErrorReason.cannotDeleteAllUserData,
+          projectReason: HosthubErrorReason.cannotDeleteAllUserData,
           context: {'function_status': response.status},
         );
       }
@@ -164,7 +165,7 @@ class ProfileRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotDeleteAllUserData,
+        reason: HosthubErrorReason.cannotDeleteAllUserData,
         context: {'op': 'deleteUser', 'user_id': userId},
       );
     }

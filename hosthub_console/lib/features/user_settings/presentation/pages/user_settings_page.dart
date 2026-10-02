@@ -58,7 +58,7 @@ class _UserSettingsView extends StatelessWidget {
             if (toast.type == UserSettingsToastType.error) {
               await showAppError(
                 context,
-                AppError.custom(title: context.s.error, alert: message),
+                AppError(title: context.s.error, alert: message),
               );
               if (!context.mounted) return;
               context.read<UserSettingsCubit>().clearToast();
@@ -479,7 +479,8 @@ class _PropertiesListTile extends StatelessWidget with StyledTileLike {
     // Each half only when it has something to report: "3 van Lodgify, 0
     // handmatig" states a zero where the absence already says it.
     final breakdown = [
-      if (fromLodgify > 0) context.s.accountPropertiesFromLodgifyCount(fromLodgify),
+      if (fromLodgify > 0)
+        context.s.accountPropertiesFromLodgifyCount(fromLodgify),
       if (manual > 0) context.s.accountPropertiesManualCount(manual),
     ].join(', ');
     final total = context.s.accountPropertiesCount(properties.length);
@@ -632,7 +633,9 @@ class _BillingSection extends StatelessWidget {
       horizontalPadding: 0,
       children: [
         StyledTile(
-          leading: const StyledIconBadge(icon: Icons.workspace_premium_outlined),
+          leading: const StyledIconBadge(
+            icon: Icons.workspace_premium_outlined,
+          ),
           title: context.s.accountBillingPlan,
           subtitle: context.s.accountBillingPlanSubtitle(propertyCount),
           value: context.s.accountBillingPlanPro,
@@ -732,7 +735,7 @@ class _AppInfoTileState extends State<_AppInfoTile> {
 AppError _mapDomainError(BuildContext context, DomainError domainError) {
   final lodgifyAction = domainError.context?['lodgify_action']?.toString();
   if (lodgifyAction == 'connect') {
-    return AppError.custom(
+    return AppError(
       title: context.s.lodgifyConnectErrorTitle,
       alert: _lodgifyConnectAlert(context, domainError),
       domainError: domainError,

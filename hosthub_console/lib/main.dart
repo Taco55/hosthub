@@ -1,13 +1,13 @@
 import 'dart:async';
 
 import 'package:app_errors/app_errors.dart';
-import 'package:app_errors/supabase_adapter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:hosthub_console/app/app.dart';
 import 'package:hosthub_console/app/bootstrap/bootstrap.dart';
+import 'package:hosthub_console/app/bootstrap/domain_errors_setup.dart';
 import 'package:hosthub_console/core/config/app_environment.dart';
 import 'package:hosthub_console/core/widgets/auth/auth_ui_styled_overrides.dart';
 import 'package:hosthub_console/core/widgets/widgets.dart';
@@ -32,8 +32,9 @@ void main() {
       // (Back, Reload, Inspect) — still reachable from the keyboard and the
       // Chrome menu. Drop this line to hand it back.
       if (kIsWeb) await BrowserContextMenu.disableContextMenu();
+      configureDomainErrors();
       AppErrors.configure(
-        adapters: const [supabaseAdapter],
+        mapper: hosthubErrorMapper,
         showDebugDetails:
             AppEnvironment.fromEnvironment().showsErrorDiagnostics,
         errorPresenter: styledAppErrorPresenter,

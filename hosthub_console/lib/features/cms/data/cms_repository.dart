@@ -239,7 +239,7 @@ class CmsRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotLoadData,
+        operation: DomainOperation.load,
         context: const {'op': 'fetchSites'},
       );
     }
@@ -261,7 +261,7 @@ class CmsRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotLoadData,
+        operation: DomainOperation.load,
         context: {'op': 'fetchSite', 'siteId': siteId},
       );
     }
@@ -290,7 +290,7 @@ class CmsRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'updateSiteSettings', 'siteId': siteId},
       );
     }
@@ -309,7 +309,7 @@ class CmsRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'updateSiteDefaultLocale', 'siteId': siteId},
       );
     }
@@ -326,7 +326,7 @@ class CmsRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'updateSiteLocales', 'siteId': siteId},
       );
     }
@@ -340,7 +340,7 @@ class CmsRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'updateSiteName', 'siteId': siteId},
       );
     }
@@ -383,7 +383,7 @@ class CmsRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'createSite', 'owner_profile_id': userId},
       );
     }
@@ -403,7 +403,7 @@ class CmsRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotLoadData,
+        operation: DomainOperation.load,
         context: {'op': 'fetchPrimaryDomain', 'siteId': siteId},
       );
     }
@@ -428,7 +428,7 @@ class CmsRepository extends SupabaseRepository {
       final accessToken = supabase.auth.currentSession?.accessToken;
       if (accessToken == null || accessToken.isEmpty) {
         throw DomainErrorCode.unauthorized.err(
-          reason: DomainErrorReason.cannotSaveData,
+          operation: DomainOperation.save,
           message: 'No access token available for setPrimaryDomain call',
           context: const {'op': 'setPrimaryDomain', 'auth_session': 'missing'},
         );
@@ -444,7 +444,7 @@ class CmsRepository extends SupabaseRepository {
       final saved = data is Map ? data['domain'] as String? : null;
       if (saved == null || saved.isEmpty) {
         throw DomainErrorCode.serverError.err(
-          reason: DomainErrorReason.cannotSaveData,
+          operation: DomainOperation.save,
           message: 'manage_site_domain returned no domain',
           context: {'op': 'setPrimaryDomain', 'siteId': siteId},
         );
@@ -467,7 +467,7 @@ class CmsRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {
           'op': 'setPrimaryDomain',
           'siteId': siteId,
@@ -478,7 +478,7 @@ class CmsRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'setPrimaryDomain', 'siteId': siteId},
       );
     }
@@ -512,7 +512,7 @@ class CmsRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotLoadData,
+        operation: DomainOperation.load,
         context: {'op': 'fetchSiteDocuments', 'siteId': siteId},
       );
     }
@@ -531,7 +531,7 @@ class CmsRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotLoadData,
+        operation: DomainOperation.load,
         context: {'op': 'fetchDocument', 'documentId': documentId},
       );
     }
@@ -553,7 +553,7 @@ class CmsRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'updateDocumentContent', 'documentId': documentId},
       );
     }
@@ -576,7 +576,7 @@ class CmsRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'setDocumentStatus', 'documentId': documentId},
       );
     }
@@ -607,7 +607,7 @@ class CmsRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'saveDocumentDraft', 'documentId': documentId},
       );
     }
@@ -645,7 +645,7 @@ class CmsRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'publishDocument', 'documentId': documentId},
       );
     }
@@ -666,7 +666,7 @@ class CmsRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotLoadData,
+        operation: DomainOperation.load,
         context: {'op': 'fetchDocumentVersions', 'documentId': documentId},
       );
     }

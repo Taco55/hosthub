@@ -203,7 +203,7 @@ class PropertyRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotLoadData,
+        operation: DomainOperation.load,
         context: const {'op': 'fetchProperties'},
       );
     }
@@ -229,7 +229,7 @@ class PropertyRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'createProperty', 'name': name},
       );
     }
@@ -242,7 +242,7 @@ class PropertyRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'deleteProperty', 'property_id': id},
       );
     }
@@ -279,7 +279,7 @@ class PropertyRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {
           'op': linking ? 'linkLodgifyProperty' : 'unlinkLodgifyProperty',
           'property_id': propertyId,
@@ -300,7 +300,7 @@ class PropertyRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotLoadData,
+        operation: DomainOperation.load,
         context: {'op': 'fetchPropertyDetails', 'property_id': id},
       );
     }
@@ -365,7 +365,7 @@ class PropertyRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'saveChannelDetails', 'property_id': propertyId},
       );
     }
@@ -383,7 +383,7 @@ class PropertyRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'updatePropertyCurrency', 'property_id': propertyId},
       );
     }
@@ -409,7 +409,7 @@ class PropertyRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'updateChannelOverrides', 'property_id': propertyId},
       );
     }

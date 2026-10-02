@@ -2,7 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:hosthub_console/features/auth/domain/ports/email_templates_port.dart';
 import 'package:hosthub_console/features/auth/infrastructure/supabase/supabase_repository.dart';
-import 'package:app_errors/app_errors.dart';
+import 'package:hosthub_console/core/errors/hosthub_error_reason.dart';
 
 /// Sends the transactional auth mails through the `send_auth_email` function.
 ///
@@ -18,8 +18,12 @@ class SupabaseAuthMailAdapter extends SupabaseRepository
   static const _functionName = 'send_auth_email';
 
   @override
-  Future<void> sendLoginOtpEmail(String to, {String? redirectTo}) =>
-      _send(kind: 'login_otp', to: to, redirectTo: redirectTo);
+  Future<void> sendLoginOtpEmail(String to, {String? redirectTo}) => _send(
+    kind: 'login_otp',
+    failure: HosthubErrorReason.loginOtpEmailFailed,
+    to: to,
+    redirectTo: redirectTo,
+  );
 
   @override
   Future<void> sendSignUpConfirmationEmail(
@@ -28,6 +32,7 @@ class SupabaseAuthMailAdapter extends SupabaseRepository
     String? redirectTo,
   }) => _send(
     kind: 'sign_up_confirmation',
+    failure: HosthubErrorReason.signUpConfirmationEmailFailed,
     to: to,
     name: name,
     redirectTo: redirectTo,
@@ -38,19 +43,32 @@ class SupabaseAuthMailAdapter extends SupabaseRepository
     String to, {
     String? name,
     String? redirectTo,
-  }) =>
-      _send(kind: 'user_created', to: to, name: name, redirectTo: redirectTo);
+  }) => _send(
+    kind: 'user_created',
+    failure: HosthubErrorReason.userCreatedEmailFailed,
+    to: to,
+    name: name,
+    redirectTo: redirectTo,
+  );
 
   @override
   Future<void> sendPasswordResetEmail(
     String to, {
     String? name,
     String? redirectTo,
-  }) =>
-      _send(kind: 'password_reset', to: to, name: name, redirectTo: redirectTo);
+  }) => _send(
+    kind: 'password_reset',
+    failure: HosthubErrorReason.passwordResetEmailFailed,
+    to: to,
+    name: name,
+    redirectTo: redirectTo,
+  );
 
+  /// Sends the mail [kind]; a failure is [failure] where the conversion found
+  /// no cause of its own.
   Future<void> _send({
     required String kind,
+    required HosthubErrorReason failure,
     required String to,
     String? name,
     String? redirectTo,
@@ -73,7 +91,7 @@ class SupabaseAuthMailAdapter extends SupabaseRepository
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.emailSendFailed,
+        reason: failure,
         context: {'op': 'sendAuthEmail', 'kind': kind, 'email': trimmed},
       );
     }

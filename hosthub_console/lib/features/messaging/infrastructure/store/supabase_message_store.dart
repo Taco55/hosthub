@@ -54,7 +54,7 @@ class SupabaseMessageStore extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotLoadData,
+        operation: DomainOperation.load,
         context: {'op': 'fetchThreads', 'properties': propertyIds.length},
       );
     }
@@ -88,7 +88,7 @@ class SupabaseMessageStore extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotLoadData,
+        operation: DomainOperation.load,
         context: {'op': 'fetchThread', 'thread_id': threadId},
       );
     }
@@ -145,7 +145,7 @@ class SupabaseMessageStore extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'appendOutgoing', 'thread_id': threadId},
       );
     }
@@ -168,7 +168,7 @@ class SupabaseMessageStore extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': op, 'thread_id': threadId},
       );
     }

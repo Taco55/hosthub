@@ -24,7 +24,7 @@ class UserSettingsRepositorySupabase extends SupabaseRepository
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotLoadData,
+        operation: DomainOperation.load,
         context: const {'op': 'fetch'},
       );
     }
@@ -66,7 +66,7 @@ class UserSettingsRepositorySupabase extends SupabaseRepository
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: const {'op': 'save'},
       );
     }

@@ -77,7 +77,7 @@ class MediaRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotLoadData,
+        operation: DomainOperation.load,
         context: {'op': 'loadLibrary', 'siteId': siteId},
       );
     }
@@ -126,7 +126,7 @@ class MediaRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'uploadMedia', 'siteId': siteId, 'file': filename},
       );
     }
@@ -172,7 +172,7 @@ class MediaRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'deleteMedia', 'siteId': siteId, 'path': storagePath},
       );
     }
@@ -196,7 +196,7 @@ class MediaRepository extends SupabaseRepository {
       throw mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: {'op': 'saveMediaUsage', 'siteId': siteId},
       );
     }

@@ -1,4 +1,4 @@
-import 'package:app_errors/app_errors.dart';
+import 'package:app_errors/supabase_adapter.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -16,6 +16,8 @@ EdgeFunctionTranslationService buildService(EdgeFunctionInvoke invoke) {
 }
 
 void main() {
+  tearDown(DomainErrors.resetForTesting);
+
   test(
     'sends the TRANSLATION.md payload shape and maps the response',
     () async {
@@ -83,25 +85,35 @@ void main() {
     expect(called, isFalse);
   });
 
-  test('wraps function failures in a DomainError', () async {
-    final service = buildService((name, {body}) async {
-      throw const FunctionException(
-        status: 403,
-        details: {'error': 'insufficient_permissions'},
+  test(
+    'wraps function failures in a DomainError that names the load',
+    () async {
+      DomainErrors.configure(adapters: const [supabaseAdapter]);
+      final service = buildService((name, {body}) async {
+        throw const FunctionException(
+          status: 403,
+          details: {'error': 'insufficient_permissions'},
+        );
+      });
+
+      await expectLater(
+        service.translateFields(
+          sourceLanguage: 'nl',
+          targetLanguage: 'en',
+          sourceFields: {'hero.headline': 'Jouw bergwoning'},
+        ),
+        throwsA(
+          isA<DomainError>()
+              .having((e) => e.code, 'code', DomainErrorCode.permissionDenied)
+              .having((e) => e.operation, 'operation', DomainOperation.load),
+        ),
       );
-    });
+    },
+  );
 
-    await expectLater(
-      service.translateFields(
-        sourceLanguage: 'nl',
-        targetLanguage: 'en',
-        sourceFields: {'hero.headline': 'Jouw bergwoning'},
-      ),
-      throwsA(isA<DomainError>()),
-    );
-  });
-
-  test('rejects an unexpected response shape as DomainError', () async {
+  test('reports an unexpected response shape once, as an anomaly', () async {
+    final reported = <DomainError>[];
+    DomainError.onUnexpectedError = reported.add;
     final service = buildService(
       (name, {body}) async => FunctionResponse(status: 200, data: 'oops'),
     );
@@ -112,7 +124,13 @@ void main() {
         targetLanguage: 'en',
         sourceFields: {'hero.headline': 'x'},
       ),
-      throwsA(isA<DomainError>()),
+      throwsA(
+        isA<DomainError>()
+            .having((e) => e.code, 'code', DomainErrorCode.serverError)
+            .having((e) => e.operation, 'operation', DomainOperation.load),
+      ),
     );
+    await pumpEventQueue();
+    expect(reported, hasLength(1));
   });
 }

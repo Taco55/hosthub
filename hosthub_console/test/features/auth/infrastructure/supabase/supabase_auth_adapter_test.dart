@@ -8,6 +8,8 @@ import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_auth_flutter/supabase_auth_flutter.dart';
 
+import 'package:hosthub_console/app/bootstrap/domain_errors_setup.dart';
+import 'package:hosthub_console/core/errors/hosthub_error_reason.dart';
 import 'package:hosthub_console/features/auth/auth.dart';
 import 'package:hosthub_console/features/auth/infrastructure/supabase/supabase_auth_adapter.dart';
 import 'package:hosthub_console/features/auth/infrastructure/supabase/supabase_onboarding_adapter.dart';
@@ -24,6 +26,7 @@ void main() {
   late SupabaseAuthAdapter adapter;
 
   setUp(() async {
+    configureDomainErrors();
     SharedPreferences.setMockInitialValues({});
     FlutterSecureStorage.setMockInitialValues({});
     gotrue = _GoTrue();
@@ -47,7 +50,10 @@ void main() {
     );
   });
 
-  tearDown(() => runtime.dispose());
+  tearDown(() async {
+    await runtime.dispose();
+    DomainErrors.resetForTesting();
+  });
 
   group("the console's own mails", () {
     test('a sign-up that still needs confirming sends the console mail '
@@ -108,6 +114,24 @@ void main() {
       expect(jsonDecode(call.body), {'user_id': 'user-1'});
     });
 
+    test('a failed delete_user names the account data it left', () async {
+      await adapter.confirmSignInWithOtp('host@example.com', '123456');
+      gotrue.deleteUserStatus = 500;
+
+      await expectLater(
+        adapter.deleteAccount(),
+        throwsA(
+          isA<DomainError>()
+              .having((e) => e.code, 'code', DomainErrorCode.serverError)
+              .having(
+                (e) => e.projectReason,
+                'projectReason',
+                HosthubErrorReason.cannotDeleteAllUserData,
+              ),
+        ),
+      );
+    });
+
     test('without a session is refused, without signing anyone out', () async {
       await expectLater(
         adapter.deleteAccount(),
@@ -128,20 +152,27 @@ void main() {
 class _GoTrue {
   final calls = <http.Request>[];
 
+  /// What `delete_user` answers.
+  int deleteUserStatus = 200;
+
   late final http.Client client = MockClient((request) async {
     calls.add(request);
     return switch (request.url.path) {
       '/auth/v1/signup' => _json(_user(confirmed: false)),
       '/auth/v1/verify' => _json(_session()),
+      '/functions/v1/delete_user' => _json(
+        const <String, Object?>{},
+        status: deleteUserStatus,
+      ),
       _ => _json(const <String, Object?>{}),
     };
   });
 
   Iterable<String> get paths => calls.map((call) => call.url.path);
 
-  static http.Response _json(Object body) => http.Response(
+  static http.Response _json(Object body, {int status = 200}) => http.Response(
     jsonEncode(body),
-    200,
+    status,
     headers: const {'content-type': 'application/json'},
   );
 

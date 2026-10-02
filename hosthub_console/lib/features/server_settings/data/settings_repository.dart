@@ -22,7 +22,7 @@ class SettingsRepository {
       throw _mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotLoadData,
+        operation: DomainOperation.load,
         context: const {'op': 'load'},
       );
     }
@@ -47,7 +47,7 @@ class SettingsRepository {
       throw _mapError(
         error,
         stack,
-        reason: DomainErrorReason.cannotSaveData,
+        operation: DomainOperation.save,
         context: const {'op': 'save'},
       );
     }
@@ -86,19 +86,12 @@ class SettingsRepository {
   DomainError _mapError(
     Object error,
     StackTrace stack, {
-    DomainErrorReason? reason,
+    ErrorOperation? operation,
     Map<String, Object?> context = const {},
-  }) {
-    final base = DomainError.from(error, stack: stack);
-    final mergedContext = <String, Object?>{
-      'repository': runtimeType.toString(),
-      if (base.context != null) ...base.context!,
-      ...context,
-    };
-    final resolvedReason = base.reason ?? reason;
-    return base.copyWith(
-      reason: resolvedReason,
-      context: mergedContext.isEmpty ? base.context : mergedContext,
-    );
-  }
+  }) => DomainError.from(
+    error,
+    stack: stack,
+    operation: operation,
+    context: {'repository': runtimeType.toString(), ...context},
+  );
 }

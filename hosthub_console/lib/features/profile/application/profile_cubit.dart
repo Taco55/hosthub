@@ -72,7 +72,7 @@ class ProfileCubit extends Cubit<ProfileState> {
         final user = _sessionManager.currentUser;
         if (user == null) {
           throw DomainErrorCode.unauthorized.err(
-            reason: DomainErrorReason.cannotLoadData,
+            operation: DomainOperation.load,
             message: 'No authenticated user available for profile creation.',
           );
         }

@@ -21,24 +21,27 @@ void main() {
 
   tearDown(() => authPort.close());
 
-  test('a session event re-primes a load stuck on the boot-time auth race', () async {
-    final repository = _RacyRepository(failFirstCalls: 1);
-    final cubit = AccountChannelDefaultsCubit(
-      repository: repository,
-      authPort: authPort,
-    );
-    addTearDown(cubit.close);
+  test(
+    'a session event re-primes a load stuck on the boot-time auth race',
+    () async {
+      final repository = _RacyRepository(failFirstCalls: 1);
+      final cubit = AccountChannelDefaultsCubit(
+        repository: repository,
+        authPort: authPort,
+      );
+      addTearDown(cubit.close);
 
-    await cubit.load();
-    expect(cubit.state.status, AccountChannelDefaultsStatus.error);
-    expect(repository.calls, 1);
+      await cubit.load();
+      expect(cubit.state.status, AccountChannelDefaultsStatus.error);
+      expect(repository.calls, 1);
 
-    authPort.emitSession(const AuthUser(id: 'user-1', email: 'a@b.test'));
-    await pumpEventQueue();
+      authPort.emitSession(const AuthUser(id: 'user-1', email: 'a@b.test'));
+      await pumpEventQueue();
 
-    expect(cubit.state.status, AccountChannelDefaultsStatus.loaded);
-    expect(repository.calls, 2);
-  });
+      expect(cubit.state.status, AccountChannelDefaultsStatus.loaded);
+      expect(repository.calls, 2);
+    },
+  );
 
   test('a session event is a no-op once the tier already loaded', () async {
     final repository = _RacyRepository(failFirstCalls: 0);
@@ -79,7 +82,7 @@ class _RacyRepository extends AccountChannelDefaultsRepository {
     calls++;
     if (calls <= failFirstCalls) {
       throw DomainErrorCode.unauthorized.err(
-        reason: DomainErrorReason.cannotLoadData,
+        operation: DomainOperation.load,
         message: 'User not logged in',
         logout: false,
       );

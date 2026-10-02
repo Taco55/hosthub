@@ -37,27 +37,22 @@ abstract class SupabaseRepository {
     Iterable<Map<String, dynamic>> rows,
   ) => rows.map(ensureCreator).toList();
 
+  /// Converts [error], naming what the catch did ([operation]) and, when it
+  /// knows one, what went wrong ([reason]). Both fill in: a cause or an
+  /// operation the conversion found itself stays.
   DomainError mapError(
     Object error,
     StackTrace stack, {
-    DomainErrorReason? reason,
+    ErrorOperation? operation,
+    ErrorReason? reason,
     Map<String, Object?> context = const {},
-  }) {
-    final base = DomainError.from(
-      error,
-      stack: stack,
-    ).ensureLogoutOnInvalidRefresh();
-    final mergedContext = <String, Object?>{
-      'repository': runtimeType.toString(),
-      if (base.context != null) ...base.context!,
-      ...context,
-    };
-    final resolvedReason = base.reason ?? reason;
-    return base.copyWith(
-      reason: resolvedReason,
-      context: mergedContext.isEmpty ? base.context : mergedContext,
-    );
-  }
+  }) => DomainError.from(
+    error,
+    stack: stack,
+    operation: operation,
+    projectReason: reason,
+    context: {'repository': runtimeType.toString(), ...context},
+  );
 
   Future<Map<String, dynamic>?> maybeSingle(
     String table, {
