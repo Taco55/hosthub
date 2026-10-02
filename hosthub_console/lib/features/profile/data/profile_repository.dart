@@ -157,7 +157,7 @@ class ProfileRepository extends SupabaseRepository {
 
       if (response.status != 200) {
         throw DomainErrorCode.serverError.err(
-          projectReason: HosthubErrorReason.cannotDeleteAllUserData,
+          reason: HosthubErrorReason.cannotDeleteAllUserData,
           context: {'function_status': response.status},
         );
       }

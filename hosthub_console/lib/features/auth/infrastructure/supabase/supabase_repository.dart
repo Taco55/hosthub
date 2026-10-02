@@ -50,7 +50,7 @@ abstract class SupabaseRepository {
     error,
     stack: stack,
     operation: operation,
-    projectReason: reason,
+    reason: reason,
     context: {'repository': runtimeType.toString(), ...context},
   );
 

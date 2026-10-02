@@ -1,7 +1,7 @@
 import 'package:app_errors/app_errors.dart';
 
 /// What went wrong in a flow of the console's own, beyond the library's
-/// generic causes. Set as `projectReason:`; `hosthubErrorMapper` words it.
+/// generic causes. Set as `reason:`; `hosthubErrorMapper` words it.
 enum HosthubErrorReason implements ErrorReason {
   /// The account was not removed with all of its data.
   cannotDeleteAllUserData,

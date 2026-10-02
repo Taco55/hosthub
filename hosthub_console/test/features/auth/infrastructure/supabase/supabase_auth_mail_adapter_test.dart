@@ -31,7 +31,7 @@ void main() {
       );
 
   Matcher failsWith(HosthubErrorReason reason) => throwsA(
-    isA<DomainError>().having((e) => e.projectReason, 'projectReason', reason),
+    isA<DomainError>().having((e) => e.reason, 'reason', reason),
   );
 
   test('each mail flow fails with its own reason', () async {

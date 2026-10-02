@@ -48,7 +48,7 @@ void main() {
       HosthubErrorReason.userCreatedEmailFailed: s.errorUserCreatedEmailFailed,
     };
     for (final MapEntry(key: reason, value: alert) in expected.entries) {
-      final error = DomainErrorCode.serverError.err(projectReason: reason);
+      final error = DomainErrorCode.serverError.err(reason: reason);
       expect(read(error).alert, alert, reason: reason.name);
     }
   });
@@ -59,7 +59,7 @@ void main() {
     await pumpContext(tester);
 
     final error = DomainErrorCode.network.err(
-      projectReason: HosthubErrorReason.loginOtpEmailFailed,
+      reason: HosthubErrorReason.loginOtpEmailFailed,
     );
 
     expect(read(error).alert, AppErrorLocalizations.of(context).networkError);
@@ -72,7 +72,7 @@ void main() {
 
     final appError = read(
       DomainErrorCode.unauthorized.err(
-        projectReason: HosthubErrorReason.cannotDeleteAllUserData,
+        reason: HosthubErrorReason.cannotDeleteAllUserData,
         logout: true,
       ),
     );

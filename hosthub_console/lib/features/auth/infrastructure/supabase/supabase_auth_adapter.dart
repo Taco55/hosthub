@@ -212,7 +212,7 @@ class SupabaseAuthAdapter extends SupabaseAuthService implements AuthPort {
       );
       if (response.status != 200) {
         throw DomainErrorCode.serverError.err(
-          projectReason: HosthubErrorReason.cannotDeleteAllUserData,
+          reason: HosthubErrorReason.cannotDeleteAllUserData,
           cause: response.data,
           context: {
             ..._context('deleteAccount'),
@@ -302,7 +302,7 @@ class SupabaseAuthAdapter extends SupabaseAuthService implements AuthPort {
   ]) => DomainError.from(
     error,
     stack: stack,
-    projectReason: reason,
+    reason: reason,
     context: _context(operation, extra),
   );
 

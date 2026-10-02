@@ -23,7 +23,7 @@ packages:
       path: "../../../shared/libraries/app_errors"
       relative: true
     source: path
-    version: "0.18.0"
+    version: "1.0.0"
   app_links:
     dependency: transitive
     description:

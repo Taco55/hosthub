@@ -124,8 +124,8 @@ void main() {
           isA<DomainError>()
               .having((e) => e.code, 'code', DomainErrorCode.serverError)
               .having(
-                (e) => e.projectReason,
-                'projectReason',
+                (e) => e.reason,
+                'reason',
                 HosthubErrorReason.cannotDeleteAllUserData,
               ),
         ),

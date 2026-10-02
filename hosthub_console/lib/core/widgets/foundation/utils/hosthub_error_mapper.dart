@@ -14,7 +14,7 @@ AppError? hosthubErrorMapper(
   DomainError error,
   AppErrorStrings strings,
 ) {
-  final reason = error.projectReason;
+  final reason = error.reason;
   if (reason is! HosthubErrorReason) return null;
   if (error.endsSession || _connectionFailed(error)) return null;
 
