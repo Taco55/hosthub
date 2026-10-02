@@ -2290,9 +2290,6 @@ class MessageLookup extends MessageLookupByLibrary {
     "siteSettingsLodgifyRoomTypeIdLabel": MessageLookupByLibrary.simpleMessage(
       "Lodgify room type ID",
     ),
-    "siteSettingsSaveFailed": MessageLookupByLibrary.simpleMessage(
-      "Could not save website settings",
-    ),
     "siteSettingsSaved": MessageLookupByLibrary.simpleMessage(
       "Website settings saved",
     ),

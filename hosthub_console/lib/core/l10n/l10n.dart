@@ -8922,16 +8922,6 @@ class S {
     );
   }
 
-  /// `Could not save website settings`
-  String get siteSettingsSaveFailed {
-    return Intl.message(
-      'Could not save website settings',
-      name: 'siteSettingsSaveFailed',
-      desc: '',
-      args: [],
-    );
-  }
-
   /// `Website`
   String get weBreadcrumbWebsite {
     return Intl.message(

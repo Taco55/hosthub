@@ -241,26 +241,44 @@ class CmsCubit extends Cubit<CmsState> {
 
   /// Persist per-site website config (contact recipient, sender name, Lodgify
   /// property/room) and refresh the loaded site. Throws on failure.
-  Future<void> saveSiteSettings({
+  /// Saves the site's settings and answers whether they were saved. A failure
+  /// lands in the state's error, for the page to show.
+  Future<bool> saveSiteSettings({
     String? contactEmail,
     String? emailFromName,
     String? lodgifyPropertyId,
     String? lodgifyRoomTypeId,
   }) async {
     final siteId = state.site?.id;
-    if (siteId == null) return;
-    await _cmsRepository.updateSiteSettings(
-      siteId,
-      contactEmail: contactEmail,
-      emailFromName: emailFromName,
-      lodgifyPropertyId: lodgifyPropertyId,
-      lodgifyRoomTypeId: lodgifyRoomTypeId,
-    );
-    if (isClosed) return;
-    final site = await _cmsRepository.fetchSite(siteId);
-    if (isClosed) return;
-    if (site != null) {
-      emit(state.copyWith(site: site));
+    if (siteId == null) return false;
+    try {
+      await _cmsRepository.updateSiteSettings(
+        siteId,
+        contactEmail: contactEmail,
+        emailFromName: emailFromName,
+        lodgifyPropertyId: lodgifyPropertyId,
+        lodgifyRoomTypeId: lodgifyRoomTypeId,
+      );
+      if (isClosed) return true;
+      final site = await _cmsRepository.fetchSite(siteId);
+      if (isClosed) return true;
+      if (site != null) {
+        emit(state.copyWith(site: site));
+      }
+      return true;
+    } catch (error, stack) {
+      if (!isClosed) {
+        emit(
+          state.copyWith(
+            error: DomainError.from(
+              error,
+              stack: stack,
+              operation: DomainOperation.save,
+            ),
+          ),
+        );
+      }
+      return false;
     }
   }
 

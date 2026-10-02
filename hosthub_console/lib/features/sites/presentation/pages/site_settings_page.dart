@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:app_errors/app_errors.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:styled_widgets/styled_widgets.dart';
 
@@ -68,116 +69,124 @@ class _SiteSettingsPageState extends State<SiteSettingsPage> {
     return trimmed.isEmpty ? null : trimmed;
   }
 
+  /// A failure is the cubit's error, shown by the listener in [build].
   Future<void> _save() async {
     setState(() => _saving = true);
-    try {
-      await context.read<CmsCubit>().saveSiteSettings(
-        contactEmail: _norm(_contactEmail.text),
-        emailFromName: _norm(_emailFromName.text),
-        lodgifyPropertyId: _norm(_lodgifyPropertyId.text),
-        lodgifyRoomTypeId: _norm(_lodgifyRoomTypeId.text),
-      );
-      if (!mounted) return;
+    final saved = await context.read<CmsCubit>().saveSiteSettings(
+      contactEmail: _norm(_contactEmail.text),
+      emailFromName: _norm(_emailFromName.text),
+      lodgifyPropertyId: _norm(_lodgifyPropertyId.text),
+      lodgifyRoomTypeId: _norm(_lodgifyRoomTypeId.text),
+    );
+    if (!mounted) return;
+    setState(() => _saving = false);
+    if (saved) {
       showStyledToast(
         context,
         type: ToastificationType.success,
         description: context.s.siteSettingsSaved,
       );
-    } catch (_) {
-      if (!mounted) return;
-      showStyledToast(
-        context,
-        type: ToastificationType.error,
-        description: context.s.siteSettingsSaveFailed,
-      );
-    } finally {
-      if (mounted) setState(() => _saving = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<CmsCubit, CmsState>(
+    return BlocListener<CmsCubit, CmsState>(
       listenWhen: (previous, current) =>
-          current.site != null && current.site!.id == widget.siteId,
-      listener: (context, state) {
-        final site = state.site;
-        if (site != null && site.id == widget.siteId) _hydrate(site);
+          previous.error != current.error && current.error != null,
+      listener: (context, state) async {
+        final error = state.error;
+        if (error == null) return;
+        await showAppError(context, AppError.fromDomain(context, error));
+        if (!context.mounted) return;
+        context.read<CmsCubit>().clearError();
       },
-      builder: (context, state) {
-        final loading = state.status == CmsStatus.loading && !_initialized;
-        return StyledWebPageScaffold(
-          // Design `.top`: the crumb says which part of the console this is,
-          // the title is the screen.
-          overline: context.s.navPropertyWebsite,
-          title: context.s.navPropertySiteSettings,
-          primaryAction: StyledWebPageAction(
-            label: context.s.saveButton,
-            icon: Icons.save_outlined,
-            enabled: !_saving && !loading,
-            inProgress: _saving,
-            onPressed: (_saving || loading) ? null : () => _save(),
-          ),
-          // The sidebar carries no row for this page, so the back button is the
-          // way out — and it must survive a cold link, which has no stack.
-          onBack: () => leaveTo(context, '/sites/${widget.siteId}'),
-          backLabel: context.s.navPropertyWebsite,
-          intrinsicPaneHeight: true,
-          leftChild: SafeArea(
-            child: loading
-                ? const Center(child: CircularProgressIndicator())
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Site details, website languages and the source
-                      // language: property scope, so they live here rather
-                      // than on the account page they used to sit on.
-                      ...buildSiteSettingsSections(
-                        context,
-                        context.watch<SiteContextCubit>().state,
-                      ),
-                      const SizedBox(height: 20),
-                      StyledSection(
-                        header: context.s.siteSettingsContactSection,
-                        inset: false,
-                        children: [
-                          StyledTextFormField(
-                            controller: _emailFromName,
-                            label: context.s.siteSettingsEmailFromNameLabel,
-                            helperText: context.s.siteSettingsEmailFromNameHint,
-                          ),
-                          const SizedBox(height: 12),
-                          StyledTextFormField(
-                            controller: _contactEmail,
-                            label: context.s.siteSettingsContactEmailLabel,
-                            helperText: context.s.siteSettingsContactEmailHint,
-                            keyboardType: TextInputType.emailAddress,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      StyledSection(
-                        header: context.s.siteSettingsBookingSection,
-                        inset: false,
-                        children: [
-                          StyledTextFormField(
-                            controller: _lodgifyPropertyId,
-                            label: context.s.siteSettingsLodgifyPropertyIdLabel,
-                          ),
-                          const SizedBox(height: 12),
-                          StyledTextFormField(
-                            controller: _lodgifyRoomTypeId,
-                            label: context.s.siteSettingsLodgifyRoomTypeIdLabel,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      LegalDocumentSection(siteId: widget.siteId),
-                    ],
-                  ),
-          ),
-        );
-      },
+      child: BlocConsumer<CmsCubit, CmsState>(
+        listenWhen: (previous, current) =>
+            current.site != null && current.site!.id == widget.siteId,
+        listener: (context, state) {
+          final site = state.site;
+          if (site != null && site.id == widget.siteId) _hydrate(site);
+        },
+        builder: (context, state) {
+          final loading = state.status == CmsStatus.loading && !_initialized;
+          return StyledWebPageScaffold(
+            // Design `.top`: the crumb says which part of the console this is,
+            // the title is the screen.
+            overline: context.s.navPropertyWebsite,
+            title: context.s.navPropertySiteSettings,
+            primaryAction: StyledWebPageAction(
+              label: context.s.saveButton,
+              icon: Icons.save_outlined,
+              enabled: !_saving && !loading,
+              inProgress: _saving,
+              onPressed: (_saving || loading) ? null : () => _save(),
+            ),
+            // The sidebar carries no row for this page, so the back button is the
+            // way out — and it must survive a cold link, which has no stack.
+            onBack: () => leaveTo(context, '/sites/${widget.siteId}'),
+            backLabel: context.s.navPropertyWebsite,
+            intrinsicPaneHeight: true,
+            leftChild: SafeArea(
+              child: loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Site details, website languages and the source
+                        // language: property scope, so they live here rather
+                        // than on the account page they used to sit on.
+                        ...buildSiteSettingsSections(
+                          context,
+                          context.watch<SiteContextCubit>().state,
+                        ),
+                        const SizedBox(height: 20),
+                        StyledSection(
+                          header: context.s.siteSettingsContactSection,
+                          inset: false,
+                          children: [
+                            StyledTextFormField(
+                              controller: _emailFromName,
+                              label: context.s.siteSettingsEmailFromNameLabel,
+                              helperText:
+                                  context.s.siteSettingsEmailFromNameHint,
+                            ),
+                            const SizedBox(height: 12),
+                            StyledTextFormField(
+                              controller: _contactEmail,
+                              label: context.s.siteSettingsContactEmailLabel,
+                              helperText:
+                                  context.s.siteSettingsContactEmailHint,
+                              keyboardType: TextInputType.emailAddress,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        StyledSection(
+                          header: context.s.siteSettingsBookingSection,
+                          inset: false,
+                          children: [
+                            StyledTextFormField(
+                              controller: _lodgifyPropertyId,
+                              label:
+                                  context.s.siteSettingsLodgifyPropertyIdLabel,
+                            ),
+                            const SizedBox(height: 12),
+                            StyledTextFormField(
+                              controller: _lodgifyRoomTypeId,
+                              label:
+                                  context.s.siteSettingsLodgifyRoomTypeIdLabel,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        LegalDocumentSection(siteId: widget.siteId),
+                      ],
+                    ),
+            ),
+          );
+        },
+      ),
     );
   }
 }
