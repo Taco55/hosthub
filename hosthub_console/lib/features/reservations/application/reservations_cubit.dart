@@ -273,13 +273,15 @@ class ReservationsCubit extends Cubit<ReservationsState> {
     );
   }
 
-  Future<void> updateNotes(String reservationId, String notes) async {
+  /// Writes [notes] back to the reservation and answers whether it was saved.
+  /// A failure lands in the state's error, for the page to show.
+  Future<bool> updateNotes(String reservationId, String notes) async {
     try {
       await _channelManagerRepository.updateReservationNotes(
         reservationId,
         notes,
       );
-      if (isClosed) return;
+      if (isClosed) return true;
 
       final updatedEntries = state.entries.map((e) {
         if (e.reservationId == reservationId) {
@@ -289,10 +291,12 @@ class ReservationsCubit extends Cubit<ReservationsState> {
       }).toList();
 
       emit(state.copyWith(entries: updatedEntries));
+      return true;
     } catch (error, stack) {
       if (!isClosed) {
         emit(state.copyWith(error: DomainError.from(error, stack: stack)));
       }
+      return false;
     }
   }
 

@@ -39,7 +39,7 @@ void main() {
   Future<void> pumpDialog(
     WidgetTester tester, {
     ReservationRevenueSummary revenue = ReservationRevenueSummary.empty,
-    Future<void> Function(String, String)? onSaveNotes,
+    Future<bool> Function(String, String)? onSaveNotes,
   }) async {
     await tester.binding.setSurfaceSize(const Size(900, 1200));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -132,7 +132,10 @@ void main() {
     final saved = <(String, String)>[];
     await pumpDialog(
       tester,
-      onSaveNotes: (id, notes) async => saved.add((id, notes)),
+      onSaveNotes: (id, notes) async {
+        saved.add((id, notes));
+        return true;
+      },
     );
 
     expect(find.byType(StyledTextField), findsOneWidget);
@@ -148,13 +151,9 @@ void main() {
     expect(find.text('Opgeslagen'), findsOneWidget);
   });
 
-  testWidgets('a failed save stops the spinner and keeps the text', (
-    tester,
-  ) async {
-    await pumpDialog(
-      tester,
-      onSaveNotes: (id, notes) async => throw Exception('offline'),
-    );
+  testWidgets('a failed save stops the spinner and keeps the text, '
+      'without confirming it', (tester) async {
+    await pumpDialog(tester, onSaveNotes: (id, notes) async => false);
 
     await tester.enterText(find.byType(StyledTextField), 'Nieuwe notitie');
     await tester.ensureVisible(find.text('Opslaan in Lodgify'));

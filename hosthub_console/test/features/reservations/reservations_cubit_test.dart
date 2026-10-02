@@ -24,6 +24,9 @@ class _FakeChannelManager implements ChannelManagerRepository {
 
   final List<String> requestedChannelIds = [];
 
+  /// What writing a note throws; null saves it.
+  Object? notesFailure;
+
   @override
   Future<List<Reservation>> fetchReservations({
     required int propertyId,
@@ -59,7 +62,10 @@ class _FakeChannelManager implements ChannelManagerRepository {
   Future<void> updateReservationNotes(
     String reservationId,
     String notes,
-  ) async => throw UnimplementedError();
+  ) async {
+    final failure = notesFailure;
+    if (failure != null) throw failure;
+  }
 
   @override
   Future<({Map<DateTime, num> rates, String? currency})> fetchNightlyRates(
@@ -209,6 +215,39 @@ void main() {
 
       expect(cubit.state.stalePropertyIds, isEmpty);
       expect(cubit.state.entries, hasLength(2));
+
+      await cubit.close();
+    });
+  });
+
+  group('saving a note', () {
+    test('answers that it saved and keeps the note on the entry', () async {
+      final cubit = ReservationsCubit(
+        channelManagerRepository: _FakeChannelManager(),
+      );
+      await cubit.loadReservations(properties: const [trysil]);
+
+      final saved = await cubit.updateNotes('L-1-0', 'Late arrival');
+
+      expect(saved, isTrue);
+      expect(cubit.state.entries.single.notes, 'Late arrival');
+      expect(cubit.state.error, isNull);
+
+      await cubit.close();
+    });
+
+    test('answers that it did not save and leaves the failure in the state, '
+        'for the page to show', () async {
+      final repository = _FakeChannelManager()
+        ..notesFailure = Exception('lodgify down');
+      final cubit = ReservationsCubit(channelManagerRepository: repository);
+      await cubit.loadReservations(properties: const [trysil]);
+
+      final saved = await cubit.updateNotes('L-1-0', 'Late arrival');
+
+      expect(saved, isFalse);
+      expect(cubit.state.entries.single.notes, isNull);
+      expect(cubit.state.error, isNotNull);
 
       await cubit.close();
     });

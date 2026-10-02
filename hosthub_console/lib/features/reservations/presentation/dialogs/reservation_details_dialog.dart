@@ -55,7 +55,7 @@ Future<void> showReservationDetailsDialog(
   required DateFormat dateFormatter,
   required DateFormat dateTimeFormatter,
   required ReservationRevenueSummary revenue,
-  Future<void> Function(String reservationId, String notes)? onSaveNotes,
+  Future<bool> Function(String reservationId, String notes)? onSaveNotes,
 }) {
   return showDialog<void>(
     context: context,
@@ -91,8 +91,9 @@ class ReservationDetailsDialog extends StatefulWidget {
   final DateFormat dateTimeFormatter;
   final ReservationRevenueSummary revenue;
 
-  /// Persists an edited note. Null renders the note read-only.
-  final Future<void> Function(String reservationId, String notes)? onSaveNotes;
+  /// Persists an edited note and answers whether it was saved; the caller
+  /// shows a failure. Null renders the note read-only.
+  final Future<bool> Function(String reservationId, String notes)? onSaveNotes;
 
   @override
   State<ReservationDetailsDialog> createState() =>
@@ -133,17 +134,12 @@ class _ReservationDetailsDialogState extends State<ReservationDetailsDialog> {
       _notesSaved = false;
     });
 
-    try {
-      await save(reservationId, _notesController.text.trim());
-      if (!mounted) return;
-      setState(() {
-        _isSavingNotes = false;
-        _notesSaved = true;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _isSavingNotes = false);
-    }
+    final saved = await save(reservationId, _notesController.text.trim());
+    if (!mounted) return;
+    setState(() {
+      _isSavingNotes = false;
+      _notesSaved = saved;
+    });
   }
 
   @override
