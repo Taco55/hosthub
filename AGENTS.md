@@ -11,9 +11,14 @@ Voor deze repo is dit de bron die Codex/Claude leest.
 - `.agents/skills` is de enige bron voor repo-specifieke skills. `.claude/skills` is een symlink naar `.agents/skills`.
 - Lees de relevante skill voordat je aan dat gebied begint:
   - Thema, kleuren, typografie, `HosthubThemePreset`, tokens: `.agents/skills/hosthub-styling/SKILL.md`
-- Nog niet aanwezig, maar wel voorgeschreven door `AGENTS_CORE.md`: skills voor feature-architectuur,
-  StyledWidgets-afwijkingen, localisatie, Supabase en dart-analysis. Schrijf er een zodra een gebied
-  meer dan eenmalige uitleg nodig heeft.
+- De gedeelde conventies `tk-feature`, `tk-styling`, `tk-localization` en `tk-dart-analysis` staan
+  gevendord in `.agents/skills/tk-*/`, uit `tk-skills`. Lees de gedeelde skill eerst, en daarna de
+  repo-skill voor wat hier anders is. Bewerk nooit een `tk-*`-kopie: wijzig hem in `tk-skills` en
+  vendor opnieuw (README daar, "Vendoring").
+- Nog niet aanwezig, maar wel voorgeschreven door `AGENTS_CORE.md`: repo-skills voor
+  feature-architectuur, StyledWidgets-afwijkingen, localisatie, Supabase en dart-analysis. Tot die
+  er zijn, is de `tk-*`-skill van dat onderwerp de ondergrens. Schrijf er een zodra een gebied meer
+  dan eenmalige uitleg nodig heeft.
 - De generieke StyledWidgets-component-API staat niet in deze repo: die hoort bij de library zelf,
   als de `styled-widgets` skill.
 

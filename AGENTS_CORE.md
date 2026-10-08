@@ -19,7 +19,7 @@ most specific one wins:
 | Tier | Lives in | Holds |
 |---|---|---|
 | Library | the library's own repo | the API it ships to consumers |
-| Shared convention | `shared/tk-skills/skills/` | the pattern, brand-neutral, no file paths |
+| Shared convention | `tk-skills`, vendored into the repo's `.agents/skills/tk-<topic>/` | the pattern, brand-neutral, no file paths |
 | Repo | that repo's `.agents/skills/`, via a committed `.claude/skills` symlink | the bindings: key files, package names, what this repo does differently |
 
 The shared tier exists because the same conventions were being written out per repo and
@@ -33,6 +33,13 @@ in every repo but one.
 | styling | `tk-styling` | palette/preset files, the repo's semantic colors and text styles |
 | localization | `tk-localization` | ARB locations, the generated class, the regen command |
 | dart-analysis | `tk-dart-analysis` | analyze/test commands, analyzer config, repo guardrails |
+
+A shared skill reaches a repo the way this file does: copied unchanged into
+`.agents/skills/tk-<topic>/`, committed, and listed in the repo's `AGENTS.md`. Load it
+by name like any repo skill. A repo without that copy has no shared skill for the
+topic — never read one through a path outside the repo, and never install one at user
+level, where it would fire in every other repo on the machine too. Change a copy only
+by changing `tk-skills` and re-vendoring.
 
 Name a repo skill after its repo (`justorganize-feature`, `diplora-feature`) and have it
 point at the shared one rather than restating it. A repo whose skill is richer than the
@@ -51,7 +58,9 @@ Two topics have **no** shared skill on purpose:
 
 Never copy another project's skill into a repo. A `diplora-feature` inside a
 non-Diplora repo names packages that do not exist there, and it drifts from the
-original the moment either side is edited.
+original the moment either side is edited. A vendored `tk-<topic>` is not such a copy:
+it names no package, and `tk-skills` records every copy and reports when one falls
+behind.
 
 ## Tooling and workflow
 
