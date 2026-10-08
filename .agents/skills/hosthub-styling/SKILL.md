@@ -7,14 +7,17 @@ description: >
   HosthubDiploraV1Palette, AppColors, ThemeExtension, CustomTextTheme,
   StyledWidgetsTheme.of, context.colors, context.theme, M3 color roles, design
   tokens, golden tests for theme changes.
-  Cross-project rules (M3-only, no local ThemeData, no hex in widgets) live in
-  AGENTS_CORE.md; this skill is about where things are in this app.
+  The cross-project convention lives in tk-styling; this skill is about where
+  things are in this app.
 user-invocable: true
 ---
 
 # HostHub Console — Styling & Theming
 
-
+Read `tk-styling` first — it holds the convention: the palette → ColorScheme →
+ThemeData → StyledWidgets preset pipeline, Material 3 roles only, no hex or local
+`ThemeData` in a widget, no branching on `Brightness` in a widget, and how to verify a
+theme change. This skill holds where things are in this app.
 
 Entry point
 -----------
