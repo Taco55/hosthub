@@ -41,7 +41,7 @@ topic — never read one through a path outside the repo, and never install one 
 level, where it would fire in every other repo on the machine too. Change a copy only
 by changing `tk-skills` and re-vendoring.
 
-Name a repo skill after its repo (`justorganize-feature`, `diplora-feature`) and have it
+Name a repo skill after its repo (`justorganize-feature`, `hosthub-styling`) and have it
 point at the shared one rather than restating it. A repo whose skill is richer than the
 shared one keeps its own — the shared tier is a floor, not a ceiling.
 
