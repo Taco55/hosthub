@@ -63,9 +63,9 @@ Future<void> _showStyledAuthErrorDialog(
 
   await showStyledAlertDialog(
     context,
-    title: AuthUiIntl.of(context).errorDialogTitle,
+    title: AuthUiStrings.of(context).errorDialogTitle,
     message: message,
-    dismissText: AuthUiIntl.of(context).errorDialogDismiss,
+    dismissText: AuthUiStrings.of(context).errorDialogDismiss,
   );
 }
 

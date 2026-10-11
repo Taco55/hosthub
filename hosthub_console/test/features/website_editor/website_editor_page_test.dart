@@ -524,6 +524,9 @@ void main() {
     expect(find.textContaining('not reviewed yet'), findsNWidgets(2));
     expect(find.text('Open'), findsNWidgets(2));
 
+    // The opened breakdown is taller than the dialog: scroll to the row.
+    await tester.ensureVisible(find.text('Open').first);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Open').first);
     await tester.pumpAndSettle();
     expect(opened, isNotEmpty);

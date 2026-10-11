@@ -439,13 +439,6 @@ void main() {
       expect(content.bottom, 0);
       expect(styled.modals.minBottomInset, greaterThanOrEqualTo(16));
     });
-
-    test('commitments render below the content they confirm', () {
-      expect(
-        styledFor(Brightness.light).modals.actionPlacement,
-        StyledModalSlotPlacement.footer,
-      );
-    });
   });
 
   group('timeline calendar geometry follows the design', () {

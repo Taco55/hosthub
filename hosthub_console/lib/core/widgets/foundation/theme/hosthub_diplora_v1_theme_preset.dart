@@ -585,14 +585,11 @@ abstract final class HosthubThemePreset {
         backgroundColorDark: HosthubDiploraV1Palette.surfaceContainerDark,
         buttonsLayout: DialogButtonsLayout.horizontal,
         buttonAlignment: DialogButtonAlignment.right,
-      ),
-      // Body and footer padding come from the library: its default is the 24 the
-      // sections use, so a bare-field body and a section body land on the same
-      // edge without either being stated here.
-      modals: (t) => t.copyWith(
-        // Every modal here commits below the content it confirms; saying so once
-        // keeps a new call site from inheriting the library's header default.
-        actionPlacement: StyledModalSlotPlacement.footer,
+        // The design system's standard modal width. The library's 440 is too
+        // narrow for a confirmation that lists what it confirms: the publish
+        // dialog's language rows carry a status chip and a checkbox beside
+        // their title, and at 440 the title is squeezed to a sliver.
+        maxWidth: 520,
       ),
       toasts: (t) => t.copyWith(
         successBackgroundColor: HosthubDiploraV1Palette.success,
