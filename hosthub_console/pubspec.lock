@@ -1146,7 +1146,7 @@ packages:
   supabase_auth_flutter:
     dependency: "direct main"
     description:
-      path: "../../../shared/libraries/supabase-auth-flutter"
+      path: "../../../shared/libraries/supabase_auth_flutter"
       relative: true
     source: path
     version: "0.5.1"

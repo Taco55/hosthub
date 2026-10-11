@@ -20,7 +20,7 @@ dependencies:
   auth_ui_flutter:
     path: ../../../shared/libraries/auth_ui_flutter
   supabase_auth_flutter:
-    path: ../../../shared/libraries/supabase-auth-flutter
+    path: ../../../shared/libraries/supabase_auth_flutter
 
   flutter_localizations:
     sdk: flutter
