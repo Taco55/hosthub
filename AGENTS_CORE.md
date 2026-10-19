@@ -97,8 +97,16 @@ behind.
   in the same change.
 - **Library-first.** A generic UI or infrastructure capability belongs in the shared
   library (optional/disableable), not app-local. A change to a shared library is a
-  cross-repo change: keep it compatible with every consuming repo, and remember some
-  repos consume it by path and others by git tag.
+  cross-repo change: keep every consuming repo working, and remember some repos consume
+  it by path and others by git tag. An owned shared library changes whenever that makes
+  the design better (owner, 2026-10-19): its API, its sync core and its SQL are ours to
+  change, breaking changes included — a breaking change updates its consumers in the
+  same round. When an app would otherwise guess what the library knows, poll for it,
+  copy one of its rules or values, or work around what it does not say, the change
+  belongs in the library — a release, with its version bump, its tag and the consumers'
+  refreshed lockfiles — not in the app. "No new library API" is never a premise of a
+  plan or a reason to defer a review finding. Another session working in the library is
+  a reason to sequence the change after its release, not to skip it.
 - View/UI never calls the data layer directly. Feature actions go through the state
   layer; callbacks and side effects live in the cubit/bloc, not the widget.
 - Business errors flow `Supabase error → mapError() → DomainError → state → AppError`
