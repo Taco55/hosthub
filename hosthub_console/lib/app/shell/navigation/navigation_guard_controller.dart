@@ -10,9 +10,6 @@ class NavigationGuardController extends ChangeNotifier {
     return await guard();
   }
 
-  /// Called by widgets that manage their own pop handling (e.g. WillPopScope).
-  Future<bool> maybePop() => canNavigateAway();
-
   void setGuard(Future<bool> Function()? guard) {
     _guard = guard;
   }

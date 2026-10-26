@@ -14,11 +14,12 @@ import 'package:go_router/go_router.dart';
 /// there. Anyone who later `push`es to the same page keeps their history for
 /// free, and the address bar stays true either way.
 ///
-/// Shaped for `StyledWebPageScaffold.onBack`, where `true` means "go ahead and
-/// pop" and `false` means "I navigated myself, do not also pop" — which is why
-/// the branch that navigates is the one returning `false`.
-Future<bool> leaveTo(BuildContext context, String parentPath) async {
-  if (context.canPop()) return true;
-  context.go(parentPath);
-  return false;
+/// Shaped for `StyledWebPageScaffold.onBack`, which replaces the scaffold's
+/// own pop: so this pops when there is a stack, as the scaffold would have.
+void leaveTo(BuildContext context, String parentPath) {
+  if (context.canPop()) {
+    context.pop();
+  } else {
+    context.go(parentPath);
+  }
 }
