@@ -41,8 +41,11 @@ Whatever the repo's base class or helper, the contract is the same:
 
 - Every failure leaves the repository as a `DomainError`. A raw driver or transport
   exception never escapes.
-- An **existing** `DomainError` is rethrown unchanged, so its code and context
-  survive. Don't re-wrap it.
+- One conversion handles both: a raw failure becomes a `DomainError`, and converting
+  it is its one report; an **existing** `DomainError` comes through the same
+  conversion with its code kept, at most with context added, and is not reported
+  again. So a repository catches once and converts — no separate branch that
+  rethrows a `DomainError`, no re-wrapping it by hand.
 - Never swallow an error. An empty result set is a valid result; a failed read is not.
 - Include enough context to identify the call — for an edge function, its name.
 - When a signature changes, update every call site in the same change. No overload
@@ -79,13 +82,18 @@ Future<void> load() async {
     final data = await _repository.load();
     emit(state.copyWith(status: FeatureStatus.loaded, data: data));
   } catch (error, stack) {
-    emit(state.copyWith(
-      status: FeatureStatus.error,
-      error: DomainError.from(error, stack: stack),
-    ));
+    final domainError =
+        DomainError.from(error, stack: stack, context: {'op': 'FeatureCubit.load'});
+    if (isClosed) return;
+    emit(state.copyWith(status: FeatureStatus.error, error: domainError));
   }
 }
 ```
+
+The catch converts what it caught first, before any guard: converting is the
+failure's one report, so a guard that returns early (`isClosed`, a stale sequence)
+protects only the `emit`, never the report. The `op` names the owner of the catch —
+the class and the method — so a report says where it came from.
 
 **A cubit never silently swallows an error.** It propagates a `DomainError` through
 the state so the view can surface it. Only a genuinely expected empty outcome — no
@@ -112,8 +120,10 @@ Future<void> search(String query) async {
     if (seq != _fetchSeq) return;            // stale — discard
     emit(state.copyWith(status: Status.loaded, results: results));
   } catch (error, stack) {
-    if (seq != _fetchSeq) return;
-    emit(state.copyWith(status: Status.error, error: DomainError.from(error, stack: stack)));
+    final domainError =
+        DomainError.from(error, stack: stack, context: {'op': 'SearchCubit.search'});
+    if (seq != _fetchSeq) return;            // stale — reported, not shown
+    emit(state.copyWith(status: Status.error, error: domainError));
   }
 }
 ```
