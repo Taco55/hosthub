@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/../../shared/tk-skills/scripts/vendored-behind.sh\" \"$CLAUDE_PROJECT_DIR\" 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}
