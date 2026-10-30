@@ -31,7 +31,8 @@ the user starts, and **decisions** — filtering, sorting, deriving, validating 
 are plain functions of their inputs.
 
 This skill holds the convention. The API of the shared state types and their helper
-is the error library's skill, `app-errors`. The repo's own feature skill names the
+is the error library's skill, `app-errors`; what a page shows per state is the
+`styled-widgets` skill › "Pages". The repo's own feature skill names the
 repository base, the DI container and anything specific to the backend — read that
 one too. A feature's routes are composed
 by the app's frame: `tk-app-shell`.
@@ -115,94 +116,61 @@ Whatever the repo's base class or helper, the contract is the same:
 
 A screen holds what it read as one generic value with four cases — never a status
 enum, a nullable `data` and a nullable `error` side by side, which allow states that
-cannot exist ("loaded" without data, "loading" with a stale error):
+cannot exist ("loaded" without data, "loading" with a stale error): nothing asked
+yet, the first read on its way, a value (maybe refreshing, maybe beside a failed
+read), or a failure with nothing to show. The cases and their fields are the
+`app-errors` skill › "State of a read or a write"; what a page shows in each is the
+`styled-widgets` skill › "Pages".
 
-| Case | Holds | The screen shows |
-|---|---|---|
-| `NotLoaded` | nothing asked yet | its start (a search hint) |
-| `Loading` | the first read is on its way | a spinner |
-| `Loaded(value, refreshing:, failure:)` | a value; maybe a read on its way; maybe the last read failed | the value |
-| `LoadFailed(error)` | nothing — the read failed | a full retry |
-
-Only `Loaded` has a value, and a `switch` over the four is exhaustive. **What was
-shown stays**: a value survives a refresh (`refreshing`) and a failed read
-(`failure`). The view reads it with a switch:
-
-```dart
-switch (state.items) {
-  Loaded(:final value) => ItemList(value),   // a failure: a quiet "not updated" line
-  LoadFailed(:final error) => RetryView(error: error, onRetry: cubit.retry),
-  NotLoaded() || Loading() => const Spinner(),
-}
-```
-
-- **A read's failure is never a dialog or a toast**, in any app. With content on
-  screen the content stays, with a quiet "not updated" line and a retry where the
-  reload indicator stands; with nothing to show, a "not loaded" line with a retry
-  takes the content's place. Which component draws each state is the
-  `styled-widgets` skill › "Pages". The error presenter is for a write the user
-  started.
+- **Only the value case has a value**, and a `switch` over the four cases is
+  exhaustive: the view handles every one, and cannot read data that is not there.
+- **What was shown stays**: a value survives a refresh and a failed read.
+- **A read's failure is never a dialog or a toast**, in any app: the page says it
+  in place. The error presenter is for a write the user started.
 - **Read again when it can succeed**: retry on the user's word, and when the
-  connection returns while the last read failed (`failure != null`).
-- A state holds one `Loadable` per read, beside the other fields it needs (the query,
-  a selection). Several independent reads are several `Loadable`s, not one status.
+  connection returns while the last read failed.
+- A state holds one `Loadable` per read, beside the other fields it needs (the
+  query, a selection). Several independent reads are several `Loadable`s, not one
+  status.
 
 ## Reads and writes in a cubit
 
 The state types and the helper that runs them (`CubitSlots`, with a slot per read
-and per write) ship with the error library; its skill, `app-errors` (section
-"State of a read or a write"), holds the API and its exact semantics. This section
-holds the rules a feature follows with it. A cubit never writes them by hand: no
-status enum, no sequence counter, no try/convert/`isClosed`/emit per method.
-
-```dart
-class ItemsCubit extends Cubit<ItemsState> with CubitSlots<ItemsState> {
-  ItemsCubit(this._repository) : super(const ItemsState());
-
-  final ItemRepository _repository;
-
-  late final _items = loadableSlot(
-    (state) => state.items,
-    (state, items) => state.copyWith(items: items),
-  );
-
-  /// Follows the items of [listId]: the screen stays current on its own.
-  void follow(String listId) => _items.watch(
-        () => _repository.watchItems(listId),
-        op: 'ItemsCubit.follow',
-      );
-}
-```
+and per write) ship with the error library; its skill holds the API and its exact
+semantics. This section holds the rules a feature follows with it. A cubit never
+writes them by hand: no status enum, no sequence counter, no
+try/convert/`isClosed`/emit per method.
 
 **Reads**
 
-- **A stream is the normal case** (`watch`); a one-shot read (`load`) is for what
-  has no change feed. Watching something else (another list, another account) is a
-  new read that starts from nothing, so the previous one's data never looks current
-  for the new one.
+- **A stream is the normal case**; a one-shot read is for what has no change feed.
+- **A read of something else** (another list, another account) starts from
+  nothing: the slot is reset first, so the previous one's data never shows as
+  this one's, not while it loads and not after it fails.
 - **A newer read replaces an older one**: a slow first response that lands after a
   fast second one is dropped. A search typed quickly shows the answer to the last
   query, never the slowest. A read that asks something new of the same thing (a
-  query) leaves no old answer standing when it fails.
+  query) leaves no old answer standing when it fails, and what it asks lands in the
+  same state as its loading.
 - **The caught failure is converted first** — its one report — and only then dropped
   as stale or shown. A guard that returns early (closed, stale) protects only the
-  emit, never the report. Nothing is emitted after `close`.
+  emit, never the report. Nothing is emitted from `close` on.
 - The `op` names the method that starts the read or write (`Owner.method`), so a
   report says where it came from.
 
 **Writes** — a write the user starts and waits on (save, delete, invite) is a
-`Submission<R>`: `NotSubmitted`, `Submitting`, `Submitted(result)` or
-`SubmitFailed(error)`.
+`Submission<R>`, whose cases say whether it is on its way, done or failed.
 
-- **Busy** is `Submitting`: the button disables, a row spins. One write at a time
-  per slot; one action at a time across several is the cubit's check before it
+- **Busy** is the write on its way: the button disables, a row spins. One write at a
+  time per slot; one action at a time across several is the cubit's check before it
   starts one.
-- **An optimistic change** applies together with `Submitting`, and a rollback puts
-  back the value captured before, never by undoing the change by hand. With a live
-  read it is often unnecessary: the write returns when the reads see it.
-- **An outcome is an event, not a flag.** `Submitted` and `SubmitFailed` equal only
-  themselves, so the same save done twice is two states. The view reacts to each
-  with a listener, and nothing sets the state back:
+- **An optimistic change of a read** goes through that read, before the write, so a
+  read that started earlier cannot overwrite it. A rollback puts back what the cubit
+  captured before the write — never by inverting the change. With a live read it is
+  often unnecessary: the write returns when the reads see it.
+- **An outcome is an event, not a flag.** A done or failed write equals only itself,
+  so the same save done twice is two states. The view reacts to each with a
+  listener, and nothing sets the state back:
 
 ```dart
 BlocListener<ItemsCubit, ItemsState>(
@@ -219,11 +187,9 @@ BlocListener<ItemsCubit, ItemsState>(
   A listener that mounts later does not fire for the standing outcome, so a page
   never pops twice. Never model an effect as a `bool shouldClose` or a `message`
   field that the view clears after showing it.
-- **A local-first write** that returns at once and may overlap another (an outbox
-  write nobody waits on) is not a `Submission`: change the loaded value locally,
-  write, and on a failure put the value back and keep the failure in a field of its
-  own — each failure is a new `DomainError`, so a listener on that field sees each
-  one without a reset.
+- **A write that returns before its outcome is known** — a store that sends it
+  later — is not a `Submission`: nobody waits on it, and how a screen shows it and
+  undoes it is the rule of the library that owns that store.
 
 **A Bloc** keeps its events and handlers and holds the same `Loadable` and
 `Submission`, applying their pure transitions in its handlers (`emit.forEach` over
@@ -256,7 +222,7 @@ A feature is testable when its collaborators come in, not when its tests reach i
 - **Test behaviour, not the emit sequence.** Assert the state the user would see once
   the action settles (`await cubit.rename('x'); expect(cubit.state.save, isA<Submitted>())`),
   or what the page shows. Pin a sequence only where the sequence is the behaviour (a
-  spinner shows at once, a rollback follows the optimistic change).
+  loading state shows at once, a rollback follows the optimistic change).
 - **Decisions get their own unit tests**, with plain values in and out; the cubit's
   tests then cover the wiring, not every branch of the decision.
 - A test of a page pumps it with the real cubit over a fake repository, not a mocked
