@@ -109,9 +109,12 @@ behind.
   a reason to sequence the change after its release, not to skip it.
 - View/UI never calls the data layer directly. Feature actions go through the state
   layer; callbacks and side effects live in the cubit/bloc, not the widget.
-- Business errors flow `Supabase error → mapError() → DomainError → state → AppError`
-  and are shown with `showAppError(...)`. Only field-level validation errors render
-  inline. No `try/catch` in view code for feature actions.
+- Business errors flow `Supabase error → mapError() → DomainError → state → AppError`.
+  A write's error (a save, a delete, an invite: an action the user started) is shown
+  with `showAppError(...)`; only field-level validation renders inline. A read's
+  failure (a page or list that cannot load or refresh) never opens a dialog or a
+  toast: the page says it in place (the `styled-widgets` skill, "Pages"). No
+  `try/catch` in view code for feature actions.
 - When an API signature changes, update every call site in the same change.
 - Do not reinterpret user intent in an unintended layer, and do not revert or modify
   user changes outside the requested scope.
@@ -178,8 +181,8 @@ behind.
 - **Never** use `ScaffoldMessenger` or `SnackBar` — always `showStyledToast()` from
   `styled_widgets`, which requires a `type` (`ToastificationType.success`, `.error`)
   and a `title`.
-- Errors are not toasts. Business errors go through `showAppError`; toasts are for
-  success and info.
+- Errors are not toasts. A write's business errors go through `showAppError`, a
+  read's failure stays on its page; toasts are for success and info.
 - The rule covers feedback an app *renders through a library* too. A shared library
   cannot depend on `styled_widgets`, so it must not decide how a notice looks: it
   exposes an injectable presenter (as it already does for buttons, fields and error

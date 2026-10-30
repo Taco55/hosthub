@@ -130,6 +130,10 @@ A repo's own skill names, and does not restate this one:
 - the version widget and the account actions;
 - its deviations from this convention, each with its reason.
 
+For a web console this binding and the console binding of the `styled-widgets`
+skill ("A console's binding") are one place: the app's own console skill or
+section, never spread over a general UI skill and the repo's `AGENTS.md`.
+
 ## Review checklist
 
 - [ ] No page adds itself to the navigation; the tree is built in one place from
